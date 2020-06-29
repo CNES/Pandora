@@ -1,0 +1,6 @@
+__pycache__/
+.coverage
+coverage.xml
+nosetests.xml
+pylint-report.txt
+doc/build/
