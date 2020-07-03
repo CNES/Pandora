@@ -319,7 +319,9 @@ class TestPandora(unittest.TestCase):
                 "img_ref": "tests/pandora/ref.png",
                 "img_sec": "tests/pandora/sec.png",
                 "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif"
+                "disp_max": "tests/pandora/disp_max_grid.tif",
+                "disp_min_sec": "tests/pandora/sec_disp_min_grid.tif",
+                "disp_max_sec": "tests/pandora/sec_disp_max_grid.tif",
             },
             "stereo": {
                 "stereo_method": "zncc",
@@ -339,7 +341,7 @@ class TestPandora(unittest.TestCase):
                 "filter_method": "median"
             },
             "validation": {
-                "validation_method": "none"
+                "validation_method": "cross_checking"
             }
         }
 
@@ -354,6 +356,10 @@ class TestPandora(unittest.TestCase):
 
             # Check the reference disparity map
             if self.error(rasterio.open(tmp_dir + '/ref_disparity.tif').read(1), self.disp_ref, 1) > 0.20:
+                raise AssertionError
+
+            # Check the secondary disparity map
+            if self.error(-1 * rasterio.open(tmp_dir +'/sec_disparity.tif').read(1), self.disp_sec, 1) > 0.20:
                 raise AssertionError
 
 
