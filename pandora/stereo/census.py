@@ -81,10 +81,10 @@ class Census(stereo.AbstractStereo):
         """
         print('census similarity measure')
 
-    def compute_cost_volume(self, img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: int, disp_max: int,
-                            **cfg: Dict[str, Union[str, int]]) -> xr.Dataset:
+    def compute_cost_volume(self, img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: int,
+                            disp_max: int, **cfg: Union[str, int]) -> xr.Dataset:
         """
-        Computes the cost volume for a pair of images with the census measure
+        Computes the cost volume for a pair of images
 
         :param img_ref: reference Dataset image
         :type img_ref:
@@ -134,10 +134,6 @@ class Census(stereo.AbstractStereo):
         cv = np.zeros((len(disparity_range), ref['im'].shape[1], ref['im'].shape[0]), dtype=np.float32)
         cv += np.nan
 
-        # First pixel in the image that is fully computable (aggregation windows are complete)
-        offset = int((self._window_size - 1) / 2)
-        mask_ref, mask_sec = self.masks_dilatation(img_ref, img_sec, offset, self._window_size, self._subpix, cfg)
-
         # Giving the 2 images, the matching cost will be calculated as :
         #                 1, 1, 1                2, 5, 6
         #                 2, 1, 4                1, 1, 3
@@ -170,20 +166,17 @@ class Census(stereo.AbstractStereo):
         for disp in disparity_range:
             i_sec = int((disp % 1) * self._subpix)
             p, q = self.point_interval(ref, img_sec_shift[i_sec], disp)
-            # mask_sec is of size 2
-            i_mask_sec = min(1, i_sec)
             d = int((disp - disp_min) * self._subpix)
 
-            cv[d, p[0]:p[1], :] = np.swapaxes(self.census_cost(p, q, ref, img_sec_shift[i_sec]), 0, 1) + \
-                np.swapaxes(mask_sec[i_mask_sec].data[:, q[0]:q[1]], 0, 1) + \
-                np.swapaxes(mask_ref.data[:, p[0]:p[1]], 0, 1)
+            cv[d, p[0]:p[1], :] = np.swapaxes(self.census_cost(p, q, ref, img_sec_shift[i_sec]), 0, 1)
 
         # Create the xarray.DataSet that will contain the cost_volume of dimensions (row, col, disp)
         cv = self.allocate_costvolume(img_ref, self._subpix, disp_min, disp_max, self._window_size, metadata,
                                       np.swapaxes(cv, 0, 2))
 
         # Remove temporary values
-        del mask_ref, mask_sec, ref, img_sec_shift
+        del ref, img_sec_shift
+
         return cv
 
     def census_cost(self, p: Tuple[int, int], q: Tuple[int, int], img_ref: xr.Dataset, img_sec: xr.Dataset) ->\

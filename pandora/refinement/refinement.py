@@ -164,7 +164,7 @@ class AbstractRefinement(object):
 
     @staticmethod
     @njit(parallel=True)
-    def loop_refinement(cv: np.ndarray, disp: np.ndarray, mask: np.ndarray, d_min: int, d_max: int, subpixel: int,
+    def loop_refinement(cv: np.ndarray, disp: np.ndarray, mask: np.ndarray, d_min: float, d_max: float, subpixel: int,
                         measure: str, method: Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray, str],
                                                        Tuple[int, int, int]]) -> Tuple[np.ndarray, np.ndarray,
                                                                                        np.ndarray]:
@@ -178,9 +178,9 @@ class AbstractRefinement(object):
         :param mask: validity mask
         :type mask: 2D numpy array (row, col)
         :param d_min: minimal disparity
-        :type d_min: int
+        :type d_min: float
         :param d_max: maximal disparity
-        :type d_max: int
+        :type d_max: float
         :param subpixel: subpixel precision used to create the cost volume
         :type subpixel: int ( 1 | 2 | 4 )
         :param measure: the measure used to create the cot volume

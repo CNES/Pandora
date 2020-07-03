@@ -36,6 +36,7 @@ import pandora
 from pandora.img_tools import read_img
 from pandora import import_plugin
 from tempfile import TemporaryDirectory
+import pandora.common as common
 
 
 class TestPandora(unittest.TestCase):
@@ -86,7 +87,7 @@ class TestPandora(unittest.TestCase):
         return nb_error / float(row * col)
 
     def test_run(self):
-        """"
+        """
         Test the run method
 
         """
@@ -120,7 +121,7 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.JSON_checker.update_conf(pandora.JSON_checker.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        ref, sec = pandora.run(self.ref, self.sec, -60, 0, cfg)
+        ref, sec = pandora.run(self.ref, self.sec, -60, 0, 0, 60, cfg)
 
         # Check the reference disparity map
         if self.error(ref['disparity_map'].data, self.disp_ref, 1) > 0.20:
@@ -198,7 +199,8 @@ class TestPandora(unittest.TestCase):
         import_plugin()
 
         # Run the Pandora pipeline
-        ref, sec = pandora.run(img_ref, img_sec, cfg['input']['disp_min'], cfg['input']['disp_max'], cfg)
+        ref, sec = pandora.run(img_ref, img_sec, cfg['input']['disp_min'], cfg['input']['disp_max'],
+                               -cfg['input']['disp_max'], -cfg['input']['disp_min'], cfg)
 
         # Ground truth confidence measure
         gt_ref_indicator_stereo = np.array([[1.57175062, 1.46969385, 1.39484766, 1.6],
@@ -225,8 +227,6 @@ class TestPandora(unittest.TestCase):
         gt_sec_confidence_measure[2:-2, 2:-2, 0] = gt_sec_indicator_stereo
         gt_sec_confidence_measure[2:-2, 2:-2, 1] = gt_sec_indicator_validation
 
-        gt_sec_indicator_validation = np.array([[]])
-
         # assert equal on ref confidence_measure
         np.testing.assert_array_equal(gt_ref_confidence_measure, ref['confidence_measure'].data)
 
@@ -234,7 +234,7 @@ class TestPandora(unittest.TestCase):
         np.testing.assert_array_equal(gt_sec_confidence_measure, sec['confidence_measure'].data)
 
     def test_main(self):
-        """"
+        """
         Test the main method ( read and write products )
 
         """
@@ -254,14 +254,10 @@ class TestPandora(unittest.TestCase):
             out_occlusion = rasterio.open(tmp_dir + '/ref_validity_mask.tif').read(1)
             occlusion = np.ones((out_occlusion.shape[0], out_occlusion.shape[1]))
             occlusion[out_occlusion >= 512] = 0
-
+    
     def test_dataset_image(self):
         """
         Test pandora with variable coordinate in dataset image
-
-        """
-        """"
-        Test the run method
 
         """
         user_cfg = {
@@ -296,7 +292,7 @@ class TestPandora(unittest.TestCase):
         sec_img = read_img('tests/pandora/sec.png', no_data=np.nan, cfg=cfg['image'], mask=None)
 
         # Run the pandora pipeline on images without modified coordinates
-        ref_origin, sec_origin = pandora.run(ref_img, sec_img, -60, 0, cfg)
+        ref_origin, sec_origin = pandora.run(ref_img, sec_img, -60, 0, 0, 60, cfg)
 
         row_c = ref_img.coords['row'].data
         row_c += 41
@@ -307,11 +303,58 @@ class TestPandora(unittest.TestCase):
         sec_img.assign_coords(row=row_c, col=col_c)
 
         # Run the pandora pipeline on images with modified coordinates
-        ref_modified, sec_modified = pandora.run(ref_img, sec_img, -60, 0, cfg)
+        ref_modified, sec_modified = pandora.run(ref_img, sec_img, -60, 0, 0, 60, cfg)
 
         # check if the disparity maps are equals
         np.testing.assert_array_equal(ref_origin['disparity_map'].values, ref_modified['disparity_map'].values)
         np.testing.assert_array_equal(sec_origin['disparity_map'].values, sec_modified['disparity_map'].values)
+
+    def test_variable_range_of_disp(self):
+        """
+        Test that variable range of disparities (grids of local disparities) are well taken into account in Pandora
+
+        """
+        cfg = {
+            "input": {
+                "img_ref": "tests/pandora/ref.png",
+                "img_sec": "tests/pandora/sec.png",
+                "disp_min": "tests/pandora/disp_min_grid.tif",
+                "disp_max": "tests/pandora/disp_max_grid.tif"
+            },
+            "stereo": {
+                "stereo_method": "zncc",
+                "window_size": 5,
+                "subpix": 2
+            },
+            "aggregation": {
+                "aggregation_method": "none"
+            },
+            "optimization": {
+                "optimization_method": "none"
+            },
+            "refinement": {
+                "refinement_method": "vfit"
+            },
+            "filter": {
+                "filter_method": "median"
+            },
+            "validation": {
+                "validation_method": "none"
+            }
+        }
+
+        # Create temporary directory
+        with TemporaryDirectory() as tmp_dir:
+
+            with open(os.path.join(tmp_dir, 'config.json'), 'w') as f:
+                json.dump(cfg, f, indent=2)
+
+            # Run Pandora pipeline
+            pandora.main(tmp_dir + '/config.json', tmp_dir, verbose=False)
+
+            # Check the reference disparity map
+            if self.error(rasterio.open(tmp_dir + '/ref_disparity.tif').read(1), self.disp_ref, 1) > 0.20:
+                raise AssertionError
 
 
 def setup_logging(path='logging.json', default_level=logging.WARNING, ):

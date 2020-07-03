@@ -28,7 +28,7 @@ from json_checker import Checker, And, Or
 import rasterio
 import numpy as np
 import sys
-from typing import Dict, List
+from typing import Dict, List, Union, Tuple
 import logging
 
 import copy
@@ -122,20 +122,101 @@ def check_images(img_ref: str, img_sec: str, msk_ref: str, msk_sec: str) -> None
             sys.exit(1)
 
 
-def check_disparity(disp_min: int, disp_max: int) -> None:
+def check_complete_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str, None],
+                               sec_disp_min: Union[str, None], sec_disp_max: Union[str, None], img_ref: str) \
+        -> Tuple[Union[int, str], Union[int, str]]:
     """
-    Check the disparity
+    Check reference and secondary disparities. Computes the secondary disparity if it is not provided.
 
     :param disp_min: minimal disparity
-    :type disp_min: int
+    :type disp_min: int or str or None
     :param disp_max: maximal disparity
-    :type disp_max: int
+    :type disp_max: int or str or None
+    :param sec_disp_min: secondary minimal disparity
+    :type sec_disp_min: str or None
+    :param sec_disp_max: secondary maximal disparity
+    :type sec_disp_max: str or None
+    :param img_ref: path to the reference image
+    :type img_ref: str
+    :return: the secondary disparity
+    :rtype: Tuple(int, int)  or Tuple(str, str)
     """
+    disp_min_sec = sec_disp_min
+    disp_max_sec = sec_disp_max
 
-    # verify the disparity
-    if abs(disp_min) + abs(disp_max) == 0:
-        logging.error('Disparity range must be greater than 0')
-        sys.exit(1)
+    # --- Check reference disparities
+    # Reference disparity are integers
+    if type(disp_min) == int and type(disp_max) == int:
+        if abs(disp_min) + abs(disp_max) == 0:
+            logging.error('Disparity range must be greater than 0')
+            sys.exit(1)
+        if (disp_min - disp_max) >= 0:
+            logging.error('Disp_max must be bigger than Disp_min')
+            sys.exit(1)
+
+        # Computes the secondary disparities
+        disp_min_sec = -disp_max
+        disp_max_sec = -disp_min
+
+    # Reference disparity are grids
+    elif (type(disp_min) == str) and (type(disp_max) == str):
+        # Load an image to compare the grid size
+        img_ref_ = rasterio.open(img_ref)
+
+        disp_min_ = rasterio.open(disp_min)
+        dmin = disp_min_.read(1)
+        disp_max_ = rasterio.open(disp_max)
+        dmax = disp_max_.read(1)
+
+        # check that disparity grids is a 1-channel grid
+        if (disp_min_.count != 1) or (disp_max_.count != 1):
+            logging.error('Disparity grids must be a 1-channel grid')
+            sys.exit(1)
+
+        # check that disp_min has the same size as the image
+        if (disp_min_.width != img_ref_.width) or (disp_min_.height != img_ref_.height) \
+                or (disp_max_.width != img_ref_.width) or (disp_max_.height != img_ref_.height):
+            logging.error('Disparity grids and image must have the same size')
+            sys.exit(1)
+
+        if (abs(dmin) + abs(dmax)).all() == 0:
+            logging.error('Disparity range must be greater than 0')
+            sys.exit(1)
+
+        if ((dmin - dmax) >= 0).any():
+            logging.error('Disp_max must be bigger than Disp_min')
+            sys.exit(1)
+
+    # --- Check secondary disparities
+    if (type(sec_disp_min) == str) and (type(sec_disp_max) == str):
+        # Load an image to compare the grid size
+        img_ref_ = rasterio.open(img_ref)
+
+        disp_min_ = rasterio.open(disp_min)
+        dmin = disp_min_.read(1)
+        disp_max_ = rasterio.open(disp_max)
+        dmax = disp_max_.read(1)
+
+        # check that disparity grids is a 1-channel grid
+        if (disp_min_.count != 1) or (disp_max_.count != 1):
+            logging.error('Disparity grids must be a 1-channel grid')
+            sys.exit(1)
+
+        # check that disp_min has the same size as the image
+        if (disp_min_.width != img_ref_.width) or (disp_min_.height != img_ref_.height) \
+                or (disp_max_.width != img_ref_.width) or (disp_max_.height != img_ref_.height):
+            logging.error('Disparity grids and image must have the same size')
+            sys.exit(1)
+
+        if (abs(dmin) + abs(dmax)).all() == 0:
+            logging.error('Disparity range must be greater than 0')
+            sys.exit(1)
+
+        if ((dmin - dmax) >= 0).any():
+            logging.error('Disp_max must be bigger than Disp_min')
+            sys.exit(1)
+
+    return disp_min_sec, disp_max_sec
 
 
 def get_config_pipeline(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
@@ -291,6 +372,17 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     # Add missing steps and inputs defaults values in user_cfg
     cfg = update_conf(default_short_configuration_input, user_cfg)
 
+    # Disparity can be integer type, or string type (path to the disparity grid)
+    # If the reference disparity is string type, secondary disparity must be string type or none
+    # if the reference disparity is integer type, secondary disparity must be none
+    if type(cfg['input']['disp_min']) == int:
+        input_configuration_schema.update(input_configuration_schema_integer_disparity)
+    else:
+        if type(cfg['input']['disp_min_sec']) == str:
+            input_configuration_schema.update(input_configuration_schema_ref_disparity_grids_sec_grids)
+        else:
+            input_configuration_schema.update(input_configuration_schema_ref_disparity_grids_sec_none)
+
     # check schema
     configuration_schema = {
         "input": input_configuration_schema
@@ -300,7 +392,14 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     checker.validate(cfg)
 
     # custom checking
-    check_disparity(cfg['input']['disp_min'], cfg['input']['disp_max'])
+
+    # check reference disparities. Check and complete secondary disparities
+    cfg['input']['disp_min_sec'], cfg['input']['disp_max_sec'] = check_complete_disparities(cfg['input']['disp_min'],
+                                                                                            cfg['input']['disp_max'],
+                                                                                            cfg['input']['disp_min_sec'],
+                                                                                            cfg['input']['disp_max_sec'],
+                                                                                            cfg['input']['img_ref'])
+
     check_images(cfg['input']['img_ref'], cfg['input']['img_sec'], cfg['input']['ref_mask'],
                  cfg['input']['sec_mask'])
 
@@ -317,10 +416,6 @@ def check_conf(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     :rtype cfg: dict
     """
 
-    # check pipeline
-    user_cfg_pipeline = get_config_pipeline(user_cfg)
-    cfg_pipeline = check_pipeline_section(user_cfg_pipeline)
-
     # check image
     user_cfg_image = get_config_image(user_cfg)
     cfg_image = check_image_section(user_cfg_image)
@@ -328,6 +423,17 @@ def check_conf(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     # check input
     user_cfg_input = get_config_input(user_cfg)
     cfg_input = check_input_section(user_cfg_input)
+
+    # check pipeline
+    user_cfg_pipeline = get_config_pipeline(user_cfg)
+    cfg_pipeline = check_pipeline_section(user_cfg_pipeline)
+
+    # If reference disparities are grids of disparity and the secondary disparities are none, the cross-checking
+    # method cannot be used
+    if (cfg_input['input']['disp_min_sec'] is None) and (cfg_pipeline['validation']['validation_method'] != "none"):
+        logging.error("The cross-checking step cannot be processed if disp_min, disp_max are paths to the reference "
+                      "disparity grids and disp_sec_min, disp_sec_max are none.")
+        sys.exit(1)
 
     # concatenate updated config
     cfg = concat_conf([cfg_image, cfg_input, cfg_pipeline])
@@ -356,9 +462,31 @@ input_configuration_schema = {
     "img_ref": And(str, gdal_can_open_mandatory),
     "img_sec": And(str, gdal_can_open_mandatory),
     "ref_mask": And(Or(str, lambda x: x is None), gdal_can_open),
-    "sec_mask": And(Or(str, lambda x: x is None), gdal_can_open),
+    "sec_mask": And(Or(str, lambda x: x is None), gdal_can_open)
+}
+
+# Input configuration when disparity is integer
+input_configuration_schema_integer_disparity = {
     "disp_min": int,
-    "disp_max": int
+    "disp_max": int,
+    "disp_min_sec": (lambda x: x is None),
+    "disp_max_sec": (lambda x: x is None)
+}
+
+# Input configuration when reference disparity is a grid, and secondary not provided
+input_configuration_schema_ref_disparity_grids_sec_none = {
+    "disp_min": And(str, gdal_can_open),
+    "disp_max": And(str, gdal_can_open),
+    "disp_min_sec": (lambda x: x is None),
+    "disp_max_sec": (lambda x: x is None)
+}
+
+# Input configuration when reference disparity is a grid, and secondary not provided
+input_configuration_schema_ref_disparity_grids_sec_grids = {
+    "disp_min": And(str, gdal_can_open),
+    "disp_max": And(str, gdal_can_open),
+    "disp_min_sec": And(str, gdal_can_open),
+    "disp_max_sec": And(str, gdal_can_open)
 }
 
 image_configuration_schema = {
@@ -380,7 +508,9 @@ default_short_configuration_image = {
 default_short_configuration_input = {
     "input": {
         "ref_mask": None,
-        "sec_mask": None
+        "sec_mask": None,
+        "disp_min_sec": None,
+        "disp_max_sec": None
     }
 }
 
