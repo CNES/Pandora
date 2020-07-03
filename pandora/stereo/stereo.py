@@ -94,8 +94,8 @@ class AbstractStereo(object):
         print('Stereo matching description')
 
     @abstractmethod
-    def compute_cost_volume(self, img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: Union[int, np.ndarray],
-                            disp_max: Union[int, np.ndarray], **cfg: Union[str, int]) -> xr.Dataset:
+    def compute_cost_volume(self, img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: int, disp_max: int,
+                            **cfg: Union[str, int]) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
 
@@ -110,9 +110,9 @@ class AbstractStereo(object):
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :param disp_min: minimum disparity
-        :type disp_min: int or np.ndarray
+        :type disp_min: int
         :param disp_max: maximum disparity
-        :type disp_max: int or np.ndarray
+        :type disp_max: int
         :param cfg: images configuration containing the mask convention : valid_pixels, no_data
         :type cfg: dict
         :return: the cost volume dataset
@@ -144,7 +144,7 @@ class AbstractStereo(object):
         :type metadata: dictionary
         :param np_data: the array’s data
         :type np_data: 3D numpy array, dtype=np.float32
-        :return: the dataset cost volume with the cost_volume and the confifence measure
+        :return: the dataset cost volume with the cost_volume and the confidence measure
         :rtype:
             xarray.Dataset, with the data variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)

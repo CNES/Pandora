@@ -103,7 +103,7 @@ Input parameters
 +----------------+-----------------------------------------------------------+---------------+---------------+----------+
 | *sec_mask*     | path to the secondary mask                                | string        | "none"        | No       |
 +----------------+-----------------------------------------------------------+---------------+---------------+----------+
-| *disp_min_sec* | Path to the minimum disparity grid of the secondary image | string        | "none"        | No       |
+| *disp_min_sec* | Path to the minimal disparity grid of the secondary image | string        | "none"        | No       |
 +----------------+-----------------------------------------------------------+---------------+---------------+----------+
 | *disp_max_sec* | Path to the maximal disparity grid of the secondary image | string        | "none"        | No       |
 +----------------+-----------------------------------------------------------+---------------+---------------+----------+

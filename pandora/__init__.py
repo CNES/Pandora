@@ -64,9 +64,9 @@ def run(img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: Union[int, np.ndarra
     :param disp_max: maximal disparity
     :type disp_max: int or np.ndarray
     :param disp_min_sec: minimal disparity of the secondary image
-    :type disp_min_sec: int or np.ndarray or None
+    :type disp_min_sec: int or np.ndarray
     :param disp_max_sec: maximal disparity of the secondary image
-    :type disp_max_sec: int or np.ndarray of None
+    :type disp_max_sec: int or np.ndarray
     :param cfg: configuration
     :type cfg: dict
     :return:
