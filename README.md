@@ -40,6 +40,7 @@ Make sure  latex and dvipng are already installed
 
 ```
 pip install sphinx-rtd-theme
+pip install sphinx-autoapi
 python setup.py build_sphinx
 ```
 
