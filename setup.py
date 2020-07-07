@@ -54,10 +54,10 @@ setup(name='pandora',
       version='x.y.z',
       description='Pandora is a stereo matching framework that helps emulate state of the art algorithms',
       long_description=readme(),
-      url='https://gitlab.cnes.fr/OutilsCommuns/CorrelateurChaine3D/pandora',
+      url='https://github.com/CNES/Pandora_pandora',
       author='CNES',
       author_email='myriam.cournet@cnes.fr',
-      license='',
+      license='Apache License 2.0',
       entry_points={
           'console_scripts': ['pandora = bin.Pandora:main']
       },
