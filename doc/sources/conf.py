@@ -41,7 +41,9 @@ copyright = '2020, CNES'
 author = 'CNES'
 
 # The full version, including alpha/beta/rc tags
-release = '1.A'
+# not useful at the moment :  see  https://gitlab.cnes.fr/OutilsCommuns/CorrelateurChaine3D/pandora/issues/124
+# release = '0.2.0'
+# version = '0.2.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -54,10 +56,14 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.autodoc',
     'sphinx_rtd_theme',
-    'sphinx.ext.imgmath'
+    'sphinx.ext.imgmath',
+    'autoapi.extension'
 ]
 
-# Add any paths that contain templates here, relative to this directory.
+autoapi_dirs = ['../../pandora']
+autoapi_root = 'api_reference'
+
+# Add any paths that contain templates here, relative to this directory.cd
 templates_path = ['_templates']
 
 # List of patterns, relative to source directory, that match files and
