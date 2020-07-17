@@ -106,7 +106,7 @@ def run(img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: Union[int, np.ndarra
 
     # Cost (support) aggregation
     logging.info('Cost aggregation...')
-    cv = aggregation_.cost_volume_aggregation(img_ref, img_sec, cv)
+    cv = aggregation_.cost_volume_aggregation(img_ref, img_sec, cv, **cfg['image'])
 
     # Cost optimization
 
@@ -139,7 +139,7 @@ def run(img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: Union[int, np.ndarra
         dmin_min_sec, dmax_max_sec = stereo_.dmin_dmax(disp_min_sec, disp_max_sec)
         cv_right = stereo_.compute_cost_volume(img_sec, img_ref, dmin_min_sec, dmax_max_sec, **cfg['image'])
         cv_right = stereo_.cv_masked(img_sec, img_ref, cv_right, disp_min_sec, disp_max_sec, **cfg['image'])
-        cv_right = aggregation_.cost_volume_aggregation(img_sec, img_ref, cv_right)
+        cv_right = aggregation_.cost_volume_aggregation(img_sec, img_ref, cv_right, **cfg['image'])
         cv_right = optimization_.optimize_cv(cv_right, img_sec, img_ref)
         sec = disparity.to_disp(cv_right, cfg['invalid_disparity'], img_sec, img_ref)
         sec = disparity.validity_mask(sec, img_sec, img_ref, cv_right, **cfg['image'])

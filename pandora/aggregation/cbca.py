@@ -26,12 +26,12 @@ This module contains functions associated to the Cross Based Cost Aggregation (c
 import numpy as np
 from numba import njit
 from json_checker import Checker, And
-from typing import Dict, Union, Tuple
+from typing import Dict, Union, Tuple, List
 import xarray as xr
 
 from pandora.img_tools import shift_sec_img
 from . import aggregation
-from scipy.ndimage.filters import median_filter
+from pandora.filter import AbstractFilter
 
 
 @aggregation.AbstractAggregation.register_subclass('cbca')
@@ -83,7 +83,8 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         """
         print('CrossBasedCostAggregation method')
 
-    def cost_volume_aggregation(self, img_ref: xr.Dataset, img_sec: xr.Dataset, cv: xr.Dataset) -> xr.Dataset:
+    def cost_volume_aggregation(self, img_ref: xr.Dataset, img_sec: xr.Dataset, cv: xr.Dataset,
+                                **cfg: Union[str, int]) -> xr.Dataset:
         """
         Aggregated the cost volume with Cross-Based Cost Aggregation, using the pipeline define in
         Zhang, K., Lu, J., & Lafruit, G. (2009).
@@ -105,26 +106,15 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
             xarray.Dataset, with the data variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :param cfg: images configuration containing the mask convention : valid_pixels, no_data
+        :type cfg: dict
         :return: the cost volume aggregated in the dataset
         :rtype:
             xarray.Dataset, with the data variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
-        subpix = cv.attrs['subpixel']
-
-        # Contains the shifted secondary images
-        img_sec_shift = shift_sec_img(img_sec, subpix)
-
-        # Compute the reference cross support. Apply a 3×3 median filter to the input image
-        cross_ref = cross_support(median_filter(img_ref['im'].data, size=(3, 3), mode="nearest"),
-                                  self._cbca_distance, self._cbca_intensity)
-
-        # Compute the secondary cross support. Apply a 3×3 median filter to the input image
-        cross_sec = []
-        for i in range(0, len(img_sec_shift)):
-            cross_sec.append(cross_support(median_filter(img_sec_shift[i]['im'].data, size=(3, 3), mode="nearest"),
-                                           self._cbca_distance, self._cbca_intensity))
+        cross_ref, cross_sec = self.computes_cross_supports(img_ref, img_sec, cv, cfg)
 
         ny_, nx_, nb_disp = cv['cost_volume'].shape
 
@@ -153,12 +143,15 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
             valid_index = np.where((range_col_sec >= 0) & (range_col_sec < cross_sec[i_sec].shape[1]))
 
             # Step 2 : horizontal matching cost
-            step2, sum2 = cbca_step_2(step1, cross_ref, cross_sec[i_sec], range_col[valid_index], range_col_sec[valid_index].astype(int))
+            step2, sum2 = cbca_step_2(step1, cross_ref, cross_sec[i_sec], range_col[valid_index],
+                                      range_col_sec[valid_index].astype(int))
+
             # Step 3 : vertical integral image
             step3 = cbca_step_3(step2)
 
             # Step 4 : aggregate cost volume
-            step4, sum4 = cbca_step_4(step3, sum2, cross_ref, cross_sec[i_sec], range_col[valid_index], range_col_sec[valid_index].astype(int))
+            step4, sum4 = cbca_step_4(step3, sum2, cross_ref, cross_sec[i_sec], range_col[valid_index],
+                                      range_col_sec[valid_index].astype(int))
 
             # Added the pixel anchor pixel to the number of support pixels used during the aggregation
             sum4 += 1
@@ -175,6 +168,94 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         cv.attrs['cmax'] = cmax
 
         return cv
+
+    def computes_cross_supports(self, img_ref: xr.Dataset, img_sec: xr.Dataset, cv: xr.Dataset,
+                                cfg: Union[str, int]) -> Tuple[np.ndarray, List[np.ndarray]]:
+        """
+        Prepare images and compute the cross support region of the reference and secondary images.
+        A 3x3 median filter is applied to the images before calculating the cross support region.
+
+        :param img_ref: reference Dataset image
+        :type img_ref:
+            xarray.Dataset containing :
+                - im : 2D (row, col) xarray.DataArray
+                - msk (optional): 2D (row, col) xarray.DataArray
+        :param img_sec: secondary Dataset image
+        :type img_sec:
+            xarray.Dataset containing :
+                - im : 2D (row, col) xarray.DataArray
+                - msk (optional): 2D (row, col) xarray.DataArray
+        :param cv: cost volume dataset
+        :type cv:
+            xarray.Dataset, with the data variables:
+                - cost_volume 3D xarray.DataArray (row, col, disp)
+                - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :param cfg: images configuration containing the mask convention : valid_pixels, no_data
+        :type cfg: dict
+        :return: the reference and secondary cross support region
+        :rtype: Tuples(reference cross support region, List(secondary cross support region))
+        """
+        subpix = cv.attrs['subpixel']
+        offset = int(cv.attrs['offset_row_col'])
+
+        # shift the secondary image
+        img_sec_shift = shift_sec_img(img_sec, subpix)
+
+        # Median filter on valid pixels
+        filter = AbstractFilter(**{'filter_method': 'median', 'filter_size': 3})
+
+        # Invalid and nodata pixels are masked with np.nan to avoid propagating the values with the median filter
+        ref_masked = np.copy(img_ref['im'].data)
+        if 'msk' in img_ref.data_vars:
+            ref_masked[np.where(img_ref['msk'].data != cfg['valid_pixels'])] = np.nan
+
+        ref_masked = filter.median_filter(ref_masked)
+        # Convert nan to inf to be able to use the comparison operators < and > in cross_support function
+        np.nan_to_num(ref_masked, copy=False, nan=np.inf)
+        # Compute reference cross support using numba to reduce running time
+        if offset != 0:
+            # Cross support to the size of the cost volume
+            cross_ref = cross_support(ref_masked[offset: -offset, offset: -offset], self._cbca_distance, self._cbca_intensity)
+        else:
+            cross_ref = cross_support(ref_masked, self._cbca_distance, self._cbca_intensity)
+
+        # Compute the secondary cross support. Apply a 3×3 median filter to the input image
+        cross_sec = []
+        for shift in range(0, len(img_sec_shift)):
+            # Invalid and nodata pixels are masked with np.nan to avoid propagating the values with the median filter
+            sec_masked = np.copy(img_sec_shift[shift]['im'].data)
+
+            # Pixel precision
+            if ('msk' in img_sec.data_vars) and (shift == 0):
+                sec_masked[np.where(img_sec['msk'].data != cfg['valid_pixels'])] = np.nan
+
+            # Subpixel precision : computes the shifted secondary mask
+            if ('msk' in img_sec.data_vars) and (shift != 0):
+                shift_mask = np.zeros(img_sec['msk'].data.shape)
+                shift_mask[np.where(img_sec['msk'].data != cfg['valid_pixels'])] = np.nan
+
+                # Since the interpolation of the secondary image is of order 1, the shifted secondary mask corresponds
+                # to an aggregation of two columns of the secondary mask
+                str_row, str_col = shift_mask.strides
+                shape_windows = (shift_mask.shape[0], shift_mask.shape[1] - 1, 2)
+                strides_windows = (str_row, str_col, str_col)
+                aggregation_window = np.lib.stride_tricks.as_strided(shift_mask, shape_windows, strides_windows)
+                shift_mask = np.sum(aggregation_window, 2)
+                sec_masked += shift_mask
+
+            #  Apply a 3×3 median filter to the input image
+            sec_masked = filter.median_filter(sec_masked)
+            # Convert nan to inf to be able to use the comparison operators < and > in cross_support function
+            np.nan_to_num(sec_masked, copy=False, nan=np.inf)
+            # Compute secondary cross support using numba to reduce running time
+            if offset != 0:
+                # Cross support to the size of the cost volume
+                cross_sec.append(cross_support(sec_masked[offset: -offset, offset: -offset], self._cbca_distance,
+                                               self._cbca_intensity))
+            else:
+                cross_sec.append(cross_support(sec_masked, self._cbca_distance, self._cbca_intensity))
+
+        return cross_ref, cross_sec
 
 
 @njit('f4[:, :](f4[:, :])', cache=True)
@@ -201,7 +282,7 @@ def cbca_step_1(cv: np.ndarray) -> np.ndarray:
             if not np.isnan(cv[y, x]):
                 step1[y, x] = step1[y, x - 1] + cv[y, x]
             else:
-                step1[y, x] = 0
+                step1[y, x] = step1[y, x - 1]
 
     return step1
 
@@ -310,13 +391,16 @@ def cbca_step_4(step3: np.ndarray, sum2: np.ndarray, cross_ref: np.ndarray, cros
                 sum4[y, range_col[x]] += np.sum(sum2[y-top:y, range_col[x]])
             if bot != 0:
                 sum4[y, range_col[x]] += np.sum(sum2[y+1:y+bot+1, range_col[x]])
+
     return step4, sum4
 
 
 @njit('i2[:, :, :](f4[:, :], i2, f4)', cache=True)
 def cross_support(image: np.ndarray, len_arms: int, intensity: float) -> np.ndarray:
     """
-    Compute the cross support for an image: find the 4 arms
+    Compute the cross support for an image: find the 4 arms.
+    Enforces a minimum support region of 3×3 if pixels are valid.
+    The cross support of invalid pixels (pixels that are np.inf) is 0 for the 4 arms.
 
     :param image: image
     :type image: 2D np.array (row , col) dtype = np.float32
@@ -333,36 +417,46 @@ def cross_support(image: np.ndarray, len_arms: int, intensity: float) -> np.ndar
 
     for y in range(ny_):
         for x in range(nx_):
-            left_len = 0
-            for left in range(x-1, max(x-len_arms, -1), -1):
-                if abs(image[y, x] - image[y, left]) >= intensity:
-                    break
-                left_len += 1
-            # enforces a minimum support region of 3×3
-            cross[y, x, 0] = max(left_len, 1 * (x >= 1))
 
-            right_len = 0
-            for right in range(x+1, min(x+len_arms, nx_)):
-                if abs(image[y, x] - image[y, right]) >= intensity:
-                    break
-                right_len += 1
-            # enforces a minimum support region of 3×3
-            cross[y, x, 1] = max(right_len, 1 * (x < nx_ - 1))
+            # If the pixel is valid compute the cross support
+            if np.isfinite(image[y, x]):
+                left_len = 0
+                left = x
+                for left in range(x-1, max(x-len_arms, -1), -1):
+                    if abs(image[y, x] - image[y, left]) >= intensity:
+                        break
+                    left_len += 1
+                # enforces a minimum support region of 3×3 if pixels are valid
+                cross[y, x, 0] = max(left_len, 1 * (x >= 1) * np.isfinite(image[y, left]))
 
-            up_len = 0
-            for up in range(y-1,  max(y-len_arms, -1), -1):
-                if abs(image[y, x] - image[up, x]) >= intensity:
-                    break
-                up_len += 1
-            # enforces a minimum support region of 3×3
-            cross[y, x, 2] = max(up_len, 1 * (y >= 1))
+                right_len = 0
+                right = x
+                for right in range(x+1, min(x+len_arms, nx_)):
+                    if abs(image[y, x] - image[y, right]) >= intensity:
+                        break
+                    right_len += 1
+                # enforces a minimum support region of 3×3 if pixels are valid
+                cross[y, x, 1] = max(right_len, 1 * (x < nx_ - 1) * np.isfinite(image[y, right]))
 
-            bot_len = 0
-            for bot in range(y+1, min(y+len_arms, ny_)):
-                if abs(image[y, x] - image[bot, x]) >= intensity:
-                    break
-                bot_len += 1
-            # enforces a minimum support region of 3×3
-            cross[y, x, 3] = max(bot_len, 1 * (y < ny_ - 1))
+                up_len = 0
+                up = y
+                for up in range(y-1,  max(y-len_arms, -1), -1):
+                    if abs(image[y, x] - image[up, x]) >= intensity:
+                        break
+                    up_len += 1
+                # enforces a minimum support region of 3×3 if pixels are valid
+                cross[y, x, 2] = max(up_len, 1 * (y >= 1) * np.isfinite(image[up, x]))
 
+                bot_len = 0
+                bot = y
+                for bot in range(y+1, min(y+len_arms, ny_)):
+                    if abs(image[y, x] - image[bot, x]) >= intensity:
+                        break
+                    bot_len += 1
+                # enforces a minimum support region of 3×3 if pixels are valid
+                cross[y, x, 3] = max(bot_len, 1 * (y < ny_ - 1) * np.isfinite(image[bot, x]))
+
+            # If the pixel is not valid (no data or invalid) the cross support value is 0 for the 4 arms
+            else:
+                cross[y, x, 0] = 0
     return cross

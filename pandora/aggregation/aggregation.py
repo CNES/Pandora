@@ -84,7 +84,8 @@ class AbstractAggregation(object):
         print('Aggregation description')
 
     @abstractmethod
-    def cost_volume_aggregation(self, img_ref: xr.Dataset, img_sec: xr.Dataset, cv: xr.Dataset) -> xr.Dataset:
+    def cost_volume_aggregation(self, img_ref: xr.Dataset, img_sec: xr.Dataset, cv: xr.Dataset,
+                                **cfg: Union[str, int]) -> xr.Dataset:
         """
         Aggregate the cost volume for a pair of images
 
@@ -103,6 +104,8 @@ class AbstractAggregation(object):
             xarray.Dataset, with the data variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :param cfg: images configuration containing the mask convention : valid_pixels, no_data
+        :type cfg: dict
         :return: the cost volume aggregated in the dataset
         :rtype:
             xarray.Dataset, with the data variables:
@@ -148,7 +151,8 @@ class NoneAggregation(AbstractAggregation):
         """
         print('No aggregation method')
 
-    def cost_volume_aggregation(self, img_ref: xr.Dataset, img_sec: xr.Dataset, cv: xr.Dataset) -> xr.Dataset:
+    def cost_volume_aggregation(self, img_ref: xr.Dataset, img_sec: xr.Dataset, cv: xr.Dataset,
+                                **cfg: Union[str, int]) -> xr.Dataset:
         """
         Returns the cost volume without aggregation
 
@@ -167,6 +171,8 @@ class NoneAggregation(AbstractAggregation):
             xarray.Dataset, with the data variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :param cfg: images configuration containing the mask convention : valid_pixels, no_data
+        :type cfg: dict
         :return: the cost volume without aggregation in the dataset
         :rtype:
             xarray.Dataset, with the data variables:

@@ -107,22 +107,41 @@ class MedianFilter(filter.AbstractFilter):
         # Invalid pixels are nan
         masked_data = disp['disparity_map'].copy(deep=True).data
         masked_data[np.where((disp['validity_mask'].data & PANDORA_MSK_PIXEL_INVALID) != 0)] = np.nan
-        disp_median = np.copy(masked_data)
 
         valid = np.isfinite(masked_data)
-        ny_, nx_ = masked_data.shape
+        disp_median = self.median_filter(masked_data)
+
+        disp['disparity_map'].data[valid] = disp_median[valid]
+        disp.attrs['filter'] = 'median'
+        del disp_median, masked_data,
+        return disp
+
+    def median_filter(self, data):
+        """
+        Apply median filter on valid pixels (pixels that are not nan).
+        Invalid pixels are not filtered. If a valid pixel contains an invalid pixel in its filter, the invalid pixel is
+        ignored for the calculation of the median.
+
+        :param data: input data to be filtered
+        :type data: 2D np.array (row, col)
+        :return: The filtered array
+        :rtype: 2D np.array(row, col)
+        """
+        data_median = np.copy(data)
+        invalid = np.isnan(data_median)
+        ny_, nx_ = data.shape
 
         # Created a view of each window, by manipulating the internal data structure of array
         # The view allow to looking at the array data in memory in a new way, without additional cost on the memory.
-        str_row, str_col = masked_data.strides
+        str_row, str_col = data.strides
         shape_windows = (
             ny_ - (self._filter_size - 1), nx_ - (self._filter_size - 1), self._filter_size, self._filter_size)
         strides_windows = (str_row, str_col, str_row, str_col)
-        aggregation_window = np.lib.stride_tricks.as_strided(masked_data, shape_windows, strides_windows)
+        aggregation_window = np.lib.stride_tricks.as_strided(data, shape_windows, strides_windows)
 
         radius = int(self._filter_size / 2)
 
-        # To reduce memory, the disparity card is split (along the row axis) into multiple sub-arrays with a step of 100
+        # To reduce memory, the data array is split (along the row axis) into multiple sub-arrays with a step of 100
         disp_chunked_y = np.array_split(aggregation_window, np.arange(100, ny_, 100), axis=0)
         y_begin = radius
 
@@ -131,19 +150,20 @@ class MedianFilter(filter.AbstractFilter):
             # numpy.nanmedian : Compute the median along the specified axis, while ignoring NaNs (i.e if valid pixel
             # contains an invalid pixel in its filter, the invalid pixel is ignored because invalid pixels are nan )
             for y in range(len(disp_chunked_y)):
-                # To reduce memory, the disparity card is split (along the col axis) into multiple sub-arrays with a step of 100
+                # To reduce memory, the data array is split (along the col axis) into multiple sub-arrays,
+                # with a step of 100
                 disp_chunked_x = np.array_split(disp_chunked_y[y], np.arange(100, nx_, 100), axis=1)
                 x_begin = radius
 
                 for x in range(len(disp_chunked_x)):
                     y_end = y_begin + disp_chunked_y[y].shape[0]
                     x_end = x_begin + disp_chunked_x[x].shape[1]
-                    disp_median[y_begin:y_end, x_begin:x_end] = np.nanmedian(disp_chunked_x[x], axis=(2, 3))
+                    data_median[y_begin:y_end, x_begin:x_end] = np.nanmedian(disp_chunked_x[x], axis=(2, 3))
                     x_begin += disp_chunked_x[x].shape[1]
 
                 y_begin += disp_chunked_y[y].shape[0]
 
-        disp['disparity_map'].data[valid] = disp_median[valid]
-        disp.attrs['filter'] = 'median'
-        del disp_median, masked_data, aggregation_window
-        return disp
+        del aggregation_window
+
+        data_median[invalid] = np.nan
+        return data_median
