@@ -101,7 +101,7 @@ class TestAggregation(unittest.TestCase):
                                              [(1+0+5+3+13+5)/6, (1+8+3+1.5+1+4+5.5+6+4.5+12)/10, (2+2+3+14+1+4)/6, (0.5+1+1+7+0.5)/5, 0.],
                                              [(0+5+13+5)/4, (1.5+1+4+6+4.5)/5, (2+2+3+1+4)/5, np.nan, np.nan]]])
 
-        # Check if the calculated standard deviation is equal ( to desired tolerance 1e-07 ) to the ground truth
+        # Check if the calculated standard deviation is equal (upto the desired tolerance of 1e-07) to the ground truth
         np.testing.assert_allclose(cv_aggreg['cost_volume'].data, aggregated_ground_truth, rtol=1e-07)
 
     def test_cross_support_region(self):
@@ -176,7 +176,7 @@ class TestAggregation(unittest.TestCase):
                                              [(1+0+5+3+13+5)/6, (2+2+3+14+1+4)/6, 0.],
                                              [(0+5+13+5)/4, (2+2+3+1+4)/5, np.nan]]])
 
-        # Check if the calculated standard deviation is equal ( to desired tolerance 1e-07 ) to the ground truth
+        # Check if the calculated standard deviation is equal (upto the desired tolerance of 1e-07) to the ground truth
         np.testing.assert_allclose(cv_aggreg['cost_volume'].data, aggregated_ground_truth, rtol=1e-07)
 
     def test_cmax(self):
@@ -243,7 +243,7 @@ class TestAggregation(unittest.TestCase):
                                             [(2+8+1+17)/4, (8+1+2+17+14+4+14)/7, (17+14+4+14+8)/5, np.nan, (4+3+4+8)/4],
                                             [np.nan, (4+2+17+14+14)/5, (14+17+14+4+8)/5, (14+8+4)/3, (4+4+8)/3]])
 
-        # Check if the calculated aggregated cost volume is equal ( to desired tolerance 1e-07 ) to the ground truth
+        # Check if the calculated aggregated cost volume is equal (upto the desired tolerance of 1e-07) to the ground truth
         np.testing.assert_allclose(cv_aggreg['cost_volume'].data[:, :, 1], aggregated_ground_truth, rtol=1e-07)
 
     def test_compute_cbca_with_offset(self):
@@ -281,7 +281,7 @@ class TestAggregation(unittest.TestCase):
                                              [55., (66+63+52+66+63+52)/6, 0.],
                                              [55., (63+63+52+52)/4, np.nan]]])
 
-        # Check if the calculated aggregated cost volume is equal ( to desired tolerance 1e-07 ) to the ground truth
+        # Check if the calculated aggregated cost volume is equal (upto the desired tolerance of 1e-07) to the ground truth
         np.testing.assert_allclose(cv_aggreg['cost_volume'].data, aggregated_ground_truth, rtol=1e-07)
 
     def test_computes_cross_support(self):

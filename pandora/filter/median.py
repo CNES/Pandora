@@ -142,7 +142,8 @@ class MedianFilter(filter.AbstractFilter):
         radius = int(self._filter_size / 2)
 
         # To reduce memory, the data array is split (along the row axis) into multiple sub-arrays with a step of 100
-        disp_chunked_y = np.array_split(aggregation_window, np.arange(100, ny_, 100), axis=0)
+        chunk_size = 100
+        disp_chunked_y = np.array_split(aggregation_window, np.arange(chunk_size, ny_, chunk_size), axis=0)
         y_begin = radius
 
         with warnings.catch_warnings():
@@ -152,7 +153,7 @@ class MedianFilter(filter.AbstractFilter):
             for y in range(len(disp_chunked_y)):
                 # To reduce memory, the data array is split (along the col axis) into multiple sub-arrays,
                 # with a step of 100
-                disp_chunked_x = np.array_split(disp_chunked_y[y], np.arange(100, nx_, 100), axis=1)
+                disp_chunked_x = np.array_split(disp_chunked_y[y], np.arange(chunk_size, nx_, chunk_size), axis=1)
                 x_begin = radius
 
                 for x in range(len(disp_chunked_x)):
