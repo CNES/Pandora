@@ -128,6 +128,18 @@ class TestConfig(unittest.TestCase):
         """
         Test the method check_input_section that must raise an error
         """
+        # Test configuration with reference disparity min as grids and reference disparity max as integer
+        cfg = {
+            "input": {
+                "img_ref": "tests/pandora/ref.png",
+                "img_sec": "tests/pandora/sec.png",
+                "disp_min": "tests/pandora/disp_min_grid.tif",
+                "disp_max": 45,
+            }
+        }
+        # Json checker must raise an error
+        self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
+
         # Test configuration with reference disparity grids and secondary disparity max as integer
         cfg = {
             "input": {

@@ -285,25 +285,21 @@ def compute_std_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
     return np.sqrt(var)
 
 
-def read_disp(cfg_disp: Union[int, str, None], window_size: int) -> Union[int, np.ndarray]:
+def read_disp(disparity: Union[int, str]) -> Union[int, np.ndarray]:
     """
     Read the disparity :
         - if cfg_disp is the path of a disparity grid, read and return the grid (type numpy array)
         - else return the value of cfg_disp
 
-    :param cfg_disp: disparity, or path to the disparity grid
-    :type cfg_disp: int or str
-    :param window_size: size of the window
-    :type window_size: int
+    :param disparity: disparity, or path to the disparity grid
+    :type disparity: int or str
     :return: the disparity
     :rtype: int or np.ndarray
     """
-    if type(cfg_disp) == str:
-        disp_ = rasterio.open(cfg_disp)
+    if type(disparity) == str:
+        disp_ = rasterio.open(disparity)
         data_disp = disp_.read(1)
-        # Disp grid has the cost_volume size
-        data_disp = data_disp[int(window_size/2): -int(window_size/2), int(window_size/2): -int(window_size/2)]
     else:
-        data_disp = cfg_disp
+        data_disp = disparity
 
     return data_disp

@@ -194,17 +194,19 @@ class TestImgTools(unittest.TestCase):
         Test the method read_disp
         """
         # Ground truth (numpy array of pandora/tests/image/mask_ref image)
-        gt = np.array([[0, 0, 0],
-                       [5, 0, 0]])
+        gt = np.array([[0, 0, 1, 2, 0],
+                       [0, 0, 0, 0, 1],
+                       [3, 5, 0, 0, 1],
+                       [0, 0, 255, 0, 0]])
 
-        disp_ = img_tools.read_disp('tests/image/mask_ref.tif', window_size=3)
+        disp_ = img_tools.read_disp('tests/image/mask_ref.tif')
 
         # Check if the calculated disparity is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(disp_, gt)
 
         # Check with integer disparity
         gt = -60
-        disp_ = img_tools.read_disp(-60, window_size=3)
+        disp_ = img_tools.read_disp(-60)
 
         # Check if the calculated disparity is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(disp_, gt)

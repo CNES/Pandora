@@ -421,10 +421,19 @@ class AbstractStereo(object):
             return cost_volume
 
         # Variable range of disparities
+        # Resize disparity grids : disparity grids size and cost volume size must be equal
+        offset = int(cost_volume.attrs['offset_row_col'])
+        if offset == 0:
+            disp_min_crop = disp_min
+            disp_max_crop = disp_max
+        else:
+            disp_min_crop = disp_min[offset: -offset, offset: -offset]
+            disp_max_crop = disp_max[offset: -offset, offset: -offset]
+
         # Mask the costs computed with a disparity lower than disp_min and higher than disp_max
         for d in range(nd_):
-            masking = np.where(np.logical_or(cost_volume.coords['disp'].data[d] < disp_min,
-                                             cost_volume.coords['disp'].data[d] > disp_max))
+            masking = np.where(np.logical_or(cost_volume.coords['disp'].data[d] < disp_min_crop,
+                                             cost_volume.coords['disp'].data[d] > disp_max_crop))
             cost_volume['cost_volume'].data[masking[0], masking[1], d] = np.nan
 
         return cost_volume

@@ -44,7 +44,7 @@ import numpy as np
 
 
 def run(img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: Union[int, np.ndarray], disp_max: Union[int, np.ndarray],
-        disp_min_sec: Union[int, np.ndarray,  None], disp_max_sec: Union[int, np.ndarray, None], cfg: Dict[str, dict]) \
+        disp_min_sec: Union[int, np.ndarray], disp_max_sec: Union[int, np.ndarray], cfg: Dict[str, dict]) \
         -> Tuple[xr.Dataset, xr.Dataset]:
     """
     Run the pandora pipeline
@@ -215,10 +215,10 @@ def main(cfg_path: str, output: str, verbose: bool) -> None:
                        mask=cfg['input']['sec_mask'])
 
     # Read range of disparities
-    disp_min = read_disp(cfg['input']['disp_min'], cfg['stereo']['window_size'])
-    disp_max = read_disp(cfg['input']['disp_max'], cfg['stereo']['window_size'])
-    disp_min_sec = read_disp(cfg['input']['disp_min_sec'], cfg['stereo']['window_size'])
-    disp_max_sec = read_disp(cfg['input']['disp_max_sec'], cfg['stereo']['window_size'])
+    disp_min = read_disp(cfg['input']['disp_min'])
+    disp_max = read_disp(cfg['input']['disp_max'])
+    disp_min_sec = read_disp(cfg['input']['disp_min_sec'])
+    disp_max_sec = read_disp(cfg['input']['disp_max_sec'])
 
     # Run the Pandora pipeline
     ref, sec = run(img_ref, img_sec, disp_min, disp_max, disp_min_sec, disp_max_sec, cfg)

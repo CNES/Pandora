@@ -1156,11 +1156,15 @@ class TestStereo(unittest.TestCase):
         sec = xr.Dataset({'im': (['row', 'col'], data)},
                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        dmin_grid = np.array([[-8, -8, -5, -8, -4, -6, -7, -9, -8],
-                              [-9, -8, -4, -6, -5, -7, -8, -9, -7]])
+        dmin_grid = np.array([[-0, -0, -0, -0, -0, -0, -0, -0, -0, -0, -0],
+                              [-0, -8, -8, -5, -8, -4, -6, -7, -9, -8, -0],
+                              [-0, -9, -8, -4, -6, -5, -7, -8, -9, -7, -0],
+                              [-0, -0, -0, -0, -0, -0, -0, -0, -0, -0, -0]])
 
-        dmax_grid = np.array([[-2, -1, -1, -5, -1, -2, -6, -4, -3],
-                              [-3, 0, -2, -2, -2, -3, -5, -5, -4]])
+        dmax_grid = np.array([[-0, -0, -0, -0, -0, -0, -0, -0, -0, -0, -0],
+                              [-0, -2, -1, -1, -5, -1, -2, -6, -4, -3, -0],
+                              [-0, -3, 0, -2, -2, -2, -3, -5, -5, -4, -0],
+                              [-0, -0, -0, -0, -0, -0, -0, -0, -0, -0, -0]])
 
         # Initialization of stereo plugin
         stereo_ = stereo.AbstractStereo(**{'stereo_method': 'census', 'window_size': 3, 'subpix': 1})
@@ -1197,70 +1201,6 @@ class TestStereo(unittest.TestCase):
                                   [np.nan, np.nan, np.nan, 4., 5., np.nan, np.nan, np.nan, np.nan, np.nan],
                                   [np.nan, np.nan, 3., 2., 7., np.nan, np.nan, np.nan, np.nan, np.nan],
                                   [np.nan, np.nan, 4., 3., 3., 4., np.nan, np.nan, np.nan, np.nan]]], dtype=np.float32)
-
-        # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(gt_cv_masked, cv['cost_volume'].data)
-
-        # ------------ Test the method with disp_min as an int and disp_max as a grid, subpixel = 1 ------------
-        # Compute the cost_volume
-        cv = stereo_.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=dmin_int, disp_max=dmax_int,
-                                         **{'valid_pixels': 0, 'no_data': 1})
-        # Compute the masked cost volume
-        cv = stereo_.cv_masked(img_ref=ref, img_sec=sec, cost_volume=cv, disp_min=dmin_int, disp_max=dmax_grid,
-                               **{'valid_pixels': 0, 'no_data': 1})
-
-        # Cost volume ground truth
-        gt_cv_masked = np.array([[[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 5., np.nan],
-                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 1., 8., np.nan],
-                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                                  [np.nan, np.nan, np.nan, np.nan, np.nan, 5., 4., 3., 2., np.nan],
-                                  [np.nan, np.nan, np.nan, np.nan, 7., 2., 3., 6., np.nan, np.nan],
-                                  [np.nan, np.nan, np.nan, 1., np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                                  [np.nan, np.nan, 4., 5., 6., 3., np.nan, np.nan, np.nan, np.nan],
-                                  [np.nan, 6., 1., 4., 7., 1., 6., np.nan, np.nan, np.nan]],
-
-                                 [[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 5., 6.],
-                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 4., np.nan, np.nan],
-                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 2., 3., np.nan, np.nan],
-                                  [np.nan, np.nan, np.nan, np.nan, np.nan, 3., 2., 7., np.nan, np.nan],
-                                  [np.nan, np.nan, np.nan, np.nan, 5., 4., 3., np.nan, np.nan, np.nan],
-                                  [np.nan, np.nan, np.nan, 4., 5., np.nan, np.nan, np.nan, np.nan, np.nan],
-                                  [np.nan, np.nan, 3., 2., 7., np.nan, np.nan, np.nan, np.nan, np.nan],
-                                  [np.nan, 5., 4., 3., 3., 4., np.nan, np.nan, np.nan, np.nan]]], dtype=np.float32)
-
-        # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(gt_cv_masked, cv['cost_volume'].data)
-
-        # ------------ Test the method with disp_min as a grid and disp_max as an int, subpixel = 1 ------------
-        # Compute the cost_volume
-        cv = stereo_.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=dmin_int, disp_max=dmax_int,
-                                         **{'valid_pixels': 0, 'no_data': 1})
-        # Compute the masked cost volume
-        cv = stereo_.cv_masked(img_ref=ref, img_sec=sec, cost_volume=cv, disp_min=dmin_grid, disp_max=dmax_int,
-                               **{'valid_pixels': 0, 'no_data': 1})
-
-        # Cost volume ground truth
-        gt_cv_masked = np.array([[[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 2.],
-                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 5., 4.],
-                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 1., 8., 5.],
-                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 3., 4., 7., 6.],
-                                  [np.nan, np.nan, np.nan, np.nan, np.nan, 5., 4., 3., 2., 6.],
-                                  [np.nan, np.nan, np.nan, np.nan, 7., 2., 3., 6., 2., 5.],
-                                  [np.nan, np.nan, np.nan, 1., 8., 5., 2., 6., 3., 2.],
-                                  [np.nan, np.nan, 4., 5., 6., 3., 5., 4., 3., 1.],
-                                  [np.nan, 6., 1., 4., 7., 1., 6., 7., 7., 6.]],
-
-                                 [[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 4.],
-                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 5., 6.],
-                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 4., 5., 2.],
-                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 2., 3., 6., 6.],
-                                  [np.nan, np.nan, np.nan, np.nan, np.nan, 3., 2., 7., 7., 2.],
-                                  [np.nan, np.nan, np.nan, np.nan, 5., 4., 3., 3., 6., 6.],
-                                  [np.nan, np.nan, np.nan, 4., 5., 0., 2., 5., 5., 5.],
-                                  [np.nan, np.nan, 3., 2., 7., 7., 2., 2., 4., 7.],
-                                  [np.nan, np.nan, 4., 3., 3., 4., 6., 4., 3., 4.]]], dtype=np.float32)
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(gt_cv_masked, cv['cost_volume'].data)
