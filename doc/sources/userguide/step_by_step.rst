@@ -38,7 +38,13 @@ Cost Aggregation
 The second step is to aggregate the matching costs:
 
 - Cross-based Cost Aggregation [2]_. This method consists in creating aggregation support regions that adapt to the structures
-  present in the scene.
+  present in the scene, it is performed in 5 steps:
+
+    - a 3x3 median filter is applied to the reference image (left image) and the secondary image (right image),
+    - cross support region computation of each pixel of the reference image,
+    - cross support region computation of each pixel of the secondary image,
+    - combination of the reference and secondary support region,
+    - the matching cost is averaged over the combined support region.
 
 Optimisation
 ------------
