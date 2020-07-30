@@ -285,14 +285,14 @@ def compute_std_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
     return np.sqrt(var)
 
 
-def read_disp(disparity: Union[int, str]) -> Union[int, np.ndarray]:
+def read_disp(disparity: Union[None, int, str]) -> Union[None, int, np.ndarray]:
     """
     Read the disparity :
         - if cfg_disp is the path of a disparity grid, read and return the grid (type numpy array)
         - else return the value of cfg_disp
 
     :param disparity: disparity, or path to the disparity grid
-    :type disparity: int or str
+    :type disparity: None, int or str
     :return: the disparity
     :rtype: int or np.ndarray
     """

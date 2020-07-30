@@ -121,7 +121,7 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.JSON_checker.update_conf(pandora.JSON_checker.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        ref, sec = pandora.run(self.ref, self.sec, -60, 0, 0, 60, cfg)
+        ref, sec = pandora.run(self.ref, self.sec, -60, 0, cfg)
 
         # Check the reference disparity map
         if self.error(ref['disparity_map'].data, self.disp_ref, 1) > 0.20:
@@ -199,8 +199,7 @@ class TestPandora(unittest.TestCase):
         import_plugin()
 
         # Run the Pandora pipeline
-        ref, sec = pandora.run(img_ref, img_sec, cfg['input']['disp_min'], cfg['input']['disp_max'],
-                               -cfg['input']['disp_max'], -cfg['input']['disp_min'], cfg)
+        ref, sec = pandora.run(img_ref, img_sec, cfg['input']['disp_min'], cfg['input']['disp_max'], cfg)
 
         # Ground truth confidence measure
         gt_ref_indicator_stereo = np.array([[1.57175062, 1.46969385, 1.39484766, 1.6],
@@ -292,7 +291,7 @@ class TestPandora(unittest.TestCase):
         sec_img = read_img('tests/pandora/sec.png', no_data=np.nan, cfg=cfg['image'], mask=None)
 
         # Run the pandora pipeline on images without modified coordinates
-        ref_origin, sec_origin = pandora.run(ref_img, sec_img, -60, 0, 0, 60, cfg)
+        ref_origin, sec_origin = pandora.run(ref_img, sec_img, -60, 0, cfg)
 
         row_c = ref_img.coords['row'].data
         row_c += 41
@@ -303,7 +302,7 @@ class TestPandora(unittest.TestCase):
         sec_img.assign_coords(row=row_c, col=col_c)
 
         # Run the pandora pipeline on images with modified coordinates
-        ref_modified, sec_modified = pandora.run(ref_img, sec_img, -60, 0, 0, 60, cfg)
+        ref_modified, sec_modified = pandora.run(ref_img, sec_img, -60, 0, cfg)
 
         # check if the disparity maps are equals
         np.testing.assert_array_equal(ref_origin['disparity_map'].values, ref_modified['disparity_map'].values)

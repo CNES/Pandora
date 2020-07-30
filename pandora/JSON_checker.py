@@ -122,11 +122,10 @@ def check_images(img_ref: str, img_sec: str, msk_ref: str, msk_sec: str) -> None
             sys.exit(1)
 
 
-def check_complete_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str, None],
-                               sec_disp_min: Union[str, None], sec_disp_max: Union[str, None], img_ref: str) \
-        -> Tuple[Union[int, str], Union[int, str]]:
+def check_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str, None],
+                               sec_disp_min: Union[str, None], sec_disp_max: Union[str, None], img_ref: str):
     """
-    Check reference and secondary disparities. Computes the secondary disparity if it is not provided.
+    Check reference and secondary disparities.
 
     :param disp_min: minimal disparity
     :type disp_min: int or str or None
@@ -138,12 +137,7 @@ def check_complete_disparities(disp_min: Union[int, str, None], disp_max: Union[
     :type sec_disp_max: str or None
     :param img_ref: path to the reference image
     :type img_ref: str
-    :return: the secondary disparity
-    :rtype: Tuple(int, int)  or Tuple(str, str)
     """
-    disp_min_sec = sec_disp_min
-    disp_max_sec = sec_disp_max
-
     # --- Check reference disparities
     # Reference disparity are integers
     if type(disp_min) == int and type(disp_max) == int:
@@ -153,10 +147,6 @@ def check_complete_disparities(disp_min: Union[int, str, None], disp_max: Union[
         if (disp_min - disp_max) >= 0:
             logging.error('Disp_max must be bigger than Disp_min')
             sys.exit(1)
-
-        # Computes the secondary disparities
-        disp_min_sec = -disp_max
-        disp_max_sec = -disp_min
 
     # Reference disparity are grids
     elif (type(disp_min) == str) and (type(disp_max) == str):
@@ -215,8 +205,6 @@ def check_complete_disparities(disp_min: Union[int, str, None], disp_max: Union[
         if ((dmin - dmax) >= 0).any():
             logging.error('Disp_max must be bigger than Disp_min')
             sys.exit(1)
-
-    return disp_min_sec, disp_max_sec
 
 
 def get_config_pipeline(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
@@ -393,12 +381,9 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
 
     # custom checking
 
-    # check reference disparities. Check and complete secondary disparities
-    cfg['input']['disp_min_sec'], cfg['input']['disp_max_sec'] = check_complete_disparities(cfg['input']['disp_min'],
-                                                                                            cfg['input']['disp_max'],
-                                                                                            cfg['input']['disp_min_sec'],
-                                                                                            cfg['input']['disp_max_sec'],
-                                                                                            cfg['input']['img_ref'])
+    # check reference and secondary disparities
+    check_disparities(cfg['input']['disp_min'], cfg['input']['disp_max'], cfg['input']['disp_min_sec'],
+                      cfg['input']['disp_max_sec'], cfg['input']['img_ref'])
 
     check_images(cfg['input']['img_ref'], cfg['input']['img_sec'], cfg['input']['ref_mask'],
                  cfg['input']['sec_mask'])
@@ -430,7 +415,8 @@ def check_conf(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
 
     # If reference disparities are grids of disparity and the secondary disparities are none, the cross-checking
     # method cannot be used
-    if (cfg_input['input']['disp_min_sec'] is None) and (cfg_pipeline['validation']['validation_method'] != "none"):
+    if (type(cfg_input['input']['disp_min']) == str) and (cfg_input['input']['disp_min_sec'] is None) and \
+            (cfg_pipeline['validation']['validation_method'] != "none"):
         logging.error("The cross-checking step cannot be processed if disp_min, disp_max are paths to the reference "
                       "disparity grids and disp_sec_min, disp_sec_max are none.")
         sys.exit(1)
@@ -481,7 +467,7 @@ input_configuration_schema_ref_disparity_grids_sec_none = {
     "disp_max_sec": (lambda x: x is None)
 }
 
-# Input configuration when reference disparity is a grid, and secondary not provided
+# Input configuration when reference and secondary disparity are grids
 input_configuration_schema_ref_disparity_grids_sec_grids = {
     "disp_min": And(str, gdal_can_open),
     "disp_max": And(str, gdal_can_open),

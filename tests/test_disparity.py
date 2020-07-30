@@ -248,7 +248,7 @@ class TestDisparity(unittest.TestCase):
             }
         }
         cfg = pandora.JSON_checker.update_conf(default_cfg, fast_cfg)
-        ref, sec_fast = pandora.run(pandora_ref, pandora_sec, -60, 0, 0, 60, cfg)
+        ref, sec_fast = pandora.run(pandora_ref, pandora_sec, -60, 0, cfg)
 
         acc_cfg = {
             "stereo": {
@@ -265,7 +265,7 @@ class TestDisparity(unittest.TestCase):
             }
         }
         cfg = pandora.JSON_checker.update_conf(default_cfg, acc_cfg)
-        ref, sec_acc = pandora.run(pandora_ref, pandora_sec, -60, 0, 0, 60, cfg)
+        ref, sec_acc = pandora.run(pandora_ref, pandora_sec, -60, 0, cfg)
 
         # Check if the calculated disparity map in fast mode is equal to the disparity map in accurate mode
         np.testing.assert_array_equal(sec_fast['disparity_map'].data, sec_acc['disparity_map'].data)

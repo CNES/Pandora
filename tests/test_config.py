@@ -37,46 +37,6 @@ class TestConfig(unittest.TestCase):
     def setUp(self):
         pass
 
-    def test_check_complete_disparities(self):
-        """
-        Test the method check_complete_disparities
-        """
-        # Check the secondary disparities
-        sec_min, sec_max = JSON_checker.check_complete_disparities(-60, 0, None, None, 'tests/pandora/ref.png')
-
-        if (sec_min != 0) and (sec_max != 60):
-            raise AssertionError
-
-        # Check the secondary disparities with negative disparity range
-        sec_min, sec_max = JSON_checker.check_complete_disparities(-60, -10, None, None, 'tests/pandora/ref.png')
-
-        if (sec_min != 10) and (sec_max != 60):
-            raise AssertionError
-
-        # Check the secondary disparities with positive disparity range
-        sec_min, sec_max = JSON_checker.check_complete_disparities(10, 60, None, None, 'tests/pandora/ref.png')
-
-        if (sec_min != -60) and (sec_max != -10):
-            raise AssertionError
-
-        # Check the secondary disparities with reference disparity grids
-        sec_min, sec_max = JSON_checker.check_complete_disparities("tests/pandora/disp_min_grid.tif",
-                                                                   "tests/pandora/disp_max_grid.tif", None,
-                                                                   None, 'tests/pandora/ref.png')
-
-        if (sec_min is not None) and (sec_max is not None):
-            raise AssertionError
-
-        # Check the secondary disparities with reference and secondary disparity grids
-        sec_min, sec_max = JSON_checker.check_complete_disparities("tests/pandora/disp_min_grid.tif",
-                                                                   "tests/pandora/disp_max_grid.tif",
-                                                                   "tests/pandora/disp_min_grid.tif",
-                                                                   "tests/pandora/disp_max_grid.tif",
-                                                                   'tests/pandora/ref.png')
-
-        if (sec_min != "tests/pandora/disp_min_grid.tif") and (sec_max != "tests/pandora/disp_max_grid.tif"):
-            raise AssertionError
-
     def test_check_input_section(self):
         """
         Test the method check_input_section
@@ -105,8 +65,6 @@ class TestConfig(unittest.TestCase):
             }
         }
         cfg_return = JSON_checker.check_input_section(cfg)
-        if (cfg_return['input']['disp_min_sec'] != 0) and (cfg_return['input']['disp_max_sec'] != 60):
-            raise AssertionError
 
         # Test configuration with reference and secondary disparity grids
         cfg = {

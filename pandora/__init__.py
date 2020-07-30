@@ -44,8 +44,8 @@ import numpy as np
 
 
 def run(img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: Union[int, np.ndarray], disp_max: Union[int, np.ndarray],
-        disp_min_sec: Union[int, np.ndarray], disp_max_sec: Union[int, np.ndarray], cfg: Dict[str, dict]) \
-        -> Tuple[xr.Dataset, xr.Dataset]:
+        cfg: Dict[str, dict], disp_min_sec: Union[None, int, np.ndarray] = None,
+        disp_max_sec: Union[None, int, np.ndarray] = None) -> Tuple[xr.Dataset, xr.Dataset]:
     """
     Run the pandora pipeline
 
@@ -63,12 +63,12 @@ def run(img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: Union[int, np.ndarra
     :type disp_min: int or np.ndarray
     :param disp_max: maximal disparity
     :type disp_max: int or np.ndarray
-    :param disp_min_sec: minimal disparity of the secondary image
-    :type disp_min_sec: int or np.ndarray
-    :param disp_max_sec: maximal disparity of the secondary image
-    :type disp_max_sec: int or np.ndarray
     :param cfg: configuration
     :type cfg: dict
+    :param disp_min_sec: minimal disparity of the secondary image
+    :type disp_min_sec: None, int or np.ndarray
+    :param disp_max_sec: maximal disparity of the secondary image
+    :type disp_max_sec: None, int or np.ndarray
     :return:
         Two xarray.Dataset :
             - ref : the reference dataset, which contains the variables :
@@ -130,6 +130,12 @@ def run(img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: Union[int, np.ndarra
     if cfg['validation']['validation_method'] == 'cross_checking':
 
         logging.info('Computing the right disparity map with the accurate method...')
+
+        # Computes the secondary disparity if it is not provided
+        if disp_min_sec is None:
+            disp_min_sec = -disp_max
+            disp_max_sec = -disp_min
+
         dmin_min_sec, dmax_max_sec = stereo_.dmin_dmax(disp_min_sec, disp_max_sec)
         cv_right = stereo_.compute_cost_volume(img_sec, img_ref, dmin_min_sec, dmax_max_sec, **cfg['image'])
         cv_right = stereo_.cv_masked(img_sec, img_ref, cv_right, disp_min_sec, disp_max_sec, **cfg['image'])
@@ -221,7 +227,7 @@ def main(cfg_path: str, output: str, verbose: bool) -> None:
     disp_max_sec = read_disp(cfg['input']['disp_max_sec'])
 
     # Run the Pandora pipeline
-    ref, sec = run(img_ref, img_sec, disp_min, disp_max, disp_min_sec, disp_max_sec, cfg)
+    ref, sec = run(img_ref, img_sec, disp_min, disp_max, cfg, disp_min_sec, disp_max_sec)
 
     # Save the reference and secondary DataArray in tiff files
     common.save_results(ref, sec, output)
