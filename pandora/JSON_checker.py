@@ -41,9 +41,9 @@ from . import validation
 from . import refinement
 
 
-def gdal_can_open_mandatory(f: str) -> bool:
+def rasterio_can_open_mandatory(f: str) -> bool:
     """
-    Test if file f can be open by gdal
+    Test if file f can be open by rasterio
 
     :param f: File to test
     :type f: string
@@ -59,9 +59,9 @@ def gdal_can_open_mandatory(f: str) -> bool:
         return False
 
 
-def gdal_can_open(f: str) -> bool:
+def rasterio_can_open(f: str) -> bool:
     """
-    Test if file f can be open by gdal
+    Test if file f can be open by rasterio
 
     :param f: File to test
     :type f: string
@@ -72,7 +72,7 @@ def gdal_can_open(f: str) -> bool:
     if f == 'none' or f is None:
         return True
     else:
-        return gdal_can_open_mandatory(f)
+        return rasterio_can_open_mandatory(f)
 
 
 def check_images(img_ref: str, img_sec: str, msk_ref: str, msk_sec: str) -> None:
@@ -434,10 +434,10 @@ def concat_conf(cfg_list: List[Dict[str, dict]]) -> Dict[str, dict]:
 
 
 input_configuration_schema = {
-    "img_ref": And(str, gdal_can_open_mandatory),
-    "img_sec": And(str, gdal_can_open_mandatory),
-    "ref_mask": And(Or(str, lambda x: x is None), gdal_can_open),
-    "sec_mask": And(Or(str, lambda x: x is None), gdal_can_open)
+    "img_ref": And(str, rasterio_can_open_mandatory),
+    "img_sec": And(str, rasterio_can_open_mandatory),
+    "ref_mask": And(Or(str, lambda x: x is None), rasterio_can_open),
+    "sec_mask": And(Or(str, lambda x: x is None), rasterio_can_open)
 }
 
 # Input configuration when disparity is integer
@@ -450,18 +450,18 @@ input_configuration_schema_integer_disparity = {
 
 # Input configuration when reference disparity is a grid, and secondary not provided
 input_configuration_schema_ref_disparity_grids_sec_none = {
-    "disp_min": And(str, gdal_can_open),
-    "disp_max": And(str, gdal_can_open),
+    "disp_min": And(str, rasterio_can_open),
+    "disp_max": And(str, rasterio_can_open),
     "disp_min_sec": (lambda x: x is None),
     "disp_max_sec": (lambda x: x is None)
 }
 
 # Input configuration when reference and secondary disparity are grids
 input_configuration_schema_ref_disparity_grids_sec_grids = {
-    "disp_min": And(str, gdal_can_open),
-    "disp_max": And(str, gdal_can_open),
-    "disp_min_sec": And(str, gdal_can_open),
-    "disp_max_sec": And(str, gdal_can_open)
+    "disp_min": And(str, rasterio_can_open),
+    "disp_max": And(str, rasterio_can_open),
+    "disp_min_sec": And(str, rasterio_can_open),
+    "disp_max_sec": And(str, rasterio_can_open)
 }
 
 image_configuration_schema = {
