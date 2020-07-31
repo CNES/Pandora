@@ -101,7 +101,7 @@ def to_disp(cv: xr.Dataset, invalid_value: float = 0, img_ref: xr.Dataset = None
     return disp_map
 
 
-def validity_mask(disp: xr.Dataset, img_ref: xr.Dataset, img_sec: xr.Dataset, cv: xr.Dataset = None, **cfg: int) -> xr.Dataset:
+def validity_mask(disp: xr.Dataset, img_ref: xr.Dataset, img_sec: xr.Dataset, cv: xr.Dataset, **cfg: int) -> xr.Dataset:
     """
     Create the validity mask of the disparity map
 
