@@ -141,10 +141,7 @@ def check_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str,
     # --- Check reference disparities
     # Reference disparity are integers
     if type(disp_min) == int and type(disp_max) == int:
-        if abs(disp_min) + abs(disp_max) == 0:
-            logging.error('Disparity range must be greater than 0')
-            sys.exit(1)
-        if (disp_min - disp_max) >= 0:
+        if disp_max < disp_min:
             logging.error('Disp_max must be bigger than Disp_min')
             sys.exit(1)
 
@@ -169,11 +166,7 @@ def check_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str,
             logging.error('Disparity grids and image must have the same size')
             sys.exit(1)
 
-        if (abs(dmin) + abs(dmax)).all() == 0:
-            logging.error('Disparity range must be greater than 0')
-            sys.exit(1)
-
-        if ((dmin - dmax) >= 0).any():
+        if (dmax < dmin).any():
             logging.error('Disp_max must be bigger than Disp_min')
             sys.exit(1)
 
@@ -198,11 +191,7 @@ def check_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str,
             logging.error('Disparity grids and image must have the same size')
             sys.exit(1)
 
-        if (abs(dmin) + abs(dmax)).all() == 0:
-            logging.error('Disparity range must be greater than 0')
-            sys.exit(1)
-
-        if ((dmin - dmax) >= 0).any():
+        if (dmax < dmin).any():
             logging.error('Disp_max must be bigger than Disp_min')
             sys.exit(1)
 
