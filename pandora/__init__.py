@@ -37,13 +37,15 @@ from . import disparity
 from . import validation
 from . import refinement
 from . import optimization
-from .img_tools import read_img
+from .img_tools import read_img, read_disp
 from .JSON_checker import check_conf, read_config_file
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
+import numpy as np
 
 
-def run(img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: int, disp_max: int,
-        cfg: Dict[str, dict]) -> Tuple[xr.Dataset, xr.Dataset]:
+def run(img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: Union[int, np.ndarray], disp_max: Union[int, np.ndarray],
+        cfg: Dict[str, dict], disp_min_sec: Union[None, int, np.ndarray] = None,
+        disp_max_sec: Union[None, int, np.ndarray] = None) -> Tuple[xr.Dataset, xr.Dataset]:
     """
     Run the pandora pipeline
 
@@ -58,11 +60,15 @@ def run(img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: int, disp_max: int,
             - im : 2D (row, col) xarray.DataArray
             - msk (optional): 2D (row, col) xarray.DataArray
     :param disp_min: minimal disparity
-    :type disp_min: int
+    :type disp_min: int or np.ndarray
     :param disp_max: maximal disparity
-    :type disp_max: int
+    :type disp_max: int or np.ndarray
     :param cfg: configuration
     :type cfg: dict
+    :param disp_min_sec: minimal disparity of the secondary image
+    :type disp_min_sec: None, int or np.ndarray
+    :param disp_max_sec: maximal disparity of the secondary image
+    :type disp_max_sec: None, int or np.ndarray
     :return:
         Two xarray.Dataset :
             - ref : the reference dataset, which contains the variables :
@@ -91,7 +97,12 @@ def run(img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: int, disp_max: int,
 
     # Matching cost computation
     logging.info('Matching cost computation...')
-    cv = stereo_.compute_cost_volume(img_ref, img_sec, disp_min, disp_max, **cfg['image'])
+    # Compute the global minimum and maximum of disparity
+    dmin_min, dmax_max = stereo_.dmin_dmax(disp_min, disp_max)
+    # Compute the cost volume
+    cv = stereo_.compute_cost_volume(img_ref, img_sec, dmin_min, dmax_max, **cfg['image'])
+    # Masking the costs computed for disparities outside of the variable disparities range
+    cv = stereo_.cv_masked(img_ref, img_sec, cv, disp_min, disp_max,  **cfg['image'])
 
     # Cost (support) aggregation
     logging.info('Cost aggregation...')
@@ -119,12 +130,20 @@ def run(img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: int, disp_max: int,
     if cfg['validation']['validation_method'] == 'cross_checking':
 
         logging.info('Computing the right disparity map with the accurate method...')
-        cv_right = stereo_.compute_cost_volume(img_sec, img_ref, -disp_max, -disp_min, **cfg['image'])
+
+        # Computes the secondary disparity if it is not provided
+        if disp_min_sec is None:
+            disp_min_sec = -disp_max
+            disp_max_sec = -disp_min
+
+        dmin_min_sec, dmax_max_sec = stereo_.dmin_dmax(disp_min_sec, disp_max_sec)
+        cv_right = stereo_.compute_cost_volume(img_sec, img_ref, dmin_min_sec, dmax_max_sec, **cfg['image'])
+        cv_right = stereo_.cv_masked(img_sec, img_ref, cv_right, disp_min_sec, disp_max_sec, **cfg['image'])
         cv_right = aggregation_.cost_volume_aggregation(img_sec, img_ref, cv_right)
         cv_right = optimization_.optimize_cv(cv_right, img_sec, img_ref)
         sec = disparity.to_disp(cv_right, cfg['invalid_disparity'], img_sec, img_ref)
         sec = disparity.validity_mask(sec, img_sec, img_ref, cv_right, **cfg['image'])
-        cv_right, sec = refinement_.subpixel_refinement(cv_right, sec, img_sec,img_ref)
+        cv_right, sec = refinement_.subpixel_refinement(cv_right, sec, img_sec, img_ref)
 
         sec = filter_.filter_disparity(sec, img_sec, img_ref, cv_right)
 
@@ -201,8 +220,14 @@ def main(cfg_path: str, output: str, verbose: bool) -> None:
     img_sec = read_img(cfg['input']['img_sec'], no_data=cfg['image']['nodata2'], cfg=cfg['image'],
                        mask=cfg['input']['sec_mask'])
 
+    # Read range of disparities
+    disp_min = read_disp(cfg['input']['disp_min'])
+    disp_max = read_disp(cfg['input']['disp_max'])
+    disp_min_sec = read_disp(cfg['input']['disp_min_sec'])
+    disp_max_sec = read_disp(cfg['input']['disp_max_sec'])
+
     # Run the Pandora pipeline
-    ref, sec = run(img_ref, img_sec, cfg['input']['disp_min'], cfg['input']['disp_max'], cfg)
+    ref, sec = run(img_ref, img_sec, disp_min, disp_max, cfg, disp_min_sec, disp_max_sec)
 
     # Save the reference and secondary DataArray in tiff files
     common.save_results(ref, sec, output)

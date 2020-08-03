@@ -84,8 +84,8 @@ class SadSsd(stereo.AbstractStereo):
         """
         print(str(self._method) + ' similarity measure')
 
-    def compute_cost_volume(self, img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: int, disp_max: int,
-                            **cfg: Union[str, int]) -> xr.Dataset:
+    def compute_cost_volume(self, img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: int,
+                            disp_max: int, **cfg: Union[str, int]) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
 
@@ -143,18 +143,6 @@ class SadSsd(stereo.AbstractStereo):
         cv = np.zeros((len(disparity_range), img_ref['im'].shape[1], img_ref['im'].shape[0]), dtype=np.float32)
         cv += np.nan
 
-        # Allocate the 3D masks (disp, col, row) that will contains valid pixels = 0, and invalid pixels = np.nan
-        # First pixel in the image that is fully computable (aggregation windows are complete)
-        offset = int((self._window_size - 1) / 2)
-        row = img_ref['im'].shape[0] - (2 * offset)
-        col = img_ref['im'].shape[1] - (2 * offset)
-        cv_masks = np.zeros((len(disparity_range), col, row), dtype=np.float32)
-
-        # Masks are truncated truncated for points that are not calculable
-        mask_ref, mask_sec = self.masks_dilatation(img_ref, img_sec, offset, self._window_size, self._subpix, cfg)
-
-        offset_mask = (int(self._window_size / 2) * 2)
-
         # Giving the 2 images, the matching cost will be calculated as :
         #                 1, 1, 1                2, 5, 6
         #                 2, 1, 4                1, 1, 3
@@ -187,23 +175,14 @@ class SadSsd(stereo.AbstractStereo):
         for disp in disparity_range:
             i_sec = int((disp % 1) * self._subpix)
             p, q = self.point_interval(img_ref, img_sec_shift[i_sec], disp)
-            # Masks are truncated for points that are not calculable
-            p_mask = (p[0], p[1] - offset_mask)
-            q_mask = (q[0], q[1] - offset_mask)
-            # mask_sec is of size 2
-            i_mask_sec = min(1, i_sec)
             d = int((disp - disp_min) * self._subpix)
-
-            cv_masks[d, p_mask[0]:p_mask[1], :] = np.swapaxes(mask_sec[i_mask_sec].data[:, q_mask[0]:q_mask[1]], 0, 1) \
-                                                  + np.swapaxes(mask_ref.data[:, p_mask[0]:p_mask[1]], 0, 1)
 
             cv[d, p[0]:p[1], :] = \
                 np.swapaxes(self._pixel_wise_methods[self._method](p, q, img_ref, img_sec_shift[i_sec]), 0, 1)
 
         # Apply aggregation
         cv = self.pixel_wise_aggregation(cv.data)
-        # Invalid pixels
-        cv += cv_masks
+
         # Reallocates the cost because its size has decreased due to the aggregation step
         cv = self.allocate_costvolume(img_ref, self._subpix, disp_min, disp_max, self._window_size, metadata,
                                       np.swapaxes(cv, 0, 2))

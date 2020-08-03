@@ -30,6 +30,9 @@ from math import ceil, floor
 from abc import ABCMeta, abstractmethod
 from scipy.ndimage.morphology import binary_dilation
 from typing import Tuple, Dict, List, Union
+from pandora.img_tools import shift_sec_img
+from json_checker import Or
+import rasterio
 
 from pandora.img_tools import compute_std_raster
 
@@ -141,7 +144,7 @@ class AbstractStereo(object):
         :type metadata: dictionary
         :param np_data: the array’s data
         :type np_data: 3D numpy array, dtype=np.float32
-        :return: the dataset cost volume with the cost_volume and the indicator_map
+        :return: the dataset cost volume with the cost_volume and the confidence measure
         :rtype:
             xarray.Dataset, with the data variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
@@ -314,3 +317,123 @@ class AbstractStereo(object):
                                          coords=[row, col], dims=['row', 'col'])
 
         return dilatate_ref_mask, [dilatate_sec_mask, dilatate_sec_mask_shift]
+
+    @staticmethod
+    def dmin_dmax(disp_min: Union[int, np.ndarray], disp_max: Union[int, np.ndarray]) -> Tuple[int, int]:
+        """
+        Find the smallest disparity present in disp_min, and the highest disparity present in disp_max
+
+        :param disp_min: minimum disparity
+        :type disp_min: int or np.ndarray
+        :param disp_max: maximum disparity
+        :type disp_max: int or np.ndarray
+        :return:
+            dmin_min: the smallest disparity in disp_min
+            dmax_max: the highest disparity in disp_max
+        :rtype: Tuple(int, int)
+        """
+        # Disp_min is a fixed disparity
+        if type(disp_min) == int:
+            dmin_min = disp_min
+
+        # Disp_min is a variable disparity
+        else:
+            dmin_min = int(np.nanmin(disp_min))
+
+        # Disp_max is a fixed disparity
+        if type(disp_max) == int:
+            dmax_max = disp_max
+
+        # Disp_max is a variable disparity
+        else:
+            dmax_max = int(np.nanmax(disp_max))
+
+        return dmin_min, dmax_max
+
+    def cv_masked(self, img_ref: xr.Dataset, img_sec: xr.Dataset, cost_volume: xr.Dataset,
+                  disp_min: Union[int, np.ndarray], disp_max: Union[int, np.ndarray], **cfg: Union[str, int]) -> xr.Dataset:
+        """
+        Masks the cost volume :
+            - costs which are not inside their disparity range, are masked with a nan value
+            - costs of invalid_pixels (invalidated by the input image mask), are masked with a nan value
+            - costs of no_data pixels, are masked with a nan value. If a valid pixel contains a no_data in its
+                aggregation window, then the cost of the central pixel is masked with a nan value
+
+        :param img_ref: reference Dataset image
+        :type img_ref:
+            xarray.Dataset containing :
+                - im : 2D (row, col) xarray.DataArray
+                - msk : 2D (row, col) xarray.DataArray
+        :param img_sec: secondary Dataset image
+        :type img_sec:
+            xarray.Dataset containing :
+                - im : 2D (row, col) xarray.DataArray
+                - msk : 2D (row, col) xarray.DataArray
+        :param cost_volume: the cost_volume DataSet
+        :type cost_volume:
+            xarray.Dataset, with the data variables:
+                - cost_volume 3D xarray.DataArray (row, col, disp)
+                - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :param disp_min: minimum disparity
+        :type disp_min: int or np.ndarray
+        :param disp_max: maximum disparity
+        :type disp_max: int or np.ndarray
+        :param cfg: images configuration containing the mask convention : valid_pixels, no_data
+        :type cfg: dict
+        :return: the cost_volume DataArray masked
+        :rtype: 3D xarray.DataArray (row, col, disp)
+        """
+        ny_, nx_, nd_ = cost_volume['cost_volume'].shape
+
+        dmin, dmax = self.dmin_dmax(disp_min, disp_max)
+
+        # ----- Masking invalid pixels -----
+
+        # Contains the shifted secondary images
+        img_sec_shift = shift_sec_img(img_sec, self._subpix)
+
+        # Computes the validity mask of the cost volume : invalid pixels or no_data are masked with the value nan.
+        # Valid pixels are = 0
+        offset = int((self._window_size - 1) / 2)
+        mask_ref, mask_sec = self.masks_dilatation(img_ref, img_sec, offset, self._window_size, self._subpix, cfg)
+        offset_mask = (int(self._window_size / 2) * 2)
+
+        for disp in cost_volume.coords['disp'].data:
+            i_sec = int((disp % 1) * self._subpix)
+            p, q = self.point_interval(img_ref, img_sec_shift[i_sec], disp)
+
+            # Point interval in the reference image
+            p_mask = (p[0], p[1] - offset_mask)
+            # Point interval in the secondary image
+            q_mask = (q[0], q[1] - offset_mask)
+
+            i_mask_sec = min(1, i_sec)
+            d = int((disp - dmin) * self._subpix)
+
+            # Invalid costs in the cost volume
+            cost_volume['cost_volume'].data[:, p_mask[0]:p_mask[1], d] += (
+                    mask_sec[i_mask_sec].data[:, q_mask[0]:q_mask[1]] + mask_ref.data[:, p_mask[0]:p_mask[1]])
+
+        # ----- Masking disparity range -----
+
+        # Fixed range of disparities
+        if type(disp_min) == int and type(disp_max) == int:
+            return cost_volume
+
+        # Variable range of disparities
+        # Resize disparity grids : disparity grids size and cost volume size must be equal
+        offset = int(cost_volume.attrs['offset_row_col'])
+        if offset == 0:
+            disp_min_crop = disp_min
+            disp_max_crop = disp_max
+        else:
+            disp_min_crop = disp_min[offset: -offset, offset: -offset]
+            disp_max_crop = disp_max[offset: -offset, offset: -offset]
+
+        # Mask the costs computed with a disparity lower than disp_min and higher than disp_max
+        for d in range(nd_):
+            masking = np.where(np.logical_or(cost_volume.coords['disp'].data[d] < disp_min_crop,
+                                             cost_volume.coords['disp'].data[d] > disp_max_crop))
+            cost_volume['cost_volume'].data[masking[0], masking[1], d] = np.nan
+
+        return cost_volume

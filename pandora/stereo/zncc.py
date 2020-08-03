@@ -82,8 +82,8 @@ class Zncc(stereo.AbstractStereo):
         """
         print('zncc similarity measure')
 
-    def compute_cost_volume(self, img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: int, disp_max: int,
-                            **cfg: Union[str, int]) -> xr.Dataset:
+    def compute_cost_volume(self, img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: int,
+                            disp_max: int, **cfg: Union[str, int]) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
 
@@ -146,17 +146,11 @@ class Zncc(stereo.AbstractStereo):
                        img_sec['im'].shape[0] - (self._window_size - 1)), dtype=np.float32)
         cv += np.nan
 
-        mask_ref, mask_sec = self.masks_dilatation(img_ref, img_sec_shift[0], int((self._window_size - 1) / 2),
-                                                   self._window_size, self._subpix, cfg)
-
         # Computes the matching cost
         for disp in disparity_range:
             i_sec = int((disp % 1) * self._subpix)
-            # mask_sec is of size 2
-            i_mask_sec = min(1, i_sec)
-            d = int((disp - disp_min) * self._subpix)
-
             p, q = self.point_interval(img_ref, img_sec_shift[i_sec], disp)
+            d = int((disp - disp_min) * self._subpix)
 
             # Point interval in the reference standard deviation image
             # -  (win_radius * 2) because img_std is truncated for points that are not calculable
@@ -181,11 +175,7 @@ class Zncc(stereo.AbstractStereo):
             zncc_[np.where(divide_standard <= 0)] = 0
 
             # Places the result in the cost_volume
-            # We use p_std indices because cost_volume and img_std have the same shape,
-            # they are both truncated for points that are not calculable
-            cv[d, p[0]:p_std[1], :] = np.swapaxes(zncc_, 0, 1) + \
-                                      np.swapaxes(mask_sec[i_mask_sec].data[:, q_std[0]:q_std[1]], 0, 1) + \
-                                      np.swapaxes(mask_ref.data[:, p_std[0]:p_std[1]], 0, 1)
+            cv[d, p[0]:p_std[1], :] = np.swapaxes(zncc_, 0, 1)
 
         # Create the xarray.DataSet that will contain the cost_volume of dimensions (row, col, disp)
         cv = self.allocate_costvolume(img_ref, self._subpix, disp_min, disp_max, self._window_size, metadata,

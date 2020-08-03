@@ -88,21 +88,35 @@ Pandora works with JSON formatted data with the following nested structures.
 Input parameters
 ^^^^^^^^^^^^^^^^
 
-+------------+--------------------------------+--------+---------------+--------------------------+
-| Name       | Description                    | Type   | Default value | Required                 |
-+============+================================+========+===============+==========================+
-|*img_ref*   | Path to the reference image    | string |               | Yes                      |
-+------------+--------------------------------+--------+---------------+--------------------------+
-| *img_sec*  | Path to the secondary image    | string |               | Yes                      |
-+------------+--------------------------------+--------+---------------+--------------------------+
-| *disp_min* | minimal disparity              | int    |               | Yes                      |
-+------------+--------------------------------+--------+---------------+--------------------------+
-| *disp_max* | maximal disparity              | int    |               | Yes                      |
-+------------+--------------------------------+--------+---------------+--------------------------+
-| *ref_mask* | path to the reference mask     | string | "none"        | No                       |
-+------------+--------------------------------+--------+---------------+--------------------------+
-| *sec_mask* | path to the secondary mask     | string | "none"        | No                       |
-+------------+--------------------------------+--------+---------------+--------------------------+
++----------------+-----------------------------------------------------------+---------------+---------------+----------+
+| Name           | Description                                               | Type          | Default value | Required |
++================+===========================================================+===============+===============+==========+
+|*img_ref*       | Path to the reference image                               | string        |               | Yes      |
++----------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *img_sec*      | Path to the secondary image                               | string        |               | Yes      |
++----------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *disp_min*     | minimal disparity                                         | int or string |               | Yes      |
++----------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *disp_max*     | maximal disparity                                         | int or string |               | Yes      |
++----------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *ref_mask*     | path to the reference mask                                | string        | "none"        | No       |
++----------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *sec_mask*     | path to the secondary mask                                | string        | "none"        | No       |
++----------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *disp_min_sec* | Path to the minimal disparity grid of the secondary image | string        | "none"        | No       |
++----------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *disp_max_sec* | Path to the maximal disparity grid of the secondary image | string        | "none"        | No       |
++----------------+-----------------------------------------------------------+---------------+---------------+----------+
+
+.. note::
+    - Parameters *disp_min* and *disp_max* can be the disparity range (type int) or the path to the grids
+      that contain the minimum and maximum disparity of a pixel (type string).
+    - If *disp_min* and *disp_max* are integers, then the range of disparities is fixed. The minimal and maximal
+      disparity of the secondary image is automatically calculated : *disp_min_sec* = - *disp_max* and *disp_max_sec* = - *disp_min*.
+    - If *disp_min* or *disp_max* are strings, that means they are grids of disparities which have the same size as the input images.
+      Each pixel (x,y) of the grid corresponds to a local disparity (min for disp_min and max for disp_max) related to the same pixel (x, y) of the image.
+    - Cross-checking step is not applicable if *disp_min*, *disp_max* are path to the reference grids and *disp_min_sec*, *disp_max_sec* are none.
+
 
 .. _image_parameters:
 

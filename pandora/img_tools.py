@@ -28,7 +28,7 @@ import numpy as np
 import logging
 from scipy.ndimage.interpolation import zoom
 import rasterio
-from typing import Dict, List
+from typing import Dict, List, Union
 
 
 def read_img(img: str, no_data: float, cfg: Dict, mask: xr.Dataset = None) -> xr.Dataset:
@@ -283,3 +283,23 @@ def compute_std_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
     # Avoid very small values
     var[np.where(var < (10 ** (-15) * abs(mean_power_two)))] = 0
     return np.sqrt(var)
+
+
+def read_disp(disparity: Union[None, int, str]) -> Union[None, int, np.ndarray]:
+    """
+    Read the disparity :
+        - if cfg_disp is the path of a disparity grid, read and return the grid (type numpy array)
+        - else return the value of cfg_disp
+
+    :param disparity: disparity, or path to the disparity grid
+    :type disparity: None, int or str
+    :return: the disparity
+    :rtype: int or np.ndarray
+    """
+    if type(disparity) == str:
+        disp_ = rasterio.open(disparity)
+        data_disp = disp_.read(1)
+    else:
+        data_disp = disparity
+
+    return data_disp

@@ -101,7 +101,7 @@ def to_disp(cv: xr.Dataset, invalid_value: float = 0, img_ref: xr.Dataset = None
     return disp_map
 
 
-def validity_mask(disp: xr.Dataset, img_ref: xr.Dataset, img_sec: xr.Dataset, cv: xr.Dataset = None, **cfg: int) -> xr.Dataset:
+def validity_mask(disp: xr.Dataset, img_ref: xr.Dataset, img_sec: xr.Dataset, cv: xr.Dataset, **cfg: int) -> xr.Dataset:
     """
     Create the validity mask of the disparity map
 
@@ -166,6 +166,25 @@ def validity_mask(disp: xr.Dataset, img_ref: xr.Dataset, img_sec: xr.Dataset, cv
     # Invalid pixel : the disparity interval is missing in the secondary image ( disparity range
     # outside the image )
     disp['validity_mask'].data[:, bit_1] += PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING
+
+    # The disp_min and disp_max used to search missing disparity interval are not the local disp_min and disp_max in
+    # case of a variable range of disparities. So there may be pixels that have missing disparity range (all cost are
+    # np.nan), but are not detected in the code block above. To find the pixels that have a missing disparity range, we
+    # search in the cost volume pixels where cost_volume(x,y, for all d) = np.nan
+    indices_nan = np.isnan(cv['cost_volume'].data)
+    missing_disparity_range = np.min(indices_nan, axis=2)
+    missing_range_y, missing_range_x = np.where(missing_disparity_range == True)
+
+    # Mask the positions which have an missing disparity range, not already taken into account
+    condition_to_mask = (disp['validity_mask'].data[missing_range_y, missing_range_x] &
+                         PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING) == 0
+    masking_value = disp['validity_mask'].data[missing_range_y, missing_range_x] + \
+                    PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING
+    no_masking_value = disp['validity_mask'].data[missing_range_y, missing_range_x]
+
+    disp['validity_mask'].data[missing_range_y, missing_range_x] = np.where(condition_to_mask,
+                                                                            masking_value,
+                                                                            no_masking_value)
 
     if 'msk' in img_ref.data_vars:
         _, r_mask = xr.align(disp['validity_mask'], img_ref['msk'])
