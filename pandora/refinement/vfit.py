@@ -107,8 +107,8 @@ class Vfit(refinement.AbstractRefinement):
                 - interpolated_coeff 2D xarray.DataArray (row, col) that contains the refined cost
         :rtype: tuple(Dataset cv, Dataset disp)
         """
-        d_min = cv.coords['disp'].data.astype(float)[0]
-        d_max = cv.coords['disp'].data.astype(float)[-1]
+        d_min = cv.coords['disp'].data[0]
+        d_max = cv.coords['disp'].data[-1]
         subpixel = cv.attrs['subpixel']
         measure = cv.attrs['type_measure']
 
@@ -158,8 +158,8 @@ class Vfit(refinement.AbstractRefinement):
                 - interpolated_coeff 2D xarray.DataArray (row, col) that contains the refined cost
         :rtype: Dataset
         """
-        d_min = cv_ref.coords['disp'].data.astype(float)[0]
-        d_max = cv_ref.coords['disp'].data.astype(float)[-1]
+        d_min = cv_ref.coords['disp'].data[0]
+        d_max = cv_ref.coords['disp'].data[-1]
         subpixel = cv_ref.attrs['subpixel']
         measure = cv_ref.attrs['type_measure']
 
