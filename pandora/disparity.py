@@ -167,22 +167,22 @@ def validity_mask(disp: xr.Dataset, img_ref: xr.Dataset, img_sec: xr.Dataset, cv
     # outside the image )
     disp['validity_mask'].data[:, bit_1] += PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING
 
-    # The disp_min and disp_max used to mask the validity_mask before are not the local disp_min and disp_max in case
-    # of a variable range of disparities. To mask the invalid disparity range, the local disp_min and disp_max have to
-    # be taken into account.
-    # Invalid range
+    # The disp_min and disp_max used to search missing disparity interval are not the local disp_min and disp_max in
+    # case of a variable range of disparities. So there may be pixels that have missing disparity range (all cost are
+    # np.nan), but are not detected in the code block above. To find the pixels that have a missing disparity range, we
+    # search in the cost volume pixels where cost_volume(x,y, for all d) = np.nan
     indices_nan = np.isnan(cv['cost_volume'].data)
-    invalid_mc = np.min(indices_nan, axis=2)
-    invalid_range_y, invalid_range_x = np.where(invalid_mc == True)
+    missing_disparity_range = np.min(indices_nan, axis=2)
+    missing_range_y, missing_range_x = np.where(missing_disparity_range == True)
 
-    # Mask the positions which have an invalid disparity range, not already taken into account
-    condition_to_mask = (disp['validity_mask'].data[invalid_range_y, invalid_range_x] &
+    # Mask the positions which have an missing disparity range, not already taken into account
+    condition_to_mask = (disp['validity_mask'].data[missing_range_y, missing_range_x] &
                          PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING) == 0
-    masking_value = disp['validity_mask'].data[invalid_range_y, invalid_range_x] + \
+    masking_value = disp['validity_mask'].data[missing_range_y, missing_range_x] + \
                     PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING
-    no_masking_value = disp['validity_mask'].data[invalid_range_y, invalid_range_x]
+    no_masking_value = disp['validity_mask'].data[missing_range_y, missing_range_x]
 
-    disp['validity_mask'].data[invalid_range_y, invalid_range_x] = np.where(condition_to_mask,
+    disp['validity_mask'].data[missing_range_y, missing_range_x] = np.where(condition_to_mask,
                                                                             masking_value,
                                                                             no_masking_value)
 
