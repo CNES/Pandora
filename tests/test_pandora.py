@@ -131,7 +131,7 @@ class TestPandora(unittest.TestCase):
         occlusion = np.ones((ref['validity_mask'].shape[0], ref['validity_mask'].shape[1]))
         occlusion[ref['validity_mask'].data >= 512] = 0
 
-        if self.error_mask(occlusion, self.occlusion) > 0.15:
+        if self.error_mask(occlusion, self.occlusion) > 0.16:
             raise AssertionError
 
         # Check the secondary disparity map
