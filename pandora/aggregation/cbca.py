@@ -276,8 +276,6 @@ def cbca_step_1(cv: np.ndarray) -> np.ndarray:
 
     for y in range(ny_):
         for x in range(nx_):
-            if x - 1 == -1:
-                step1[y, x] = 0
             # Do not propagate nan
             if not np.isnan(cv[y, x]):
                 step1[y, x] = step1[y, x - 1] + cv[y, x]
