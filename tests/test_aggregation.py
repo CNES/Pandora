@@ -74,6 +74,7 @@ class TestAggregation(unittest.TestCase):
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 2})
         sad = stereo_matcher.compute_cost_volume(img_ref=self.ref, img_sec=self.sec, disp_min=-1, disp_max=1,
                                                  **{'valid_pixels': 0, 'no_data': 1})
+        sad = stereo_matcher.cv_masked(self.ref, self.sec, sad, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
 
         # Computes the cost aggregation with the cross-based cost aggregation method,
         # with cbca_intensity=5 and cbca_distance=3
@@ -231,6 +232,7 @@ class TestAggregation(unittest.TestCase):
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
         sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1,
                                                  **{'valid_pixels': 0, 'no_data': 1})
+        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                    'cbca_intensity': 5., 'cbca_distance': 3})
@@ -267,6 +269,7 @@ class TestAggregation(unittest.TestCase):
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
         sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1)
+        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                    'cbca_intensity': 5., 'cbca_distance': 3})
@@ -310,6 +313,7 @@ class TestAggregation(unittest.TestCase):
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
         sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1,
                                                  **{'valid_pixels': 0, 'no_data': 1})
+        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                    'cbca_intensity': 5., 'cbca_distance': 3})
@@ -394,6 +398,7 @@ class TestAggregation(unittest.TestCase):
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
         sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1,
                                                  **{'valid_pixels': 0, 'no_data': 1})
+        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                    'cbca_intensity': 6., 'cbca_distance': 3})
@@ -479,6 +484,7 @@ class TestAggregation(unittest.TestCase):
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 2})
         sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1,
                                                  **{'valid_pixels': 0, 'no_data': 1})
+        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                    'cbca_intensity': 5., 'cbca_distance': 3})
@@ -537,6 +543,7 @@ class TestAggregation(unittest.TestCase):
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 2})
         sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1,
                                                  **{'valid_pixels': 0, 'no_data': 1})
+        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                    'cbca_intensity': 6., 'cbca_distance': 3})
@@ -596,6 +603,7 @@ class TestAggregation(unittest.TestCase):
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
         sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1,
                                                  **{'valid_pixels': 0, 'no_data': 1})
+        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                       'cbca_intensity': 5., 'cbca_distance': 3})
