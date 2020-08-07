@@ -375,8 +375,8 @@ class CrossChecking(AbstractValidation):
             disp_sec = np.full(index.shape, np.inf, dtype=np.float32)
             disp_sec[inside_col_disp] = dataset_sec['disparity_map'].data[row, index[inside_col_disp].astype(int)]
 
-            # Check if Disp_sec(i + d) == -d
-            comp = (disp_sec == np.tile(-1 * disparity_range, (len(col_ref[inside_sec][invalid]), 1)).astype(
+            # Check if rint(Disp_sec(i + d)) == -d
+            comp = (np.rint(disp_sec) == np.tile(-1 * disparity_range, (len(col_ref[inside_sec][invalid]), 1)).astype(
                 np.float32))
             comp = np.sum(comp, axis=1)
             comp[comp > 1] = 1
