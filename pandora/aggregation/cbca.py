@@ -236,10 +236,15 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
 
                 # Since the interpolation of the secondary image is of order 1, the shifted secondary mask corresponds
                 # to an aggregation of two columns of the secondary mask
+
+                # Create a sliding window of shape 2 using as_strided function : this function create a new a view (by
+                # manipulating data pointer)of the shift_mask array with a different shape. The new view pointing to the
+                # same memory block as shift_mask so it does not consume any additional memory.
                 str_row, str_col = shift_mask.strides
                 shape_windows = (shift_mask.shape[0], shift_mask.shape[1] - 1, 2)
                 strides_windows = (str_row, str_col, str_col)
-                aggregation_window = np.lib.stride_tricks.as_strided(shift_mask, shape_windows, strides_windows)
+                aggregation_window = np.lib.stride_tricks.as_strided(shift_mask, shape_windows, strides_windows,
+                                                                     writeable=False)
                 shift_mask = np.sum(aggregation_window, 2)
                 sec_masked += shift_mask
 

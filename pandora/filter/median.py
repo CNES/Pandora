@@ -131,13 +131,14 @@ class MedianFilter(filter.AbstractFilter):
         invalid = np.isnan(data_median)
         ny_, nx_ = data.shape
 
-        # Created a view of each window, by manipulating the internal data structure of array
-        # The view allow to looking at the array data in memory in a new way, without additional cost on the memory.
+        # Create a sliding window of using as_strided function : this function create a new a view (by manipulating
+        # data pointer) of the data array with a different shape. The new view pointing to the same memory block as
+        # data so it does not consume any additional memory.
         str_row, str_col = data.strides
         shape_windows = (
             ny_ - (self._filter_size - 1), nx_ - (self._filter_size - 1), self._filter_size, self._filter_size)
         strides_windows = (str_row, str_col, str_row, str_col)
-        aggregation_window = np.lib.stride_tricks.as_strided(data, shape_windows, strides_windows)
+        aggregation_window = np.lib.stride_tricks.as_strided(data, shape_windows, strides_windows, writeable=False)
 
         radius = int(self._filter_size / 2)
 
