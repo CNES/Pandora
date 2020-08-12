@@ -411,12 +411,15 @@ def cross_support(image: np.ndarray, len_arms: int, intensity: float) -> np.ndar
     :rtype:  3D np.array ( row, col, [left, right, top, bot] ), dtype=np.int16
     """
     ny_, nx_ = image.shape
+    # By default, all cross supports are 0
     cross = np.zeros((ny_, nx_, 4), dtype=np.int16)
 
     for y in range(ny_):
         for x in range(nx_):
 
-            # If the pixel is valid compute the cross support
+            # If the pixel is valid (np.isfinite = True) compute the cross support
+            # Else (np.isfinite = False) the pixel is not valid (no data or invalid) and the cross support value is 0
+            # for the 4 arms (default value of the variable cross).
             if np.isfinite(image[y, x]):
                 left_len = 0
                 left = x
@@ -454,7 +457,4 @@ def cross_support(image: np.ndarray, len_arms: int, intensity: float) -> np.ndar
                 # enforces a minimum support region of 3×3 if pixels are valid
                 cross[y, x, 3] = max(bot_len, 1 * (y < ny_ - 1) * np.isfinite(image[bot, x]))
 
-            # If the pixel is not valid (no data or invalid) the cross support value is 0 for the 4 arms
-            else:
-                cross[y, x, 0] = 0
     return cross
