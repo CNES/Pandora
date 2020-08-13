@@ -42,7 +42,7 @@ requirements = ['numpy',
                 'nose2',
                 'json-checker',
                 'numba>=0.47.*',
-                'opencv-python']
+                'opencv-python-headless']
 
 
 def readme():
