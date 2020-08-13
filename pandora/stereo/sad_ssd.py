@@ -246,13 +246,14 @@ class SadSsd(stereo.AbstractStereo):
         """
         nb_disp, nx_, ny_ = cost_volume.shape
 
-        # Created a view of each window, by manipulating the internal data structure of array
-        # The view allow to looking at the array data in memory in a new way, without additional cost on the memory.
-        # str_row, str_col, str_disp = cost_volume.strides
+        # Create a sliding window of using as_strided function : this function create a new a view (by manipulating
+        # data pointer) of the cost_volume array with a different shape. The new view pointing to the same memory block
+        # as cost_volume so it does not consume any additional memory.
         str_disp, str_col, str_row = cost_volume.strides
 
         shape_windows = (self._window_size, self._window_size, nb_disp, nx_ - (self._window_size - 1), ny_ - (self._window_size - 1))
         strides_windows = (str_row, str_col, str_disp, str_col, str_row)
-        aggregation_window = np.lib.stride_tricks.as_strided(cost_volume, shape_windows, strides_windows)
+        aggregation_window = np.lib.stride_tricks.as_strided(cost_volume, shape_windows, strides_windows,
+                                                             writeable=False)
         cost_volume = np.sum(aggregation_window, (0, 1))
         return cost_volume

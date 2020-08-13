@@ -88,6 +88,7 @@ class TestStereo(unittest.TestCase):
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'ssd', 'window_size': 5, 'subpix': 1})
         ssd = stereo_matcher.compute_cost_volume(img_ref=self.ref, img_sec=self.sec, disp_min=-1, disp_max=1,
                                                  **{'valid_pixels': 0, 'no_data': 1})
+        ssd = stereo_matcher.cv_masked(self.ref, self.sec, ssd, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
 
         # Check if the calculated sd cost is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(ssd['cost_volume'].sel(disp=0), ssd_ground_truth)
@@ -119,6 +120,7 @@ class TestStereo(unittest.TestCase):
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 5, 'subpix': 1})
         sad = stereo_matcher.compute_cost_volume(img_ref=self.ref, img_sec=self.sec, disp_min=-1, disp_max=1,
                                                  **{'valid_pixels': 0, 'no_data': 1})
+        sad = stereo_matcher.cv_masked(self.ref, self.sec, sad, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
 
         # Check if the calculated ad cost is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(sad['cost_volume'].sel(disp=0), sad_ground_truth)
@@ -158,6 +160,7 @@ class TestStereo(unittest.TestCase):
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'census', 'window_size': 3, 'subpix': 1})
         census = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1,
                                                     **{'valid_pixels': 0, 'no_data': 1})
+        census = stereo_matcher.cv_masked(ref, sec, census, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
 
         # Check if the calculated census cost is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(census['cost_volume'].sel(disp=-1), census_ground_truth_d1)
@@ -223,6 +226,7 @@ class TestStereo(unittest.TestCase):
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
         cv = stereo_matcher.compute_cost_volume(ref, sec, disp_min=-2, disp_max=1,
                                                 **{'valid_pixels': 0, 'no_data': 1})
+        cv = stereo_matcher.cv_masked(ref, sec, cv, -2, 1, **{'valid_pixels': 0, 'no_data': 1})
 
         # Check if the calculated mean is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv['cost_volume'].data, ground_truth)
@@ -243,6 +247,7 @@ class TestStereo(unittest.TestCase):
         # compute with compute_cost_volume
         cv = stereo_matcher.compute_cost_volume(self.ref, self.sec, disp_min=-2, disp_max=1,
                                                 **{'valid_pixels': 0, 'no_data': 1})
+        cv = stereo_matcher.cv_masked(self.ref, self.sec, cv, -2, 1, **{'valid_pixels': 0, 'no_data': 1})
 
         # Check if the calculated confidence_measure is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv['confidence_measure'].data, std_bright_ground_truth)
@@ -274,6 +279,7 @@ class TestStereo(unittest.TestCase):
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'zncc', 'window_size': 5, 'subpix': 1})
         cost_volume_zncc = stereo_matcher.compute_cost_volume(self.ref, self.sec, disp_min=-1, disp_max=1,
                                                               **{'valid_pixels': 0, 'no_data': 1})
+        cost_volume_zncc = stereo_matcher.cv_masked(self.ref, self.sec, cost_volume_zncc, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
 
         # Ground truth zncc cost for the disparity -1
         x = self.ref['im'].data[:, 1:]
@@ -312,7 +318,8 @@ class TestStereo(unittest.TestCase):
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 2})
         cv_zncc_subpixel = stereo_matcher.compute_cost_volume(ref, sec, disp_min=-2, disp_max=2,
                                                               **{'valid_pixels': 0, 'no_data': 1})
-
+        cv_zncc_subpixel = stereo_matcher.cv_masked(ref, sec, cv_zncc_subpixel, -2, 1,
+                                                    **{'valid_pixels': 0, 'no_data': 1})
         # Test the disparity range
         disparity_range_compute = cv_zncc_subpixel.coords['disp'].data
         disparity_range_ground_truth = [-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]

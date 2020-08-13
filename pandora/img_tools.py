@@ -157,11 +157,13 @@ def census_transform(image: xr.Dataset, window_size: int) -> xr.Dataset:
     ny_, nx_ = image['im'].shape
     border = int((window_size - 1) / 2)
 
-    # Create a view of each window, by manipulating the internal data structure of array
+    # Create a sliding window of using as_strided function : this function create a new a view (by manipulating data
+    #  pointer) of the image array with a different shape. The new view pointing to the same memory block as
+    # image so it does not consume any additional memory.
     str_row, str_col = image['im'].data.strides
     shape_windows = (ny_ - (window_size - 1), nx_ - (window_size - 1), window_size, window_size)
     strides_windows = (str_row, str_col, str_row, str_col)
-    windows = np.lib.stride_tricks.as_strided(image['im'].data, shape_windows, strides_windows)
+    windows = np.lib.stride_tricks.as_strided(image['im'].data, shape_windows, strides_windows, writeable=False)
 
     # Pixels inside the image which can be centers of windows
     central_pixels = image['im'].data[border:-border, border:-border]
