@@ -42,8 +42,8 @@ requirements = ['numpy',
                 'nose2',
                 'json-checker',
                 'numba>=0.47.*',
-                'opencv-python-headless']
-
+                'opencv-python-headless',
+                'transitions']
 
 def readme():
     with open('README.md', "r", "utf-8") as f:
