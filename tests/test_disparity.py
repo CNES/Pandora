@@ -37,6 +37,7 @@ from pandora.img_tools import read_img
 import pandora
 
 from pandora.constants import *
+from pandora.state_machine import PandoraMachine
 
 
 class TestDisparity(unittest.TestCase):
@@ -234,38 +235,48 @@ class TestDisparity(unittest.TestCase):
         pandora_sec = read_img('tests/pandora/sec.png', no_data=np.nan, cfg=default_cfg['image'], mask=None)
 
         fast_cfg = {
-            "stereo": {
-                "stereo_method": "census"
-            },
-            "refinement": {
-                "refinement_method": "vfit"
-            },
-            "validation": {
-                "validation_method": "cross_checking",
-                "right_left_mode": "approximate",
-                "interpolated_disparity": "none",
-                "filter_interpolated_disparities": True
+            "pipeline": {
+                "stereo": {
+                    "stereo_method": "census"
+                },
+                "disparity": "wta",
+                "refinement": {
+                    "refinement_method": "vfit"
+                },
+                "validation": {
+                    "validation_method": "cross_checking",
+                    "right_left_mode": "approximate",
+                    "interpolated_disparity": "none",
+                    "filter_interpolated_disparities": True
+                }
             }
         }
+        pandora_machine_fast = PandoraMachine()
         cfg = pandora.JSON_checker.update_conf(default_cfg, fast_cfg)
-        ref, sec_fast = pandora.run(pandora_ref, pandora_sec, -60, 0, cfg)
+        ref, sec_fast = pandora.run(pandora_machine_fast, pandora_ref, pandora_sec, -60, 0, cfg)
 
         acc_cfg = {
-            "stereo": {
-                "stereo_method": "census"
-            },
-            "refinement": {
-                "refinement_method": "vfit"
-            },
-            "validation": {
-                "validation_method": "cross_checking",
-                "right_left_mode": "accurate",
-                "interpolated_disparity": "none",
-                "filter_interpolated_disparities": True
-            }
+            "pipeline":
+                {
+                    "stereo": {
+                        "stereo_method": "census"
+                    },
+                    "disparity": "wta",
+                    "refinement": {
+                        "refinement_method": "vfit"
+                    },
+                    "validation": {
+                        "validation_method": "cross_checking",
+                        "right_left_mode": "accurate",
+                        "interpolated_disparity": "none",
+                        "filter_interpolated_disparities": True
+                    }
+                }
         }
+
+        pandora_machine_acc = PandoraMachine()
         cfg = pandora.JSON_checker.update_conf(default_cfg, acc_cfg)
-        ref, sec_acc = pandora.run(pandora_ref, pandora_sec, -60, 0, cfg)
+        ref, sec_acc = pandora.run(pandora_machine_acc, pandora_ref, pandora_sec, -60, 0, cfg)
 
         # Check if the calculated disparity map in fast mode is equal to the disparity map in accurate mode
         np.testing.assert_array_equal(sec_fast['disparity_map'].data, sec_acc['disparity_map'].data)

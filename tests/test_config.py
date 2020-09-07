@@ -28,6 +28,8 @@ import json_checker
 
 import pandora.JSON_checker as JSON_checker
 
+from pandora.state_machine import PandoraMachine
+
 
 class TestConfig(unittest.TestCase):
     """
@@ -157,6 +159,7 @@ class TestConfig(unittest.TestCase):
         Test the method check_conf
         """
         # Check the configuration returned with reference disparity grids
+        pandora_machine = PandoraMachine()
         cfg = {
             "input": {
                 "img_ref": "tests/pandora/ref.png",
@@ -164,13 +167,15 @@ class TestConfig(unittest.TestCase):
                 "disp_min": "tests/pandora/disp_min_grid.tif",
                 "disp_max": "tests/pandora/disp_max_grid.tif"
             },
-            "stereo": {
-                "stereo_method": "zncc",
-                "window_size": 5,
-                "subpix": 2
+            "pipeline": {
+                "stereo": {
+                    "stereo_method": "zncc",
+                    "window_size": 5,
+                    "subpix": 2
+                }
             }
         }
-        cfg_return = JSON_checker.check_conf(cfg)
+        cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
         cfg_gt = {
             "image": {
                 "nodata1": 0,
@@ -189,28 +194,33 @@ class TestConfig(unittest.TestCase):
                 "disp_max": "tests/pandora/disp_max_grid.tif"
             },
             "invalid_disparity": -9999,
-            "stereo": {
-                "stereo_method": "zncc",
-                "window_size": 5,
-                "subpix": 2
-            },
-            "aggregation": {
-                "aggregation_method": "none"
-            },
-            "optimization": {
-                "optimization_method": "none"
-            },
-            "refinement": {
-                "refinement_method": "none"
-            },
-            "filter": {
-                "filter_method": "none"
-            },
-            "validation": {
-                "validation_method": "none",
-                "interpolated_disparity": "none"
+            "pipeline": {
+                "stereo": {
+                    "stereo_method": "zncc",
+                    "window_size": 5,
+                    "subpix": 2
+                },
+                "aggregation": {
+                    "aggregation_method": "none"
+                },
+                "optimization": {
+                    "optimization_method": "none"
+                },
+                "disparity": "wta",
+                "refinement": {
+                    "refinement_method": "none"
+                },
+                "filter": {
+                    "filter_method": "none"
+                },
+                "validation": {
+                    "validation_method": "none",
+                    "interpolated_disparity": "none"
+                }
             }
+
         }
+
         assert (cfg_return == cfg_gt)
 
         # Check the configuration returned with reference and secondary disparity grids
@@ -223,13 +233,16 @@ class TestConfig(unittest.TestCase):
                 "disp_min_sec": "tests/pandora/disp_min_grid.tif",
                 "disp_max_sec": "tests/pandora/disp_max_grid.tif"
             },
-            "stereo": {
-                "stereo_method": "zncc",
-                "window_size": 5,
-                "subpix": 2
+            "pipeline": {
+                "stereo": {
+                    "stereo_method": "zncc",
+                    "window_size": 5,
+                    "subpix": 2
+                }
             }
+
         }
-        cfg_return = JSON_checker.check_conf(cfg)
+        cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
         cfg_gt = {
             "image": {
                 "nodata1": 0,
@@ -248,28 +261,34 @@ class TestConfig(unittest.TestCase):
                 "disp_max": "tests/pandora/disp_max_grid.tif"
             },
             "invalid_disparity": -9999,
-            "stereo": {
-                "stereo_method": "zncc",
-                "window_size": 5,
-                "subpix": 2
-            },
-            "aggregation": {
-                "aggregation_method": "none"
-            },
-            "optimization": {
-                "optimization_method": "none"
-            },
-            "refinement": {
-                "refinement_method": "none"
-            },
-            "filter": {
-                "filter_method": "none"
-            },
-            "validation": {
-                "validation_method": "none",
-                "interpolated_disparity": "none"
-            }
+            "pipeline":
+                {
+                    "stereo": {
+                        "stereo_method": "zncc",
+                        "window_size": 5,
+                        "subpix": 2
+                    },
+                    "aggregation": {
+                        "aggregation_method": "none"
+                    },
+                    "optimization": {
+                        "optimization_method": "none"
+                    },
+                    "disparity": "wta",
+                    "refinement": {
+                        "refinement_method": "none"
+                    },
+                    "filter": {
+                        "filter_method": "none"
+                    },
+                    "validation": {
+                        "validation_method": "none",
+                        "interpolated_disparity": "none"
+                    }
+                }
+
         }
+
         assert (cfg_return == cfg_gt)
 
         # Check the configuration returned with reference disparity grids and cross checking method
@@ -280,18 +299,21 @@ class TestConfig(unittest.TestCase):
                 "disp_min": "tests/pandora/disp_min_grid.tif",
                 "disp_max": "tests/pandora/disp_max_grid.tif"
             },
-            "stereo": {
-                "stereo_method": "zncc",
-                "window_size": 5,
-                "subpix": 2
-            },
-            "validation": {
-                "validation_method": "cross_checking"
-            }
+            "pipeline":
+                {
+                    "stereo": {
+                        "stereo_method": "zncc",
+                        "window_size": 5,
+                        "subpix": 2
+                    },
+                    "validation": {
+                        "validation_method": "cross_checking"
+                    }
+                }
         }
 
         # When reference disparities are grids and secondary are none, cross checking method cannot be used : the program exits
-        self.assertRaises(SystemExit, JSON_checker.check_conf, cfg)
+        self.assertRaises(SystemExit, JSON_checker.check_conf, cfg, pandora_machine)
 
         # Check the configuration returned with reference and secondary disparity grids and cross checking method
         cfg = {
@@ -303,17 +325,20 @@ class TestConfig(unittest.TestCase):
                 "disp_min_sec": "tests/pandora/disp_min_grid.tif",
                 "disp_max_sec": "tests/pandora/disp_max_grid.tif",
             },
-            "stereo": {
-                "stereo_method": "zncc",
-                "window_size": 5,
-                "subpix": 2
-            },
-            "validation": {
-                "validation_method": "cross_checking"
+            "pipeline": {
+                "stereo": {
+                    "stereo_method": "zncc",
+                    "window_size": 5,
+                    "subpix": 2
+                },
+                "validation": {
+                    "validation_method": "cross_checking"
+                }
             }
+
         }
         # When reference and secondary disparities are grids, cross checking method can be used
-        cfg_return = JSON_checker.check_conf(cfg)
+        cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
         cfg_gt = {
             "image": {
                 "nodata1": 0,
@@ -332,31 +357,36 @@ class TestConfig(unittest.TestCase):
                 "disp_max": "tests/pandora/disp_max_grid.tif"
             },
             "invalid_disparity": -9999,
-            "stereo": {
-                "stereo_method": "zncc",
-                "window_size": 5,
-                "subpix": 2
-            },
-            "aggregation": {
-                "aggregation_method": "none"
-            },
-            "optimization": {
-                "optimization_method": "none"
-            },
-            "refinement": {
-                "refinement_method": "none"
-            },
-            "filter": {
-                "filter_method": "none"
-            },
-            "validation": {
-                "validation_method": "cross_checking",
-                'cross_checking_threshold': 1.0,
-                'right_left_mode': 'accurate',
-                "interpolated_disparity": "none",
-                'filter_interpolated_disparities': True
+            "pipeline": {
+                "stereo": {
+                    "stereo_method": "zncc",
+                    "window_size": 5,
+                    "subpix": 2
+                },
+                "aggregation": {
+                    "aggregation_method": "none"
+                },
+                "optimization": {
+                    "optimization_method": "none"
+                },
+                "disparity": "wta",
+                "refinement": {
+                    "refinement_method": "none"
+                },
+                "filter": {
+                    "filter_method": "none"
+                },
+                "validation": {
+                    "validation_method": "cross_checking",
+                    'cross_checking_threshold': 1.0,
+                    'right_left_mode': 'accurate',
+                    "interpolated_disparity": "none",
+                    'filter_interpolated_disparities': True
+                }
             }
+
         }
+
         assert (cfg_return == cfg_gt)
 
 

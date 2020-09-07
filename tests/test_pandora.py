@@ -37,6 +37,7 @@ from pandora.img_tools import read_img
 from pandora import import_plugin
 from tempfile import TemporaryDirectory
 import pandora.common as common
+from pandora.state_machine import PandoraMachine
 
 
 class TestPandora(unittest.TestCase):
@@ -92,36 +93,41 @@ class TestPandora(unittest.TestCase):
 
         """
         user_cfg = {
-            "stereo": {
-                "stereo_method": "zncc",
-                "window_size": 5,
-                "subpix": 2
-            },
-            "aggregation": {
-                "aggregation_method": "none"
-            },
-            "optimization": {
-                "optimization_method": "none"
-            },
-            "refinement": {
-                "refinement_method": "vfit"
-            },
-            "filter": {
-                "filter_method": "median"
-            },
-            "validation": {
-                "validation_method": "cross_checking",
-                "right_left_mode": "accurate",
-                "interpolated_disparity": "none",
-                "filter_interpolated_disparities": True
-            }
+            "pipeline":
+                {
+                    "stereo": {
+                        "stereo_method": "zncc",
+                        "window_size": 5,
+                        "subpix": 2
+                    },
+                    "aggregation": {
+                        "aggregation_method": "none"
+                    },
+                    "optimization": {
+                        "optimization_method": "none"
+                    },
+                    "disparity": "wta",
+                    "refinement": {
+                        "refinement_method": "vfit"
+                    },
+                    "filter": {
+                        "filter_method": "median"
+                    },
+                    "validation": {
+                        "validation_method": "cross_checking",
+                        "right_left_mode": "accurate",
+                        "interpolated_disparity": "none",
+                        "filter_interpolated_disparities": True
+                    }
+                }
         }
+        pandora_machine = PandoraMachine()
 
         # Update the user configuration with default values
         cfg = pandora.JSON_checker.update_conf(pandora.JSON_checker.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        ref, sec = pandora.run(self.ref, self.sec, -60, 0, cfg)
+        ref, sec = pandora.run(pandora_machine, self.ref, self.sec, -60, 0, cfg)
 
         # Check the reference disparity map
         if self.error(ref['disparity_map'].data, self.disp_ref, 1) > 0.20:
@@ -171,35 +177,42 @@ class TestPandora(unittest.TestCase):
                 "disp_min": -2,
                 "disp_max": 2
             },
-            "stereo": {
-                "stereo_method": "census",
-                "window_size": 5,
-                "subpix": 1
-            },
-            "aggregation": {
-                "aggregation_method": "none"
-            },
-            "optimization": {
-                "optimization_method": "none"
-            },
-            "refinement": {
-                "refinement_method": "none"
-            },
-            "filter": {
-                "filter_method": "none"
-            },
-            "validation": {
-                "validation_method": "cross_checking",
-                "right_left_mode": "accurate",
-                "interpolated_disparity": "none",
-                "filter_interpolated_disparities": False
+            "pipeline": {
+                "stereo": {
+                    "stereo_method": "census",
+                    "window_size": 5,
+                    "subpix": 1
+                },
+                "aggregation": {
+                    "aggregation_method": "none"
+                },
+                "optimization": {
+                    "optimization_method": "none"
+                },
+                "disparity": "wta",
+                "filter": {
+                    "filter_method": "none"
+                },
+                "validation": {
+                    "validation_method": "cross_checking",
+                    "right_left_mode": "accurate",
+                    "interpolated_disparity": "none",
+                    "filter_interpolated_disparities": False
+                },
+                "refinement": {
+                    "refinement_method": "none"
+                }
             }
         }
+
+        pandora_machine = PandoraMachine()
+
         cfg = pandora.JSON_checker.update_conf(pandora.JSON_checker.default_short_configuration, user_cfg)
         import_plugin()
 
         # Run the Pandora pipeline
-        ref, sec = pandora.run(img_ref, img_sec, cfg['input']['disp_min'], cfg['input']['disp_max'], cfg)
+        ref, sec = pandora.run(pandora_machine,img_ref, img_sec, cfg['input']['disp_min'],
+                               cfg['input']['disp_max'], cfg)
 
         # Ground truth confidence measure
         gt_ref_indicator_stereo = np.array([[1.57175062, 1.46969385, 1.39484766, 1.6],
@@ -259,31 +272,38 @@ class TestPandora(unittest.TestCase):
         Test pandora with variable coordinate in dataset image
 
         """
+
         user_cfg = {
-            "stereo": {
-                "stereo_method": "census",
-                "window_size": 5,
-                "subpix": 2
-            },
-            "aggregation": {
-                "aggregation_method": "none"
-            },
-            "optimization": {
-                "optimization_method": "none"
-            },
-            "refinement": {
-                "refinement_method": "vfit"
-            },
-            "filter": {
-                "filter_method": "median"
-            },
-            "validation": {
-                "validation_method": "cross_checking",
-                "right_left_mode": "accurate",
-                "interpolated_disparity": "none",
-                "filter_interpolated_disparities": True
+            "pipeline":{
+                "stereo": {
+                    "stereo_method": "census",
+                    "window_size": 5,
+                    "subpix": 2
+                },
+                "aggregation": {
+                    "aggregation_method": "none"
+                },
+                "optimization": {
+                    "optimization_method": "none"
+                },
+                "disparity": "wta",
+                "refinement": {
+                    "refinement_method": "vfit"
+                },
+                "filter": {
+                    "filter_method": "median"
+                },
+                "validation": {
+                    "validation_method": "cross_checking",
+                    "right_left_mode": "accurate",
+                    "interpolated_disparity": "none",
+                    "filter_interpolated_disparities": True
+                }
             }
         }
+
+        pandora_machine = PandoraMachine()
+
         # Update the user configuration with default values
         cfg = pandora.JSON_checker.update_conf(pandora.JSON_checker.default_short_configuration, user_cfg)
 
@@ -291,7 +311,7 @@ class TestPandora(unittest.TestCase):
         sec_img = read_img('tests/pandora/sec.png', no_data=np.nan, cfg=cfg['image'], mask=None)
 
         # Run the pandora pipeline on images without modified coordinates
-        ref_origin, sec_origin = pandora.run(ref_img, sec_img, -60, 0, cfg)
+        ref_origin, sec_origin = pandora.run(pandora_machine, ref_img, sec_img, -60, 0, cfg)
 
         row_c = ref_img.coords['row'].data
         row_c += 41
@@ -302,7 +322,7 @@ class TestPandora(unittest.TestCase):
         sec_img.assign_coords(row=row_c, col=col_c)
 
         # Run the pandora pipeline on images with modified coordinates
-        ref_modified, sec_modified = pandora.run(ref_img, sec_img, -60, 0, cfg)
+        ref_modified, sec_modified = pandora.run(pandora_machine, ref_img, sec_img, -60, 0, cfg)
 
         # check if the disparity maps are equals
         np.testing.assert_array_equal(ref_origin['disparity_map'].values, ref_modified['disparity_map'].values)
@@ -322,26 +342,30 @@ class TestPandora(unittest.TestCase):
                 "disp_min_sec": "tests/pandora/sec_disp_min_grid.tif",
                 "disp_max_sec": "tests/pandora/sec_disp_max_grid.tif",
             },
-            "stereo": {
-                "stereo_method": "zncc",
-                "window_size": 5,
-                "subpix": 2
-            },
-            "aggregation": {
-                "aggregation_method": "none"
-            },
-            "optimization": {
-                "optimization_method": "none"
-            },
-            "refinement": {
-                "refinement_method": "vfit"
-            },
-            "filter": {
-                "filter_method": "median"
-            },
-            "validation": {
-                "validation_method": "cross_checking"
-            }
+            "pipeline":
+                {
+                    "stereo": {
+                        "stereo_method": "zncc",
+                        "window_size": 5,
+                        "subpix": 2
+                    },
+                    "aggregation": {
+                        "aggregation_method": "none"
+                    },
+                    "optimization": {
+                        "optimization_method": "none"
+                    },
+                    "disparity": "wta",
+                    "refinement": {
+                        "refinement_method": "vfit"
+                    },
+                    "filter": {
+                        "filter_method": "median"
+                    },
+                    "validation": {
+                        "validation_method": "cross_checking"
+                    }
+                }
         }
 
         # Create temporary directory
