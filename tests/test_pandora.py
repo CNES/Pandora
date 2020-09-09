@@ -100,12 +100,6 @@ class TestPandora(unittest.TestCase):
                         "window_size": 5,
                         "subpix": 2
                     },
-                    "aggregation": {
-                        "aggregation_method": "none"
-                    },
-                    "optimization": {
-                        "optimization_method": "none"
-                    },
                     "disparity": "wta",
                     "refinement": {
                         "refinement_method": "vfit"
@@ -115,9 +109,7 @@ class TestPandora(unittest.TestCase):
                     },
                     "validation": {
                         "validation_method": "cross_checking",
-                        "right_left_mode": "accurate",
-                        "interpolated_disparity": "none",
-                        "filter_interpolated_disparities": True
+                        "right_left_mode": "accurate"
                     }
                 }
         }
@@ -183,24 +175,10 @@ class TestPandora(unittest.TestCase):
                     "window_size": 5,
                     "subpix": 1
                 },
-                "aggregation": {
-                    "aggregation_method": "none"
-                },
-                "optimization": {
-                    "optimization_method": "none"
-                },
                 "disparity": "wta",
-                "filter": {
-                    "filter_method": "none"
-                },
                 "validation": {
                     "validation_method": "cross_checking",
-                    "right_left_mode": "accurate",
-                    "interpolated_disparity": "none",
-                    "filter_interpolated_disparities": False
-                },
-                "refinement": {
-                    "refinement_method": "none"
+                    "right_left_mode": "accurate"
                 }
             }
         }
@@ -280,12 +258,6 @@ class TestPandora(unittest.TestCase):
                     "window_size": 5,
                     "subpix": 2
                 },
-                "aggregation": {
-                    "aggregation_method": "none"
-                },
-                "optimization": {
-                    "optimization_method": "none"
-                },
                 "disparity": "wta",
                 "refinement": {
                     "refinement_method": "vfit"
@@ -295,9 +267,7 @@ class TestPandora(unittest.TestCase):
                 },
                 "validation": {
                     "validation_method": "cross_checking",
-                    "right_left_mode": "accurate",
-                    "interpolated_disparity": "none",
-                    "filter_interpolated_disparities": True
+                    "right_left_mode": "accurate"
                 }
             }
         }
@@ -348,12 +318,6 @@ class TestPandora(unittest.TestCase):
                         "stereo_method": "zncc",
                         "window_size": 5,
                         "subpix": 2
-                    },
-                    "aggregation": {
-                        "aggregation_method": "none"
-                    },
-                    "optimization": {
-                        "optimization_method": "none"
                     },
                     "disparity": "wta",
                     "refinement": {

@@ -158,7 +158,10 @@ class TestConfig(unittest.TestCase):
         """
         Test the method check_conf
         """
+
+
         # Check the configuration returned with reference disparity grids
+
         pandora_machine = PandoraMachine()
         cfg = {
             "input": {
@@ -172,9 +175,11 @@ class TestConfig(unittest.TestCase):
                     "stereo_method": "zncc",
                     "window_size": 5,
                     "subpix": 2
-                }
+                },
+                "disparity": "wta",
             }
         }
+
         cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
         cfg_gt = {
             "image": {
@@ -200,23 +205,7 @@ class TestConfig(unittest.TestCase):
                     "window_size": 5,
                     "subpix": 2
                 },
-                "aggregation": {
-                    "aggregation_method": "none"
-                },
-                "optimization": {
-                    "optimization_method": "none"
-                },
-                "disparity": "wta",
-                "refinement": {
-                    "refinement_method": "none"
-                },
-                "filter": {
-                    "filter_method": "none"
-                },
-                "validation": {
-                    "validation_method": "none",
-                    "interpolated_disparity": "none"
-                }
+                "disparity": "wta"
             }
 
         }
@@ -238,7 +227,8 @@ class TestConfig(unittest.TestCase):
                     "stereo_method": "zncc",
                     "window_size": 5,
                     "subpix": 2
-                }
+                },
+                "disparity": "wta"
             }
 
         }
@@ -268,23 +258,7 @@ class TestConfig(unittest.TestCase):
                         "window_size": 5,
                         "subpix": 2
                     },
-                    "aggregation": {
-                        "aggregation_method": "none"
-                    },
-                    "optimization": {
-                        "optimization_method": "none"
-                    },
-                    "disparity": "wta",
-                    "refinement": {
-                        "refinement_method": "none"
-                    },
-                    "filter": {
-                        "filter_method": "none"
-                    },
-                    "validation": {
-                        "validation_method": "none",
-                        "interpolated_disparity": "none"
-                    }
+                    "disparity": "wta"
                 }
 
         }
@@ -306,6 +280,7 @@ class TestConfig(unittest.TestCase):
                         "window_size": 5,
                         "subpix": 2
                     },
+                    "disparity": "wta",
                     "validation": {
                         "validation_method": "cross_checking"
                     }
@@ -331,6 +306,7 @@ class TestConfig(unittest.TestCase):
                     "window_size": 5,
                     "subpix": 2
                 },
+                "disparity": "wta",
                 "validation": {
                     "validation_method": "cross_checking"
                 }
@@ -363,25 +339,11 @@ class TestConfig(unittest.TestCase):
                     "window_size": 5,
                     "subpix": 2
                 },
-                "aggregation": {
-                    "aggregation_method": "none"
-                },
-                "optimization": {
-                    "optimization_method": "none"
-                },
                 "disparity": "wta",
-                "refinement": {
-                    "refinement_method": "none"
-                },
-                "filter": {
-                    "filter_method": "none"
-                },
                 "validation": {
                     "validation_method": "cross_checking",
                     'cross_checking_threshold': 1.0,
-                    'right_left_mode': 'accurate',
-                    "interpolated_disparity": "none",
-                    'filter_interpolated_disparities': True
+                    'right_left_mode': 'accurate'
                 }
             }
 

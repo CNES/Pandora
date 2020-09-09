@@ -245,12 +245,11 @@ class TestDisparity(unittest.TestCase):
                 },
                 "validation": {
                     "validation_method": "cross_checking",
-                    "right_left_mode": "approximate",
-                    "interpolated_disparity": "none",
-                    "filter_interpolated_disparities": True
+                    "right_left_mode": "approximate"
                 }
             }
         }
+
         pandora_machine_fast = PandoraMachine()
         cfg = pandora.JSON_checker.update_conf(default_cfg, fast_cfg)
         ref, sec_fast = pandora.run(pandora_machine_fast, pandora_ref, pandora_sec, -60, 0, cfg)
@@ -268,8 +267,6 @@ class TestDisparity(unittest.TestCase):
                     "validation": {
                         "validation_method": "cross_checking",
                         "right_left_mode": "accurate",
-                        "interpolated_disparity": "none",
-                        "filter_interpolated_disparities": True
                     }
                 }
         }
@@ -277,7 +274,6 @@ class TestDisparity(unittest.TestCase):
         pandora_machine_acc = PandoraMachine()
         cfg = pandora.JSON_checker.update_conf(default_cfg, acc_cfg)
         ref, sec_acc = pandora.run(pandora_machine_acc, pandora_ref, pandora_sec, -60, 0, cfg)
-
         # Check if the calculated disparity map in fast mode is equal to the disparity map in accurate mode
         np.testing.assert_array_equal(sec_fast['disparity_map'].data, sec_acc['disparity_map'].data)
 

@@ -249,7 +249,9 @@ def get_config_image(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
 
 def check_pipeline_section(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> Dict[str, dict]:
     """
-    Complete and check if the pipeline dictionary is correct
+    Check if the pipeline is correct by
+    - Checking the sequence of steps according to the machine transitions
+    - Checking parameters, define in dictionary, of each Pandora step
 
     :param user_cfg: pipeline user configuration
     :type user_cfg: dict
@@ -367,8 +369,9 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> Di
 
     # If reference disparities are grids of disparity and the secondary disparities are none, the cross-checking
     # method cannot be used
+
     if (type(cfg_input['input']['disp_min']) == str) and (cfg_input['input']['disp_min_sec'] is None) and \
-            (cfg_pipeline['pipeline']['validation']['validation_method'] != "none"):
+            ('validation' in cfg_pipeline['pipeline']):
         logging.error("The cross-checking step cannot be processed if disp_min, disp_max are paths to the reference "
                       "disparity grids and disp_sec_min, disp_sec_max are none.")
         sys.exit(1)
@@ -456,25 +459,6 @@ default_short_configuration_pipeline = {
     "invalid_disparity": -9999,
     "pipeline":
         {
-            "stereo": {
-                "stereo_method": "ssd"
-            },
-            "aggregation": {
-                "aggregation_method": "none"
-            },
-            "optimization": {
-                "optimization_method": "none"
-            },
-            "disparity": "wta",
-            "refinement": {
-                "refinement_method": "none"
-            },
-            "filter": {
-                "filter_method": "none"
-            },
-            "validation": {
-                "validation_method": "none"
-            }
         }
 }
 

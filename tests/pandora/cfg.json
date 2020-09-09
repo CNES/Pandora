@@ -15,12 +15,6 @@
     "window_size": 5,
     "subpix": 2
     },
-    "aggregation": {
-      "aggregation_method": "none"
-    },
-    "optimization": {
-      "optimization_method": "none"
-    },
     "disparity": "wta",
     "refinement": {
       "refinement_method": "vfit"

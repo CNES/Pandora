@@ -24,21 +24,6 @@ class PandoraMachine(Machine):
     PandoraMachine class to create and use a state machine
     """
 
-    cv = None
-    cv_right = None
-    ref_disparity = None
-    sec_disparity = None
-    disp_min = None
-    disp_max = None
-    disp_min_sec = None
-    disp_max_sec = None
-    img_ref = None
-    img_sec = None
-
-    steps_run = []
-    reference_pipeline = True
-    pipeline_cfg = {'pipeline': {}}
-
     _transitions_run = [
         {'trigger': 'stereo', 'source': 'begin', 'dest': 'cost_volume', 'after': 'stereo_run'},
         {'trigger': 'aggregation', 'source': 'cost_volume', 'dest': 'cost_volume', 'after': 'aggregation_run'},
@@ -110,6 +95,24 @@ class PandoraMachine(Machine):
         self.disp_min_sec = disp_min_sec
         self.disp_max_sec = disp_max_sec
 
+        # Reference cost volume
+        self.cv = None
+        # Secondary cost volume
+        self.cv_right = None
+        # Reference disparity map
+        self.ref_disparity = None
+        # Secondary disparity map
+        self.sec_disparity = None
+
+        # Pandora's pipeline configuration
+        self.pipeline_cfg = {'pipeline': {}}
+        # Reference_pipeline = Pipeline for reference (left) disparity computation. False when it's about
+        # secondary (right) disparity computation
+        self.reference_pipeline = True
+        # List of pandora steps that have been executed. Information to create the secondary disparity following the
+        # same pipeline that has been used to create the reference one.
+        self.steps_run = []
+
         # Define avalaible states
         states_ = ['begin', 'cost_volume', 'reference_disparity', 'reference_and_secondary_disparity', 'end']
 
@@ -146,7 +149,6 @@ class PandoraMachine(Machine):
                                                         **cfg['image'])
             self.cv_right = stereo_.cv_masked(self.img_sec, self.img_ref, self.cv_right, self.disp_min_sec,
                                               self.disp_max_sec, **cfg['image'])
-
 
     def disparity_run(self, cfg: Dict[str, dict], input_step: str):
         """
@@ -269,7 +271,8 @@ class PandoraMachine(Machine):
         :return:
         """
         validation_ = validation.AbstractValidation(**cfg['pipeline'][input_step])
-        interpolate_ = validation.AbstractInterpolation(**cfg['pipeline'][input_step])
+        if 'interpolated_disparity' in cfg:
+            interpolate_ = validation.AbstractInterpolation(**cfg['pipeline'][input_step])
         logging.info('Computing the right disparity map with the accurate method...')
 
         # Create the secondary map with the same pipeline as the reference
@@ -286,8 +289,9 @@ class PandoraMachine(Machine):
         self.sec_disparity = validation_.disparity_checking(self.sec_disparity, self.ref_disparity)
 
         # Interpolated mismatch and occlusions
-        self.ref_disparity = interpolate_.interpolated_disparity(self.ref_disparity)
-        self.sec_disparity = interpolate_.interpolated_disparity(self.sec_disparity)
+        if 'interpolated_disparity' in cfg:
+            self.ref_disparity = interpolate_.interpolated_disparity(self.ref_disparity)
+            self.sec_disparity = interpolate_.interpolated_disparity(self.sec_disparity)
 
         self.set_state('reference_and_secondary_disparity')
 
@@ -329,7 +333,7 @@ class PandoraMachine(Machine):
 
     def run(self, input_step: str, cfg: Dict[str, dict]):
         """
-        Check configuration and transitions
+        Run pandora step by triggering the corresponding machine transition
 
         :param input_step: step to trigger
         :type input_step: str
@@ -337,7 +341,6 @@ class PandoraMachine(Machine):
         :type  cfg: dict
         :return:
         """
-
         try:
             # There may be steps that are repeated several times, for example:
             #     "filter": {
@@ -362,7 +365,7 @@ class PandoraMachine(Machine):
         self.remove_transitions(self._transitions_run)
         self.set_state('begin')
         self.reference_pipeline = True
-
+        self.steps_run = []
 
     def stereo_check_conf(self, stereo_cfg: Dict[str, dict], input_step: str):
         """
@@ -453,9 +456,11 @@ class PandoraMachine(Machine):
         :type input_step: string
         :return:
         """
+
         validation_ = validation.AbstractValidation(**validation_cfg)
         self.pipeline_cfg['pipeline'][input_step] = validation_.cfg
-
+        if 'interpolated_disparity' in validation_cfg:
+            interpolate_ = validation.AbstractInterpolation(**validation_cfg)
 
     def check_conf(self, cfg: Dict[str, dict]):
         """
