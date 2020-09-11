@@ -358,7 +358,10 @@ class PandoraMachine(Machine):
             else:
                 self.trigger(input_step, cfg, input_step)
         except (MachineError, KeyError):
-            raise MachineError
+            print('\n A problem occurs during Pandora running ' + input_step +
+                  '. Be sure of your sequencement step  \n')
+            raise
+
 
     def run_exit(self):
 
@@ -494,8 +497,9 @@ class PandoraMachine(Machine):
                     self.trigger(input_step, cfg[input_step], input_step)
 
             except (MachineError, KeyError):
-                print("MachineError")
-                raise MachineError
+                print('\n Problem during Pandora checking configuration steps sequencing. '
+                    'Check your configuration file. \n')
+                raise
 
         # Remove transitions
         self.remove_transitions(self._transitions_check)

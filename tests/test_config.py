@@ -29,6 +29,8 @@ import json_checker
 import pandora.JSON_checker as JSON_checker
 
 from pandora.state_machine import PandoraMachine
+from transitions import MachineError
+import transitions
 
 
 class TestConfig(unittest.TestCase):
@@ -350,6 +352,32 @@ class TestConfig(unittest.TestCase):
         }
 
         assert (cfg_return == cfg_gt)
+
+    def test_check_pipeline_section_with_error(self):
+        """
+        Test the method check_input_section that must raise an error from PandoraMachine
+        """
+
+        cfg_pipeline = {
+            "pipeline": {
+                "stereo": {
+                    "stereo_method": "zncc",
+                    "window_size": 5,
+                    "subpix": 2
+                },
+                'filter': {
+                  'filter_method': 'median'
+                },
+                "disparity": "wta",
+                "validation": {
+                    "validation_method": "cross_checking"
+                }
+            }
+        }
+
+        pandora_machine = PandoraMachine()
+
+        self.assertRaises(MachineError, JSON_checker.check_pipeline_section, cfg_pipeline, pandora_machine)
 
 
 if __name__ == '__main__':
