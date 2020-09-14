@@ -13,7 +13,7 @@ Required dependencies
 * `netCDF4 <https://github.com/Unidata/netcdf4-python>`_
 * `numba <http://numba.pydata.org/>`_ (0.47.* or later)
 * `opencv-python <https://github.com/skvark/opencv-python>`_
-
+* `transitions <https://github.com/pytransitions/transitions>`_
 
 
 Instructions

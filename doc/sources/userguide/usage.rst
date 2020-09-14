@@ -39,27 +39,31 @@ Pandora works with JSON formatted data with the following nested structures.
       "input" : {
         ...
       },
-      "stereo" : {
-        ...
-      },
-      "aggregation" : {
-        ...
-      },
-      "optimization" : {
-        ...
-      },
-      "refinement": {
-        ...
-      },
-      "filter" : {
-       ...
-      },
-      "validation" : {
-        ...
-      },
+      {
+        "pipeline" : {
+          "stereo" : {
+            ...
+          },
+          "aggregation" : {
+            ...
+          },
+          "optimization" : {
+            ...
+          },
+          "refinement": {
+            ...
+          },
+          "filter" : {
+           ...
+          },
+          "validation" : {
+            ...
+          }
+      }
       "invalid_disparity": ...
     }
 
+"Pipeline" parameters define steps sequencing to be run. Pandora will check if sub-parameters of each mentioned step are correct.
 
 +---------------------+-----------------------------------+------+---------------+---------------------------+----------+
 | Name                | Description                       | Type | Default value | Sub structures            | Required |
@@ -70,15 +74,15 @@ Pandora works with JSON formatted data with the following nested structures.
 +---------------------+-----------------------------------+------+---------------+---------------------------+----------+
 | *stereo*            | Pixel and mask parameters         | dict |               | :ref:`stereo_parameters`  | Yes      |
 +---------------------+-----------------------------------+------+---------------+---------------------------+----------+
-| *aggregation*       | Aggregation step parameters       | dict |               | :ref:`aggreg_parameters`  | Yes      |
+| *aggregation*       | Aggregation step parameters       | dict |               | :ref:`aggreg_parameters`  | No       |
 +---------------------+-----------------------------------+------+---------------+---------------------------+----------+
-| *optimization*      | Optimization step parameters      | dict |               | :ref:`optim_parameters`   | Yes      |
+| *optimization*      | Optimization step parameters      | dict |               | :ref:`optim_parameters`   | No       |
 +---------------------+-----------------------------------+------+---------------+---------------------------+----------+
-| *refinement*        | Refinement step parameters        | dict |               | :ref:`refine_parameters`  | Yes      |
+| *refinement*        | Refinement step parameters        | dict |               | :ref:`refine_parameters`  | No       |
 +---------------------+-----------------------------------+------+---------------+---------------------------+----------+
-| *filter*            | Filtering step parameters         | dict |               | :ref:`filter_parameters`  | Yes      |
+| *filter*            | Filtering step parameters         | dict |               | :ref:`filter_parameters`  | No       |
 +---------------------+-----------------------------------+------+---------------+---------------------------+----------+
-| *validation*        | Validation step parameters        | dict |               | :ref:`valid_parameters`   | Yes      |
+| *validation*        | Validation step parameters        | dict |               | :ref:`valid_parameters`   | No       |
 +---------------------+-----------------------------------+------+---------------+---------------------------+----------+
 | *invalid disparity* | Disparity value for invalid pixel | int  | -99999        |                           | No       |
 +---------------------+-----------------------------------+------+---------------+---------------------------+----------+
@@ -143,7 +147,7 @@ Stereo parameters
 +-----------------+------------------------------------+--------+---------------+--------------------------------+----------+
 | Name            | Description                        | Type   | Default value | Available value                | Required |
 +=================+====================================+========+===============+================================+==========+
-| *stereo_method* | Similarity measure                 | string | "ssd"         | "ssd" , "sad", "census, "zncc" | Yes      |
+| *stereo_method* | Similarity measure                 | string |               | "ssd" , "sad", "census, "zncc" | Yes      |
 +-----------------+------------------------------------+--------+---------------+--------------------------------+----------+
 | *window_size*   | Window size for similarity measure | int    | 5             | Must be >0                     | No       |
 |                 |                                    |        |               |                                |          |
@@ -166,7 +170,7 @@ Aggregation parameters
 +----------------------+-----------------------------------------------+--------+---------------+-----------------+-------------------------------------+
 | Name                 | Description                                   | Type   | Default value | Available value | Required                            |
 +======================+===============================================+========+===============+=================+=====================================+
-| *aggregation_method* | Aggregation method                            | string | "none"        | "cbca"          | Yes                                 |
+| *aggregation_method* | Aggregation method                            | string |               | "cbca"          | Yes                                 |
 +----------------------+-----------------------------------------------+--------+---------------+-----------------+-------------------------------------+
 | *cbca_intensity*     | Maximum intensity difference between 2 points | float  | 30.0          | >0              | No. Only available if "cbca" method |
 +----------------------+-----------------------------------------------+--------+---------------+-----------------+-------------------------------------+
@@ -181,7 +185,7 @@ Optimization parameters
 +-----------------------+----------------------+--------+---------------+-------------------------------------+----------+
 | Name                  | Description          | Type   | Default value | Available value                     | Required |
 +=======================+======================+========+===============+=====================================+==========+
-| *optimization_method* | Optimization méthode | string | "none"        | "sgm" if plugin_libsgm is installed | Yes      |
+| *optimization_method* | Optimization méthode | string |               | "sgm" if plugin_libsgm is installed | Yes      |
 +-----------------------+----------------------+--------+---------------+-------------------------------------+----------+
 
 .. note:: If plugin_libsgm is installed, see the documentation of this package. There are subparameters for sgm method.
@@ -194,7 +198,7 @@ Refinement parameters
 +---------------------+-------------------+--------+---------------+---------------------+----------+
 | Name                | Description       | Type   | Default value | Available value     | Required |
 +=====================+===================+========+===============+=====================+==========+
-| *refinement_method* | Refinement method | string | "none"        | "vift", "quadratic" | Yes      |
+| *refinement_method* | Refinement method | string |               | "vift", "quadratic" | Yes      |
 +---------------------+-------------------+--------+---------------+---------------------+----------+
 
 .. _filter_parameters:
@@ -205,7 +209,7 @@ Filtering parameters
 +-----------------+----------------------------+--------+---------------+-----------------------+------------------------------------+
 | Name            | Description                | Type   | Default value | Available value       | Required                           |
 +=================+============================+========+===============+=======================+====================================+
-| *filter_method* | Filtering method           | string | "none"        | "median", "bilateral" | Yes                                |
+| *filter_method* | Filtering method           | string |               | "median", "bilateral" | Yes                                |
 +-----------------+----------------------------+--------+---------------+-----------------------+------------------------------------+
 | *filter_size*   | Filter's size              | int    | 3             | >= 1                  | No                                 |
 |                 |                            |        |               |                       | Only avalaible if median filter    |
@@ -226,15 +230,113 @@ Validation parameters
 +-----------------------------------+---------------------------------------------------------------------------------------------------------+--------+---------------+---------------------------+----------+
 | Name                              | Description                                                                                             | Type   | Default value | Available value           | Required |
 +===================================+=========================================================================================================+========+===============+===========================+==========+
-| *validation_method*               | Validation method                                                                                       | string | "none"        | "cross_checking"          | Yes      |
+| *validation_method*               | Validation method                                                                                       | string |               | "cross_checking"          | Yes      |
 +-----------------------------------+---------------------------------------------------------------------------------------------------------+--------+---------------+---------------------------+----------+
 | *right_left_mode*                 | Method for right disparity map computation                                                              | string | "accurate"    | "accurate"                | No       |
 |                                   | - if "accurate": right disparity map computed from scratch                                              |        |               |                           |          |
 +-----------------------------------+---------------------------------------------------------------------------------------------------------+--------+---------------+---------------------------+----------+
-| *interpolated_disparity*          | Interpolation method for filling occlusion and mismatches                                               | string | "none"        | "mc_cnn", "sgm"           | No       |
+| *interpolated_disparity*          | Interpolation method for filling occlusion and mismatches                                               | string |               | "mc_cnn", "sgm"           | No       |
 +-----------------------------------+---------------------------------------------------------------------------------------------------------+--------+---------------+---------------------------+----------+
-| *filter_interpolated_disparities* | Disparity map filtering. If activated, filtering method is the one defined on  :ref:`filter_parameters` | bool   | True          | False                     | No       |
-+-----------------------------------+---------------------------------------------------------------------------------------------------------+--------+---------------+---------------------------+----------+
+
+Sequencing of Pandora steps (Pandora Machine)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Moreover, Pandora will check if the requested steps sequencing is correct following the permitted
+transition defined by the Pandora Machine (`transitions <https://github.com/pytransitions/transitions>`_)
+
+Pandora Machine defines 4 possible states:
+ - begin
+ - cost_volume
+ - reference_disparity
+ - reference_and_secondary_disparity
+
+It starts at the begin state. To go from a state from another one, transitions are called and triggered
+by specific name. It corresponds to the name of Pandora steps you can write in configuration file.
+
+The following diagram highligts all states and possible transitions.
+
+    .. figure:: ../Images/Machine_state_diagram.png
+
+
+Examples
+--------
+
+SSD measurment and filtered disparity map
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Configuration to produce a disparity map, computed by SSD method, and filterd by
+median filter method.
+
+.. sourcecode:: text
+
+    {
+      "input": {
+        "ref_mask": null,
+        "sec_mask": null,
+        "disp_min_sec": null,
+        "disp_max_sec": null,
+        "img_ref": "img_ref.png",
+        "img_sec": "img_ref.png",
+        "disp_min": -100,
+        "disp_max": 100
+      },
+      "invalid_disparity": -9999,
+      "pipeline": {
+          "stereo": {
+            "stereo_method": "ssd",
+            "window_size": 5,
+            "subpix": 1
+          },
+        "disparity": "wta",
+        "filter": {
+                      "filter_method": "median"
+                    }
+
+     }
+    }
+
+An impossible sequencing
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. sourcecode:: text
+
+    {
+      "input": {
+        "ref_mask": null,
+        "sec_mask": null,
+        "disp_min_sec": null,
+        "disp_max_sec": null,
+        "img_ref": "img_ref.png",
+        "img_sec": "img_ref.png",
+        "disp_min": -100,
+        "disp_max": 100
+      },
+      "invalid_disparity": -9999,
+      "pipeline": {
+          "stereo": {
+            "stereo_method": "ssd",
+            "window_size": 5,
+            "subpix": 1
+          },
+        "filter": {
+                      "filter_method": "median"
+                    }
+        "disparity": "wta",
+     }
+    }
+
+With this configuration, you receive the following error
+
+.. sourcecode:: text
+
+    Problem during Pandora checking configuration steps sequencing. Check your configuration file.
+    (...)
+    transitions.core.MachineError: "Can't trigger event filter from state cost_volume!"
+
+Before the start, Pandora Machine is in the "begin" state. The configuration file defines *stereo* as
+the first step to be triggered. So, Pandora Machine go from *begin* state to *cost_volume* state.
+Next, the *filter* is going to be triggered but this is not possible. This step can be triggered only
+if the Pandora Machine is in *reference_disparity* or *reference_and_secondary_disparity*.
 
 
 Output
