@@ -11,8 +11,12 @@
     "window_size": 5,
     "subpix": 4
   },
-
-  "invalid_disparity": 0
-
+  "disparity": {
+    "disparity_method": "wta",
+    "invalid_disparity": "np.nan"
+  },
+  "resize": { 
+    "border_disparity": "np.nan"
+	}
   }
 }

@@ -202,9 +202,6 @@ def get_config_pipeline(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     """
     cfg = {}
 
-    if 'invalid_disparity' in user_cfg:
-        cfg['invalid_disparity'] = user_cfg['invalid_disparity']
-
     if 'pipeline' in user_cfg:
         cfg['pipeline'] = user_cfg['pipeline']
 
@@ -267,7 +264,6 @@ def check_pipeline_section(user_cfg: Dict[str, dict], pandora_machine: PandoraMa
     cfg = update_conf(cfg, pandora_machine.pipeline_cfg)
 
     configuration_schema = {
-        "invalid_disparity": Or(int, lambda x: np.isnan(x)),
         "pipeline": dict
     }
 
@@ -456,7 +452,6 @@ default_short_configuration_input = {
 }
 
 default_short_configuration_pipeline = {
-    "invalid_disparity": -9999,
     "pipeline":
         {
         }

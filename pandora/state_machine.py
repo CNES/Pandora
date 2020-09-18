@@ -1,9 +1,10 @@
 from transitions import MachineError
-from transitions import Machine
+from transitions.extensions import GraphMachine as Machine
 import logging
 import xarray as xr
 import numpy as np
 from typing import Dict, Tuple, Union
+from json_checker import Checker, Or
 
 from pandora import stereo
 from pandora import disparity
@@ -12,6 +13,7 @@ from pandora import refinement
 from pandora import aggregation
 from pandora import optimization
 from pandora import validation
+from pandora import common
 
 """
 This module contains class associated to the pandora state machine
@@ -33,12 +35,16 @@ class PandoraMachine(Machine):
          'after': 'filter_run'},
         {'trigger': 'refinement', 'source': 'reference_disparity', 'dest': 'reference_disparity',
          'after': 'refinement_run'},
+        {'trigger': 'resize', 'source': 'reference_disparity',
+         'dest': 'resized_disparity', 'after': 'resize_run_ref'},
         {'trigger': 'validation', 'source': 'reference_disparity', 'dest': 'reference_and_secondary_disparity',
          'after': 'validation_run'},
         {'trigger': 'filter', 'source': 'reference_and_secondary_disparity',
          'dest': 'reference_and_secondary_disparity', 'after': 'filter_run_ref_and_sec'},
         {'trigger': 'refinement', 'source': 'reference_and_secondary_disparity',
-         'dest': 'reference_and_secondary_disparity', 'after': 'refinement_run_ref_and_sec'}
+         'dest': 'reference_and_secondary_disparity', 'after': 'refinement_run_ref_and_sec'},
+        {'trigger': 'resize', 'source': 'reference_and_secondary_disparity',
+         'dest': 'resized_disparity', 'after': 'resize_run_ref_and_sec'},
     ]
 
     _transitions_check = [
@@ -53,13 +59,17 @@ class PandoraMachine(Machine):
          'after': 'filter_check_conf'},
         {'trigger': 'refinement', 'source': 'reference_disparity', 'dest': 'reference_disparity',
          'after': 'refinement_check_conf'},
+        {'trigger': 'resize', 'source': 'reference_disparity', 'dest': 'resized_disparity',
+         'after': 'resize_check_conf'},
         {'trigger': 'validation', 'source': 'reference_disparity', 'dest': 'reference_and_secondary_disparity',
          'after': 'validation_check_conf'},
         {'trigger': 'filter', 'source': 'reference_and_secondary_disparity',
          'dest': 'reference_and_secondary_disparity', 'after': 'filter_check_conf'},
         {'trigger': 'refinement', 'source': 'reference_and_secondary_disparity',
          'dest': 'reference_and_secondary_disparity',
-         'after': 'refinement_check_conf'}
+         'after': 'refinement_check_conf'},
+        {'trigger': 'resize', 'source': 'reference_and_secondary_disparity', 'dest': 'resized_disparity',
+         'after': 'resize_check_conf'}
     ]
 
     def __init__(self, img_ref: xr.Dataset =None, img_sec: xr.Dataset =None,
@@ -114,7 +124,8 @@ class PandoraMachine(Machine):
         self.steps_run = []
 
         # Define avalaible states
-        states_ = ['begin', 'cost_volume', 'reference_disparity', 'reference_and_secondary_disparity', 'end']
+        states_ = ['begin', 'cost_volume', 'reference_disparity', 'reference_and_secondary_disparity',
+                   'resized_disparity']
 
         # Initiliaze a machine without any transition
         Machine.__init__(self, states=states_, initial='begin', transitions=None, auto_transitions=False)
@@ -160,13 +171,14 @@ class PandoraMachine(Machine):
         :return:
         """
         logging.info('Disparity computation...')
+        disparity_ = disparity.AbstractDisparity(**cfg['pipeline'][input_step])
         if self.reference_pipeline:
-            self.ref_disparity = disparity.to_disp(self.cv, cfg['invalid_disparity'])
-            self.ref_disparity = disparity.validity_mask(self.ref_disparity, self.img_ref, self.img_sec, self.cv,
+            self.ref_disparity = disparity_.to_disp(self.cv, self.img_ref, self.img_sec)
+            self.ref_disparity = disparity_.validity_mask(self.ref_disparity, self.img_ref, self.img_sec, self.cv,
                                                          **cfg['image'])
         else:
-            self.sec_disparity = disparity.to_disp(self.cv_right, cfg['invalid_disparity'])
-            self.sec_disparity = disparity.validity_mask(self.sec_disparity, self.img_sec, self.img_ref,
+            self.sec_disparity = disparity_.to_disp(self.cv_right, self.img_sec, self.img_ref)
+            self.sec_disparity = disparity_.validity_mask(self.sec_disparity, self.img_sec, self.img_ref,
                                                          self.cv_right, **cfg['image'])
 
     def filter_run(self, cfg: Dict[str, dict], input_step: str):
@@ -295,6 +307,35 @@ class PandoraMachine(Machine):
 
         self.set_state('reference_and_secondary_disparity')
 
+
+    def resize_run_ref(self, cfg: Dict[str, dict], input_step: str):
+        """
+         Resize reference disparity map
+        :param cfg: pipeline configuration
+        :type  cfg: dict
+        :param input_step: step to trigger
+        :type input_step: str
+        :return:
+        """
+        logging.info('Resize disparity reference map...')
+        import pdb
+        pdb.set_trace()
+        self.ref_disparity = common.resize(self.ref_disparity, cfg['pipeline'][input_step]['border_disparity'])
+
+    def resize_run_ref_and_sec(self, cfg: Dict[str, dict], input_step: str):
+        """
+         Resize reference and secondary disparity maps
+        :param cfg: pipeline configuration
+        :type  cfg: dict
+        :param input_step: step to trigger
+        :type input_step: str
+        :return:
+        """
+        logging.info('Resize disparity reference and secondary map...')
+
+        self.ref_disparity = common.resize(self.ref_disparity, cfg['pipeline'][input_step]['border_disparity'])
+        self.sec_disparity = common.resize(self.sec_disparity, cfg['pipeline'][input_step]['border_disparity'])
+
     def run_prepare(self, img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: Union[int, np.ndarray],
                     disp_max: Union[int, np.ndarray], disp_min_sec: Union[None, int, np.ndarray] = None,
                     disp_max_sec: Union[None, int, np.ndarray] = None):
@@ -362,7 +403,6 @@ class PandoraMachine(Machine):
                   '. Be sure of your sequencement step  \n')
             raise
 
-
     def run_exit(self):
 
         self.remove_transitions(self._transitions_run)
@@ -384,18 +424,18 @@ class PandoraMachine(Machine):
         stereo_ = stereo.AbstractStereo(**stereo_cfg)
         self.pipeline_cfg['pipeline'][input_step] = stereo_.cfg
 
-    def disparity_check_conf(self, disparity_computation_cfg: Dict[str, dict], input_step: str):
+    def disparity_check_conf(self, disparity_cfg: Dict[str, dict], input_step: str):
         """
         Check the disparity computation configuration
 
-        :param disparity_computation_cfg: disparity computation configuration
-        :type disparity_computation_cfg: dict
+        :param disparity_cfg: disparity computation configuration
+        :type disparity_cfg: dict
         :param input_step: current step
         :type input_step: string
         :return:
         """
-        assert disparity_computation_cfg == 'wta'
-        self.pipeline_cfg['pipeline'][input_step] = disparity_computation_cfg
+        disparity_ = disparity.AbstractDisparity(**disparity_cfg)
+        self.pipeline_cfg['pipeline'][input_step] = disparity_.cfg
 
     def filter_check_conf(self, filter_cfg: Dict[str, dict], input_step: str):
         """
@@ -464,6 +504,24 @@ class PandoraMachine(Machine):
         self.pipeline_cfg['pipeline'][input_step] = validation_.cfg
         if 'interpolated_disparity' in validation_cfg:
             interpolate_ = validation.AbstractInterpolation(**validation_cfg)
+
+    def resize_check_conf(self, resize_cfg: Dict[str, dict], input_step: str):
+        """
+        Check the resize configuration
+
+        :param resize_cfg: validation configuration
+        :type resize_cfg: dict
+        :param input_step: current step
+        :type input_step: string
+        :return:
+        """
+
+        schema = {
+            "border_disparity": Or(int, float, lambda x: np.isnan(x)),
+        }
+
+        checker = Checker(schema)
+        checker.validate(resize_cfg)
 
     def check_conf(self, cfg: Dict[str, dict]):
         """

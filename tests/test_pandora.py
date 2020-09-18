@@ -100,7 +100,9 @@ class TestPandora(unittest.TestCase):
                         "window_size": 5,
                         "subpix": 2
                     },
-                    "disparity": "wta",
+                    "disparity": {
+                        "disparity_method": "wta"
+                    },
                     "refinement": {
                         "refinement_method": "vfit"
                     },
@@ -110,6 +112,9 @@ class TestPandora(unittest.TestCase):
                     "validation": {
                         "validation_method": "cross_checking",
                         "right_left_mode": "accurate"
+                    },
+                    "resize": {
+                        "border_disparity": -9999
                     }
                 }
         }
@@ -175,10 +180,15 @@ class TestPandora(unittest.TestCase):
                     "window_size": 5,
                     "subpix": 1
                 },
-                "disparity": "wta",
+                "disparity": {
+                    "disparity_method": "wta"
+                },
                 "validation": {
                     "validation_method": "cross_checking",
                     "right_left_mode": "accurate"
+                },
+                "resize": {
+                    "border_disparity": -9999
                 }
             }
         }
@@ -258,7 +268,9 @@ class TestPandora(unittest.TestCase):
                     "window_size": 5,
                     "subpix": 2
                 },
-                "disparity": "wta",
+                "disparity": {
+                    "disparity_method": "wta"
+                },
                 "refinement": {
                     "refinement_method": "vfit"
                 },
@@ -268,6 +280,9 @@ class TestPandora(unittest.TestCase):
                 "validation": {
                     "validation_method": "cross_checking",
                     "right_left_mode": "accurate"
+                },
+                "resize": {
+                    "border_disparity": -9999
                 }
             }
         }
@@ -319,7 +334,9 @@ class TestPandora(unittest.TestCase):
                         "window_size": 5,
                         "subpix": 2
                     },
-                    "disparity": "wta",
+                    "disparity": {
+                        "disparity_method": "wta"
+                    },
                     "refinement": {
                         "refinement_method": "vfit"
                     },
@@ -328,6 +345,9 @@ class TestPandora(unittest.TestCase):
                     },
                     "validation": {
                         "validation_method": "cross_checking"
+                    },
+                    "resize": {
+                        "border_disparity": -9999
                     }
                 }
         }

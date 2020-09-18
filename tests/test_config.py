@@ -178,7 +178,9 @@ class TestConfig(unittest.TestCase):
                     "window_size": 5,
                     "subpix": 2
                 },
-                "disparity": "wta",
+                "disparity": {
+                    "disparity_method": "wta"
+                }
             }
         }
 
@@ -200,14 +202,17 @@ class TestConfig(unittest.TestCase):
                 "disp_min": "tests/pandora/disp_min_grid.tif",
                 "disp_max": "tests/pandora/disp_max_grid.tif"
             },
-            "invalid_disparity": -9999,
+
             "pipeline": {
                 "stereo": {
                     "stereo_method": "zncc",
                     "window_size": 5,
                     "subpix": 2
                 },
-                "disparity": "wta"
+                "disparity": {
+                    "disparity_method": "wta",
+                    "invalid_disparity": -9999
+                }
             }
 
         }
@@ -230,7 +235,9 @@ class TestConfig(unittest.TestCase):
                     "window_size": 5,
                     "subpix": 2
                 },
-                "disparity": "wta"
+                "disparity": {
+                    "disparity_method": "wta"
+                }
             }
 
         }
@@ -252,7 +259,7 @@ class TestConfig(unittest.TestCase):
                 "disp_min": "tests/pandora/disp_min_grid.tif",
                 "disp_max": "tests/pandora/disp_max_grid.tif"
             },
-            "invalid_disparity": -9999,
+
             "pipeline":
                 {
                     "stereo": {
@@ -260,7 +267,10 @@ class TestConfig(unittest.TestCase):
                         "window_size": 5,
                         "subpix": 2
                     },
-                    "disparity": "wta"
+                    "disparity": {
+                        "disparity_method": "wta",
+                        "invalid_disparity": -9999
+                    }
                 }
 
         }
@@ -282,7 +292,9 @@ class TestConfig(unittest.TestCase):
                         "window_size": 5,
                         "subpix": 2
                     },
-                    "disparity": "wta",
+                    "disparity": {
+                        "disparity_method": "wta"
+                    },
                     "validation": {
                         "validation_method": "cross_checking"
                     }
@@ -308,7 +320,10 @@ class TestConfig(unittest.TestCase):
                     "window_size": 5,
                     "subpix": 2
                 },
-                "disparity": "wta",
+                "disparity": {
+                    "disparity_method": "wta",
+                    "invalid_disparity": -9999
+                },
                 "validation": {
                     "validation_method": "cross_checking"
                 }
@@ -334,14 +349,16 @@ class TestConfig(unittest.TestCase):
                 "disp_min": "tests/pandora/disp_min_grid.tif",
                 "disp_max": "tests/pandora/disp_max_grid.tif"
             },
-            "invalid_disparity": -9999,
             "pipeline": {
                 "stereo": {
                     "stereo_method": "zncc",
                     "window_size": 5,
                     "subpix": 2
                 },
-                "disparity": "wta",
+                "disparity": {
+                    "disparity_method": "wta",
+                    "invalid_disparity": -9999
+                },
                 "validation": {
                     "validation_method": "cross_checking",
                     'cross_checking_threshold': 1.0,
@@ -368,7 +385,10 @@ class TestConfig(unittest.TestCase):
                 'filter': {
                   'filter_method': 'median'
                 },
-                "disparity": "wta",
+                "disparity": {
+                    "disparity_method": "wta",
+                    "invalid_disparity": -9999
+                },
                 "validation": {
                     "validation_method": "cross_checking"
                 }

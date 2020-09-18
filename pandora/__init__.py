@@ -94,12 +94,6 @@ def run(pandora_machine: PandoraMachine, img_ref: xr.Dataset, img_sec: xr.Datase
     for e in cfg['pipeline']:
         pandora_machine.run(e, cfg)
 
-    # Resize the output products : add rows and columns that have been truncated
-    pandora_machine.ref_disparity = disparity.resize(pandora_machine.ref_disparity, cfg['invalid_disparity'])
-    if len(pandora_machine.sec_disparity.data_vars) != 0:
-        # Resize the output products : add rows and columns that have been truncated
-        pandora_machine.sec_disparity = disparity.resize(pandora_machine.sec_disparity, cfg['invalid_disparity'])
-
     # Stop the machine which returns to its initial state
     pandora_machine.run_exit()
 
