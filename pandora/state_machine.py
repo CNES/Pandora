@@ -318,8 +318,6 @@ class PandoraMachine(Machine):
         :return:
         """
         logging.info('Resize disparity reference map...')
-        import pdb
-        pdb.set_trace()
         self.ref_disparity = common.resize(self.ref_disparity, cfg['pipeline'][input_step]['border_disparity'])
 
     def resize_run_ref_and_sec(self, cfg: Dict[str, dict], input_step: str):
