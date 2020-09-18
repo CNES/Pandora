@@ -16,16 +16,23 @@ Define your inputs and configure your pipeline by writting a json configuration 
         "disp_max" : 0
       },
       "pipeline": {
-        "stereo" : {
-          "stereo_method": "zncc",
-          "window_size": 5,
-          "subpix": 4
-      },
-      "invalid_disparity": 0
+          "stereo": {
+            "stereo_method": "ssd",
+            "window_size": 5,
+            "subpix": 1
+          },
+          "disparity": {
+            "disparity_method": "wta",
+            "invalid_disparity": "np.nan"
+          },
+          "filter": {
+            "filter_method": "median"
+          }
+          "resize": {
+            "border_disparity": "np.nan"
+          }
       }
     }
-
-
 
 And run pandora
 

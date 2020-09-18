@@ -52,6 +52,11 @@ Copyright (c) 2007-2019 by the Sphinx team
 Website: https://www.sphinx-doc.org/
 License: BSD 2 Clause.
 
+Transitions: A lightweight, object-oriented state machine implementation.
+Copyright (c) 2014 - 2020 Tal Yarkoni, Alexander Neumann
+Website: https://github.com/pytransitions/transitions
+License: MIT.
+
 OpenCV: Open Source Computer Vision Library
 Copyright (c) 2000-2019, Intel Corporation, all rights reserved.
 Copyright (c) 2009-2011, Willow Garage Inc., all rights reserved.

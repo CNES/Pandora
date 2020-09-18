@@ -50,6 +50,9 @@ Pandora works with JSON formatted data with the following nested structures.
           "optimization" : {
             ...
           },
+          "disparity" : {
+            ...
+          }
           "refinement": {
             ...
           },
@@ -58,34 +61,38 @@ Pandora works with JSON formatted data with the following nested structures.
           },
           "validation" : {
             ...
+          },
+          "resize" : {
+            ...
           }
       }
-      "invalid_disparity": ...
     }
 
 "Pipeline" parameters define steps sequencing to be run. Pandora will check if sub-parameters of each mentioned step are correct.
 
-+---------------------+-----------------------------------+------+---------------+---------------------------+----------+
-| Name                | Description                       | Type | Default value | Sub structures            | Required |
-+=====================+===================================+======+===============+===========================+==========+
-| *input*             | Input data to process             | dict |               | :ref:`input_parameters`   | Yes      |
-+---------------------+-----------------------------------+------+---------------+---------------------------+----------+
-| *image*             | Images and masks parameters       | dict |               | :ref:`image_parameters`   | Yes      |
-+---------------------+-----------------------------------+------+---------------+---------------------------+----------+
-| *stereo*            | Pixel and mask parameters         | dict |               | :ref:`stereo_parameters`  | Yes      |
-+---------------------+-----------------------------------+------+---------------+---------------------------+----------+
-| *aggregation*       | Aggregation step parameters       | dict |               | :ref:`aggreg_parameters`  | No       |
-+---------------------+-----------------------------------+------+---------------+---------------------------+----------+
-| *optimization*      | Optimization step parameters      | dict |               | :ref:`optim_parameters`   | No       |
-+---------------------+-----------------------------------+------+---------------+---------------------------+----------+
-| *refinement*        | Refinement step parameters        | dict |               | :ref:`refine_parameters`  | No       |
-+---------------------+-----------------------------------+------+---------------+---------------------------+----------+
-| *filter*            | Filtering step parameters         | dict |               | :ref:`filter_parameters`  | No       |
-+---------------------+-----------------------------------+------+---------------+---------------------------+----------+
-| *validation*        | Validation step parameters        | dict |               | :ref:`valid_parameters`   | No       |
-+---------------------+-----------------------------------+------+---------------+---------------------------+----------+
-| *invalid disparity* | Disparity value for invalid pixel | int  | -99999        |                           | No       |
-+---------------------+-----------------------------------+------+---------------+---------------------------+----------+
++---------------------+-----------------------------------+------+---------------+------------------------------+---------+
+| Name                | Description                       | Type | Default value | Sub structures              | Required |
++=====================+===================================+======+===============+=============================+==========+
+| *input*             | Input data to process             | dict |               | :ref:`input_parameters`     | Yes      |
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
+| *image*             | Images and masks parameters       | dict |               | :ref:`image_parameters`     | Yes      |
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
+| *stereo*            | Pixel and mask parameters         | dict |               | :ref:`stereo_parameters`    | Yes      |
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
+| *aggregation*       | Aggregation step parameters       | dict |               | :ref:`aggreg_parameters`    | No       |
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
+| *optimization*      | Optimization step parameters      | dict |               | :ref:`optim_parameters`     | No       |
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
+| *disparity *        | Disparity  step parameters        | dict |               | :ref:`disparity_parameters` | No       |
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
+| *refinement*        | Refinement step parameters        | dict |               | :ref:`refine_parameters`    | No       |
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
+| *filter*            | Filtering step parameters         | dict |               | :ref:`filter_parameters`    | No       |
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
+| *validation*        | Validation step parameters        | dict |               | :ref:`valid_parameters`     | No       |
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
+| *resize*            | Resize step parameters            | dict |               | :ref:`resize_parameters`    | No       |
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
 
 .. _input_parameters:
 
@@ -185,10 +192,23 @@ Optimization parameters
 +-----------------------+----------------------+--------+---------------+-------------------------------------+----------+
 | Name                  | Description          | Type   | Default value | Available value                     | Required |
 +=======================+======================+========+===============+=====================================+==========+
-| *optimization_method* | Optimization méthode | string |               | "sgm" if plugin_libsgm is installed | Yes      |
+| *optimization_method* | Optimization method  | string |               | "sgm" if plugin_libsgm is installed | Yes      |
 +-----------------------+----------------------+--------+---------------+-------------------------------------+----------+
 
 .. note:: If plugin_libsgm is installed, see the documentation of this package. There are subparameters for sgm method.
+
+.. _disparity_parameters:
+
+Disparity  parameters
+^^^^^^^^^^^^^^^^^^^^^
+
++---------------------+--------------------------+------------+---------------+---------------------+----------+
+| Name                | Description              | Type       | Default value | Available value     | Required |
++=====================+==========================+============+===============+=====================+==========+
+| *disparity _method* | disparity method         | string     |               | "wta"               | Yes      |
++---------------------+--------------------------+------------+---------------+---------------------+----------+
+| *invalid_disparity* | invalid disparity value  | int, float |     -9999     | "np.nan" for NaN    | No       |
++---------------------+--------------------------+------------+---------------+---------------------+----------+
 
 .. _refine_parameters:
 
@@ -238,17 +258,32 @@ Validation parameters
 | *interpolated_disparity*          | Interpolation method for filling occlusion and mismatches                                               | string |               | "mc_cnn", "sgm"           | No       |
 +-----------------------------------+---------------------------------------------------------------------------------------------------------+--------+---------------+---------------------------+----------+
 
+.. _resize_parameters:
+
+Resize  parameters
+^^^^^^^^^^^^^^^^^^
+
++---------------------+--------------------------+------------+---------------+---------------------+----------+
+| Name                | Description              | Type       | Default value | Available value     | Required |
++=====================+==========================+============+===============+=====================+==========+
+| *border_disparity*  | border  disparity value  | int, float |               | "np.nan" for NaN    | Yes      |
++---------------------+--------------------------+------------+---------------+---------------------+----------+
+
+.. note::
+  See :ref:`border_management` to understand the goal of this step.
+
 Sequencing of Pandora steps (Pandora Machine)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Moreover, Pandora will check if the requested steps sequencing is correct following the permitted
 transition defined by the Pandora Machine (`transitions <https://github.com/pytransitions/transitions>`_)
 
-Pandora Machine defines 4 possible states:
+Pandora Machine defines 5 possible states:
  - begin
  - cost_volume
  - reference_disparity
  - reference_and_secondary_disparity
+ - Resized_disparity
 
 It starts at the begin state. To go from a state from another one, transitions are called and triggered
 by specific name. It corresponds to the name of Pandora steps you can write in configuration file.
@@ -280,19 +315,23 @@ median filter method.
         "disp_min": -100,
         "disp_max": 100
       },
-      "invalid_disparity": -9999,
       "pipeline": {
           "stereo": {
             "stereo_method": "ssd",
             "window_size": 5,
             "subpix": 1
           },
-        "disparity": "wta",
-        "filter": {
-                      "filter_method": "median"
-                    }
-
-     }
+          "disparity": {
+            "disparity_method": "wta",
+            "invalid_disparity": "np.nan"
+          },
+          "filter": {
+            "filter_method": "median"
+          }
+          "resize": {
+            "border_disparity": "np.nan"
+          }
+      }
     }
 
 An impossible sequencing
@@ -311,17 +350,22 @@ An impossible sequencing
         "disp_min": -100,
         "disp_max": 100
       },
-      "invalid_disparity": -9999,
       "pipeline": {
           "stereo": {
             "stereo_method": "ssd",
             "window_size": 5,
             "subpix": 1
           },
-        "filter": {
-                      "filter_method": "median"
-                    }
-        "disparity": "wta",
+          "filter": {
+            "filter_method": "median"
+          }
+          "disparity": {
+            "disparity_method": "wta",
+            "invalid_disparity": "np.nan"
+          },
+          "filter": {
+            "filter_method": "median"
+          }
      }
     }
 
