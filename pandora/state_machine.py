@@ -1,5 +1,5 @@
 from transitions import MachineError
-from transitions.extensions import GraphMachine as Machine
+from transitions import Machine
 import logging
 import xarray as xr
 import numpy as np
