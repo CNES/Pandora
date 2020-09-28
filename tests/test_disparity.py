@@ -242,6 +242,9 @@ class TestDisparity(unittest.TestCase):
 
         fast_cfg = {
             "pipeline": {
+                "right_disp_map": {
+                    "method": "accurate"
+                },
                 "stereo": {
                     "stereo_method": "census"
                 },
@@ -265,6 +268,9 @@ class TestDisparity(unittest.TestCase):
         acc_cfg = {
             "pipeline":
                 {
+                    "right_disp_map": {
+                        "method": "accurate"
+                    },
                     "stereo": {
                         "stereo_method": "census"
                     },

@@ -10,6 +10,9 @@
     "nodata2": "np.nan"
   },
   "pipeline": {
+    "right_disp_map":{
+      "method": "accurate"
+    },
     "stereo": {
     "stereo_method": "zncc",
     "window_size": 5,

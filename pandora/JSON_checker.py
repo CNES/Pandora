@@ -454,6 +454,9 @@ default_short_configuration_input = {
 default_short_configuration_pipeline = {
     "pipeline":
         {
+            "right_disp_map":{
+                "method" : "none"
+            }
         }
 }
 

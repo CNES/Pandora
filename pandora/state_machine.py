@@ -4,7 +4,7 @@ import logging
 import xarray as xr
 import numpy as np
 from typing import Dict, Tuple, Union
-from json_checker import Checker, Or
+from json_checker import Checker, Or, And
 
 from pandora import stereo
 from pandora import disparity
@@ -27,64 +27,41 @@ class PandoraMachine(Machine):
     """
 
     _transitions_run = [
-        {'trigger': 'stereo', 'source': 'begin', 'dest': 'cost_volume', 'after': 'stereo_run'},
+        {'trigger': 'stereo', 'source': 'begin', 'dest': 'cost_volume','after': 'stereo_run'},
         {'trigger': 'aggregation', 'source': 'cost_volume', 'dest': 'cost_volume', 'after': 'aggregation_run'},
         {'trigger': 'optimization', 'source': 'cost_volume', 'dest': 'cost_volume', 'after': 'optimization_run'},
-        {'trigger': 'disparity', 'source': 'cost_volume', 'dest': 'reference_disparity', 'after': 'disparity_run'},
-        {'trigger': 'filter', 'source': 'reference_disparity', 'dest': 'reference_disparity',
-         'after': 'filter_run'},
-        {'trigger': 'refinement', 'source': 'reference_disparity', 'dest': 'reference_disparity',
-         'after': 'refinement_run'},
-        {'trigger': 'resize', 'source': 'reference_disparity',
-         'dest': 'resized_disparity', 'after': 'resize_run_ref'},
-        {'trigger': 'validation', 'source': 'reference_disparity', 'dest': 'reference_and_secondary_disparity',
-         'after': 'validation_run'},
-        {'trigger': 'filter', 'source': 'reference_and_secondary_disparity',
-         'dest': 'reference_and_secondary_disparity', 'after': 'filter_run_ref_and_sec'},
-        {'trigger': 'refinement', 'source': 'reference_and_secondary_disparity',
-         'dest': 'reference_and_secondary_disparity', 'after': 'refinement_run_ref_and_sec'},
-        {'trigger': 'resize', 'source': 'reference_and_secondary_disparity',
-         'dest': 'resized_disparity', 'after': 'resize_run_ref_and_sec'},
+        {'trigger': 'disparity', 'source': 'cost_volume', 'dest': 'disp_map', 'after': 'disparity_run'},
+        {'trigger': 'filter', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'filter_run'},
+        {'trigger': 'refinement', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'refinement_run'},
+        {'trigger': 'validation', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'validation_run'},
+        {'trigger': 'resize', 'source': 'disp_map', 'dest': 'resized_disparity', 'after': 'resize_run'}
     ]
 
     _transitions_check = [
-        {'trigger': 'stereo', 'source': 'begin', 'dest': 'cost_volume', 'after': 'stereo_check_conf'},
-        {'trigger': 'aggregation', 'source': 'cost_volume', 'dest': 'cost_volume',
-         'after': 'aggregation_check_conf'},
-        {'trigger': 'optimization', 'source': 'cost_volume', 'dest': 'cost_volume',
-         'after': 'optimization_check_conf'},
-        {'trigger': 'disparity', 'source': 'cost_volume', 'dest': 'reference_disparity',
-         'after': 'disparity_check_conf'},
-        {'trigger': 'filter', 'source': 'reference_disparity', 'dest': 'reference_disparity',
-         'after': 'filter_check_conf'},
-        {'trigger': 'refinement', 'source': 'reference_disparity', 'dest': 'reference_disparity',
-         'after': 'refinement_check_conf'},
-        {'trigger': 'resize', 'source': 'reference_disparity', 'dest': 'resized_disparity',
-         'after': 'resize_check_conf'},
-        {'trigger': 'validation', 'source': 'reference_disparity', 'dest': 'reference_and_secondary_disparity',
-         'after': 'validation_check_conf'},
-        {'trigger': 'filter', 'source': 'reference_and_secondary_disparity',
-         'dest': 'reference_and_secondary_disparity', 'after': 'filter_check_conf'},
-        {'trigger': 'refinement', 'source': 'reference_and_secondary_disparity',
-         'dest': 'reference_and_secondary_disparity',
-         'after': 'refinement_check_conf'},
-        {'trigger': 'resize', 'source': 'reference_and_secondary_disparity', 'dest': 'resized_disparity',
-         'after': 'resize_check_conf'}
+        {'trigger': 'stereo', 'source': 'begin', 'dest': 'cost_volume','before': 'right_disp_map_check_conf',
+         'after': 'stereo_check_conf'},
+        {'trigger': 'aggregation', 'source': 'cost_volume', 'dest': 'cost_volume', 'after': 'aggregation_check_conf'},
+        {'trigger': 'optimization', 'source': 'cost_volume', 'dest': 'cost_volume', 'after': 'optimization_check_conf'},
+        {'trigger': 'disparity', 'source': 'cost_volume', 'dest': 'disp_map', 'after': 'disparity_check_conf'},
+        {'trigger': 'filter', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'filter_check_conf'},
+        {'trigger': 'refinement', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'refinement_check_conf'},
+        {'trigger': 'validation', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'validation_check_conf'},
+        {'trigger': 'resize', 'source': 'disp_map', 'dest': 'resized_disparity', 'after': 'resize_check_conf'}
     ]
 
-    def __init__(self, img_ref: xr.Dataset =None, img_sec: xr.Dataset =None,
+    def __init__(self, left_img: xr.Dataset =None, right_img: xr.Dataset =None,
                  disp_min: Union[int, np.ndarray] =None, disp_max: Union[int, np.ndarray] =None,
-                 disp_min_sec: Union[int, np.ndarray] =None, disp_max_sec: Union[int, np.ndarray] =None):
+                 right_disp_min: Union[int, np.ndarray] =None, right_disp_max: Union[int, np.ndarray] =None):
         """
         Initialize Pandora Machine
 
-        :param img_ref: reference Dataset image
-        :type img_ref:
+        :param left_img: left Dataset image
+        :type left_img:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
+        :param right_img: right Dataset image
+        :type right_img:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
@@ -92,45 +69,41 @@ class PandoraMachine(Machine):
         :type disp_min: int or np.ndarray
         :param disp_max: maximal disparity
         :type disp_max: int or np.ndarray
-        :param disp_min_sec: minimal disparity of the secondary image
-        :type disp_min_sec: None, int or np.ndarray
-        :param disp_max_sec: maximal disparity of the secondary image
-        :type disp_max_sec: None, int or np.ndarray
+        :param right_disp_min: minimal disparity of the right image
+        :type right_disp_min: None, int or np.ndarray
+        :param right_disp_max: maximal disparity of the right image
+        :type right_disp_max: None, int or np.ndarray
         """
 
-        self.img_ref = img_ref
-        self.img_sec = img_sec
+        self.left_img = left_img
+        self.right_img = right_img
         self.disp_min = disp_min
         self.disp_max = disp_max
-        self.disp_min_sec = disp_min_sec
-        self.disp_max_sec = disp_max_sec
+        self.right_disp_min = right_disp_min
+        self.right_disp_max = right_disp_max
 
-        # Reference cost volume
-        self.cv = None
-        # Secondary cost volume
-        self.cv_right = None
-        # Reference disparity map
-        self.ref_disparity = None
-        # Secondary disparity map
-        self.sec_disparity = None
+        # left cost volume
+        self.left_cv = None
+        # right cost volume
+        self.right_cv = None
+        # left disparity map
+        self.left_disparity = None
+        # right disparity map
+        self.right_disparity = None
 
         # Pandora's pipeline configuration
         self.pipeline_cfg = {'pipeline': {}}
-        # Reference_pipeline = Pipeline for reference (left) disparity computation. False when it's about
-        # secondary (right) disparity computation
-        self.reference_pipeline = True
-        # List of pandora steps that have been executed. Information to create the secondary disparity following the
-        # same pipeline that has been used to create the reference one.
-        self.steps_run = []
-
+        # Right disparity map computation information: Can be "none" or "accurate"
+        # Usefull during the running steps to choose if we must compute left and right objects.
+        self.right_disp_map = "none"
         # Define avalaible states
-        states_ = ['begin', 'cost_volume', 'reference_disparity', 'reference_and_secondary_disparity',
-                   'resized_disparity']
+        states_ = ['begin', 'cost_volume', 'disp_map', 'resized_disparity']
 
         # Initiliaze a machine without any transition
         Machine.__init__(self, states=states_, initial='begin', transitions=None, auto_transitions=False)
 
         logging.getLogger("transitions").setLevel(logging.WARNING)
+
 
     def stereo_run(self, cfg: Dict[str, dict], input_step: str):
         """
@@ -146,100 +119,25 @@ class PandoraMachine(Machine):
         stereo_ = stereo.AbstractStereo(**cfg['pipeline'][input_step])
         dmin_min, dmax_max = stereo_.dmin_dmax(self.disp_min, self.disp_max)
 
-        if self.reference_pipeline:
-            self.cv = stereo_.compute_cost_volume(self.img_ref, self.img_sec, dmin_min, dmax_max, **cfg['image'])
-            self.cv = stereo_.cv_masked(self.img_ref, self.img_sec, self.cv, self.disp_min, self.disp_max,
+        if not self.right_disp_map == "accurate":
+            self.left_cv = stereo_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max, **cfg['image'])
+            self.left_cv = stereo_.cv_masked(self.left_img, self.right_img, self.left_cv, self.disp_min, self.disp_max,
                                         **cfg['image'])
 
         else:
-            if self.disp_min_sec is None:
-                self.disp_min_sec = -self.disp_max
-                self.disp_max_sec = -self.disp_min
-            dmin_min_sec, dmax_max_sec = stereo_.dmin_dmax(self.disp_min_sec, self.disp_max_sec)
-            self.cv_right = stereo_.compute_cost_volume(self.img_sec, self.img_ref, dmin_min_sec, dmax_max_sec,
+            self.left_cv = stereo_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max, **cfg['image'])
+            self.left_cv = stereo_.cv_masked(self.left_img, self.right_img, self.left_cv, self.disp_min, self.disp_max,
+                                        **cfg['image'])
+
+            if self.right_disp_min is None:
+                self.right_disp_min = -self.disp_max
+                self.right_disp_max = -self.disp_min
+
+            dmin_min_sec, dmax_max_sec = stereo_.dmin_dmax(self.right_disp_min, self.right_disp_max)
+            self.right_cv = stereo_.compute_cost_volume(self.right_img, self.left_img, dmin_min_sec, dmax_max_sec,
                                                         **cfg['image'])
-            self.cv_right = stereo_.cv_masked(self.img_sec, self.img_ref, self.cv_right, self.disp_min_sec,
-                                              self.disp_max_sec, **cfg['image'])
-
-    def disparity_run(self, cfg: Dict[str, dict], input_step: str):
-        """
-        Disparity computation and validity mask
-        :param cfg: pipeline configuration
-        :type  cfg: dict
-        :param input_step: step to trigger
-        :type input_step: str
-        :return:
-        """
-        logging.info('Disparity computation...')
-        disparity_ = disparity.AbstractDisparity(**cfg['pipeline'][input_step])
-        if self.reference_pipeline:
-            self.ref_disparity = disparity_.to_disp(self.cv, self.img_ref, self.img_sec)
-            self.ref_disparity = disparity_.validity_mask(self.ref_disparity, self.img_ref, self.img_sec, self.cv,
-                                                         **cfg['image'])
-        else:
-            self.sec_disparity = disparity_.to_disp(self.cv_right, self.img_sec, self.img_ref)
-            self.sec_disparity = disparity_.validity_mask(self.sec_disparity, self.img_sec, self.img_ref,
-                                                         self.cv_right, **cfg['image'])
-
-    def filter_run(self, cfg: Dict[str, dict], input_step: str):
-        """
-        Disparity filter
-        :param cfg: pipeline configuration
-        :type  cfg: dict
-        :param input_step: step to trigger
-        :type input_step: str
-        :return:
-        """
-        logging.info('Disparity filtering...')
-        filter_ = filter.AbstractFilter(**cfg['pipeline'][input_step])
-        if self.reference_pipeline:
-            self.ref_disparity = filter_.filter_disparity(self.ref_disparity)
-        else:
-            self.sec_disparity = filter_.filter_disparity(self.sec_disparity)
-
-    def filter_run_ref_and_sec(self, cfg: Dict[str, dict], input_step: str):
-        """
-        Disparity filter on reference and secondary disparity
-        :param cfg: pipeline configuration
-        :type  cfg: dict
-        :param input_step: step to trigger
-        :type input_step: str
-        :return:
-        """
-        logging.info('Disparity filtering Ref + Sec ...')
-        filter_ = filter.AbstractFilter(**cfg['pipeline'][input_step])
-        self.ref_disparity = filter_.filter_disparity(self.ref_disparity)
-        self.sec_disparity = filter_.filter_disparity(self.sec_disparity)
-
-    def refinement_run_ref_and_sec(self, cfg: Dict[str, dict], input_step: str):
-        """
-         Subpixel disparity refinement
-        :param cfg: pipeline configuration
-        :type  cfg: dict
-        :param input_step: step to trigger
-        :type input_step: str
-        :return:
-        """
-        refinement_ = refinement.AbstractRefinement(**cfg['pipeline'][input_step])
-        logging.info('Subpixel refinement Ref + Sec ...')
-        self.cv, self.ref_disparity = refinement_.subpixel_refinement(self.cv, self.ref_disparity)
-        self.cv_right, self.sec_disparity = refinement_.subpixel_refinement(self.cv_right, self.sec_disparity)
-
-    def refinement_run(self, cfg: Dict[str, dict], input_step: str):
-        """
-         Subpixel disparity refinement
-        :param cfg: pipeline configuration
-        :type  cfg: dict
-        :param input_step: step to trigger
-        :type input_step: str
-        :return:
-        """
-        refinement_ = refinement.AbstractRefinement(**cfg['pipeline'][input_step])
-        logging.info('Subpixel refinement...')
-        if self.reference_pipeline:
-            self.cv, self.ref_disparity = refinement_.subpixel_refinement(self.cv, self.ref_disparity)
-        else:
-            self.cv_right, self.sec_disparity = refinement_.subpixel_refinement(self.cv_right, self.sec_disparity)
+            self.right_cv = stereo_.cv_masked(self.right_img, self.left_img, self.right_cv, self.right_disp_min,
+                                              self.right_disp_max, **cfg['image'])
 
     def aggregation_run(self, cfg: Dict[str, dict], input_step: str):
         """
@@ -252,10 +150,11 @@ class PandoraMachine(Machine):
         """
 
         aggregation_ = aggregation.AbstractAggregation(**cfg['pipeline'][input_step])
-        if self.reference_pipeline:
-            self.cv = aggregation_.cost_volume_aggregation(self.img_ref, self.img_sec, self.cv)
+        if not self.right_disp_map == "accurate":
+            self.left_cv = aggregation_.cost_volume_aggregation(self.left_img, self.right_img, self.left_cv)
         else:
-            self.cv_right = aggregation_.cost_volume_aggregation(self.img_sec, self.img_ref, self.cv_right)
+            self.left_cv = aggregation_.cost_volume_aggregation(self.left_img, self.right_img, self.left_cv)
+            self.right_cv = aggregation_.cost_volume_aggregation(self.right_img, self.left_img, self.right_cv)
 
     def optimization_run(self, cfg: Dict[str, dict], input_step: str):
         """
@@ -268,14 +167,74 @@ class PandoraMachine(Machine):
         """
         optimization_ = optimization.AbstractOptimization(**cfg['pipeline'][input_step])
         logging.info('Cost optimization...')
-        if self.reference_pipeline:
-            self.cv = optimization_.optimize_cv(self.cv, self.img_ref, self.img_sec)
+        if not self.right_disp_map == "accurate":
+            self.left_cv = optimization_.optimize_cv(self.left_cv, self.left_img, self.right_img)
         else:
-            self.cv_right = optimization_.optimize_cv(self.cv_right, self.img_sec, self.img_ref)
+            self.left_cv = optimization_.optimize_cv(self.left_cv, self.left_img, self.right_img)
+            self.right_cv = optimization_.optimize_cv(self.right_cv, self.right_img, self.left_img)
+
+    def disparity_run(self, cfg: Dict[str, dict], input_step: str):
+        """
+        Disparity computation and validity mask
+        :param cfg: pipeline configuration
+        :type  cfg: dict
+        :param input_step: step to trigger
+        :type input_step: str
+        :return:
+        """
+        logging.info('Disparity computation...')
+        disparity_ = disparity.AbstractDisparity(**cfg['pipeline'][input_step])
+        if self.right_disp_map == "none":
+            self.left_disparity = disparity_.to_disp(self.left_cv, self.left_img, self.right_img)
+            self.left_disparity = disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img,
+                                                           self.left_cv, **cfg['image'])
+        elif self.right_disp_map == "accurate":
+            self.left_disparity = disparity_.to_disp(self.left_cv, self.left_img, self.right_img)
+            self.left_disparity = disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img,
+                                                           self.left_cv, **cfg['image'])
+            self.right_disparity = disparity_.to_disp(self.right_cv, self.right_img, self.left_img)
+            self.right_disparity = disparity_.validity_mask(self.right_disparity, self.right_img, self.left_img,
+                                                         self.right_cv, **cfg['image'])
+
+
+    def filter_run(self, cfg: Dict[str, dict], input_step: str):
+        """
+        Disparity filter
+        :param cfg: pipeline configuration
+        :type  cfg: dict
+        :param input_step: step to trigger
+        :type input_step: str
+        :return:
+        """
+        logging.info('Disparity filtering...')
+        filter_ = filter.AbstractFilter(**cfg['pipeline'][input_step])
+        if self.right_disp_map == "none":
+            self.left_disparity = filter_.filter_disparity(self.left_disparity)
+        else:
+            self.left_disparity = filter_.filter_disparity(self.left_disparity)
+            self.right_disparity = filter_.filter_disparity(self.right_disparity)
+
+    def refinement_run(self, cfg: Dict[str, dict], input_step: str):
+        """
+         Subpixel disparity refinement
+        :param cfg: pipeline configuration
+        :type  cfg: dict
+        :param input_step: step to trigger
+        :type input_step: str
+        :return:
+        """
+        refinement_ = refinement.AbstractRefinement(**cfg['pipeline'][input_step])
+        logging.info('Subpixel refinement...')
+        if self.right_disp_map == "none":
+            self.left_cv, self.left_disparity = refinement_.subpixel_refinement(self.left_cv, self.left_disparity)
+        else:
+            self.left_cv, self.left_disparity = refinement_.subpixel_refinement(self.left_cv, self.left_disparity)
+            self.right_cv, self.right_disparity = refinement_.subpixel_refinement(self.right_cv, self.right_disparity)
+
 
     def validation_run(self, cfg: Dict[str, dict], input_step: str):
         """
-         Create reference and secondary disparity map. Computes the cross cheking. Interpolated mismatch and occlusions
+         Validation of disparity map
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
@@ -283,70 +242,54 @@ class PandoraMachine(Machine):
         :return:
         """
         validation_ = validation.AbstractValidation(**cfg['pipeline'][input_step])
-        if 'interpolated_disparity' in cfg:
-            interpolate_ = validation.AbstractInterpolation(**cfg['pipeline'][input_step])
-        logging.info('Computing the right disparity map with the accurate method...')
 
-        # Create the secondary map with the same pipeline as the reference
-        self.set_state('begin')
-        self.reference_pipeline = False
+        logging.info('Validation...')
 
-        for e in self.steps_run:
-            if e == 'validation':
-                break
-            self.run(e, cfg)
+        if self.right_disp_map == "none":
+            self.left_disparity = validation_.disparity_checking(self.left_disparity, self.right_disparity)
 
-        # Apply cross checking
-        self.ref_disparity = validation_.disparity_checking(self.ref_disparity, self.sec_disparity)
-        self.sec_disparity = validation_.disparity_checking(self.sec_disparity, self.ref_disparity)
+        else:
+            self.left_disparity = validation_.disparity_checking(self.left_disparity, self.right_disparity)
+            self.right_disparity = validation_.disparity_checking(self.right_disparity, self.left_disparity)
 
-        # Interpolated mismatch and occlusions
-        if 'interpolated_disparity' in cfg:
-            self.ref_disparity = interpolate_.interpolated_disparity(self.ref_disparity)
-            self.sec_disparity = interpolate_.interpolated_disparity(self.sec_disparity)
+            # Interpolated mismatch and occlusions
+            if 'interpolated_disparity' in cfg:
+                interpolate_ = validation.AbstractInterpolation(**cfg['pipeline'][input_step])
+                self.left_disparity = interpolate_.interpolated_disparity(self.left_disparity)
+                self.right_disparity = interpolate_.interpolated_disparity(self.right_disparity)
 
-        self.set_state('reference_and_secondary_disparity')
-
-
-    def resize_run_ref(self, cfg: Dict[str, dict], input_step: str):
+    def resize_run(self, cfg: Dict[str, dict], input_step: str):
         """
-         Resize reference disparity map
+         Resize left disparity map
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
         :type input_step: str
         :return:
         """
-        logging.info('Resize disparity reference map...')
-        self.ref_disparity = common.resize(self.ref_disparity, cfg['pipeline'][input_step]['border_disparity'])
+        logging.info('Resize disparity map...')
+        if self.right_disp_map == "none":
+            self.left_disparity = common.resize(self.left_disparity, cfg['pipeline'][input_step]['border_disparity'])
 
-    def resize_run_ref_and_sec(self, cfg: Dict[str, dict], input_step: str):
-        """
-         Resize reference and secondary disparity maps
-        :param cfg: pipeline configuration
-        :type  cfg: dict
-        :param input_step: step to trigger
-        :type input_step: str
-        :return:
-        """
-        logging.info('Resize disparity reference and secondary map...')
+        else:
+            self.left_disparity = common.resize(self.left_disparity, cfg['pipeline'][input_step]['border_disparity'])
+            self.right_disparity = common.resize(self.right_disparity, cfg['pipeline'][input_step]['border_disparity'])
 
-        self.ref_disparity = common.resize(self.ref_disparity, cfg['pipeline'][input_step]['border_disparity'])
-        self.sec_disparity = common.resize(self.sec_disparity, cfg['pipeline'][input_step]['border_disparity'])
 
-    def run_prepare(self, img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: Union[int, np.ndarray],
-                    disp_max: Union[int, np.ndarray], disp_min_sec: Union[None, int, np.ndarray] = None,
-                    disp_max_sec: Union[None, int, np.ndarray] = None):
+    def run_prepare(self,cfg: Dict[str, dict], left_img: xr.Dataset, right_img: xr.Dataset, disp_min: Union[int, np.ndarray],
+                    disp_max: Union[int, np.ndarray], right_disp_min: Union[None, int, np.ndarray] = None,
+                    right_disp_max: Union[None, int, np.ndarray] = None):
         """
         Prepare the machine before running
-
-        :param img_ref: reference Dataset image
-        :type img_ref:
+        :param cfg:  configuration
+        :type  cfg: dict
+        :param left_img: left Dataset image
+        :type left_img:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
+        :param right_img: right Dataset image
+        :type right_img:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
@@ -354,20 +297,23 @@ class PandoraMachine(Machine):
         :type disp_min: int or np.ndarray
         :param disp_max: maximal disparity
         :type disp_max: int or np.ndarray
-        :param disp_min_sec: minimal disparity of the secondary image
-        :type disp_min_sec: None, int or np.ndarray
-        :param disp_max_sec: maximal disparity of the secondary image
-        :type disp_max_sec: None, int or np.ndarray
+        :param right_disp_min: minimal disparity of the right image
+        :type right_disp_min: None, int or np.ndarray
+        :param right_disp_max: maximal disparity of the right image
+        :type right_disp_max: None, int or np.ndarray
         """
 
-        self.img_ref = img_ref
-        self.img_sec = img_sec
+        self.left_img = left_img
+        self.right_img = right_img
         self.disp_min = disp_min
         self.disp_max = disp_max
-        self.disp_max_sec = disp_max_sec
-        self.disp_min_sec = disp_min_sec
-        self.ref_disparity = xr.Dataset()
-        self.sec_disparity = xr.Dataset()
+        self.right_disp_max = right_disp_max
+        self.right_disp_min = right_disp_min
+        self.left_disparity = xr.Dataset()
+        self.right_disparity = xr.Dataset()
+
+        self.right_disp_map = cfg['pipeline']['right_disp_map']['method']
+
         self.add_transitions(self._transitions_run)
 
     def run(self, input_step: str, cfg: Dict[str, dict]):
@@ -391,7 +337,6 @@ class PandoraMachine(Machine):
             # But there's only a filter transition. Therefore, in the case of filter_1 we have to call the
             # filter
             # trigger and give the configuration of filter_1
-            self.steps_run.append(input_step)
             if len(input_step.split('_')) != 1:
                 self.trigger(input_step.split('_')[0], cfg, input_step)
             else:
@@ -405,110 +350,135 @@ class PandoraMachine(Machine):
 
         self.remove_transitions(self._transitions_run)
         self.set_state('begin')
-        self.reference_pipeline = True
-        self.steps_run = []
 
-    def stereo_check_conf(self, stereo_cfg: Dict[str, dict], input_step: str):
+    def right_disp_map_check_conf(self, cfg: Dict[str, dict], input_step: str):
+        """
+        Check the right_disp_map configuration
+
+        :param cfg: configuration
+        :type cfg: dict
+        :param input_step: current step
+        :type input_step: string
+        :return:
+        """
+
+        schema = {
+            "method": And(str, lambda x: 'none' or 'accurate')
+        }
+
+        checker = Checker(schema)
+        checker.validate(cfg['right_disp_map'])
+
+        # Store the righ disparity map configuration
+        self.right_disp_map = cfg['right_disp_map']['method']
+
+
+    def stereo_check_conf(self, cfg: Dict[str, dict], input_step: str):
         """
         Check the stereo configuration
 
-        :param stereo_cfg: stereo configuration
-        :type stereo_cfg: dict
+        :param cfg: configuration
+        :type cfg: dict
         :param input_step: current step
         :type input_step: string
         :return:
         """
 
-        stereo_ = stereo.AbstractStereo(**stereo_cfg)
+        stereo_ = stereo.AbstractStereo(**cfg[input_step])
         self.pipeline_cfg['pipeline'][input_step] = stereo_.cfg
 
-    def disparity_check_conf(self, disparity_cfg: Dict[str, dict], input_step: str):
+    def disparity_check_conf(self, cfg: Dict[str, dict], input_step: str):
         """
         Check the disparity computation configuration
 
-        :param disparity_cfg: disparity computation configuration
-        :type disparity_cfg: dict
+        :param cfg: configuration
+        :type cfg: dict
         :param input_step: current step
         :type input_step: string
         :return:
         """
-        disparity_ = disparity.AbstractDisparity(**disparity_cfg)
+        disparity_ = disparity.AbstractDisparity(**cfg[input_step])
         self.pipeline_cfg['pipeline'][input_step] = disparity_.cfg
 
-    def filter_check_conf(self, filter_cfg: Dict[str, dict], input_step: str):
+    def filter_check_conf(self, cfg: Dict[str, dict], input_step: str):
         """
         Check the filter configuration
 
-        :param filter_cfg: filter configuration
-        :type filter_cfg: dict
+        :param cfg: configuration
+        :type cfg: dict
         :param input_step: current step
         :type input_step: string
         :return:
         """
-        filter_ = filter.AbstractFilter(**filter_cfg)
+        filter_ = filter.AbstractFilter(**cfg[input_step])
         self.pipeline_cfg['pipeline'][input_step] = filter_.cfg
 
-    def refinement_check_conf(self, refinement_cfg: Dict[str, dict], input_step: str):
+    def refinement_check_conf(self, cfg: Dict[str, dict], input_step: str):
         """
         Check the refinement configuration
 
-        :param refinement_cfg: refinement configuration
-        :type refinement_cfg: dict
+        :param cfg: configuration
+        :type cfg: dict
         :param input_step: current step
         :type input_step: string
         :return:
         """
-        refinement_ = refinement.AbstractRefinement(**refinement_cfg)
+        refinement_ = refinement.AbstractRefinement(**cfg[input_step])
         self.pipeline_cfg['pipeline'][input_step] = refinement_.cfg
 
-    def aggregation_check_conf(self, aggregation_cfg: Dict[str, dict], input_step: str):
+    def aggregation_check_conf(self, cfg: Dict[str, dict], input_step: str):
         """
         Check the aggregation configuration
 
-        :param aggregation_cfg: aggregation configuration
-        :type aggregation_cfg: dict
+        :param cfg: configuration
+        :type cfg: dict
         :param input_step: current step
         :type input_step: string
         :return:
         """
-        aggregation_ = aggregation.AbstractAggregation(**aggregation_cfg)
+        aggregation_ = aggregation.AbstractAggregation(**cfg[input_step])
         self.pipeline_cfg['pipeline'][input_step] = aggregation_.cfg
 
-    def optimization_check_conf(self, optimization_cfg: Dict[str, dict], input_step: str):
+    def optimization_check_conf(self, cfg: Dict[str, dict], input_step: str):
         """
         Check the optimization configuration
 
-        :param optimization_cfg: optimization configuration
-        :type optimization_cfg: dict
+        :param cfg: configuration
+        :type cfg: dict
         :param input_step: current step
         :type input_step: string
         :return:
         """
-        optimization_ = optimization.AbstractOptimization(**optimization_cfg)
+        optimization_ = optimization.AbstractOptimization(**cfg[input_step])
         self.pipeline_cfg['pipeline'][input_step] = optimization_.cfg
 
-    def validation_check_conf(self, validation_cfg: Dict[str, dict], input_step: str):
+    def validation_check_conf(self, cfg: Dict[str, dict], input_step: str):
         """
         Check the validation configuration
 
-        :param validation_cfg: validation configuration
-        :type validation_cfg: dict
+        :param cfg: configuration
+        :type cfg: dict
         :param input_step: current step
         :type input_step: string
         :return:
         """
 
-        validation_ = validation.AbstractValidation(**validation_cfg)
+        validation_ = validation.AbstractValidation(**cfg[input_step])
         self.pipeline_cfg['pipeline'][input_step] = validation_.cfg
-        if 'interpolated_disparity' in validation_cfg:
-            interpolate_ = validation.AbstractInterpolation(**validation_cfg)
+        if 'interpolated_disparity' in validation_.cfg:
+            interpolate_ = validation.AbstractInterpolation(**cfg[input_step])
 
-    def resize_check_conf(self, resize_cfg: Dict[str, dict], input_step: str):
+        if validation_.cfg['validation_method'] == "cross_checking" and self.right_disp_map == "none":
+            raise MachineError("Can't trigger event cross-checking validation  if right_disp_map method equal to "
+                               + self.right_disp_map )
+
+
+    def resize_check_conf(self, cfg: Dict[str, dict], input_step: str):
         """
         Check the resize configuration
 
-        :param resize_cfg: validation configuration
-        :type resize_cfg: dict
+        :param cfg: configuration
+        :type cfg: dict
         :param input_step: current step
         :type input_step: string
         :return:
@@ -519,7 +489,7 @@ class PandoraMachine(Machine):
         }
 
         checker = Checker(schema)
-        checker.validate(resize_cfg)
+        checker.validate(cfg[input_step])
 
     def check_conf(self, cfg: Dict[str, dict]):
         """
@@ -533,8 +503,9 @@ class PandoraMachine(Machine):
         # Add transitions to the empty machine.
         self.add_transitions(self._transitions_check)
 
-        for input_step in cfg:
-
+        # Warning: first element of cfg dictionary is not a transition. It contains information about the way to
+        # compute right disparity map.
+        for input_step in list(cfg)[1:]:
             try:
                 # There may be steps that are repeated several times, for example:
                 #     "filter": {
@@ -548,9 +519,9 @@ class PandoraMachine(Machine):
                 # trigger and give the configuration of filter_1
 
                 if len(input_step.split('_')) != 1:
-                    self.trigger(input_step.split('_')[0], cfg[input_step], input_step)
+                    self.trigger(input_step.split('_')[0], cfg, input_step)
                 else:
-                    self.trigger(input_step, cfg[input_step], input_step)
+                    self.trigger(input_step, cfg, input_step)
 
             except (MachineError, KeyError):
                 print('\n Problem during Pandora checking configuration steps sequencing. '

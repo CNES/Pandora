@@ -95,6 +95,9 @@ class TestPandora(unittest.TestCase):
         user_cfg = {
             "pipeline":
                 {
+                    "right_disp_map": {
+                        "method": "accurate"
+                    },
                     "stereo": {
                         "stereo_method": "zncc",
                         "window_size": 5,
@@ -175,6 +178,9 @@ class TestPandora(unittest.TestCase):
                 "disp_max": 2
             },
             "pipeline": {
+                "right_disp_map": {
+                    "method": "accurate"
+                },
                 "stereo": {
                     "stereo_method": "census",
                     "window_size": 5,
@@ -263,6 +269,9 @@ class TestPandora(unittest.TestCase):
 
         user_cfg = {
             "pipeline":{
+                "right_disp_map": {
+                    "method": "accurate"
+                },
                 "stereo": {
                     "stereo_method": "census",
                     "window_size": 5,
@@ -329,6 +338,9 @@ class TestPandora(unittest.TestCase):
             },
             "pipeline":
                 {
+                    "right_disp_map": {
+                        "method": "accurate"
+                    },
                     "stereo": {
                         "stereo_method": "zncc",
                         "window_size": 5,

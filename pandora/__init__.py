@@ -88,16 +88,18 @@ def run(pandora_machine: PandoraMachine, img_ref: xr.Dataset, img_sec: xr.Datase
     :rtype: tuple (xarray.Dataset, xarray.Dataset)
     """
     # Prepare machine before running
-    pandora_machine.run_prepare(img_ref, img_sec, disp_min, disp_max, disp_min_sec, disp_max_sec)
+    pandora_machine.run_prepare(cfg, img_ref, img_sec, disp_min, disp_max, disp_min_sec, disp_max_sec)
 
     # Trigger the machine step by step
-    for e in cfg['pipeline']:
+    # Warning: first element of cfg dictionary is not a transition. It contains information about the way to
+    # compute right disparity map.
+    for e in list(cfg['pipeline'])[1:]:
         pandora_machine.run(e, cfg)
 
     # Stop the machine which returns to its initial state
     pandora_machine.run_exit()
 
-    return pandora_machine.ref_disparity, pandora_machine.sec_disparity
+    return pandora_machine.left_disparity, pandora_machine.right_disparity
 
 
 def setup_logging(verbose: bool) -> None:

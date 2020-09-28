@@ -204,6 +204,9 @@ class TestConfig(unittest.TestCase):
             },
 
             "pipeline": {
+                "right_disp_map": {
+                    "method": "none"
+                },
                 "stereo": {
                     "stereo_method": "zncc",
                     "window_size": 5,
@@ -216,7 +219,6 @@ class TestConfig(unittest.TestCase):
             }
 
         }
-
         assert (cfg_return == cfg_gt)
 
         # Check the configuration returned with reference and secondary disparity grids
@@ -262,6 +264,9 @@ class TestConfig(unittest.TestCase):
 
             "pipeline":
                 {
+                    "right_disp_map": {
+                        "method": "none"
+                    },
                     "stereo": {
                         "stereo_method": "zncc",
                         "window_size": 5,
@@ -287,6 +292,9 @@ class TestConfig(unittest.TestCase):
             },
             "pipeline":
                 {
+                    "right_disp_map":{
+                        "method": "accurate"
+                    },
                     "stereo": {
                         "stereo_method": "zncc",
                         "window_size": 5,
@@ -315,6 +323,9 @@ class TestConfig(unittest.TestCase):
                 "disp_max_sec": "tests/pandora/disp_max_grid.tif",
             },
             "pipeline": {
+                "right_disp_map": {
+                    "method": "accurate"
+                },
                 "stereo": {
                     "stereo_method": "zncc",
                     "window_size": 5,
@@ -350,6 +361,9 @@ class TestConfig(unittest.TestCase):
                 "disp_max": "tests/pandora/disp_max_grid.tif"
             },
             "pipeline": {
+                "right_disp_map": {
+                    "method": "accurate"
+                },
                 "stereo": {
                     "stereo_method": "zncc",
                     "window_size": 5,
@@ -377,6 +391,9 @@ class TestConfig(unittest.TestCase):
 
         cfg_pipeline = {
             "pipeline": {
+                "right_disp_map": {
+                    "method": "accurate"
+                },
                 "stereo": {
                     "stereo_method": "zncc",
                     "window_size": 5,
