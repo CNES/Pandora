@@ -108,6 +108,7 @@ class PandoraMachine(Machine):
     def stereo_run(self, cfg: Dict[str, dict], input_step: str):
         """
         Matching cost computation
+
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
@@ -141,7 +142,8 @@ class PandoraMachine(Machine):
 
     def aggregation_run(self, cfg: Dict[str, dict], input_step: str):
         """
-         Cost (support) aggregation
+        Cost (support) aggregation
+
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
@@ -158,7 +160,8 @@ class PandoraMachine(Machine):
 
     def optimization_run(self, cfg: Dict[str, dict], input_step: str):
         """
-         Cost optimization
+        Cost optimization
+
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
@@ -176,6 +179,7 @@ class PandoraMachine(Machine):
     def disparity_run(self, cfg: Dict[str, dict], input_step: str):
         """
         Disparity computation and validity mask
+
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
@@ -200,6 +204,7 @@ class PandoraMachine(Machine):
     def filter_run(self, cfg: Dict[str, dict], input_step: str):
         """
         Disparity filter
+
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
@@ -216,7 +221,8 @@ class PandoraMachine(Machine):
 
     def refinement_run(self, cfg: Dict[str, dict], input_step: str):
         """
-         Subpixel disparity refinement
+        Subpixel disparity refinement
+
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
@@ -234,7 +240,8 @@ class PandoraMachine(Machine):
 
     def validation_run(self, cfg: Dict[str, dict], input_step: str):
         """
-         Validation of disparity map
+        Validation of disparity map
+
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
@@ -260,7 +267,8 @@ class PandoraMachine(Machine):
 
     def resize_run(self, cfg: Dict[str, dict], input_step: str):
         """
-         Resize left disparity map
+        Resize left disparity map
+
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
@@ -281,6 +289,7 @@ class PandoraMachine(Machine):
                     right_disp_max: Union[None, int, np.ndarray] = None):
         """
         Prepare the machine before running
+
         :param cfg:  configuration
         :type  cfg: dict
         :param left_img: left Dataset image

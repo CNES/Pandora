@@ -153,8 +153,6 @@ Validation methods provide a confidence index on the calculated disparity, those
 .. note::  Cross checking does not modify the disparity map, it only informs bits 8 and 9 in the
            validity mask.
 
-.. note::  When a validation step is set, it is possible to calculate the secondary disparity map by reversing the role of the images.
-
 It is possible to fill in occlusions and mismatches detected during cross-validation:.
 
 - using the method proposed in [6]_ : the disparity of a occluded pixel is modified using the

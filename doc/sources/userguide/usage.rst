@@ -1,5 +1,5 @@
 Usage
-=====
+*****
 
 The use as a binary is as follows:
 
@@ -14,7 +14,9 @@ Required arguments are :
 
 The other optional arguments, also available, are :
 
--
+- -v for verbose mode
+- -h for help
+
 .. note::
     The disparity calculated by Pandora is such that :
 
@@ -26,9 +28,9 @@ The other optional arguments, also available, are :
 .. _config_file:
 
 Configuration file
-------------------
+==================
 The configuration file provides a list of parameters to Pandora so that the processing pipeline can
-run according to the parameters chosen by the user.
+run according to the parameters choosen by the user.
 
 Pandora works with JSON formatted data with the following nested structures.
 
@@ -39,8 +41,13 @@ Pandora works with JSON formatted data with the following nested structures.
       "input" : {
         ...
       },
-      {
-        "pipeline" : {
+
+      "image" : {
+        ...
+      },
+
+      "pipeline" :
+       {
           "stereo" : {
             ...
           },
@@ -68,36 +75,21 @@ Pandora works with JSON formatted data with the following nested structures.
       }
     }
 
-"Pipeline" parameters define steps sequencing to be run. Pandora will check if sub-parameters of each mentioned step are correct.
-
 +---------------------+-----------------------------------+------+---------------+------------------------------+---------+
 | Name                | Description                       | Type | Default value | Sub structures              | Required |
 +=====================+===================================+======+===============+=============================+==========+
 | *input*             | Input data to process             | dict |               | :ref:`input_parameters`     | Yes      |
 +---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *image*             | Images and masks parameters       | dict |               | :ref:`image_parameters`     | Yes      |
+| *image*             | Images and masks parameters       | dict |               | :ref:`image_parameters`     | No       |
 +---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *stereo*            | Pixel and mask parameters         | dict |               | :ref:`stereo_parameters`    | Yes      |
+| *pipeline*          | Pipeline steps parameters         | dict |               | :ref:`pipeline_parameters`  | Yes      |
 +---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *aggregation*       | Aggregation step parameters       | dict |               | :ref:`aggreg_parameters`    | No       |
-+---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *optimization*      | Optimization step parameters      | dict |               | :ref:`optim_parameters`     | No       |
-+---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *disparity *        | Disparity  step parameters        | dict |               | :ref:`disparity_parameters` | No       |
-+---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *refinement*        | Refinement step parameters        | dict |               | :ref:`refine_parameters`    | No       |
-+---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *filter*            | Filtering step parameters         | dict |               | :ref:`filter_parameters`    | No       |
-+---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *validation*        | Validation step parameters        | dict |               | :ref:`valid_parameters`     | No       |
-+---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *resize*            | Resize step parameters            | dict |               | :ref:`resize_parameters`    | No       |
-+---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
+
 
 .. _input_parameters:
 
 Input parameters
-^^^^^^^^^^^^^^^^
+----------------
 
 +----------------+-----------------------------------------------------------+---------------+---------------+----------+
 | Name           | Description                                               | Type          | Default value | Required |
@@ -132,7 +124,7 @@ Input parameters
 .. _image_parameters:
 
 Image parameters
-^^^^^^^^^^^^^^^^
+----------------
 
 +--------------+----------------------------------+------+---------------+----------+
 | Name         | Description                      | Type | Default value | Required |
@@ -145,6 +137,51 @@ Image parameters
 +--------------+----------------------------------+------+---------------+----------+
 | no_data      | Nodata pixel value in the mask   | int  | 1             | No       |
 +--------------+----------------------------------+------+---------------+----------+
+
+
+.. _pipeline_parameters:
+
+Pipeline parameters
+-------------------
+
+"Pipeline" parameters define steps sequencing to be run. Pandora will check if sub-parameters of each mentioned step are correct.
+
++---------------------+-----------------------------------+------+---------------+------------------------------+---------+
+| Name                | Description                       | Type | Default value | Sub structures              | Required |
++=====================+===================================+======+===============+=============================+==========+
+| *right_disp_map*    | Input data to process             | dict |               | :ref:`rdm_parameters`       | No       |
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
+| *stereo*            | Pixel and mask parameters         | dict |               | :ref:`stereo_parameters`    | Yes      |
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
+| *aggregation*       | Aggregation step parameters       | dict |               | :ref:`aggreg_parameters`    | No       |
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
+| *optimization*      | Optimization step parameters      | dict |               | :ref:`optim_parameters`     | No       |
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
+| *disparity *        | Disparity  step parameters        | dict |               | :ref:`disparity_parameters` | Yes      |
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
+| *refinement*        | Refinement step parameters        | dict |               | :ref:`refine_parameters`    | No       |
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
+| *filter*            | Filtering step parameters         | dict |               | :ref:`filter_parameters`    | No       |
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
+| *validation*        | Validation step parameters        | dict |               | :ref:`valid_parameters`     | No       |
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
+| *resize*            | Resize step parameters            | dict |               | :ref:`resize_parameters`    | No       |
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
+
+.. _rdm_parameters:
+
+Right disparity map parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++-----------------+---------------------------------------------+--------+---------------+--------------------------------+----------+
+| Name            | Description                                 | Type   | Default value | Available value                | Required |
++=================+=============================================+========+===============+================================+==========+
+| *stereo_method* | Method to compute the right disparity map   | string |   none        | "none", "accurate"             | Yes      |
++-----------------+---------------------------------------------+--------+---------------+--------------------------------+----------+
+
+.. note::
+    * method = "none": the right disparity map is not calculated.
+    * method = "accurate": the right disparity map is calculated following the same pipeline as for the left disparity map, by inverting input images:
+                           the left one becomes the right one, the right one becomes the left one.
 
 
 .. _stereo_parameters:
@@ -258,6 +295,9 @@ Validation parameters
 | *interpolated_disparity*          | Interpolation method for filling occlusion and mismatches                                               | string |               | "mc_cnn", "sgm"           | No       |
 +-----------------------------------+---------------------------------------------------------------------------------------------------------+--------+---------------+---------------------------+----------+
 
+.. note::
+  Cross-checking method cannot be choosen if right disparity map is not calculated. See  :ref:`rdm_parameters` to activate it.
+
 .. _resize_parameters:
 
 Resize  parameters
@@ -273,16 +313,15 @@ Resize  parameters
   See :ref:`border_management` to understand the goal of this step.
 
 Sequencing of Pandora steps (Pandora Machine)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------------------------
 
 Moreover, Pandora will check if the requested steps sequencing is correct following the permitted
 transition defined by the Pandora Machine (`transitions <https://github.com/pytransitions/transitions>`_)
 
-Pandora Machine defines 5 possible states:
+Pandora Machine defines 4 possible states:
  - begin
  - cost_volume
- - reference_disparity
- - reference_and_secondary_disparity
+ - disparity_map
  - Resized_disparity
 
 It starts at the begin state. To go from a state from another one, transitions are called and triggered
@@ -292,12 +331,15 @@ The following diagram highligts all states and possible transitions.
 
     .. figure:: ../Images/Machine_state_diagram.png
 
+A transition (i.e a pandora's step) can be triggered several times. You must respect the following
+naming convention: *stepname_xxx* . xxx can be the string you want.
+See :ref:`multiple_filters_example`
 
 Examples
---------
+========
 
 SSD measurment and filtered disparity map
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------------------
 
 Configuration to produce a disparity map, computed by SSD method, and filterd by
 median filter method.
@@ -335,7 +377,7 @@ median filter method.
     }
 
 An impossible sequencing
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------
 
 .. sourcecode:: text
 
@@ -382,9 +424,46 @@ the first step to be triggered. So, Pandora Machine go from *begin* state to *co
 Next, the *filter* is going to be triggered but this is not possible. This step can be triggered only
 if the Pandora Machine is in *reference_disparity* or *reference_and_secondary_disparity*.
 
+.. _multiple_filters_example:
+
+Same step, multiple times
+-------------------------
+
+.. sourcecode:: text
+
+    {
+      "input": {
+        "ref_mask": null,
+        "sec_mask": null,
+        "disp_min_sec": null,
+        "disp_max_sec": null,
+        "img_ref": "img_ref.png",
+        "img_sec": "img_ref.png",
+        "disp_min": -100,
+        "disp_max": 100
+      },
+      "pipeline": {
+          "stereo": {
+            "stereo_method": "ssd",
+            "window_size": 5,
+            "subpix": 1
+          },
+          "disparity": {
+            "disparity_method": "wta",
+            "invalid_disparity": "np.nan"
+          },
+          "filter_1": {
+            "filter_method": "median"
+          }
+          "filter_2": {
+            "filter_method": "bilateral"
+          }
+     }
+    }
+
 
 Output
------------
+======
 
 Pandora will store several data in the output folder, the tree structure is defined in the file
 pandora/output_tree_design.py.
@@ -403,7 +482,7 @@ Saved images
 .. _validity_mask:
 
 Validity mask
-^^^^^^^^^^^^^
+-------------
 
 Validity masks indicate why a pixel in the image is invalid and
 provide information on the reliability of the match. These masks are 16-bit encoded: each bit
