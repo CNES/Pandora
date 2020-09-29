@@ -1,0 +1,24 @@
+services:
+- docker
+
+git:
+  depth: false
+
+before_install:
+- docker pull ldumas/pandora_build_env:ubuntu19.04-python3.7
+
+before_script:
+#- if [ "x${TRAVIS_PULL_REQUEST}" = "xfalse" ]; then 
+- export SRCDIR=/data
+
+script:
+- docker run -v $TRAVIS_BUILD_DIR/:/data ldumas/pandora_build_env:ubuntu19.04-python3.7 /bin/sh -c "virtualenv venv; source venv/bin/activate; pip install -e ."
+
+# deploy:
+#   provider: script
+#   script: if [ "x${TRAVIS_PULL_REQUEST}" = "xfalse" ]; then .travis/deploy.sh; fi
+#   on:
+#     branch: master
+
+after_success:
+- if [ "x${TRAVIS_PULL_REQUEST}" = "xfalse" ]; then .travis/on_success.sh; fi
