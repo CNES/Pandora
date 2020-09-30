@@ -47,12 +47,14 @@ class TestAggregation(unittest.TestCase):
                           [1, 18, 4, 5, 9]]), dtype=np.float32)
         self.ref = xr.Dataset({'im': (['row', 'col'], data)},
                               coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+        self.ref.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         data = np.array(([[1, 5, 1, 15, 7],
                           [2, 10, 9, 11, 9],
                           [3, 1, 18, 4, 5]]), dtype=np.float32)
         self.sec = xr.Dataset({'im': (['row', 'col'], data)},
                               coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+        self.sec.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         # Create the matching cost for the images self.ref and self.sec, with disp = [-1, 0, 1] and SAD measuress
         row = np.arange(3)
@@ -72,9 +74,8 @@ class TestAggregation(unittest.TestCase):
 
         """
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 2})
-        sad = stereo_matcher.compute_cost_volume(img_ref=self.ref, img_sec=self.sec, disp_min=-1, disp_max=1,
-                                                 **{'valid_pixels': 0, 'no_data': 1})
-        sad = stereo_matcher.cv_masked(self.ref, self.sec, sad, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
+        sad = stereo_matcher.compute_cost_volume(img_ref=self.ref, img_sec=self.sec, disp_min=-1, disp_max=1)
+        sad = stereo_matcher.cv_masked(self.ref, self.sec, sad, -1, 1)
 
         # Computes the cost aggregation with the cross-based cost aggregation method,
         # with cbca_intensity=5 and cbca_distance=3
@@ -213,8 +214,7 @@ class TestAggregation(unittest.TestCase):
                           [3, 0, 0, 0, 0]]))
         ref = xr.Dataset({'im': (['row', 'col'], data), 'msk': (['row', 'col'], mask)},
                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        ref.attrs['valid_pixels'] = 0
-        ref.attrs['no_data'] = 1
+        ref.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         data = np.array(([[1, 5, 1, 15, 7],
                           [2, 10, 9, 11, 9],
@@ -226,13 +226,11 @@ class TestAggregation(unittest.TestCase):
                           [0, 0, 0, 0, 0]]))
         sec = xr.Dataset({'im': (['row', 'col'], data), 'msk': (['row', 'col'], mask)},
                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        sec.attrs['valid_pixels'] = 0
-        sec.attrs['no_data'] = 1
+        sec.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
-        sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1,
-                                                 **{'valid_pixels': 0, 'no_data': 1})
-        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
+        sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1)
+        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1)
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                    'cbca_intensity': 5., 'cbca_distance': 3})
@@ -259,6 +257,7 @@ class TestAggregation(unittest.TestCase):
                           [5, 1, 15, 7, 3]]), dtype=np.float32)
         ref = xr.Dataset({'im': (['row', 'col'], data)},
                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+        ref.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         data = np.array(([[1, 5, 1, 15, 7],
                           [2, 10, 9, 11, 9],
@@ -266,10 +265,11 @@ class TestAggregation(unittest.TestCase):
                           [1, 5, 1, 15, 7]]), dtype=np.float32)
         sec = xr.Dataset({'im': (['row', 'col'], data)},
                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+        sec.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
         sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1)
-        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
+        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1)
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                    'cbca_intensity': 5., 'cbca_distance': 3})
@@ -298,8 +298,7 @@ class TestAggregation(unittest.TestCase):
                           [1, 18, 4, 5, 9]]), dtype=np.float32)
         ref = xr.Dataset({'im': (['row', 'col'], data)},
                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        ref.attrs['valid_pixels'] = 0
-        ref.attrs['no_data'] = 1
+        ref.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         data = np.array(([[1, 5, 1, 15, 7],
                           [2, 10, 9, 11, 9],
@@ -307,17 +306,15 @@ class TestAggregation(unittest.TestCase):
 
         sec = xr.Dataset({'im': (['row', 'col'], data)},
                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        sec.attrs['valid_pixels'] = 0
-        sec.attrs['no_data'] = 1
+        sec.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
-        sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1,
-                                                 **{'valid_pixels': 0, 'no_data': 1})
-        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
+        sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1)
+        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1)
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                    'cbca_intensity': 5., 'cbca_distance': 3})
-        cross_ref, cross_sec = cbca_obj.computes_cross_supports(ref, sec, sad, {'valid_pixels': 0, 'no_data': 1})
+        cross_ref, cross_sec = cbca_obj.computes_cross_supports(ref, sec, sad)
 
         # Cross support region top arm ground truth for the reference
         top_arm = np.array([[0, 0, 0, 0, 0],
@@ -381,8 +378,7 @@ class TestAggregation(unittest.TestCase):
                           [0, 3, 0, 0, 0]]))
         ref = xr.Dataset({'im': (['row', 'col'], data), 'msk': (['row', 'col'], mask)},
                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        ref.attrs['valid_pixels'] = 0
-        ref.attrs['no_data'] = 1
+        ref.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         data = np.array(([[1, 5, 1, 15, 7],
                           [2, 10, 9, 11, 9],
@@ -392,17 +388,15 @@ class TestAggregation(unittest.TestCase):
                           [0, 0, 0, 0, 0]]))
         sec = xr.Dataset({'im': (['row', 'col'], data), 'msk': (['row', 'col'], mask)},
                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        sec.attrs['valid_pixels'] = 0
-        sec.attrs['no_data'] = 1
+        sec.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
-        sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1,
-                                                 **{'valid_pixels': 0, 'no_data': 1})
-        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
+        sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1)
+        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1)
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                    'cbca_intensity': 6., 'cbca_distance': 3})
-        cross_ref, cross_sec = cbca_obj.computes_cross_supports(ref, sec, sad, {'valid_pixels': 0, 'no_data': 1})
+        cross_ref, cross_sec = cbca_obj.computes_cross_supports(ref, sec, sad)
 
         # Cross support region top arm ground truth for the reference
         top_arm = np.array([[0, 0, 0, 0, 0],
@@ -469,8 +463,7 @@ class TestAggregation(unittest.TestCase):
                           [1, 18, 4, 5, 9]]), dtype=np.float32)
         ref = xr.Dataset({'im': (['row', 'col'], data)},
                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        ref.attrs['valid_pixels'] = 0
-        ref.attrs['no_data'] = 1
+        ref.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         data = np.array(([[1, 5, 1, 15, 7],
                           [2, 10, 9, 11, 9],
@@ -482,13 +475,12 @@ class TestAggregation(unittest.TestCase):
         sec.attrs['no_data'] = 1
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 2})
-        sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1,
-                                                 **{'valid_pixels': 0, 'no_data': 1})
-        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
+        sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1)
+        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1)
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                    'cbca_intensity': 5., 'cbca_distance': 3})
-        cross_ref, cross_sec = cbca_obj.computes_cross_supports(ref, sec, sad, {'valid_pixels': 0, 'no_data': 1})
+        cross_ref, cross_sec = cbca_obj.computes_cross_supports(ref, sec, sad)
 
         # Cross support region top arm ground truth for the secondary shifted image
         top_arm = np.array([[0, 0, 0, 0],
@@ -525,8 +517,7 @@ class TestAggregation(unittest.TestCase):
                           [0, 0, 0, 0, 0]]))
         ref = xr.Dataset({'im': (['row', 'col'], data), 'msk': (['row', 'col'], mask)},
                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        ref.attrs['valid_pixels'] = 0
-        ref.attrs['no_data'] = 1
+        ref.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         data = np.array(([[1, 5, 1, 15, 7],
                           [2, 10, 9, 11, 9],
@@ -537,17 +528,15 @@ class TestAggregation(unittest.TestCase):
 
         sec = xr.Dataset({'im': (['row', 'col'], data), 'msk': (['row', 'col'], mask)},
                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        sec.attrs['valid_pixels'] = 0
-        sec.attrs['no_data'] = 1
+        sec.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 2})
-        sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1,
-                                                 **{'valid_pixels': 0, 'no_data': 1})
-        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
+        sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1)
+        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1)
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                    'cbca_intensity': 6., 'cbca_distance': 3})
-        cross_ref, cross_sec = cbca_obj.computes_cross_supports(ref, sec, sad, {'valid_pixels': 0, 'no_data': 1})
+        cross_ref, cross_sec = cbca_obj.computes_cross_supports(ref, sec, sad)
 
         # Cross support region top arm ground truth for the secondary shifted image
         top_arm = np.array([[0, 0, 0, 0],
@@ -587,8 +576,7 @@ class TestAggregation(unittest.TestCase):
                           [5, 1, 15, 7, 3]]), dtype=np.float32)
         ref = xr.Dataset({'im': (['row', 'col'], data)},
                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        ref.attrs['valid_pixels'] = 0
-        ref.attrs['no_data'] = 1
+        ref.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         data = np.array(([[1, 5, 1, 15, 7],
                           [2, 10, 9, 11, 9],
@@ -601,13 +589,12 @@ class TestAggregation(unittest.TestCase):
         sec.attrs['no_data'] = 1
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
-        sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1,
-                                                 **{'valid_pixels': 0, 'no_data': 1})
-        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
+        sad = stereo_matcher.compute_cost_volume(img_ref=ref, img_sec=sec, disp_min=-1, disp_max=1)
+        sad = stereo_matcher.cv_masked(ref, sec, sad, -1, 1)
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                       'cbca_intensity': 5., 'cbca_distance': 3})
-        cross_ref, cross_sec = cbca_obj.computes_cross_supports(ref, sec, sad, {'valid_pixels': 0, 'no_data': 1})
+        cross_ref, cross_sec = cbca_obj.computes_cross_supports(ref, sec, sad)
 
         # Cross support region top arm ground truth for the secondary shifted image
         top_arm = np.array([[0, 0, 0],

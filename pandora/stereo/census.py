@@ -82,7 +82,7 @@ class Census(stereo.AbstractStereo):
         print('census similarity measure')
 
     def compute_cost_volume(self, img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: int,
-                            disp_max: int, **cfg: Union[str, int]) -> xr.Dataset:
+                            disp_max: int) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
 
@@ -100,8 +100,6 @@ class Census(stereo.AbstractStereo):
         :type disp_min: int
         :param disp_max: maximum disparity
         :type disp_max: int
-        :param cfg: images configuration containing the mask convention : valid_pixels, no_data
-        :type cfg: dict
         :return: the cost volume dataset
         :rtype:
             xarray.Dataset, with the data variables:

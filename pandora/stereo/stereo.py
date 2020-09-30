@@ -94,8 +94,8 @@ class AbstractStereo(object):
         print('Stereo matching description')
 
     @abstractmethod
-    def compute_cost_volume(self, img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: int, disp_max: int,
-                            **cfg: Union[str, int]) -> xr.Dataset:
+    def compute_cost_volume(self, img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: int, disp_max: int
+                            ) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
 
@@ -113,8 +113,6 @@ class AbstractStereo(object):
         :type disp_min: int
         :param disp_max: maximum disparity
         :type disp_max: int
-        :param cfg: images configuration containing the mask convention : valid_pixels, no_data
-        :type cfg: dict
         :return: the cost volume dataset
         :rtype:
             xarray.Dataset, with the data variables:
@@ -220,7 +218,7 @@ class AbstractStereo(object):
         return p, q
 
     def masks_dilatation(self, img_ref: xr.Dataset, img_sec: xr.Dataset, offset_row_col: int, window_size: int,
-                         subp: int, cfg: Union[str, int]) -> Tuple[xr.DataArray, List[xr.DataArray]]:
+                         subp: int) -> Tuple[xr.DataArray, List[xr.DataArray]]:
         """
         Return the reference and secondary mask with the convention :
             - Invalid pixels are nan
@@ -260,9 +258,9 @@ class AbstractStereo(object):
             dilatate_ref_mask = np.zeros(img_ref['msk'].shape)
             # Invalid pixels are nan
             dilatate_ref_mask[
-                np.where((img_ref['msk'].data != cfg['valid_pixels']) & (img_ref['msk'].data != cfg['no_data']))] = np.nan
+                np.where((img_ref['msk'].data != img_ref.attrs['valid_pixels']) & (img_ref['msk'].data != img_ref.attrs['no_data_mask']))] = np.nan
             # Dilatation : pixels that contains no_data in their aggregation window become no_data = nan
-            dil = binary_dilation(img_ref['msk'].data == cfg['no_data'],
+            dil = binary_dilation(img_ref['msk'].data == img_ref.attrs['no_data_mask'],
                                   structure=np.ones((window_size, window_size)), iterations=1)
             dilatate_ref_mask[dil] = np.nan
         else:
@@ -274,9 +272,9 @@ class AbstractStereo(object):
             dilatate_sec_mask = np.zeros(img_sec['msk'].shape)
             # Invalid pixels are nan
             dilatate_sec_mask[
-                np.where((img_sec['msk'].data != cfg['valid_pixels']) & (img_sec['msk'].data != cfg['no_data']))] = np.nan
+                np.where((img_sec['msk'].data != img_sec.attrs['valid_pixels']) & (img_sec['msk'].data != img_sec.attrs['no_data_mask']))] = np.nan
             # Dilatation : pixels that contains no_data in their aggregation window become no_data = nan
-            dil = binary_dilation(img_sec['msk'].data == cfg['no_data'],
+            dil = binary_dilation(img_sec['msk'].data == img_sec.attrs['no_data_mask'],
                                   structure=np.ones((window_size, window_size)), iterations=1)
             dilatate_sec_mask[dil] = np.nan
 
@@ -351,7 +349,7 @@ class AbstractStereo(object):
         return dmin_min, dmax_max
 
     def cv_masked(self, img_ref: xr.Dataset, img_sec: xr.Dataset, cost_volume: xr.Dataset,
-                  disp_min: Union[int, np.ndarray], disp_max: Union[int, np.ndarray], **cfg: Union[str, int]) -> xr.Dataset:
+                  disp_min: Union[int, np.ndarray], disp_max: Union[int, np.ndarray]) -> xr.Dataset:
         """
         Masks the cost volume :
             - costs which are not inside their disparity range, are masked with a nan value
@@ -395,7 +393,7 @@ class AbstractStereo(object):
         # Computes the validity mask of the cost volume : invalid pixels or no_data are masked with the value nan.
         # Valid pixels are = 0
         offset = int((self._window_size - 1) / 2)
-        mask_ref, mask_sec = self.masks_dilatation(img_ref, img_sec, offset, self._window_size, self._subpix, cfg)
+        mask_ref, mask_sec = self.masks_dilatation(img_ref, img_sec, offset, self._window_size, self._subpix)
         offset_mask = (int(self._window_size / 2) * 2)
 
         for disp in cost_volume.coords['disp'].data:

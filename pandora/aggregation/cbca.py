@@ -114,7 +114,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
-        cross_ref, cross_sec = self.computes_cross_supports(img_ref, img_sec, cv, cfg)
+        cross_ref, cross_sec = self.computes_cross_supports(img_ref, img_sec, cv)
 
         ny_, nx_, nb_disp = cv['cost_volume'].shape
 
@@ -169,8 +169,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
 
         return cv
 
-    def computes_cross_supports(self, img_ref: xr.Dataset, img_sec: xr.Dataset, cv: xr.Dataset,
-                                cfg: Union[str, int]) -> Tuple[np.ndarray, List[np.ndarray]]:
+    def computes_cross_supports(self, img_ref: xr.Dataset, img_sec: xr.Dataset, cv: xr.Dataset) -> Tuple[np.ndarray, List[np.ndarray]]:
         """
         Prepare images and compute the cross support region of the reference and secondary images.
         A 3x3 median filter is applied to the images before calculating the cross support region.
@@ -190,8 +189,6 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
             xarray.Dataset, with the data variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :param cfg: images configuration containing the mask convention : valid_pixels, no_data
-        :type cfg: dict
         :return: the reference and secondary cross support region
         :rtype: Tuples(reference cross support region, List(secondary cross support region))
         """
@@ -207,7 +204,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         # Invalid and nodata pixels are masked with np.nan to avoid propagating the values with the median filter
         ref_masked = np.copy(img_ref['im'].data)
         if 'msk' in img_ref.data_vars:
-            ref_masked[np.where(img_ref['msk'].data != cfg['valid_pixels'])] = np.nan
+            ref_masked[np.where(img_ref['msk'].data != img_ref.attrs['valid_pixels'])] = np.nan
 
         ref_masked = filter.median_filter(ref_masked)
         # Convert nan to inf to be able to use the comparison operators < and > in cross_support function
@@ -227,12 +224,12 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
 
             # Pixel precision
             if ('msk' in img_sec.data_vars) and (shift == 0):
-                sec_masked[np.where(img_sec['msk'].data != cfg['valid_pixels'])] = np.nan
+                sec_masked[np.where(img_sec['msk'].data != img_sec.attrs['valid_pixels'])] = np.nan
 
             # Subpixel precision : computes the shifted secondary mask
             if ('msk' in img_sec.data_vars) and (shift != 0):
                 shift_mask = np.zeros(img_sec['msk'].data.shape)
-                shift_mask[np.where(img_sec['msk'].data != cfg['valid_pixels'])] = np.nan
+                shift_mask[np.where(img_sec['msk'].data != img_sec.attrs['valid_pixels'])] = np.nan
 
                 # Since the interpolation of the secondary image is of order 1, the shifted secondary mask corresponds
                 # to an aggregation of two columns of the secondary mask
