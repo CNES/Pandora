@@ -39,6 +39,7 @@ class TestImgTools(unittest.TestCase):
     """
     TestImgTools class allows to test all the methods in the module img_tools
     """
+
     def setUp(self):
         """
         Method called to prepare the test fixture
@@ -80,16 +81,16 @@ class TestImgTools(unittest.TestCase):
 
         """
         # Mean raster ground truth for the image self.img with window size 3
-        mean_ground_truth = np.array(([1., 12/9., 15/9., 15/9.],
-                                      [1., 12/9., 15/9., 15/9.],
-                                      [1., 12/9., 14./9, 14./9]))
+        mean_ground_truth = np.array(([1., 12 / 9., 15 / 9., 15 / 9.],
+                                      [1., 12 / 9., 15 / 9., 15 / 9.],
+                                      [1., 12 / 9., 14. / 9, 14. / 9]))
         # Computes the mean raster for the image self.img with window size 3
         mean_r = img_tools.compute_mean_raster(self.img, 3)
         # Check if the calculated mean is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(mean_r, mean_ground_truth)
 
         # Mean raster ground truth for the image self.img with window size 5
-        mean_ground_truth = np.array(([[31/25., 31/25.]]))
+        mean_ground_truth = np.array(([[31 / 25., 31 / 25.]]))
         # Computes the mean raster for the image self.img with window size 5
         mean_r = img_tools.compute_mean_raster(self.img, 5)
         # Check if the calculated mean is equal to the ground truth (same shape and all elements equals)
@@ -108,7 +109,7 @@ class TestImgTools(unittest.TestCase):
         # Computes the mean for the image self.img with window size 5 centered on y=2, x=2
         mean = img_tools.compute_mean_patch(self.img, 2, 2, 5)
         # Check if the calculated mean is equal to the ground truth 31/25.
-        self.assertEqual(mean, np.float32(31/25.))
+        self.assertEqual(mean, np.float32(31 / 25.))
 
     def test_check_inside_image(self):
         """
@@ -129,9 +130,10 @@ class TestImgTools(unittest.TestCase):
 
         """
         # standard deviation raster ground truth for the image self.img with window size 3
-        std_ground_truth = np.array(([0., np.std(self.img['im'][:3,1:4]), np.std(self.img['im'][:3,2:5]), np.std(self.img['im'][:3,3:])],
-                                     [0., np.std(self.img['im'][1:4,1:4]), np.std(self.img['im'][1:4,2:5]), np.std(self.img['im'][1:4,3:])],
-                                     [0., np.std(self.img['im'][2:5,1:4]), np.std(self.img['im'][2:5,2:5]), np.std(self.img['im'][2:5,3:])]))
+        std_ground_truth = np.array(
+            ([0., np.std(self.img['im'][:3, 1:4]), np.std(self.img['im'][:3, 2:5]), np.std(self.img['im'][:3, 3:])],
+             [0., np.std(self.img['im'][1:4, 1:4]), np.std(self.img['im'][1:4, 2:5]), np.std(self.img['im'][1:4, 3:])],
+             [0., np.std(self.img['im'][2:5, 1:4]), np.std(self.img['im'][2:5, 2:5]), np.std(self.img['im'][2:5, 3:])]))
         # Computes the standard deviation raster for the image self.img with window size 3
         std_r = img_tools.compute_std_raster(self.img, 3)
         # Check if the calculated standard deviation is equal ( to desired tolerance 1e-07 ) to the ground truth
@@ -173,18 +175,18 @@ class TestImgTools(unittest.TestCase):
                                      cfg=default_cfg['image'], mask='tests/image/mask_ref.tif')
 
         # Mask ground truth
-        mask_gt = np.array([[1, 0, 2, 2, 1],
-                            [0, 0, 0, 0, 2],
-                            [1, 1, 0, 0, 2],
-                            [0, 0, 2, 0, 1]])
+        mask_gt = np.array([[1, 0, 1, 2, 1],
+                           [0, 0, 0, 0, 1],
+                           [1, 1, 0, 0, 1],
+                           [0, 0, 255, 0, 1]])
 
         # Check if the calculated mask is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(dst_ref['msk'].data, mask_gt)
 
-        ref_img = np.array([[0.,  1.,  2.,  3.,  0.],
-                            [5.,  6.,  7.,  8.,  9.],
-                            [0.,  0., 23.,  5.,  6.],
-                            [12.,  5.,  6.,  3.,  0.]], dtype=np.float32)
+        ref_img = np.array([[0., 1., 2., 3., 0.],
+                            [5., 6., 7., 8., 9.],
+                            [0., 0., 23., 5., 6.],
+                            [12., 5., 6., 3., 0.]], dtype=np.float32)
 
         # Check the image
         np.testing.assert_array_equal(dst_ref['im'].data, ref_img)
@@ -212,7 +214,7 @@ class TestImgTools(unittest.TestCase):
         np.testing.assert_array_equal(disp_, gt)
 
 
-def setup_logging(path='logging.json', default_level=logging.WARNING,):
+def setup_logging(path='logging.json', default_level=logging.WARNING, ):
     """
     Setup the logging configuration
 
