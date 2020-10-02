@@ -84,18 +84,18 @@ class AbstractAggregation(object):
         print('Aggregation description')
 
     @abstractmethod
-    def cost_volume_aggregation(self, img_ref: xr.Dataset, img_sec: xr.Dataset, cv: xr.Dataset,
+    def cost_volume_aggregation(self, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset,
                                 **cfg: Union[str, int]) -> xr.Dataset:
         """
         Aggregate the cost volume for a pair of images
 
-        :param img_ref: reference Dataset image
-        :type img_ref:
+        :param img_left: left Dataset image
+        :type img_left:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
+        :param img_right: right Dataset image
+        :type img_right:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray

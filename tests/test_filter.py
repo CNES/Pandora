@@ -59,7 +59,7 @@ class TestDisparity(unittest.TestCase):
                          [6, 1, 9, 2, 4]], dtype=np.float32)
 
         valid = np.array([[0, 0, 0, 0, 0],
-                          [0, PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0],
+                          [0, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0],
                           [0, PANDORA_MSK_PIXEL_FILLED_OCCLUSION, 0, 0, 0],
                           [0, 0, 0, 0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION]], dtype=np.uint16)
 
@@ -86,18 +86,18 @@ class TestDisparity(unittest.TestCase):
                          [5, 2, 7, 2, 2],
                          [6, 1, 9, 2, 4]], dtype=np.float32)
 
-        valid = np.array([[PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE, 0,
-                           PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE,
-                           PANDORA_MSK_PIXEL_FILLED_OCCLUSION + PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER, 0],
-                          [PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_SEC, PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER,
+        valid = np.array([[PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
+                           PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                           PANDORA_MSK_PIXEL_FILLED_OCCLUSION + PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, 0],
+                          [PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                            PANDORA_MSK_PIXEL_OCCLUSION, 0, 0],
-                          [PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_REF, PANDORA_MSK_PIXEL_MISMATCH,
-                           PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING,
-                           PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE + PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                          [PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, PANDORA_MSK_PIXEL_MISMATCH,
+                           PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                           PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE + PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                            0],
-                          [PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING, PANDORA_MSK_PIXEL_OCCLUSION,
-                           PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_REF, 0,
-                           PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING]],
+                          [PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING, PANDORA_MSK_PIXEL_OCCLUSION,
+                           PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, 0,
+                           PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING]],
                          dtype=np.uint16)
 
         disp_dataset = xr.Dataset({'disparity_map': (['row', 'col'], disp),
@@ -123,13 +123,13 @@ class TestDisparity(unittest.TestCase):
                          [5, 2, 7, 2, 2],
                          [6, 1, 9, 2, 4]], dtype=np.float32)
 
-        valid = np.array([[PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE, 0,
-                           PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE,
-                           PANDORA_MSK_PIXEL_FILLED_OCCLUSION + PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER, 0],
+        valid = np.array([[PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
+                           PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                           PANDORA_MSK_PIXEL_FILLED_OCCLUSION + PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, 0],
                           [0, 0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0, 0],
-                          [0, 0, 0, PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE +
+                          [0, 0, 0, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
                            PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0],
-                          [PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_SEC, 0, 0, 0, 0]], dtype=np.uint16)
+                          [PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT, 0, 0, 0, 0]], dtype=np.uint16)
 
         disp_dataset = xr.Dataset({'disparity_map': (['row', 'col'], disp),
                                    'validity_mask': (['row', 'col'], valid)},
@@ -156,16 +156,16 @@ class TestDisparity(unittest.TestCase):
                          [6, 1, 9, 2, 4],
                          [1, 6, 2, 7, 8]], dtype=np.float32)
 
-        valid = np.array([[PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE, 0,
-                           PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE,
-                           PANDORA_MSK_PIXEL_FILLED_OCCLUSION + PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER, 0],
+        valid = np.array([[PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
+                           PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                           PANDORA_MSK_PIXEL_FILLED_OCCLUSION + PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, 0],
                           [0, 0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0, 0],
-                          [0, 0, 0, PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE +
+                          [0, 0, 0, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
                            PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0],
-                          [PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_SEC, 0, 0, 0, 0],
-                          [PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_REF, 0,
-                           PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE,
-                           PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING +
+                          [PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT, 0, 0, 0, 0],
+                          [PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, 0,
+                           PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                           PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING +
                            PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0]],
                          dtype=np.uint16)
 
@@ -199,7 +199,7 @@ class TestDisparity(unittest.TestCase):
                          [6, 1, 9, 2, 4]], dtype=np.float32)
 
         valid = np.array([[0, 0, 0, 0, 0],
-                          [0, PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0],
+                          [0, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0],
                           [0, PANDORA_MSK_PIXEL_FILLED_OCCLUSION, 0, 0, 0],
                           [0, 0, 0, 0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION]], dtype=np.uint16)
 

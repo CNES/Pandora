@@ -28,7 +28,9 @@ import numpy as np
 import logging
 from scipy.ndimage.interpolation import zoom
 import rasterio
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Tuple
+from .common import sliding_window
+import cv2
 
 
 def read_img(img: str, no_data: float, cfg: Dict, mask: xr.Dataset = None) -> xr.Dataset:
@@ -54,7 +56,10 @@ def read_img(img: str, no_data: float, cfg: Dict, mask: xr.Dataset = None) -> xr
     dataset = xr.Dataset({'im': (['row', 'col'], data.astype(np.float32))},
                          coords={'row': np.arange(data.shape[0]),
                                  'col': np.arange(data.shape[1])})
-
+    # Add image conf to the image dataset
+    dataset.attrs = {'no_data_img': no_data,
+                     'valid_pixels': cfg["valid_pixels"],
+                     'no_data_mask': cfg["no_data"]}
     # If there is no mask, and no data in the images, do not create the mask to minimize calculation time
     no_data_pixels = np.where(data == no_data)
     if mask is None and no_data_pixels[0].size == 0:
@@ -67,64 +72,147 @@ def read_img(img: str, no_data: float, cfg: Dict, mask: xr.Dataset = None) -> xr
     # Mask invalid pixels if needed
     if mask is not None:
         input_mask = rasterio.open(mask).read(1)
-        dataset['msk'].data = input_mask
+        # Masks invalid pixels
+        # All pixels that are not no_data and valid_pixels are considered as invalid pixels
+        dataset['msk'].data[np.where(input_mask > 0)] = int(cfg['valid_pixels']) + int(cfg['no_data']) + 1
 
     # Masks no_data pixels
     # If a pixel is invalid due to the input mask, and it is also no_data, then the value of this pixel in the
-    # generated mask will be = no_data
+    # generaceted mask will be = no_data
     dataset['msk'].data[no_data_pixels] = int(cfg['no_data'])
 
-    # Add image conf to the image dataset
-    dataset.attrs = {'no_data_img': no_data,
-                     'valid_pixels': cfg["valid_pixels"],
-                     'no_data_mask': cfg["no_data"]}
     return dataset
 
 
-def shift_sec_img(img_sec: xr.Dataset, subpix: int) -> List[xr.Dataset]:
+def prepare_pyramid(img_left: xr.Dataset, img_right: xr.Dataset, num_scales: int, scale_factor: int) -> \
+        Tuple[List[xr.Dataset], List[xr.Dataset]]:
     """
-    Return an array that contains the shifted secondary images
+    Return a List with the datasets at the different scales
 
-    :param img_sec: secondary Dataset image
-    :type img_sec:
+    :param img_left: left Dataset image
+    :type img_left:
+    xarray.Dataset containing :
+        - im : 2D (row, col) xarray.DataArray
+    :param img_right: right Dataset image
+    :type img_right:
+    xarray.Dataset containing :
+        - im : 2D (row, col) xarray.DataArray
+    :param num_scales: number of scales
+    :type num_scales: int
+    :param scale_factor: factor by which downsample the images
+    :type scale_factor: int
+    :return: a List that contains the different scaled datasets
+    :rtype : List of xarray.Dataset
+    """
+
+    # Create multiscale pyramid.
+    pyramid_left = []
+    pyramid_right = []
+
+    pyramid_left.append(img_left)
+    pyramid_right.append(img_right)
+
+    scales = np.arange(num_scales - 1)
+    for scale in scales:
+        # Downsample the previous layer
+        pyramid_left.append(create_downsampled_dataset(pyramid_left[-1], scale_factor))
+        pyramid_right.append(create_downsampled_dataset(pyramid_right[-1], scale_factor))
+
+    # The pyramid is intended to be from coarse to original size, so we inverse its order.
+    return pyramid_left[::-1], pyramid_right[::-1]
+
+
+def create_downsampled_dataset(img_orig: xr.Dataset, scale_factor: int) -> xr.Dataset:
+    """
+    Return a xr.Dataset downsampled dataset
+
+    :param img_orig : original Dataset image
+    :type img_orig:
+    xarray.Dataset containing :
+        - im : 2D (row, col) xarray.DataArray
+
+    :param scale_factor: factor by which downsample the image
+    :type scale_factor: int
+    :return: a downsampled dataset
+    :rtype : array of xarray.Dataset
+    """
+
+    # Downsampling and appliying gaussian kernel to original image
+    if scale_factor == 1:
+        return img_orig
+
+    img = cv2.GaussianBlur(img_orig['im'].data, ksize=(5, 5), sigmaX=1.2, sigmaY=1.2)
+    img_downs = cv2.resize(img, dsize=(
+    int(img_orig['im'].data.shape[1] / scale_factor), int(img_orig['im'].data.shape[0] / scale_factor)),
+                           interpolation=cv2.INTER_AREA)
+
+    # Downsampling mask if exists, otherwise create mask of all valid
+    if 'msk' in img_orig:
+        mask_downs = cv2.resize(img, dsize=(
+        int(img_orig['msk'].data.shape[1] / scale_factor), int(img_orig['msk'].data.shape[0] / scale_factor)),
+                                interpolation=cv2.INTER_AREA)
+    else:
+        mask_downs = img_downs * 0
+    # Creating new dataset
+    dataset = xr.Dataset({'im': (['row', 'col'], img_downs.astype(np.float32))},
+                         coords={'row': np.arange(img_downs.shape[0]),
+                                 'col': np.arange(img_downs.shape[1])})
+
+    # Allocate the mask
+    dataset['msk'] = xr.DataArray(np.full((img_downs.shape[0], img_downs.shape[1]), mask_downs.astype(np.int16)),
+                                  dims=['row', 'col'])
+
+    # Add image conf to the image dataset
+    dataset.attrs = {'no_data_img': img_orig.attrs['no_data_img'],
+                     'valid_pixels': img_orig.attrs["valid_pixels"],
+                     'no_data_mask': img_orig.attrs["no_data_mask"]}
+    return dataset
+
+
+def shift_right_img(img_right: xr.Dataset, subpix: int) -> List[xr.Dataset]:
+    """
+    Return an array that contains the shifted right images
+
+    :param img_right: right Dataset image
+    :type img_right:
     xarray.Dataset containing :
         - im : 2D (row, col) xarray.DataArray
 
     :param subpix: subpixel precision = (1 or 2 or 4)
     :type subpix: int
-    :return: an array that contains the shifted secondary images
+    :return: an array that contains the shifted right images
     :rtype : array of xarray.Dataset
     """
-    img_sec_shift = [img_sec]
-    ny_, nx_ = img_sec['im'].shape
+    img_right_shift = [img_right]
+    ny_, nx_ = img_right['im'].shape
 
     # zoom factor = (number of columns with zoom / number of original columns)
     if subpix == 2:
-        # Shift the secondary image for subpixel precision 0.5
-        data = zoom(img_sec['im'].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 2::4]
-        col = np.arange(img_sec.coords['col'][0] + 0.5, img_sec.coords['col'][-1], step=1)
-        img_sec_shift.append(xr.Dataset({'im': (['row', 'col'], data)},
+        # Shift the right image for subpixel precision 0.5
+        data = zoom(img_right['im'].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 2::4]
+        col = np.arange(img_right.coords['col'][0] + 0.5, img_right.coords['col'][-1], step=1)
+        img_right_shift.append(xr.Dataset({'im': (['row', 'col'], data)},
                                         coords={'row': np.arange(ny_), 'col': col}))
 
     if subpix == 4:
-        # Shift the secondary image for subpixel precision 0.25
-        data = zoom(img_sec['im'].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 1::4]
-        col = np.arange(img_sec.coords['col'][0] + 0.25, img_sec.coords['col'][-1], step=1)
-        img_sec_shift.append(xr.Dataset({'im': (['row', 'col'], data)},
+        # Shift the right image for subpixel precision 0.25
+        data = zoom(img_right['im'].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 1::4]
+        col = np.arange(img_right.coords['col'][0] + 0.25, img_right.coords['col'][-1], step=1)
+        img_right_shift.append(xr.Dataset({'im': (['row', 'col'], data)},
                                         coords={'row': np.arange(ny_), 'col': col}))
 
-        # Shift the secondary image for subpixel precision 0.5
-        data = zoom(img_sec['im'].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 2::4]
-        col = np.arange(img_sec.coords['col'][0] + 0.5, img_sec.coords['col'][-1], step=1)
-        img_sec_shift.append(xr.Dataset({'im': (['row', 'col'], data)},
+        # Shift the right image for subpixel precision 0.5
+        data = zoom(img_right['im'].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 2::4]
+        col = np.arange(img_right.coords['col'][0] + 0.5, img_right.coords['col'][-1], step=1)
+        img_right_shift.append(xr.Dataset({'im': (['row', 'col'], data)},
                                         coords={'row': np.arange(ny_), 'col': col}))
 
-        # Shift the secondary image for subpixel precision 0.75
-        data = zoom(img_sec['im'].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 3::4]
-        col = np.arange(img_sec.coords['col'][0] + 0.75, img_sec.coords['col'][-1], step=1)
-        img_sec_shift.append(xr.Dataset({'im': (['row', 'col'], data)},
+        # Shift the right image for subpixel precision 0.75
+        data = zoom(img_right['im'].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 3::4]
+        col = np.arange(img_right.coords['col'][0] + 0.75, img_right.coords['col'][-1], step=1)
+        img_right_shift.append(xr.Dataset({'im': (['row', 'col'], data)},
                                         coords={'row': np.arange(ny_), 'col': col}))
-    return img_sec_shift
+    return img_right_shift
 
 
 def check_inside_image(img: xr.Dataset, x: int, y: int) -> bool:
@@ -249,13 +337,14 @@ def compute_mean_patch(img: xr.Dataset, x: int, y: int, win_size: int) -> float:
     :return: mean
     :rtype : float
     """
-    begin_window = (x-int(win_size/2), y-int(win_size/2))
-    end_window = (x+int(win_size/2), y+int(win_size/2))
+    begin_window = (x - int(win_size / 2), y - int(win_size / 2))
+    end_window = (x + int(win_size / 2), y + int(win_size / 2))
 
     # Check if the window is inside the image, and compute the mean
     if check_inside_image(img, begin_window[0], begin_window[1]) and \
             check_inside_image(img, end_window[0], end_window[1]):
-        return np.mean(img['im'][begin_window[1]:end_window[1]+1, begin_window[0]:end_window[0]+1], dtype=np.float32)
+        return np.mean(img['im'][begin_window[1]:end_window[1] + 1, begin_window[0]:end_window[0] + 1],
+                       dtype=np.float32)
 
     logging.error("The window is outside the image")
     raise IndexError

@@ -80,7 +80,7 @@ class BilateralFilter(filter.AbstractFilter):
         """
         print('Bilateral filter description')
 
-    def filter_disparity(self, disp: xr.Dataset, img_ref: xr.Dataset = None, img_sec: xr.Dataset = None,
+    def filter_disparity(self, disp: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None,
                          cv: xr.Dataset = None) -> xr.Dataset:
         """
         Apply bilateral filter using openCV.
@@ -92,10 +92,10 @@ class BilateralFilter(filter.AbstractFilter):
                 - disparity_map 2D xarray.DataArray (row, col)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
                 - validity_mask 2D xarray.DataArray (row, col)
-        :param img_ref: reference Dataset image
-        :tye img_ref: xarray.Dataset
-        :param img_sec: secondary Dataset image
-        :type img_sec: xarray.Dataset
+        :param img_left: left Dataset image
+        :tye img_left: xarray.Dataset
+        :param img_right: right Dataset image
+        :type img_right: xarray.Dataset
         :param cv: cost volume dataset
         :type cv: xarray.Dataset
         :return: the Dataset with the filtered DataArray disparity_map

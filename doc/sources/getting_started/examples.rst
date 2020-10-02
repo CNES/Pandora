@@ -10,8 +10,8 @@ Define your inputs and configure your pipeline by writting a json configuration 
 
     {
       "input" : {
-        "img_ref" : "tests/pandora/ref.png",
-        "img_sec" : "tests/pandora/sec.png",
+        "img_left" : "tests/pandora/left.png",
+        "img_right" : "tests/pandora/right.png",
         "disp_min" : -60,
         "disp_max" : 0
       },
@@ -78,22 +78,22 @@ As a package
         cfg = check_conf(user_cfg, pandora_machine)
 
         # Read images and masks
-        img_ref = read_img(cfg['input']['img_ref'], no_data=cfg['image']['nodata1'], cfg=cfg['image'],
-                           mask=cfg['input']['ref_mask'])
-        img_sec = read_img(cfg['input']['img_sec'], no_data=cfg['image']['nodata2'], cfg=cfg['image'],
-                           mask=cfg['input']['sec_mask'])
+        img_left = read_img(cfg['input']['img_left'], no_data=cfg['image']['nodata1'], cfg=cfg['image'],
+                           mask=cfg['input']['left_mask'])
+        img_right = read_img(cfg['input']['img_right'], no_data=cfg['image']['nodata2'], cfg=cfg['image'],
+                           mask=cfg['input']['right_mask'])
 
         # Read range of disparities
         disp_min = read_disp(cfg['input']['disp_min'])
         disp_max = read_disp(cfg['input']['disp_max'])
-        disp_min_sec = read_disp(cfg['input']['disp_min_sec'])
-        disp_max_sec = read_disp(cfg['input']['disp_max_sec'])
+        disp_min_right = read_disp(cfg['input']['disp_min_right'])
+        disp_max_right = read_disp(cfg['input']['disp_max_right'])
 
         # Run the Pandora pipeline
-        ref, sec = run(pandora_machine, img_ref, img_sec, disp_min, disp_max, cfg, disp_min_sec, disp_max_sec)
+        left, right = run(pandora_machine, img_left, img_right, disp_min, disp_max, cfg, disp_min_right, disp_max_right)
 
-        # Save the reference and secondary DataArray in tiff files
-        save_results(ref, sec, output)
+        # Save the left and right DataArray in tiff files
+        save_results(left, right, output)
 
         # Save the configuration
         save_config(output, cfg)

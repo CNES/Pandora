@@ -11,7 +11,7 @@ When matching is impossible, the matching cost is np.nan.
 This Dataset also has a :
 
 - xarray.DataArray 3D confidence_measure, which contains the standard deviation of pixel intensity indicator.
-  More specifically, this indicator represents standard deviation of pixel intensity of the reference image
+  More specifically, this indicator represents standard deviation of pixel intensity of the left image
   inside a window (the same as the window used for matching cost)
   It is generated during the first step: *Matching cost computation*.
 - xarray.DataArray disp_indices, which contains the minimum cost indices calculated in step *Disparity computation*..
@@ -46,14 +46,14 @@ The cost volume corresponds to the variable cv ( and cv_right for the right / le
 
 .. sourcecode:: python
 
-    def run(img_ref, img_sec, disp_min, disp_max, cfg, path_ref=None, path_sec=None):
+    def run(img_left, img_right, disp_min, disp_max, cfg, path_left=None, path_right=None):
         ...
         # Matching cost computation
         print('Matching cost computation...')
-        cv = stereo_.compute_cost_volume(pandora_ref, pandora_sec, disp_min, disp_max)
+        cv = stereo_.compute_cost_volume(pandora_left, pandora_right, disp_min, disp_max)
         ...
         print('Computing the right disparity map with the accurate method...')
-        cv_right = stereo_.compute_cost_volume(pandora_sec, pandora_ref, -disp_max, -disp_min)
+        cv_right = stereo_.compute_cost_volume(pandora_right, pandora_left, -disp_max, -disp_min)
 
 
 .. note::
@@ -74,7 +74,7 @@ This Dataset also has a :
 
   - standard deviation of the intensities within the a window: "stereo_pandora_intensityStd"
   - distance between left-right (or right-left) disparities: "validation_pandora_distanceOfDisp", if "cross_checking" validation is enabled
-- xarray.DataArray validity_mask which represents the :ref:`validity_mask_data`.
+- xarray.DataArray validity_mask which represents the :left:`validity_mask_data`.
 - xarray.DataArray interpolated_coeff, which contains the similarity coefficients interpolated by the Disparity Refinement Method.
 
 
@@ -107,17 +107,17 @@ This Dataset also has a :
         interpolated_disparity: none
 
 
-The disparity maps correspond to the variables ref, sec in the pandora file __init__.py:
+The disparity maps correspond to the variables left, right in the pandora file __init__.py:
 
 .. sourcecode:: python
 
-    def run(img_ref, img_sec, disp_min, disp_max, cfg, path_ref=None, path_sec=None):
+    def run(img_left, img_right, disp_min, disp_max, cfg, path_left=None, path_right=None):
         ...
         # Disparity computation and validity mask
         print('Disparity computation...')
-        ref = disparity.to_disp(cv)
+        left = disparity.to_disp(cv)
         ...
-        return ref, sec
+        return left, right
 
 .. _validity_mask_data:
 
@@ -132,15 +132,15 @@ rejection criterion (= 1 if rejection, = 0 otherwise):
  +---------+--------------------------------------------------------------------------------------------------------+
  |         | The point is invalid, there are two possible cases:                                                    |
  |         |                                                                                                        |
- |    0    |   * border of reference image                                                                          |
- |         |   * nodata of reference image                                                                          |
+ |    0    |   * border of left image                                                                          |
+ |         |   * nodata of left image                                                                          |
  +---------+--------------------------------------------------------------------------------------------------------+
  |         | The point is invalid, there are two possible cases:                                                    |
  |         |                                                                                                        |
- |    1    |   - Disparity range does not permit to find any point on the secondary image                           |
- |         |   - nodata of secondary image                                                                          |
+ |    1    |   - Disparity range does not permit to find any point on the right image                           |
+ |         |   - nodata of right image                                                                          |
  +---------+--------------------------------------------------------------------------------------------------------+
- |    2    | Information : disparity range cannot be used completely , reaching border of secondary image           |
+ |    2    | Information : disparity range cannot be used completely , reaching border of right image           |
  +---------+--------------------------------------------------------------------------------------------------------+
  |    3    | Information: calculations stopped at the pixel stage, sub-pixel interpolation was not successful       |
  |         | (for vfit: pixels d-1 and/or d+1 could not be calculated)                                              |
@@ -149,29 +149,29 @@ rejection criterion (= 1 if rejection, = 0 otherwise):
  +---------+--------------------------------------------------------------------------------------------------------+
  |    5    | Information : closed mismatch                                                                          |
  +---------+--------------------------------------------------------------------------------------------------------+
- |    6    | The point is invalid: invalidated by the validity mask associated to the reference image               |
+ |    6    | The point is invalid: invalidated by the validity mask associated to the left image               |
  +---------+--------------------------------------------------------------------------------------------------------+
- |    7    | The point is invalid: secondary positions to be scanned invalidated by the mask of the secondary image |
+ |    7    | The point is invalid: right positions to be scanned invalidated by the mask of the right image |
  +---------+--------------------------------------------------------------------------------------------------------+
  |    8    | The Point is invalid: point located in an occlusion zone                                               |
  +---------+--------------------------------------------------------------------------------------------------------+
  |    9    | The point is invalid: mismatch                                                                         |
  +---------+--------------------------------------------------------------------------------------------------------+
 
-The validity masks are stored in the xarray.Dataset ref and sec in the pandora/__init__.py file.
+The validity masks are stored in the xarray.Dataset left and right in the pandora/__init__.py file.
 
 .. _border_management:
 
 Border management
 -----------------
 
-Reference image
+Left image
 ^^^^^^^^^^^^^^^
 
-Pixels of the reference image for which the measurement thumbnail protrudes from the reference image are truncated
+Pixels of the left image for which the measurement thumbnail protrudes from the left image are truncated
 in the cost volume, disparity maps and masks. Therefore, the memory occupancy of the cost volume is
 diminished.
-For a similarity measurement with a 5x5 window, these incalculable pixels in the reference image correspond
+For a similarity measurement with a 5x5 window, these incalculable pixels in the left image correspond
 to a 2-pixel crown at the top, bottom, right and left, and are represented by the offset_row_col attribute in
 the xarray.Dataset. For an image of 100x100 with a window of 5x5, the products will be of dimension :
 
@@ -198,14 +198,14 @@ The resize method of the common module, allows to restitute disparity maps and m
    Attributes:
        offset_row_col:  0
 
-These pixels will have bit 0 set, *The point is invalid: reference image edge*, in the :ref:`validity_mask` and
-will be assigned the *border_disparity* ( configurable in the json configuration file , see :ref:`resize_parameters`  )
+These pixels will have bit 0 set, *The point is invalid: left image edge*, in the :left:`validity_mask` and
+will be assigned the *border_disparity* ( configurable in the json configuration file , see :left:`resize_parameters`  )
 in the disparity maps.
 
-Secondary image
+Right image
 ^^^^^^^^^^^^^^^
 
-Because of the disparity range choice, it is possible that there is no available point to scan on the secondary image.
+Because of the disparity range choice, it is possible that there is no available point to scan on the right image.
 In this case, matching cost cannot be computed for this pixel and the value will be set to :math:`nan` .
 Then bit 1 will be set : *The point is invalid: the disparity interval to explore is
-absent in the secondary image* and the point disparity will be set to *invalid_disparity*.
+absent in the right image* and the point disparity will be set to *invalid_disparity*.

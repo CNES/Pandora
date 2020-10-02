@@ -70,8 +70,8 @@ class Quadratic(refinement.AbstractRefinement):
         """
         print('Quadratic refinement method')
 
-    def subpixel_refinement(self, cv: xr.Dataset, disp: xr.Dataset, img_ref: xr.Dataset = None,
-                            img_sec: xr.Dataset = None) -> Tuple[xr.Dataset, xr.Dataset]:
+    def subpixel_refinement(self, cv: xr.Dataset, disp: xr.Dataset, img_left: xr.Dataset = None,
+                            img_right: xr.Dataset = None) -> Tuple[xr.Dataset, xr.Dataset]:
         """
         Subpixel refinement of disparities and costs.
 
@@ -85,13 +85,13 @@ class Quadratic(refinement.AbstractRefinement):
             - disparity_map 2D xarray.DataArray (row, col)
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
-        :param img_ref: reference Dataset image
-        :type img_ref:
+        :param img_left: left Dataset image
+        :type img_left:
             xarray.Dataset containing:
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
+        :param img_right: right Dataset image
+        :type img_right:
             xarray.Dataset containing:
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
@@ -123,34 +123,34 @@ class Quadratic(refinement.AbstractRefinement):
                                                       dims=['row', 'col'])
         return cv, disp
 
-    def approximate_subpixel_refinement(self, cv_ref: xr.Dataset, disp_sec: xr.Dataset, img_ref: xr.Dataset = None,
-                                        img_sec: xr.Dataset = None) -> xr.Dataset:
+    def approximate_subpixel_refinement(self, cv_left: xr.Dataset, disp_right: xr.Dataset, img_left: xr.Dataset = None,
+                                        img_right: xr.Dataset = None) -> xr.Dataset:
         """
-        Subpixel refinement of the secondary disparities map, which was created with the approximate method : a diagonal
-        search for the minimum on the reference cost volume
+        Subpixel refinement of the right disparities map, which was created with the approximate method : a diagonal
+        search for the minimum on the left cost volume
 
-        :param cv_ref: the reference cost volume dataset
-        :type cv_ref:
+        :param cv_left: the left cost volume dataset
+        :type cv_left:
             xarray.Dataset, with the data variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :param disp_sec: secondary disparity map
-        :type disp_sec: xarray.Dataset with the variables :
+        :param disp_right: right disparity map
+        :type disp_right: xarray.Dataset with the variables :
             - disparity_map 2D xarray.DataArray (row, col)
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
-        :param img_ref: reference Dataset image
-        :type img_ref:
+        :param img_left: left Dataset image
+        :type img_left:
             xarray.Dataset containing:
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
+        :param img_right: right Dataset image
+        :type img_right:
             xarray.Dataset containing:
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :return:
-            disp_sec Dataset with the variables :
+            disp_right Dataset with the variables :
                 - disparity_map 2D xarray.DataArray (row, col) that contains the refined disparities
                 - confidence_measure 3D xarray.DataArray (row, col, indicator) (unchanged)
                 - validity_mask 2D xarray.DataArray (row, col) with the value of bit 3 ( Information:
@@ -158,21 +158,21 @@ class Quadratic(refinement.AbstractRefinement):
                 - interpolated_coeff 2D xarray.DataArray (row, col) that contains the refined cost
         :rtype: Dataset
         """
-        d_min = cv_ref.coords['disp'].data[0]
-        d_max = cv_ref.coords['disp'].data[-1]
-        subpixel = cv_ref.attrs['subpixel']
-        measure = cv_ref.attrs['type_measure']
+        d_min = cv_left.coords['disp'].data[0]
+        d_max = cv_left.coords['disp'].data[-1]
+        subpixel = cv_left.attrs['subpixel']
+        measure = cv_left.attrs['type_measure']
 
         # Conversion to numpy array ( .data ), because Numba does not support Xarray
-        itp_coeff, disp_sec['disparity_map'].data, disp_sec['validity_mask'].data = self.loop_approximate_refinement(
-            cv_ref['cost_volume'].data, disp_sec['disparity_map'].data, disp_sec['validity_mask'].data, d_min, d_max,
+        itp_coeff, disp_right['disparity_map'].data, disp_right['validity_mask'].data = self.loop_approximate_refinement(
+            cv_left['cost_volume'].data, disp_right['disparity_map'].data, disp_right['validity_mask'].data, d_min, d_max,
             subpixel, measure, self.quadratic)
 
-        disp_sec.attrs['refinement'] = 'quadratic'
-        disp_sec['interpolated_coeff'] = xr.DataArray(itp_coeff,
-                                                      coords=[disp_sec.coords['row'], disp_sec.coords['col']],
+        disp_right.attrs['refinement'] = 'quadratic'
+        disp_right['interpolated_coeff'] = xr.DataArray(itp_coeff,
+                                                      coords=[disp_right.coords['row'], disp_right.coords['col']],
                                                       dims=['row', 'col'])
-        return disp_sec
+        return disp_right
 
     @staticmethod
     @njit(cache=True)

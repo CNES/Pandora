@@ -1,27 +1,3 @@
-#!/usr/bin/env python
-# coding: utf8
-#
-# Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
-#
-# This file is part of PANDORA
-#
-#     https://github.com/CNES/Pandora_pandora
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-"""
-This module contains functions allowing to check the configuration given to Pandora pipeline.
-"""
 
 import json
 from json_checker import Checker, And, Or
@@ -71,80 +47,80 @@ def rasterio_can_open(f: str) -> bool:
         return rasterio_can_open_mandatory(f)
 
 
-def check_images(img_ref: str, img_sec: str, msk_ref: str, msk_sec: str) -> None:
+def check_images(img_left: str, img_right: str, msk_left: str, msk_right: str) -> None:
     """
     Check the images
 
-    :param img_ref: path to the reference image
-    :type img_ref: string
-    :param img_sec: path to the secondary image
-    :type img_sec: string
-    :param msk_ref: path to the mask of the reference image
-    :type msk_ref: string
-    :param msk_sec: path to the mask of the secondary image
-    :type msk_sec: string
+    :param img_left: path to the left image
+    :type img_left: string
+    :param img_right: path to the right image
+    :type img_right: string
+    :param msk_left: path to the mask of the left image
+    :type msk_left: string
+    :param msk_right: path to the mask of the right image
+    :type msk_right: string
     """
     # verify that the images have 1 channel
-    ref_ = rasterio.open(img_ref)
-    if ref_.count != 1:
+    left_ = rasterio.open(img_left)
+    if left_.count != 1:
         logging.error('The input images must be 1-channel grayscale images')
         sys.exit(1)
-    sec_ = rasterio.open(img_sec)
-    if sec_.count != 1:
+    right_ = rasterio.open(img_right)
+    if right_.count != 1:
         logging.error('The input images must be 1-channel grayscale images')
         sys.exit(1)
 
     # verify that the images have the same size
-    if (ref_.width != sec_.width) or \
-            (ref_.height != sec_.height):
+    if (left_.width != right_.width) or \
+            (left_.height != right_.height):
         logging.error('Images must have the same size')
         sys.exit(1)
 
     # verify that image and mask have the same size
-    if msk_ref is not None:
-        msk_ = rasterio.open(msk_ref)
-        if (ref_.width != msk_.width) or \
-                (ref_.height != msk_.height):
+    if msk_left is not None:
+        msk_ = rasterio.open(msk_left)
+        if (left_.width != msk_.width) or \
+                (left_.height != msk_.height):
             logging.error('Image and masks must have the same size')
             sys.exit(1)
 
     # verify that image and mask have the same size
-    if msk_sec is not None:
-        msk_ = rasterio.open(msk_sec)
+    if msk_right is not None:
+        msk_ = rasterio.open(msk_right)
         # verify that the image and mask have the same size
-        if (sec_.width != msk_.width) or \
-                (sec_.height != msk_.height):
+        if (right_.width != msk_.width) or \
+                (right_.height != msk_.height):
             logging.error('Image and masks must have the same size')
             sys.exit(1)
 
 
 def check_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str, None],
-                               sec_disp_min: Union[str, None], sec_disp_max: Union[str, None], img_ref: str):
+                               right_disp_min: Union[str, None], right_disp_max: Union[str, None], img_left: str):
     """
-    Check reference and secondary disparities.
+    Check left and right disparities.
 
     :param disp_min: minimal disparity
     :type disp_min: int or str or None
     :param disp_max: maximal disparity
     :type disp_max: int or str or None
-    :param sec_disp_min: secondary minimal disparity
-    :type sec_disp_min: str or None
-    :param sec_disp_max: secondary maximal disparity
-    :type sec_disp_max: str or None
-    :param img_ref: path to the reference image
-    :type img_ref: str
+    :param right_disp_min: right minimal disparity
+    :type right_disp_min: str or None
+    :param right_disp_max: right maximal disparity
+    :type right_disp_max: str or None
+    :param img_left: path to the left image
+    :type img_left: str
     """
-    # --- Check reference disparities
-    # Reference disparity are integers
+    # --- Check left disparities
+    # left disparity are integers
     if type(disp_min) == int and type(disp_max) == int:
         if disp_max < disp_min:
             logging.error('Disp_max must be bigger than Disp_min')
             sys.exit(1)
 
-    # Reference disparity are grids
+    # left disparity are grids
     elif (type(disp_min) == str) and (type(disp_max) == str):
         # Load an image to compare the grid size
-        img_ref_ = rasterio.open(img_ref)
+        img_left_ = rasterio.open(img_left)
 
         disp_min_ = rasterio.open(disp_min)
         dmin = disp_min_.read(1)
@@ -157,8 +133,8 @@ def check_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str,
             sys.exit(1)
 
         # check that disp_min has the same size as the image
-        if (disp_min_.width != img_ref_.width) or (disp_min_.height != img_ref_.height) \
-                or (disp_max_.width != img_ref_.width) or (disp_max_.height != img_ref_.height):
+        if (disp_min_.width != img_left_.width) or (disp_min_.height != img_left_.height) \
+                or (disp_max_.width != img_left_.width) or (disp_max_.height != img_left_.height):
             logging.error('Disparity grids and image must have the same size')
             sys.exit(1)
 
@@ -166,10 +142,10 @@ def check_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str,
             logging.error('Disp_max must be bigger than Disp_min')
             sys.exit(1)
 
-    # --- Check secondary disparities
-    if (type(sec_disp_min) == str) and (type(sec_disp_max) == str):
+    # --- Check right disparities
+    if (type(right_disp_min) == str) and (type(right_disp_max) == str):
         # Load an image to compare the grid size
-        img_ref_ = rasterio.open(img_ref)
+        img_left_ = rasterio.open(img_left)
 
         disp_min_ = rasterio.open(disp_min)
         dmin = disp_min_.read(1)
@@ -182,8 +158,8 @@ def check_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str,
             sys.exit(1)
 
         # check that disp_min has the same size as the image
-        if (disp_min_.width != img_ref_.width) or (disp_min_.height != img_ref_.height) \
-                or (disp_max_.width != img_ref_.width) or (disp_max_.height != img_ref_.height):
+        if (disp_min_.width != img_left_.width) or (disp_min_.height != img_left_.height) \
+                or (disp_max_.width != img_left_.width) or (disp_max_.height != img_left_.height):
             logging.error('Disparity grids and image must have the same size')
             sys.exit(1)
 
@@ -309,15 +285,15 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     cfg = update_conf(default_short_configuration_input, user_cfg)
 
     # Disparity can be integer type, or string type (path to the disparity grid)
-    # If the reference disparity is string type, secondary disparity must be string type or none
-    # if the reference disparity is integer type, secondary disparity must be none
+    # If the left disparity is string type, right disparity must be string type or none
+    # if the left disparity is integer type, right disparity must be none
     if type(cfg['input']['disp_min']) == int:
         input_configuration_schema.update(input_configuration_schema_integer_disparity)
     else:
-        if type(cfg['input']['disp_min_sec']) == str:
-            input_configuration_schema.update(input_configuration_schema_ref_disparity_grids_sec_grids)
+        if type(cfg['input']['disp_min_right']) == str:
+            input_configuration_schema.update(input_configuration_schema_left_disparity_grids_right_grids)
         else:
-            input_configuration_schema.update(input_configuration_schema_ref_disparity_grids_sec_none)
+            input_configuration_schema.update(input_configuration_schema_left_disparity_grids_right_none)
 
     # check schema
     configuration_schema = {
@@ -329,12 +305,12 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
 
     # custom checking
 
-    # check reference and secondary disparities
-    check_disparities(cfg['input']['disp_min'], cfg['input']['disp_max'], cfg['input']['disp_min_sec'],
-                      cfg['input']['disp_max_sec'], cfg['input']['img_ref'])
+    # check left and right disparities
+    check_disparities(cfg['input']['disp_min'], cfg['input']['disp_max'], cfg['input']['disp_min_right'],
+                      cfg['input']['disp_max_right'], cfg['input']['img_left'])
 
-    check_images(cfg['input']['img_ref'], cfg['input']['img_sec'], cfg['input']['ref_mask'],
-                 cfg['input']['sec_mask'])
+    check_images(cfg['input']['img_left'], cfg['input']['img_right'], cfg['input']['left_mask'],
+                 cfg['input']['right_mask'])
 
     return cfg
 
@@ -363,13 +339,13 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> Di
     user_cfg_pipeline = get_config_pipeline(user_cfg)
     cfg_pipeline = check_pipeline_section(user_cfg_pipeline, pandora_machine)
 
-    # If reference disparities are grids of disparity and the secondary disparities are none, the cross-checking
+    # If left disparities are grids of disparity and the right disparities are none, the cross-checking
     # method cannot be used
 
-    if (type(cfg_input['input']['disp_min']) == str) and (cfg_input['input']['disp_min_sec'] is None) and \
+    if (type(cfg_input['input']['disp_min']) == str) and (cfg_input['input']['disp_min_right'] is None) and \
             ('validation' in cfg_pipeline['pipeline']):
-        logging.error("The cross-checking step cannot be processed if disp_min, disp_max are paths to the reference "
-                      "disparity grids and disp_sec_min, disp_sec_max are none.")
+        logging.error("The cross-checking step cannot be processed if disp_min, disp_max are paths to the left "
+                      "disparity grids and disp_right_min, disp_right_max are none.")
         sys.exit(1)
 
     # concatenate updated config
@@ -396,34 +372,34 @@ def concat_conf(cfg_list: List[Dict[str, dict]]) -> Dict[str, dict]:
 
 
 input_configuration_schema = {
-    "img_ref": And(str, rasterio_can_open_mandatory),
-    "img_sec": And(str, rasterio_can_open_mandatory),
-    "ref_mask": And(Or(str, lambda x: x is None), rasterio_can_open),
-    "sec_mask": And(Or(str, lambda x: x is None), rasterio_can_open)
+    "img_left": And(str, rasterio_can_open_mandatory),
+    "img_right": And(str, rasterio_can_open_mandatory),
+    "left_mask": And(Or(str, lambda x: x is None), rasterio_can_open),
+    "right_mask": And(Or(str, lambda x: x is None), rasterio_can_open)
 }
 
 # Input configuration when disparity is integer
 input_configuration_schema_integer_disparity = {
     "disp_min": int,
     "disp_max": int,
-    "disp_min_sec": (lambda x: x is None),
-    "disp_max_sec": (lambda x: x is None)
+    "disp_min_right": (lambda x: x is None),
+    "disp_max_right": (lambda x: x is None)
 }
 
-# Input configuration when reference disparity is a grid, and secondary not provided
-input_configuration_schema_ref_disparity_grids_sec_none = {
+# Input configuration when left disparity is a grid, and right not provided
+input_configuration_schema_left_disparity_grids_right_none = {
     "disp_min": And(str, rasterio_can_open),
     "disp_max": And(str, rasterio_can_open),
-    "disp_min_sec": (lambda x: x is None),
-    "disp_max_sec": (lambda x: x is None)
+    "disp_min_right": (lambda x: x is None),
+    "disp_max_right": (lambda x: x is None)
 }
 
-# Input configuration when reference and secondary disparity are grids
-input_configuration_schema_ref_disparity_grids_sec_grids = {
+# Input configuration when left and right disparity are grids
+input_configuration_schema_left_disparity_grids_right_grids = {
     "disp_min": And(str, rasterio_can_open),
     "disp_max": And(str, rasterio_can_open),
-    "disp_min_sec": And(str, rasterio_can_open),
-    "disp_max_sec": And(str, rasterio_can_open)
+    "disp_min_right": And(str, rasterio_can_open),
+    "disp_max_right": And(str, rasterio_can_open)
 }
 
 image_configuration_schema = {
@@ -444,10 +420,10 @@ default_short_configuration_image = {
 
 default_short_configuration_input = {
     "input": {
-        "ref_mask": None,
-        "sec_mask": None,
-        "disp_min_sec": None,
-        "disp_max_sec": None
+        "left_mask": None,
+        "right_mask": None,
+        "disp_min_right": None,
+        "disp_max_right": None
     }
 }
 

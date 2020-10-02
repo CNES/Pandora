@@ -46,21 +46,21 @@ class TestMargins(unittest.TestCase):
                                   'right_left_mode': 'accurate'}}
 
         res = pandora.marge.get_margins(-13, 14, cfg_sgm)
-        np.testing.assert_array_equal(res.loc[dict(image='ref_margin')].values, np.array([54, 40, 54, 40]))
-        np.testing.assert_array_equal(res.loc[dict(image='sec_margin')].values, np.array([54, 40, 54, 40]))
+        np.testing.assert_array_equal(res.loc[dict(image='left_margin')].values, np.array([54, 40, 54, 40]))
+        np.testing.assert_array_equal(res.loc[dict(image='right_margin')].values, np.array([54, 40, 54, 40]))
         assert res.attrs['disp_min'] == -13
         assert res.attrs['disp_max'] == 14
 
         res = pandora.marge.get_margins(3, 14, cfg_sgm)
-        np.testing.assert_array_equal(res.loc[dict(image='ref_margin')].values, np.array([54, 40, 54, 40]))
-        np.testing.assert_array_equal(res.loc[dict(image='sec_margin')].values, np.array([54, 40, 54, 40]))
+        np.testing.assert_array_equal(res.loc[dict(image='left_margin')].values, np.array([54, 40, 54, 40]))
+        np.testing.assert_array_equal(res.loc[dict(image='right_margin')].values, np.array([54, 40, 54, 40]))
         assert res.attrs['disp_min'] == 3
         assert res.attrs['disp_max'] == 14
 
         res = pandora.marge.get_margins(-13, -2, cfg_sgm)
-        np.testing.assert_allclose(res.loc[dict(image='ref_margin')].values,
+        np.testing.assert_allclose(res.loc[dict(image='left_margin')].values,
                                    np.array([53, 40, 53, 40]))
-        np.testing.assert_allclose(res.loc[dict(image='sec_margin')].values,
+        np.testing.assert_allclose(res.loc[dict(image='right_margin')].values,
                                    np.array([53, 40, 53, 40]))
         assert res.attrs['disp_min'] == -13
         assert res.attrs['disp_max'] == -2
@@ -72,8 +72,8 @@ class TestMargins(unittest.TestCase):
                               'right_left_mode': 'accurate'}}
 
         res = pandora.marge.get_margins(-13, 14, cfg)
-        np.testing.assert_array_equal(res.loc[dict(image='ref_margin')].values, np.array([17, 2, 17, 2]))
-        np.testing.assert_array_equal(res.loc[dict(image='sec_margin')].values, np.array([17, 2, 17, 2]))
+        np.testing.assert_array_equal(res.loc[dict(image='left_margin')].values, np.array([17, 2, 17, 2]))
+        np.testing.assert_array_equal(res.loc[dict(image='right_margin')].values, np.array([17, 2, 17, 2]))
         assert res.attrs['disp_min'] == -13
         assert res.attrs['disp_max'] == 14
 
@@ -83,8 +83,8 @@ class TestMargins(unittest.TestCase):
                               'right_left_mode': 'accurate'}}
 
         res = pandora.marge.get_margins(3, 14, cfg)
-        np.testing.assert_array_equal(res.loc[dict(image='ref_margin')].values, np.array([20, 5, 20, 5]))
-        np.testing.assert_array_equal(res.loc[dict(image='sec_margin')].values, np.array([20, 5, 20, 5]))
+        np.testing.assert_array_equal(res.loc[dict(image='left_margin')].values, np.array([20, 5, 20, 5]))
+        np.testing.assert_array_equal(res.loc[dict(image='right_margin')].values, np.array([20, 5, 20, 5]))
         assert res.attrs['disp_min'] == 3
         assert res.attrs['disp_max'] == 14
 
@@ -94,8 +94,8 @@ class TestMargins(unittest.TestCase):
                               'right_left_mode': 'accurate'}}
 
         res = pandora.marge.get_margins(-13, -2, cfg)
-        np.testing.assert_array_equal(res.loc[dict(image='ref_margin')].values, np.array([16, 2, 16, 2]))
-        np.testing.assert_array_equal(res.loc[dict(image='sec_margin')].values, np.array([16, 2, 16, 2]))
+        np.testing.assert_array_equal(res.loc[dict(image='left_margin')].values, np.array([16, 2, 16, 2]))
+        np.testing.assert_array_equal(res.loc[dict(image='right_margin')].values, np.array([16, 2, 16, 2]))
         assert res.attrs['disp_min'] == -13
         assert res.attrs['disp_max'] == -2
 

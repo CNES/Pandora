@@ -135,24 +135,24 @@ class TestRefinement(unittest.TestCase):
         Test the approximate_subpixel_refinement method
 
         """
-        # reference cost volume
-        cv_ref = xr.Dataset({'cost_volume': (['row', 'col', 'disp'], np.array([[[np.nan, np.nan, np.nan, 5, 0, 1],
+        # left cost volume
+        cv_left = xr.Dataset({'cost_volume': (['row', 'col', 'disp'], np.array([[[np.nan, np.nan, np.nan, 5, 0, 1],
                                                                                 [np.nan, np.nan, 4, 1, 0, 2],
                                                                                 [np.nan, 2, 3, 2, 0, np.nan],
                                                                                 [0, 5, 4, 2, np.nan, np.nan]]]))},
                             coords={'row': [1], 'col': [0, 1, 2, 3], 'disp': [-3, -2, -1, 0, 1, 2]})
-        cv_ref.attrs['subpixel'] = 1
-        cv_ref.attrs['measure'] = 'sad'
-        cv_ref.attrs['type_measure'] = 'min'
+        cv_left.attrs['subpixel'] = 1
+        cv_left.attrs['measure'] = 'sad'
+        cv_left.attrs['type_measure'] = 'min'
 
-        # secondary disparity map
-        disp_sec = xr.Dataset({'disparity_map': (['row', 'col'], np.array([[3, -1, -1, -1]], np.float32)),
+        # right disparity map
+        disp_right = xr.Dataset({'disparity_map': (['row', 'col'], np.array([[3, -1, -1, -1]], np.float32)),
                                'validity_mask': (['row', 'col'], np.array([[0, 0, 0, 0]], np.uint16))},
                               coords={'row': [1], 'col': [0, 1, 2, 3]})
 
         # Compute the refinement with vfit fast by calling fast_subpixel_refinement
         vfit_refinement = refinement.AbstractRefinement(**{'refinement_method': 'vfit'})
-        sub_disp = vfit_refinement.approximate_subpixel_refinement(cv_ref, disp_sec)
+        sub_disp = vfit_refinement.approximate_subpixel_refinement(cv_left, disp_right)
 
         # Subpixel costs map ground truth
         gt_sub_costs = np.array([[0,
