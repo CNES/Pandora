@@ -1,6 +1,13 @@
 #### Résumé de la proposition
 
+#### Détails techniques de l'implémentation (si besoin)
 
+#### Stratégie de validation
+
+- [ ] Tests Unitaires ? (obligatoire pour du `feat` et `fix`)
+- [ ] Tests Visuels ? (doc)
+- [ ] Tests Fonctionnels ? (intégration / interfaces avec d'autres outils)
+- [ ] Tests Comparatifs ? (`feat` métier avec outil de référence)
 
 #### MR non prête à merger
 
