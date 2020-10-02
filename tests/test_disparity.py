@@ -30,13 +30,14 @@ import os
 import json
 import numpy as np
 import xarray as xr
-
+import pandora
 import pandora.disparity as disparity
 import pandora.stereo as stereo
 from pandora.img_tools import read_img
-import pandora
+from pandora.common import resize
 
 from pandora.constants import *
+from pandora.state_machine import PandoraMachine
 
 
 class TestDisparity(unittest.TestCase):
@@ -76,7 +77,8 @@ class TestDisparity(unittest.TestCase):
                             [1, 1, 1, -3]])
 
         # Compute the disparity
-        disp = disparity.to_disp(cv)
+        disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
+        disp = disparity_.to_disp(cv)
 
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(disp['disparity_map'].data, gt_disp)
@@ -92,7 +94,7 @@ class TestDisparity(unittest.TestCase):
                             [0, -1, -2, -3]])
 
         # Compute the disparity
-        disp = disparity.to_disp(cv, invalid_value=0)
+        disp = disparity_.to_disp(cv)
 
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(disp['disparity_map'].data, gt_disp)
@@ -108,7 +110,7 @@ class TestDisparity(unittest.TestCase):
                             [1, 1, 1, 0]])
 
         # Compute the disparity
-        disp = disparity.to_disp(cv, invalid_value=0)
+        disp = disparity_.to_disp(cv)
 
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(disp['disparity_map'].data, gt_disp)
@@ -136,7 +138,8 @@ class TestDisparity(unittest.TestCase):
                             [1., 1., -1.5, -3]], dtype=np.float32)
 
         # Compute the disparity
-        disp = disparity.argmin_split(cv)
+        disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
+        disp = disparity_.argmin_split(cv)
 
         # Check if the calculated coefficient map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(gt_disp, disp)
@@ -158,7 +161,8 @@ class TestDisparity(unittest.TestCase):
                             [0., -1., -2., -3.]], dtype=np.float32)
 
         # Compute the disparity
-        disp = disparity.argmax_split(cv)
+        disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
+        disp = disparity_.argmax_split(cv)
 
         # Check if the calculated coefficient map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(gt_disp, disp)
@@ -173,14 +177,15 @@ class TestDisparity(unittest.TestCase):
         cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -3, 1, **{'valid_pixels': 0, 'no_data': 1})
 
         # Compute the disparity
-        disp = disparity.to_disp(cv)
+        disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
+        disp = disparity_.to_disp(cv)
 
         # Coefficient map ground truth, for the images described in the setUp method
         gt_coeff = np.array([[0, 0, 0, 0],
                             [0, 0, 0, 0],
                             [0, 0, 0, 0]])
         # Compute the disparity, and the coefficient map
-        coeff = disparity.coefficient_map(cv)
+        coeff = disparity_.coefficient_map(cv)
 
         # Check if the calculated coefficient map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(coeff.data, gt_coeff)
@@ -198,7 +203,8 @@ class TestDisparity(unittest.TestCase):
         gt_disp = np.array([[0, -1]])
 
         # Compute the right disparity map
-        disp_r = disparity.approximate_right_disparity(cv, self.sec)
+        disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
+        disp_r = disparity_.approximate_right_disparity(cv, self.sec)
 
         # Check if the calculated right disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(disp_r['disparity_map'].data, gt_disp)
@@ -216,7 +222,8 @@ class TestDisparity(unittest.TestCase):
         gt_disp = np.array([[0, -1]])
 
         # Compute the right disparity map
-        disp_r = disparity.approximate_right_disparity(cv, self.sec)
+        disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
+        disp_r = disparity_.approximate_right_disparity(cv, self.sec)
 
         # Check if the calculated right disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(disp_r['disparity_map'].data, gt_disp)
@@ -234,39 +241,55 @@ class TestDisparity(unittest.TestCase):
         pandora_sec = read_img('tests/pandora/sec.png', no_data=np.nan, cfg=default_cfg['image'], mask=None)
 
         fast_cfg = {
-            "stereo": {
-                "stereo_method": "census"
-            },
-            "refinement": {
-                "refinement_method": "vfit"
-            },
-            "validation": {
-                "validation_method": "cross_checking",
-                "right_left_mode": "approximate",
-                "interpolated_disparity": "none",
-                "filter_interpolated_disparities": True
+            "pipeline": {
+                "right_disp_map": {
+                    "method": "accurate"
+                },
+                "stereo": {
+                    "stereo_method": "census"
+                },
+                "disparity": {
+                    "disparity_method": "wta"
+                },
+                "refinement": {
+                    "refinement_method": "vfit"
+                },
+                "validation": {
+                    "validation_method": "cross_checking",
+                    "right_left_mode": "approximate"
+                }
             }
         }
+
+        pandora_machine_fast = PandoraMachine()
         cfg = pandora.JSON_checker.update_conf(default_cfg, fast_cfg)
-        ref, sec_fast = pandora.run(pandora_ref, pandora_sec, -60, 0, cfg)
+        ref, sec_fast = pandora.run(pandora_machine_fast, pandora_ref, pandora_sec, -60, 0, cfg)
 
         acc_cfg = {
-            "stereo": {
-                "stereo_method": "census"
-            },
-            "refinement": {
-                "refinement_method": "vfit"
-            },
-            "validation": {
-                "validation_method": "cross_checking",
-                "right_left_mode": "accurate",
-                "interpolated_disparity": "none",
-                "filter_interpolated_disparities": True
-            }
+            "pipeline":
+                {
+                    "right_disp_map": {
+                        "method": "accurate"
+                    },
+                    "stereo": {
+                        "stereo_method": "census"
+                    },
+                    "disparity": {
+                        "disparity_method": "wta"
+                    },
+                    "refinement": {
+                        "refinement_method": "vfit"
+                    },
+                    "validation": {
+                        "validation_method": "cross_checking",
+                        "right_left_mode": "accurate",
+                    }
+                }
         }
-        cfg = pandora.JSON_checker.update_conf(default_cfg, acc_cfg)
-        ref, sec_acc = pandora.run(pandora_ref, pandora_sec, -60, 0, cfg)
 
+        pandora_machine_acc = PandoraMachine()
+        cfg = pandora.JSON_checker.update_conf(default_cfg, acc_cfg)
+        ref, sec_acc = pandora.run(pandora_machine_acc, pandora_ref, pandora_sec, -60, 0, cfg)
         # Check if the calculated disparity map in fast mode is equal to the disparity map in accurate mode
         np.testing.assert_array_equal(sec_fast['disparity_map'].data, sec_acc['disparity_map'].data)
 
@@ -286,8 +309,9 @@ class TestDisparity(unittest.TestCase):
         cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -3, -1, **{'valid_pixels': 0, 'no_data': 1})
 
         # Compute the disparity map and validity mask
-        dataset = disparity.to_disp(cv)
-        dataset = disparity.validity_mask(dataset, self.ref, self.sec, cv, **{'valid_pixels': 0, 'no_data': 1})
+        disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
+        dataset = disparity_.to_disp(cv)
+        dataset = disparity_.validity_mask(dataset, self.ref, self.sec, cv, **{'valid_pixels': 0, 'no_data': 1})
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING,
@@ -308,8 +332,8 @@ class TestDisparity(unittest.TestCase):
         cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, 1, 2, **{'valid_pixels': 0, 'no_data': 1})
 
         # Compute the disparity map and validity mask
-        dataset = disparity.to_disp(cv)
-        dataset = disparity.validity_mask(dataset, self.ref, self.sec, cv, **{'valid_pixels': 0, 'no_data': 1})
+        dataset = disparity_.to_disp(cv)
+        dataset = disparity_.validity_mask(dataset, self.ref, self.sec, cv, **{'valid_pixels': 0, 'no_data': 1})
 
         # Validity mask ground truth
         gt_mask = np.array([[0, 0, 1 << 2, PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING],
@@ -324,8 +348,8 @@ class TestDisparity(unittest.TestCase):
         cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
 
         # Compute the disparity map and validity mask
-        dataset = disparity.to_disp(cv)
-        dataset = disparity.validity_mask(dataset, self.ref, self.sec, cv, **{'valid_pixels': 0, 'no_data': 1})
+        dataset = disparity_.to_disp(cv)
+        dataset = disparity_.validity_mask(dataset, self.ref, self.sec, cv, **{'valid_pixels': 0, 'no_data': 1})
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE, 0, 0,
@@ -356,8 +380,8 @@ class TestDisparity(unittest.TestCase):
         cv = stereo_plugin.cv_masked(self.ref, self.sec, cv, disp_min_grid, disp_max_grid, **{'valid_pixels': 0, 'no_data': 1})
 
         # Compute the disparity map and validity mask
-        dataset = disparity.to_disp(cv)
-        dataset = disparity.validity_mask(dataset, self.ref, self.sec, cv, **{'valid_pixels': 0, 'no_data': 1})
+        dataset = disparity_.to_disp(cv)
+        dataset = disparity_.validity_mask(dataset, self.ref, self.sec, cv, **{'valid_pixels': 0, 'no_data': 1})
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE +
@@ -399,7 +423,8 @@ class TestDisparity(unittest.TestCase):
                              PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE]], dtype=np.uint16)
 
         # Compute the right disparity map and the validity mask
-        dataset = disparity.approximate_right_disparity(cv, self.sec)
+        disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
+        dataset = disparity_.approximate_right_disparity(cv, self.sec)
 
         # Check if the calculated right disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
@@ -419,7 +444,7 @@ class TestDisparity(unittest.TestCase):
                              0, 0]], dtype=np.uint16)
 
         # Compute the right disparity map and the validity mask
-        dataset = disparity.approximate_right_disparity(cv, self.sec)
+        dataset = disparity_.approximate_right_disparity(cv, self.sec)
 
         # Check if the calculated right disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
@@ -436,7 +461,7 @@ class TestDisparity(unittest.TestCase):
                              PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING]], dtype=np.uint16)
 
         # Compute the right disparity map and the validity mask
-        dataset = disparity.approximate_right_disparity(cv, self.sec)
+        dataset = disparity_.approximate_right_disparity(cv, self.sec)
 
         # Check if the calculated right disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
@@ -517,7 +542,7 @@ class TestDisparity(unittest.TestCase):
                            dtype=np.uint16)
 
         # Resize the products
-        reference_disparity = disparity.resize(ref, invalid_value=0)
+        reference_disparity = resize(ref, border_disparity=0)
 
         # Check if the products is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(reference_disparity['disparity_map'].data, gt_disp)
@@ -573,7 +598,7 @@ class TestDisparity(unittest.TestCase):
                                dtype=bool)
 
         # Resize the products
-        secondary_disparity = disparity.resize(sec, invalid_value=0)
+        secondary_disparity = resize(sec, border_disparity=0)
 
         # Check if the products is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(secondary_disparity['disparity_map'].data, gt_disp_sec)
@@ -619,8 +644,9 @@ class TestDisparity(unittest.TestCase):
         cv = stereo_plugin.compute_cost_volume(ref, sec, -1, 1, **{'valid_pixels': 1, 'no_data': 2})
 
         # Compute the disparity map and validity mask
-        dataset = disparity.to_disp(cv)
-        dataset = disparity.validity_mask(dataset, ref, sec, cv, **{'valid_pixels': 1, 'no_data': 2})
+        disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
+        dataset = disparity_.to_disp(cv)
+        dataset = disparity_.validity_mask(dataset, ref, sec, cv, **{'valid_pixels': 1, 'no_data': 2})
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE + PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER,
@@ -640,8 +666,8 @@ class TestDisparity(unittest.TestCase):
         cv = stereo_plugin.compute_cost_volume(ref, sec, -2, -1, **{'valid_pixels': 1, 'no_data': 2})
 
         # Compute the disparity map and validity mask
-        dataset = disparity.to_disp(cv)
-        dataset = disparity.validity_mask(dataset, ref, sec, cv, **{'valid_pixels': 1, 'no_data': 2})
+        dataset = disparity_.to_disp(cv)
+        dataset = disparity_.validity_mask(dataset, ref, sec, cv, **{'valid_pixels': 1, 'no_data': 2})
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING +
@@ -666,8 +692,8 @@ class TestDisparity(unittest.TestCase):
         cv = stereo_plugin.compute_cost_volume(ref, sec, 1, 2, **{'valid_pixels': 1, 'no_data': 2})
 
         # Compute the disparity map and validity mask
-        dataset = disparity.to_disp(cv)
-        dataset = disparity.validity_mask(dataset, ref, sec, cv, **{'valid_pixels': 1, 'no_data': 2})
+        dataset = disparity_.to_disp(cv)
+        dataset = disparity_.validity_mask(dataset, ref, sec, cv, **{'valid_pixels': 1, 'no_data': 2})
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_SEC,
@@ -716,8 +742,8 @@ class TestDisparity(unittest.TestCase):
         cv = stereo_plugin.compute_cost_volume(ref, sec, -1, 1, **{'valid_pixels': 1, 'no_data': 2})
 
         # Compute the disparity map and validity mask
-        dataset = disparity.to_disp(cv)
-        dataset = disparity.validity_mask(dataset, ref, sec, cv, **{'valid_pixels': 1, 'no_data': 2})
+        dataset = disparity_.to_disp(cv)
+        dataset = disparity_.validity_mask(dataset, ref, sec, cv, **{'valid_pixels': 1, 'no_data': 2})
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE + PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER +
@@ -758,8 +784,8 @@ class TestDisparity(unittest.TestCase):
         cv = stereo_plugin.compute_cost_volume(ref, sec, -3, 2, **{'valid_pixels': 1, 'no_data': 0})
 
         # Compute the disparity map and validity mask
-        dataset = disparity.to_disp(cv)
-        dataset = disparity.validity_mask(dataset, ref, sec, cv, **{'valid_pixels': 1, 'no_data': 0})
+        dataset = disparity_.to_disp(cv)
+        dataset = disparity_.validity_mask(dataset, ref, sec, cv, **{'valid_pixels': 1, 'no_data': 0})
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE +

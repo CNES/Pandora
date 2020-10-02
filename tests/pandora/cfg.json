@@ -9,25 +9,30 @@
     "nodata1": "np.nan",
     "nodata2": "np.nan"
   },
-  "stereo": {
+  "pipeline": {
+    "right_disp_map":{
+      "method": "accurate"
+    },
+    "stereo": {
     "stereo_method": "zncc",
     "window_size": 5,
     "subpix": 2
-  },
-  "aggregation": {
-    "aggregation_method": "none"
-  },
-  "optimization": {
-    "optimization_method": "none"
-  },
-  "refinement": {
-    "refinement_method": "vfit"
-  },
-  "filter": {
-    "filter_method": "median"
-  },
-  "validation": {
-    "validation_method": "cross_checking",
-    "right_left_mode": "accurate"
+    },
+    "disparity": {
+	"disparity_method": "wta"
+	},
+    "refinement": {
+      "refinement_method": "vfit"
+    },
+    "filter": {
+      "filter_method": "median"
+    },
+    "validation": {
+      "validation_method": "cross_checking",
+      "right_left_mode": "accurate"
+    },
+    "resize": {
+        "border_disparity": -9999
+    }
   }
 }

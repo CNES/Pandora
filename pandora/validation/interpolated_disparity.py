@@ -124,59 +124,6 @@ class AbstractInterpolation(object):
         """
 
 
-@AbstractInterpolation.register_subclass('none')
-class NoneInterpolation(AbstractInterpolation):
-    """
-    Default plugin that does not perform interpolation of the disparity map
-    """
-
-    def __init__(self, **kwargs):
-        pass
-
-    def desc(self):
-        """
-        Describes the interpolation method
-        """
-        print('No interpolation of the disparity map')
-
-    def interpolated_disparity(self, ref: xr.Dataset, img_ref: xr.Dataset = None, img_sec: xr.Dataset = None,
-                               cv: xr.Dataset = None) -> xr.Dataset:
-        """
-        Interpolation of the left disparity map to resolve occlusion and mismatch conflicts.
-
-        :param ref: Reference Dataset
-        :type ref: xarray.Dataset with the variables :
-            - disparity_map 2D xarray.DataArray (row, col)
-            - confidence_measure 3D xarray.DataArray (row, col, indicator)
-            - validity_mask 2D xarray.DataArray (row, col)
-        :param img_ref: reference Datset image
-        :type img_ref:
-            xarray.Dataset containing :
-                - im : 2D (row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
-            xarray.Dataset containing :
-                - im : 2D (row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
-        :param cv: cost_volume Dataset
-        :type cv:
-            xarray.Dataset with the variables:
-                - cost_volume 3D xarray.DataArray (row, col, disp)
-                - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :return: the interpolated disparity map, with the validity mask update :
-            - If bit 4 == 1: Invalid pixel : filled occlusion
-            - If bit 5 == 1: Invalid pixel : filled mismatch
-        :rtype: xarray.Dataset with the variables :
-            - disparity_map 2D xarray.DataArray (row, col)
-            - confidence_measure 3D xarray.DataArray (row, col, indicator)
-            - validity_mask 2D xarray.DataArray (row, col)
-        """
-        ref.attrs['interpolated_disparity'] = 'none'
-
-        return ref
-
-
 @AbstractInterpolation.register_subclass('mc-cnn')
 class McCnnInterpolation(AbstractInterpolation):
     """
@@ -580,4 +527,3 @@ class SgmInterpolation(AbstractInterpolation):
                         out_val[y, x] += PANDORA_MSK_PIXEL_FILLED_MISMATCH
 
         return out_disp, out_val
-

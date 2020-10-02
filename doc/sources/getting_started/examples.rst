@@ -15,30 +15,24 @@ Define your inputs and configure your pipeline by writting a json configuration 
         "disp_min" : -60,
         "disp_max" : 0
       },
-      "stereo" : {
-        "stereo_method": "zncc",
-        "window_size": 5,
-        "subpix": 4
-      },
-      "aggregation" : {
-        "aggregation_method": "none"
-      },
-      "optimization" : {
-        "optimization_method": "none"
-      },
-      "refinement": {
-        "refinement_method": "none"
-      },
-     "filter" : {
-       "filter_method": "median"
-      },
-      "validation" : {
-        "validation_method": "none"
-      },
-      "invalid_disparity": 0
+      "pipeline": {
+          "stereo": {
+            "stereo_method": "ssd",
+            "window_size": 5,
+            "subpix": 1
+          },
+          "disparity": {
+            "disparity_method": "wta",
+            "invalid_disparity": "np.nan"
+          },
+          "filter": {
+            "filter_method": "median"
+          }
+          "resize": {
+            "border_disparity": "np.nan"
+          }
+      }
     }
-
-
 
 And run pandora
 
@@ -58,6 +52,7 @@ As a package
     from pandora.common import save_results, save_config
     from pandora.constants import *
     from pandora import import_plugin, check_conf
+    from .state_machine import PandoraMachine
 
 
     def pandora_stereo(cfg_path, output, verbose):
@@ -76,8 +71,11 @@ As a package
         # Import pandora plugins
         import_plugin()
 
+        # Instantiate pandora state machine
+        pandora_machine = PandoraMachine()
+
         # check the configuration
-        cfg = check_conf(user_cfg)
+        cfg = check_conf(user_cfg, pandora_machine)
 
         # Read images and masks
         img_ref = read_img(cfg['input']['img_ref'], no_data=cfg['image']['nodata1'], cfg=cfg['image'],
@@ -85,8 +83,14 @@ As a package
         img_sec = read_img(cfg['input']['img_sec'], no_data=cfg['image']['nodata2'], cfg=cfg['image'],
                            mask=cfg['input']['sec_mask'])
 
+        # Read range of disparities
+        disp_min = read_disp(cfg['input']['disp_min'])
+        disp_max = read_disp(cfg['input']['disp_max'])
+        disp_min_sec = read_disp(cfg['input']['disp_min_sec'])
+        disp_max_sec = read_disp(cfg['input']['disp_max_sec'])
+
         # Run the Pandora pipeline
-        ref, sec = run(img_ref, img_sec, cfg['input']['disp_min'], cfg['input']['disp_max'], cfg)
+        ref, sec = run(pandora_machine, img_ref, img_sec, disp_min, disp_max, cfg, disp_min_sec, disp_max_sec)
 
         # Save the reference and secondary DataArray in tiff files
         save_results(ref, sec, output)

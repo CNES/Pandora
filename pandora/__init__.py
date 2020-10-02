@@ -41,14 +41,17 @@ from .img_tools import read_img, read_disp
 from .JSON_checker import check_conf, read_config_file
 from typing import Dict, Tuple, Union
 import numpy as np
+from .state_machine import PandoraMachine
 
 
-def run(img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: Union[int, np.ndarray], disp_max: Union[int, np.ndarray],
-        cfg: Dict[str, dict], disp_min_sec: Union[None, int, np.ndarray] = None,
+def run(pandora_machine: PandoraMachine, img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: Union[int, np.ndarray],
+        disp_max: Union[int, np.ndarray], cfg: Dict[str, dict], disp_min_sec: Union[None, int, np.ndarray] = None,
         disp_max_sec: Union[None, int, np.ndarray] = None) -> Tuple[xr.Dataset, xr.Dataset]:
     """
     Run the pandora pipeline
 
+    :param pandora_machine: instance of PandoraMachine
+    :type pandora_machine: PandoraMachine
     :param img_ref: reference Dataset image
     :type img_ref:
         xarray.Dataset containing :
@@ -84,88 +87,19 @@ def run(img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: Union[int, np.ndarra
 
     :rtype: tuple (xarray.Dataset, xarray.Dataset)
     """
-    # Initializes the plugins
-    stereo_ = stereo.AbstractStereo(**cfg['stereo'])
-    aggregation_ = aggregation.AbstractAggregation(**cfg['aggregation'])
-    optimization_ = optimization.AbstractOptimization(**cfg['optimization'])
-    filter_ = filter.AbstractFilter(**cfg['filter'])
-    refinement_ = refinement.AbstractRefinement(**cfg['refinement'])
-    validation_ = validation.AbstractValidation(**cfg['validation'])
-    interpolate_ = validation.AbstractInterpolation(**cfg['validation'])
+    # Prepare machine before running
+    pandora_machine.run_prepare(cfg, img_ref, img_sec, disp_min, disp_max, disp_min_sec, disp_max_sec)
 
-    # Run the pandora pipeline
+    # Trigger the machine step by step
+    # Warning: first element of cfg dictionary is not a transition. It contains information about the way to
+    # compute right disparity map.
+    for e in list(cfg['pipeline'])[1:]:
+        pandora_machine.run(e, cfg)
 
-    # Matching cost computation
-    logging.info('Matching cost computation...')
-    # Compute the global minimum and maximum of disparity
-    dmin_min, dmax_max = stereo_.dmin_dmax(disp_min, disp_max)
-    # Compute the cost volume
-    cv = stereo_.compute_cost_volume(img_ref, img_sec, dmin_min, dmax_max, **cfg['image'])
-    # Masking the costs computed for disparities outside of the variable disparities range
-    cv = stereo_.cv_masked(img_ref, img_sec, cv, disp_min, disp_max,  **cfg['image'])
+    # Stop the machine which returns to its initial state
+    pandora_machine.run_exit()
 
-    # Cost (support) aggregation
-    logging.info('Cost aggregation...')
-    cv = aggregation_.cost_volume_aggregation(img_ref, img_sec, cv, **cfg['image'])
-
-    # Cost optimization
-
-    logging.info('Cost optimization...')
-    cv = optimization_.optimize_cv(cv, img_ref, img_sec)
-
-    # Disparity computation and validity mask
-    logging.info('Disparity computation...')
-    ref = disparity.to_disp(cv, cfg['invalid_disparity'], img_ref, img_sec)
-    ref = disparity.validity_mask(ref, img_ref, img_sec, cv, **cfg['image'])
-
-    # Subpixel disparity refinement
-    logging.info('Subpixel refinement...')
-    cv, ref = refinement_.subpixel_refinement(cv, ref, img_ref, img_sec)
-
-    # Disparity filter
-    logging.info('Disparity filtering...')
-    ref = filter_.filter_disparity(ref, img_ref, img_sec, cv)
-
-    sec = xr.Dataset()
-    if cfg['validation']['validation_method'] == 'cross_checking':
-
-        logging.info('Computing the right disparity map with the accurate method...')
-
-        # Computes the secondary disparity if it is not provided
-        if disp_min_sec is None:
-            disp_min_sec = -disp_max
-            disp_max_sec = -disp_min
-
-        dmin_min_sec, dmax_max_sec = stereo_.dmin_dmax(disp_min_sec, disp_max_sec)
-        cv_right = stereo_.compute_cost_volume(img_sec, img_ref, dmin_min_sec, dmax_max_sec, **cfg['image'])
-        cv_right = stereo_.cv_masked(img_sec, img_ref, cv_right, disp_min_sec, disp_max_sec, **cfg['image'])
-        cv_right = aggregation_.cost_volume_aggregation(img_sec, img_ref, cv_right, **cfg['image'])
-        cv_right = optimization_.optimize_cv(cv_right, img_sec, img_ref)
-        sec = disparity.to_disp(cv_right, cfg['invalid_disparity'], img_sec, img_ref)
-        sec = disparity.validity_mask(sec, img_sec, img_ref, cv_right, **cfg['image'])
-        cv_right, sec = refinement_.subpixel_refinement(cv_right, sec, img_sec, img_ref)
-
-        sec = filter_.filter_disparity(sec, img_sec, img_ref, cv_right)
-
-        # Computes the validation mask
-        ref = validation_.disparity_checking(ref, sec, img_ref, img_sec, cv)
-        sec = validation_.disparity_checking(sec, ref, img_sec, img_ref, cv_right)
-
-        # Interpolated mismatch and occlusions
-        ref = interpolate_.interpolated_disparity(ref, img_ref, img_sec, cv)
-        sec = interpolate_.interpolated_disparity(sec, img_sec, img_ref, cv_right)
-
-        if cfg['validation']['filter_interpolated_disparities']:
-            ref = filter_.filter_disparity(ref, img_ref, img_sec, cv)
-            sec = filter_.filter_disparity(sec, img_sec, img_ref, cv)
-
-        # Resize the output products : add rows and columns that have been truncated
-        sec = disparity.resize(sec, cfg['invalid_disparity'])
-
-    # Resize the output products : add rows and columns that have been truncated
-    ref = disparity.resize(ref, cfg['invalid_disparity'])
-
-    return ref, sec
+    return pandora_machine.left_disparity, pandora_machine.right_disparity
 
 
 def setup_logging(verbose: bool) -> None:
@@ -208,8 +142,11 @@ def main(cfg_path: str, output: str, verbose: bool) -> None:
     # Import pandora plugins
     import_plugin()
 
+    # Instantiate pandora state machine
+    pandora_machine = PandoraMachine()
+
     # check the configuration
-    cfg = check_conf(user_cfg)
+    cfg = check_conf(user_cfg, pandora_machine)
 
     # setup the logging configuration
     setup_logging(verbose)
@@ -227,7 +164,7 @@ def main(cfg_path: str, output: str, verbose: bool) -> None:
     disp_max_sec = read_disp(cfg['input']['disp_max_sec'])
 
     # Run the Pandora pipeline
-    ref, sec = run(img_ref, img_sec, disp_min, disp_max, cfg, disp_min_sec, disp_max_sec)
+    ref, sec = run(pandora_machine, img_ref, img_sec, disp_min, disp_max, cfg, disp_min_sec, disp_max_sec)
 
     # Save the reference and secondary DataArray in tiff files
     common.save_results(ref, sec, output)

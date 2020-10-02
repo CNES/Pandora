@@ -33,12 +33,8 @@ import logging
 
 import copy
 from collections.abc import Mapping
-from . import stereo
-from . import optimization
-from . import aggregation
-from . import filter
-from . import validation
-from . import refinement
+
+from pandora.state_machine import *
 
 
 def rasterio_can_open_mandatory(f: str) -> bool:
@@ -195,7 +191,6 @@ def check_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str,
             logging.error('Disp_max must be bigger than Disp_min')
             sys.exit(1)
 
-
 def get_config_pipeline(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     """
     Get the pipeline configuration
@@ -205,23 +200,10 @@ def get_config_pipeline(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     :return cfg: partial configuration
     :rtype cfg: dict
     """
-
     cfg = {}
 
-    if 'invalid_disparity' in user_cfg:
-        cfg['invalid_disparity'] = user_cfg['invalid_disparity']
-    if 'stereo' in user_cfg:
-        cfg['stereo'] = user_cfg['stereo']
-    if 'aggregation' in user_cfg:
-        cfg['aggregation'] = user_cfg['aggregation']
-    if 'optimization' in user_cfg:
-        cfg['optimization'] = user_cfg['optimization']
-    if 'refinement' in user_cfg:
-        cfg['refinement'] = user_cfg['refinement']
-    if 'filter' in user_cfg:
-        cfg['filter'] = user_cfg['filter']
-    if 'validation' in user_cfg:
-        cfg['validation'] = user_cfg['validation']
+    if 'pipeline' in user_cfg:
+        cfg['pipeline'] = user_cfg['pipeline']
 
     return cfg
 
@@ -262,50 +244,27 @@ def get_config_image(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     return cfg
 
 
-def check_pipeline_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
+def check_pipeline_section(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> Dict[str, dict]:
     """
-    Complete and check if the pipeline dictionary is correct
+    Check if the pipeline is correct by
+    - Checking the sequence of steps according to the machine transitions
+    - Checking parameters, define in dictionary, of each Pandora step
 
-    :param user_cfg: user configuration
+    :param user_cfg: pipeline user configuration
     :type user_cfg: dict
-    :return cfg: global configuration
+    :param pandora_machine: instance of PandoraMachine
+    :type pandora_machine: PandoraMachine object
+    :return cfg: pipeline configuration
     :rtype cfg: dict
     """
-    # Add missing steps and inputs defaults values in user_cfg
+    # Check if user configuration pipeline is compatible with transitions/states of pandora machine.
     cfg = update_conf(default_short_configuration_pipeline, user_cfg)
+    pandora_machine.check_conf(cfg['pipeline'])
 
-    # Initialize the plugins
-    stereo_ = stereo.AbstractStereo(**cfg["stereo"])
-    aggregation_ = aggregation.AbstractAggregation(**cfg["aggregation"])
-    optimization_ = optimization.AbstractOptimization(**cfg["optimization"])
-    refinement_ = refinement.AbstractRefinement(**cfg["refinement"])
-    filter_ = filter.AbstractFilter(**cfg["filter"])
-    validation_ = validation.AbstractValidation(**cfg["validation"])
-
-    # Load configuration steps
-    cfg_stereo = {'stereo': stereo_.cfg}
-    cfg_aggregation = {'aggregation': aggregation_.cfg}
-    cfg_optimization = {'optimization': optimization_.cfg}
-    cfg_refinement = {'refinement': refinement_.cfg}
-    cfg_filter = {'filter': filter_.cfg}
-    cfg_validation = {'validation': validation_.cfg}
-
-    # Update the configuration with steps configuration
-    cfg = update_conf(cfg, cfg_stereo)
-    cfg = update_conf(cfg, cfg_aggregation)
-    cfg = update_conf(cfg, cfg_optimization)
-    cfg = update_conf(cfg, cfg_refinement)
-    cfg = update_conf(cfg, cfg_filter)
-    cfg = update_conf(cfg, cfg_validation)
+    cfg = update_conf(cfg, pandora_machine.pipeline_cfg)
 
     configuration_schema = {
-        "invalid_disparity": Or(int, lambda x: np.isnan(x)),
-        "stereo": dict,
-        "aggregation": dict,
-        "optimization": dict,
-        "refinement": dict,
-        "filter": dict,
-        "validation": dict
+        "pipeline": dict
     }
 
     checker = Checker(configuration_schema)
@@ -380,12 +339,14 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     return cfg
 
 
-def check_conf(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
+def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> Dict[str, dict]:
     """
     Complete and check if the dictionary is correct
 
     :param user_cfg: user configuration
     :type user_cfg: dict
+    :param pandora_machine: instance of PandoraMachine
+    :type pandora_machine: PandoraMachine
     :return cfg: global configuration
     :rtype cfg: dict
     """
@@ -400,12 +361,13 @@ def check_conf(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
 
     # check pipeline
     user_cfg_pipeline = get_config_pipeline(user_cfg)
-    cfg_pipeline = check_pipeline_section(user_cfg_pipeline)
+    cfg_pipeline = check_pipeline_section(user_cfg_pipeline, pandora_machine)
 
     # If reference disparities are grids of disparity and the secondary disparities are none, the cross-checking
     # method cannot be used
+
     if (type(cfg_input['input']['disp_min']) == str) and (cfg_input['input']['disp_min_sec'] is None) and \
-            (cfg_pipeline['validation']['validation_method'] != "none"):
+            ('validation' in cfg_pipeline['pipeline']):
         logging.error("The cross-checking step cannot be processed if disp_min, disp_max are paths to the reference "
                       "disparity grids and disp_sec_min, disp_sec_max are none.")
         sys.exit(1)
@@ -490,25 +452,12 @@ default_short_configuration_input = {
 }
 
 default_short_configuration_pipeline = {
-    "invalid_disparity": -9999,
-    "stereo": {
-        "stereo_method": "ssd"
-    },
-    "aggregation": {
-        "aggregation_method": "none"
-    },
-    "optimization": {
-        "optimization_method": "none"
-    },
-    "refinement": {
-        "refinement_method": "none"
-    },
-    "filter": {
-        "filter_method": "none"
-    },
-    "validation": {
-        "validation_method": "none"
-    }
+    "pipeline":
+        {
+            "right_disp_map":{
+                "method" : "none"
+            }
+        }
 }
 
 

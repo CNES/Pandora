@@ -160,6 +160,7 @@ rejection criterion (= 1 if rejection, = 0 otherwise):
 
 The validity masks are stored in the xarray.Dataset ref and sec in the pandora/__init__.py file.
 
+.. _border_management:
 
 Border management
 -----------------
@@ -184,8 +185,8 @@ the xarray.Dataset. For an image of 100x100 with a window of 5x5, the products w
    Attributes:
        offset_row_col:  2
 
-The resize method of the disparity module, allows to restitute disparity maps and masks with the size
-original: add the pixels that have been truncated:
+The resize method of the common module, allows to restitute disparity maps and masks with the original size
+: add the pixels that have been truncated:
 
 .. sourcecode:: text
 
@@ -198,7 +199,8 @@ original: add the pixels that have been truncated:
        offset_row_col:  0
 
 These pixels will have bit 0 set, *The point is invalid: reference image edge*, in the :ref:`validity_mask` and
-will be assigned the *invalid_disparity* ( configurable in the json configuration file ) in the disparity maps.
+will be assigned the *border_disparity* ( configurable in the json configuration file , see :ref:`resize_parameters`  )
+in the disparity maps.
 
 Secondary image
 ^^^^^^^^^^^^^^^

@@ -26,7 +26,7 @@ This module contains classes and functions associated to the validation step.
 import logging
 import numpy as np
 import xarray as xr
-from json_checker import Checker, And, Or
+from json_checker import Checker, And, Or, OptionalKey
 from pandora import JSON_checker as jcheck
 from abc import ABCMeta, abstractmethod
 from typing import Dict, Union
@@ -131,94 +131,6 @@ class AbstractValidation(object):
         """
 
 
-@AbstractValidation.register_subclass('none')
-class NoneValidation(AbstractValidation):
-    """
-    Default plugin that does not perform validation
-    """
-
-    def __init__(self, **cfg: str):
-        """
-        :param cfg: optional configuration, {}
-        :type cfg: dict
-        """
-        self.cfg = self.check_conf(**cfg)
-
-    @staticmethod
-    def check_conf(**cfg: str) -> Dict[str, str]:
-        """
-        Add default values to the dictionary if there are missing elements and check if the dictionary is correct
-
-        :param cfg: validation configuration
-        :type cfg: dict
-        :return cfg: validation configuration updated
-        :rtype: dict
-        """
-        # Give the default value if the required element is not in the configuration
-        # Need to initialize 'interpolated_disparity' to run Pandora pipeline
-        if 'interpolated_disparity' not in cfg:
-            cfg['interpolated_disparity'] = 'none'
-
-        schema = {
-            "validation_method": And(str, lambda x: 'none'),
-            "interpolated_disparity": And(str, lambda x: 'none')
-        }
-
-        checker = Checker(schema)
-        checker.validate(cfg)
-        return cfg
-
-    def desc(self):
-        """
-        Describes the validation method
-        """
-        print('No validation step')
-
-    def disparity_checking(self, dataset_ref: xr.Dataset, dataset_sec: xr.Dataset, img_ref: xr.Dataset = None,
-                           img_sec: xr.Dataset = None, cv: xr.Dataset = None) -> xr.Dataset:
-        """
-        Determination of occlusions and false matches by performing a consistency check on valid pixels. \
-        Update the validity_mask :
-            - If out & MSK_PIXEL_OCCLUSION != 0 : Invalid pixel : occluded pixel
-            - If out & MSK_PIXEL_MISMATCH  != 0  : Invalid pixel : mismatched pixel
-        Update the measure map: add the disp RL / disp LR distances
-
-        :param dataset_ref: Reference Dataset
-        :type dataset_ref: xarray.Dataset with the variables :
-            - disparity_map 2D xarray.DataArray (row, col)
-            - confidence_measure 3D xarray.DataArray (row, col, indicator)
-            - validity_mask 2D xarray.DataArray (row, col)
-        :param dataset_sec: Secondary Dataset
-        :type dataset_sec: xarray.Dataset with the variables :
-            - disparity_map 2D xarray.DataArray (row, col)
-            - confidence_measure 3D xarray.DataArray (row, col, indicator)
-            - validity_mask 2D xarray.DataArray (row, col)
-        :param img_ref: reference Datset image
-        :type img_ref:
-            xarray.Dataset containing :
-                - im : 2D (row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
-            xarray.Dataset containing :
-                - im : 2D (row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
-        :param cv: cost_volume Dataset
-        :type cv:
-            xarray.Dataset with the variables:
-                - cost_volume 3D xarray.DataArray (row, col, disp)
-                - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :return: the reference dataset, with the bit 8 and 9 of the validity_mask :
-            - If out & MSK_PIXEL_OCCLUSION != 0 : Invalid pixel : occluded pixel
-            - If out & MSK_PIXEL_MISMATCH  != 0  : Invalid pixel : mismatched pixel
-        :rtype : xarray.Dataset with the variables :
-            - disparity_map 2D xarray.DataArray (row, col)
-            - confidence_measure 3D xarray.DataArray (row, col, indicator)
-            - validity_mask 2D xarray.DataArray (row, col)
-        """
-        return dataset_ref
-
-
 @AbstractValidation.register_subclass('cross_checking')
 class CrossChecking(AbstractValidation):
     """
@@ -250,17 +162,12 @@ class CrossChecking(AbstractValidation):
             cfg['cross_checking_threshold'] = self._THRESHOLD
         if 'right_left_mode' not in cfg:
             cfg['right_left_mode'] = 'accurate'
-        if 'interpolated_disparity' not in cfg:
-            cfg['interpolated_disparity'] = 'none'
-        if 'filter_interpolated_disparities' not in cfg:
-            cfg['filter_interpolated_disparities'] = True
 
         schema = {
             "validation_method": And(str, lambda x: 'cross_checking'),
             "cross_checking_threshold": Or(int, float),
             "right_left_mode": And(str, lambda x: jcheck.is_method(x, ['accurate', 'approximate'])),
-            "interpolated_disparity": And(str, lambda x: jcheck.is_method(x, ['none', 'mc-cnn', 'sgm'])),
-            "filter_interpolated_disparities": bool
+            OptionalKey("interpolated_disparity"): And(str, lambda x: jcheck.is_method(x, ['mc-cnn', 'sgm']))
         }
 
         checker = Checker(schema)

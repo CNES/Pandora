@@ -5,25 +5,18 @@
     "disp_min" : -60,
     "disp_max" : 0
   },
-  "stereo" : {
+  "pipeline" : {
+      "stereo" : {
     "stereo_method": "zncc",
     "window_size": 5,
     "subpix": 4
   },
-  "aggregation" : {
-    "aggregation_method": "none"
+  "disparity": {
+    "disparity_method": "wta",
+    "invalid_disparity": "np.nan"
   },
-  "optimization" : {
-    "optimization_method": "none"
-  },
-  "refinement": {
-    "refinement_method": "none"
-  },
- "filter" : {
-   "filter_method": "none"
-  },
-  "validation" : {
-    "validation_method": "none"
-  },
-  "invalid_disparity": 0
+  "resize": { 
+    "border_disparity": "np.nan"
+	}
+  }
 }
