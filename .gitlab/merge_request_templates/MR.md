@@ -14,7 +14,7 @@
 
 Si la Merge Request est en cours de développement, merci d'ajouter le mot clé `WIP` afin d'éviter la fusion de cette dernière.
 
-### MR prête à merger 
+#### MR prête à merger 
 
 Si la Merge Request est prête, merci de valider les étapes suivantes:
 - [ ] mise à jour de la documentation
