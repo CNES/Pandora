@@ -8,6 +8,7 @@
 - [ ] Tests Visuels ? (doc)
 - [ ] Tests Fonctionnels ? (intégration / interfaces avec d'autres outils)
 - [ ] Tests Comparatifs ? (`feat` métier avec outil de référence)
+  - dans ce cas citer l'outil et son paramétrage 
 
 #### MR non prête à merger
 
