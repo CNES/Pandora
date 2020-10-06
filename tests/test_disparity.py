@@ -544,12 +544,12 @@ class TestDisparity(unittest.TestCase):
                            dtype=np.uint16)
 
         # Resize the products
-        reference_disparity = resize(left, border_disparity=0)
+        left_disparity = resize(left, border_disparity=0)
 
         # Check if the products is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(reference_disparity['disparity_map'].data, gt_disp)
-        np.testing.assert_array_equal(reference_disparity['confidence_measure'].data, gt_confidence)
-        np.testing.assert_array_equal(reference_disparity['validity_mask'].data, gt_mask)
+        np.testing.assert_array_equal(left_disparity['disparity_map'].data, gt_disp)
+        np.testing.assert_array_equal(left_disparity['confidence_measure'].data, gt_confidence)
+        np.testing.assert_array_equal(left_disparity['validity_mask'].data, gt_mask)
 
         right = xr.Dataset({'disparity_map': (['row', 'col'], np.array([[1, -1], [2, -10]], dtype=np.float32)),
                           'confidence_measure': (['row', 'col', 'indicator'],
@@ -612,7 +612,7 @@ class TestDisparity(unittest.TestCase):
         # If bit 0 == 1 : Invalid pixel : the disparity interval is missing in the right image
         # If bit 1 == 1 : Invalid pixel : the disparity interval is missing in the right image
         # If bit 2 == 1 : Information: the disparity interval is incomplete (edge reached in the right image)
-        # If bit 6 == 1 : Invalid pixel : invalidated by the validity mask of the reference image given as input
+        # If bit 6 == 1 : Invalid pixel : invalidated by the validity mask of the left image given as input
         # If bit 7 == 1 : Invalid pixel : right positions invalidated by the mask of the right image given as
         #    input
 
@@ -624,13 +624,13 @@ class TestDisparity(unittest.TestCase):
         data = np.array(([[1, 2, 4, 6],
                           [2, 4, 1, 6],
                           [6, 7, 8, 10]]), dtype=np.float64)
-        ref_mask = np.array([[2, 1, 1, 1],
+        left_mask = np.array([[2, 1, 1, 1],
                              [1, 2, 4, 1],
                              [5, 1, 1, 2]], dtype=np.uint8)
-        ref = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], ref_mask)},
+        left = xr.Dataset({'im': (['row', 'col'], data),
+                          'msk': (['row', 'col'], left_mask)},
                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        ref.attrs = {'valid_pixels': 1, 'no_data_mask': 2}
+        left.attrs = {'valid_pixels': 1, 'no_data_mask': 2}
 
         data = np.array(([[6, 1, 2, 4],
                           [6, 2, 4, 1],
@@ -645,12 +645,12 @@ class TestDisparity(unittest.TestCase):
         right.attrs = {'valid_pixels': 1, 'no_data_mask': 2}
 
         stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
-        cv = stereo_plugin.compute_cost_volume(ref, right, -1, 1)
+        cv = stereo_plugin.compute_cost_volume(left, right, -1, 1)
 
         # Compute the disparity map and validity mask
         disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
         dataset = disparity_.to_disp(cv)
-        dataset = disparity_.validity_mask(dataset, ref, right, cv)
+        dataset = disparity_.validity_mask(dataset, left, right, cv)
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE + PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
@@ -667,11 +667,11 @@ class TestDisparity(unittest.TestCase):
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
 
         # ---------------------- Test with negative disparity range ----------------------
-        cv = stereo_plugin.compute_cost_volume(ref, right, -2, -1)
+        cv = stereo_plugin.compute_cost_volume(left, right, -2, -1)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
-        dataset = disparity_.validity_mask(dataset, ref, right, cv)
+        dataset = disparity_.validity_mask(dataset, left, right, cv)
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING +
@@ -693,11 +693,11 @@ class TestDisparity(unittest.TestCase):
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
 
         # ---------------------- Test with positive disparity range ----------------------
-        cv = stereo_plugin.compute_cost_volume(ref, right, 1, 2)
+        cv = stereo_plugin.compute_cost_volume(left, right, 1, 2)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
-        dataset = disparity_.validity_mask(dataset, ref, right, cv)
+        dataset = disparity_.validity_mask(dataset, left, right, cv)
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT,
@@ -721,14 +721,14 @@ class TestDisparity(unittest.TestCase):
                           [2, 4, 1, 6, 1],
                           [6, 7, 8, 10, 1],
                           [0, 5, 6, 7, 8]]), dtype=np.float64)
-        ref_mask = np.array([[2, 1, 1, 1, 1],
+        left_mask = np.array([[2, 1, 1, 1, 1],
                              [1, 2, 4, 1, 1],
                              [5, 2, 1, 1, 1],
                              [1, 1, 1, 1, 1]], dtype=np.uint8)
-        ref = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], ref_mask)},
+        left = xr.Dataset({'im': (['row', 'col'], data),
+                          'msk': (['row', 'col'], left_mask)},
                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        ref.attrs = {'valid_pixels': 1, 'no_data_mask': 2}
+        left.attrs = {'valid_pixels': 1, 'no_data_mask': 2}
 
         data = np.array(([[6, 1, 2, 4, 1],
                           [6, 2, 4, 1, 6],
@@ -745,11 +745,11 @@ class TestDisparity(unittest.TestCase):
         right.attrs = {'valid_pixels': 1, 'no_data_mask': 2}
 
         stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
-        cv = stereo_plugin.compute_cost_volume(ref, right, -1, 1)
+        cv = stereo_plugin.compute_cost_volume(left, right, -1, 1)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
-        dataset = disparity_.validity_mask(dataset, ref, right, cv)
+        dataset = disparity_.validity_mask(dataset, left, right, cv)
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE + PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER +
@@ -772,12 +772,12 @@ class TestDisparity(unittest.TestCase):
         # 0 = no_data
 
         data = np.ones((10, 10), dtype=np.float64)
-        ref_mask = np.ones((10, 10), dtype=np.uint8)
+        left_mask = np.ones((10, 10), dtype=np.uint8)
 
-        ref = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], ref_mask)},
+        left = xr.Dataset({'im': (['row', 'col'], data),
+                          'msk': (['row', 'col'], left_mask)},
                          coords={'row': np.arange(5, data.shape[0] + 5), 'col': np.arange(4, data.shape[1] + 4)})
-        ref.attrs = {'valid_pixels': 1, 'no_data_mask': 0}
+        left.attrs = {'valid_pixels': 1, 'no_data_mask': 0}
 
         data = np.ones((10, 10), dtype=np.float64)
         right_mask = np.ones((10, 10), dtype=np.uint8)
@@ -789,11 +789,11 @@ class TestDisparity(unittest.TestCase):
         right.attrs = {'valid_pixels': 1, 'no_data_mask': 0}
 
         stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
-        cv = stereo_plugin.compute_cost_volume(ref, right, -3, 2)
+        cv = stereo_plugin.compute_cost_volume(left, right, -3, 2)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
-        dataset = disparity_.validity_mask(dataset, ref, right, cv)
+        dataset = disparity_.validity_mask(dataset, left, right, cv)
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
