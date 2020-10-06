@@ -108,7 +108,6 @@ class PandoraMachine(Machine):
     def stereo_run(self, cfg: Dict[str, dict], input_step: str):
         """
         Matching cost computation
-
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
@@ -121,14 +120,13 @@ class PandoraMachine(Machine):
         dmin_min, dmax_max = stereo_.dmin_dmax(self.disp_min, self.disp_max)
 
         if not self.right_disp_map == "accurate":
-            self.left_cv = stereo_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max, **cfg['image'])
+            self.left_cv = stereo_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max)
             self.left_cv = stereo_.cv_masked(self.left_img, self.right_img, self.left_cv, self.disp_min, self.disp_max,
-                                        **cfg['image'])
+)
 
         else:
-            self.left_cv = stereo_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max, **cfg['image'])
-            self.left_cv = stereo_.cv_masked(self.left_img, self.right_img, self.left_cv, self.disp_min, self.disp_max,
-                                        **cfg['image'])
+            self.left_cv = stereo_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max)
+            self.left_cv = stereo_.cv_masked(self.left_img, self.right_img, self.left_cv, self.disp_min, self.disp_max)
 
             if self.right_disp_min is None:
                 self.right_disp_min = -self.disp_max
@@ -136,21 +134,20 @@ class PandoraMachine(Machine):
 
             dmin_min_sec, dmax_max_sec = stereo_.dmin_dmax(self.right_disp_min, self.right_disp_max)
             self.right_cv = stereo_.compute_cost_volume(self.right_img, self.left_img, dmin_min_sec, dmax_max_sec,
-                                                        **cfg['image'])
+)
             self.right_cv = stereo_.cv_masked(self.right_img, self.left_img, self.right_cv, self.right_disp_min,
-                                              self.right_disp_max, **cfg['image'])
+                                              self.right_disp_max)
+
 
     def aggregation_run(self, cfg: Dict[str, dict], input_step: str):
         """
-        Cost (support) aggregation
-
+         Cost (support) aggregation
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
         :type input_step: str
         :return:
         """
-
         aggregation_ = aggregation.AbstractAggregation(**cfg['pipeline'][input_step])
         if not self.right_disp_map == "accurate":
             self.left_cv = aggregation_.cost_volume_aggregation(self.left_img, self.right_img, self.left_cv)
@@ -160,8 +157,7 @@ class PandoraMachine(Machine):
 
     def optimization_run(self, cfg: Dict[str, dict], input_step: str):
         """
-        Cost optimization
-
+         Cost optimization
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
@@ -179,7 +175,6 @@ class PandoraMachine(Machine):
     def disparity_run(self, cfg: Dict[str, dict], input_step: str):
         """
         Disparity computation and validity mask
-
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
@@ -191,20 +186,19 @@ class PandoraMachine(Machine):
         if self.right_disp_map == "none":
             self.left_disparity = disparity_.to_disp(self.left_cv, self.left_img, self.right_img)
             self.left_disparity = disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img,
-                                                           self.left_cv, **cfg['image'])
+                                                           self.left_cv)
         elif self.right_disp_map == "accurate":
             self.left_disparity = disparity_.to_disp(self.left_cv, self.left_img, self.right_img)
             self.left_disparity = disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img,
-                                                           self.left_cv, **cfg['image'])
+                                                           self.left_cv)
             self.right_disparity = disparity_.to_disp(self.right_cv, self.right_img, self.left_img)
             self.right_disparity = disparity_.validity_mask(self.right_disparity, self.right_img, self.left_img,
-                                                         self.right_cv, **cfg['image'])
+                                                         self.right_cv)
 
 
     def filter_run(self, cfg: Dict[str, dict], input_step: str):
         """
         Disparity filter
-
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
@@ -221,8 +215,7 @@ class PandoraMachine(Machine):
 
     def refinement_run(self, cfg: Dict[str, dict], input_step: str):
         """
-        Subpixel disparity refinement
-
+         Subpixel disparity refinement
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
@@ -240,8 +233,7 @@ class PandoraMachine(Machine):
 
     def validation_run(self, cfg: Dict[str, dict], input_step: str):
         """
-        Validation of disparity map
-
+         Validation of disparity map
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
@@ -267,8 +259,7 @@ class PandoraMachine(Machine):
 
     def resize_run(self, cfg: Dict[str, dict], input_step: str):
         """
-        Resize left disparity map
-
+         Resize left disparity map
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
@@ -289,7 +280,6 @@ class PandoraMachine(Machine):
                     right_disp_max: Union[None, int, np.ndarray] = None):
         """
         Prepare the machine before running
-
         :param cfg:  configuration
         :type  cfg: dict
         :param left_img: left Dataset image
@@ -359,6 +349,7 @@ class PandoraMachine(Machine):
 
         self.remove_transitions(self._transitions_run)
         self.set_state('begin')
+
 
     def right_disp_map_check_conf(self, cfg: Dict[str, dict], input_step: str):
         """

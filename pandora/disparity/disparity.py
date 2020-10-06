@@ -227,7 +227,7 @@ class AbstractDisparity(object):
 
         return disp_map
 
-    def validity_mask(self, disp: xr.Dataset, img_ref: xr.Dataset, img_sec: xr.Dataset, cv: xr.Dataset, **cfg: int) -> xr.Dataset:
+    def validity_mask(self, disp: xr.Dataset, img_ref: xr.Dataset, img_sec: xr.Dataset, cv: xr.Dataset) -> xr.Dataset:
         """
         Create the validity mask of the disparity map
 
@@ -251,8 +251,6 @@ class AbstractDisparity(object):
             xarray.Dataset, with the data variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :param cfg: images configuration containing the mask convention : valid_pixels, no_data
-        :type cfg: dict
         :return: the dataset disparity with the data variable validity_mask
         :rtype :
             xarray.Dataset with the data variables :
@@ -316,7 +314,7 @@ class AbstractDisparity(object):
             _, r_mask = xr.align(disp['validity_mask'], img_ref['msk'])
 
             # Dilatation : pixels that contains no_data in their aggregation window become no_data
-            dil = binary_dilation(img_ref['msk'].data == cfg['no_data'],
+            dil = binary_dilation(img_ref['msk'].data == img_ref.attrs['no_data_mask'],
                                   structure=np.ones((disp.attrs['window_size'], disp.attrs['window_size'])), iterations=1)
             offset = disp.attrs['offset_row_col']
             if offset != 0:
@@ -326,20 +324,20 @@ class AbstractDisparity(object):
             disp['validity_mask'] += dil.astype(np.uint16) * PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER
 
             # Invalid pixel : invalidated by the validity mask of the reference image given as input
-            disp['validity_mask'] += xr.where((r_mask != cfg['no_data']) & (r_mask != cfg['valid_pixels']),
+            disp['validity_mask'] += xr.where((r_mask != img_ref.attrs['no_data_mask']) & (r_mask != img_ref.attrs['valid_pixels']),
                                               PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_REF, 0).astype(np.uint16)
 
         if 'msk' in img_sec.data_vars:
             _, r_mask = xr.align(disp['validity_mask'], img_sec['msk'])
 
             # Dilatation : pixels that contains no_data in their aggregation window become no_data
-            dil = binary_dilation(img_sec['msk'].data == cfg['no_data'],
+            dil = binary_dilation(img_sec['msk'].data == img_sec.attrs['no_data_mask'],
                                   structure=np.ones((disp.attrs['window_size'], disp.attrs['window_size'])), iterations=1)
             offset = disp.attrs['offset_row_col']
             if offset != 0:
                 dil = dil[offset:-offset, offset:-offset]
 
-            r_mask = xr.where((r_mask != cfg['no_data']) & (r_mask != cfg['valid_pixels']), 1, 0).data
+            r_mask = xr.where((r_mask != img_sec.attrs['no_data_mask']) & (r_mask != img_sec.attrs['valid_pixels']), 1, 0).data
 
             # Useful to calculate the case where the disparity interval is incomplete, and all remaining secondary
             # positions are invalidated by the secondary mask

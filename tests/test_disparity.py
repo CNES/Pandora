@@ -55,12 +55,14 @@ class TestDisparity(unittest.TestCase):
                           [6, 7, 8, 10]]), dtype=np.float64)
         self.ref = xr.Dataset({'im': (['row', 'col'], data)},
                               coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+        self.ref.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         data = np.array(([[6, 1, 2, 4],
                           [6, 2, 4, 1],
                           [10, 6, 7, 8]]), dtype=np.float64)
         self.sec = xr.Dataset({'im': (['row', 'col'], data)},
                               coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+        self.sec.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
     def test_to_disp(self):
         """
@@ -69,7 +71,7 @@ class TestDisparity(unittest.TestCase):
         """
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min -3 disp_max 1
         stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
-        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -3, 1, **{'valid_pixels': 0, 'no_data': 1})
+        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -3, 1)
 
         # Disparity map ground truth, for the images described in the setUp method
         gt_disp = np.array([[1, 1, 1, -3],
@@ -86,7 +88,7 @@ class TestDisparity(unittest.TestCase):
         #
         # Test the to_disp method with negative disparity range
         #
-        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -3, -1, **{'valid_pixels': 0, 'no_data': 1})
+        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -3, -1)
 
         # Disparity map ground truth
         gt_disp = np.array([[0, -1, -2, -3],
@@ -102,7 +104,7 @@ class TestDisparity(unittest.TestCase):
         #
         # Test the to_disp method with positive disparity range
         #
-        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, 1, 3, **{'valid_pixels': 0, 'no_data': 1})
+        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, 1, 3)
 
         # Disparity map ground truth
         gt_disp = np.array([[1, 1, 1, 0],
@@ -128,7 +130,7 @@ class TestDisparity(unittest.TestCase):
         """
         # Create the left cost volume, with SAD measure, window size 1, subpixel 2, disp_min -3 disp_max 1
         stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 2})
-        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -3, 1, **{'valid_pixels': 0, 'no_data': 1})
+        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -3, 1)
         indices_nan = np.isnan(cv['cost_volume'].data)
         cv['cost_volume'].data[indices_nan] = np.inf
 
@@ -151,7 +153,7 @@ class TestDisparity(unittest.TestCase):
         """
         # Create the left cost volume, with ZNCC measure, window size 1, subpixel 2, disp_min -3 disp_max 1
         stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'zncc', 'window_size': 1, 'subpix': 2})
-        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -3, 1, **{'valid_pixels': 0, 'no_data': 1})
+        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -3, 1)
         indices_nan = np.isnan(cv['cost_volume'].data)
         cv['cost_volume'].data[indices_nan] = -np.inf
 
@@ -174,7 +176,7 @@ class TestDisparity(unittest.TestCase):
         """
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min -3 disp_max 1
         stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
-        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -3, 1, **{'valid_pixels': 0, 'no_data': 1})
+        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -3, 1)
 
         # Compute the disparity
         disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
@@ -197,7 +199,7 @@ class TestDisparity(unittest.TestCase):
         """
         # Create the left cost volume, with SAD measure window size 3 and subpixel 1
         stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
-        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -2, 1, **{'valid_pixels': 0, 'no_data': 1})
+        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -2, 1)
 
         # Right disparity map ground truth, for the images described in the setUp method
         gt_disp = np.array([[0, -1]])
@@ -216,7 +218,7 @@ class TestDisparity(unittest.TestCase):
         """
         # Create the left cost volume, with SAD measure window size 3 and subpixel 4
         stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 4})
-        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -2, 1, **{'valid_pixels': 0, 'no_data': 1})
+        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -2, 1)
 
         # Right disparity map ground truth
         gt_disp = np.array([[0, -1]])
@@ -306,12 +308,12 @@ class TestDisparity(unittest.TestCase):
         # ------ Negative disparities ------
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min -3 disp_max -1
         stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
-        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -3, -1, **{'valid_pixels': 0, 'no_data': 1})
+        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -3, -1)
 
         # Compute the disparity map and validity mask
         disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
         dataset = disparity_.to_disp(cv)
-        dataset = disparity_.validity_mask(dataset, self.ref, self.sec, cv, **{'valid_pixels': 0, 'no_data': 1})
+        dataset = disparity_.validity_mask(dataset, self.ref, self.sec, cv)
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING,
@@ -329,11 +331,11 @@ class TestDisparity(unittest.TestCase):
 
         # ------ Positive disparities ------
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min 1 disp_max 2
-        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, 1, 2, **{'valid_pixels': 0, 'no_data': 1})
+        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, 1, 2)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
-        dataset = disparity_.validity_mask(dataset, self.ref, self.sec, cv, **{'valid_pixels': 0, 'no_data': 1})
+        dataset = disparity_.validity_mask(dataset, self.ref, self.sec, cv)
 
         # Validity mask ground truth
         gt_mask = np.array([[0, 0, 1 << 2, PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING],
@@ -345,11 +347,11 @@ class TestDisparity(unittest.TestCase):
 
         # ------ Negative and positive disparities ------
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min -1 disp_max 1
-        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -1, 1, **{'valid_pixels': 0, 'no_data': 1})
+        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -1, 1)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
-        dataset = disparity_.validity_mask(dataset, self.ref, self.sec, cv, **{'valid_pixels': 0, 'no_data': 1})
+        dataset = disparity_.validity_mask(dataset, self.ref, self.sec, cv)
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE, 0, 0,
@@ -376,12 +378,12 @@ class TestDisparity(unittest.TestCase):
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min -3 disp_max -1
         stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
         dmin, dmax = stereo_plugin.dmin_dmax(disp_min_grid, disp_max_grid)
-        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, dmin, dmax, **{'valid_pixels': 0, 'no_data': 1})
-        cv = stereo_plugin.cv_masked(self.ref, self.sec, cv, disp_min_grid, disp_max_grid, **{'valid_pixels': 0, 'no_data': 1})
+        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, dmin, dmax)
+        cv = stereo_plugin.cv_masked(self.ref, self.sec, cv, disp_min_grid, disp_max_grid)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
-        dataset = disparity_.validity_mask(dataset, self.ref, self.sec, cv, **{'valid_pixels': 0, 'no_data': 1})
+        dataset = disparity_.validity_mask(dataset, self.ref, self.sec, cv)
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE +
@@ -409,7 +411,7 @@ class TestDisparity(unittest.TestCase):
         stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
 
         # ------ Negative and positive disparities ------
-        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -2, 1, **{'valid_pixels': 0, 'no_data': 1})
+        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -2, 1)
 
         # Validity mask ground truth ( for disparities -1 0 1 2 )
         gt_mask = np.array([[PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE, 0,
@@ -430,7 +432,7 @@ class TestDisparity(unittest.TestCase):
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
 
         # ------ Negative disparities ------
-        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, 1, 2, **{'valid_pixels': 0, 'no_data': 1})
+        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, 1, 2)
 
         # Validity mask ground truth ( for disparities -2 -1 )
         gt_mask = np.array([[PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING,
@@ -450,7 +452,7 @@ class TestDisparity(unittest.TestCase):
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
 
         # ------ Positive disparities ------
-        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -2, -1, **{'valid_pixels': 0, 'no_data': 1})
+        cv = stereo_plugin.compute_cost_volume(self.ref, self.sec, -2, -1)
 
         # Validity mask ground truth ( for disparities 1 2 )
         gt_mask = np.array([[0, 0, PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE,
@@ -628,6 +630,7 @@ class TestDisparity(unittest.TestCase):
         ref = xr.Dataset({'im': (['row', 'col'], data),
                           'msk': (['row', 'col'], ref_mask)},
                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+        ref.attrs = {'valid_pixels': 1, 'no_data_mask': 2}
 
         data = np.array(([[6, 1, 2, 4],
                           [6, 2, 4, 1],
@@ -639,14 +642,15 @@ class TestDisparity(unittest.TestCase):
         sec = xr.Dataset({'im': (['row', 'col'], data),
                           'msk': (['row', 'col'], sec_mask)},
                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+        sec.attrs = {'valid_pixels': 1, 'no_data_mask': 2}
 
         stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
-        cv = stereo_plugin.compute_cost_volume(ref, sec, -1, 1, **{'valid_pixels': 1, 'no_data': 2})
+        cv = stereo_plugin.compute_cost_volume(ref, sec, -1, 1)
 
         # Compute the disparity map and validity mask
         disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
         dataset = disparity_.to_disp(cv)
-        dataset = disparity_.validity_mask(dataset, ref, sec, cv, **{'valid_pixels': 1, 'no_data': 2})
+        dataset = disparity_.validity_mask(dataset, ref, sec, cv)
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE + PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER,
@@ -663,11 +667,11 @@ class TestDisparity(unittest.TestCase):
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
 
         # ---------------------- Test with negative disparity range ----------------------
-        cv = stereo_plugin.compute_cost_volume(ref, sec, -2, -1, **{'valid_pixels': 1, 'no_data': 2})
+        cv = stereo_plugin.compute_cost_volume(ref, sec, -2, -1)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
-        dataset = disparity_.validity_mask(dataset, ref, sec, cv, **{'valid_pixels': 1, 'no_data': 2})
+        dataset = disparity_.validity_mask(dataset, ref, sec, cv)
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING +
@@ -689,11 +693,11 @@ class TestDisparity(unittest.TestCase):
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
 
         # ---------------------- Test with positive disparity range ----------------------
-        cv = stereo_plugin.compute_cost_volume(ref, sec, 1, 2, **{'valid_pixels': 1, 'no_data': 2})
+        cv = stereo_plugin.compute_cost_volume(ref, sec, 1, 2)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
-        dataset = disparity_.validity_mask(dataset, ref, sec, cv, **{'valid_pixels': 1, 'no_data': 2})
+        dataset = disparity_.validity_mask(dataset, ref, sec, cv)
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_SEC,
@@ -724,6 +728,7 @@ class TestDisparity(unittest.TestCase):
         ref = xr.Dataset({'im': (['row', 'col'], data),
                           'msk': (['row', 'col'], ref_mask)},
                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+        ref.attrs = {'valid_pixels': 1, 'no_data_mask': 2}
 
         data = np.array(([[6, 1, 2, 4, 1],
                           [6, 2, 4, 1, 6],
@@ -737,13 +742,14 @@ class TestDisparity(unittest.TestCase):
         sec = xr.Dataset({'im': (['row', 'col'], data),
                           'msk': (['row', 'col'], sec_mask)},
                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+        sec.attrs = {'valid_pixels': 1, 'no_data_mask': 2}
 
         stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
-        cv = stereo_plugin.compute_cost_volume(ref, sec, -1, 1, **{'valid_pixels': 1, 'no_data': 2})
+        cv = stereo_plugin.compute_cost_volume(ref, sec, -1, 1)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
-        dataset = disparity_.validity_mask(dataset, ref, sec, cv, **{'valid_pixels': 1, 'no_data': 2})
+        dataset = disparity_.validity_mask(dataset, ref, sec, cv)
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE + PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER +
@@ -771,6 +777,7 @@ class TestDisparity(unittest.TestCase):
         ref = xr.Dataset({'im': (['row', 'col'], data),
                           'msk': (['row', 'col'], ref_mask)},
                          coords={'row': np.arange(5, data.shape[0] + 5), 'col': np.arange(4, data.shape[1] + 4)})
+        ref.attrs = {'valid_pixels': 1, 'no_data_mask': 0}
 
         data = np.ones((10, 10), dtype=np.float64)
         sec_mask = np.ones((10, 10), dtype=np.uint8)
@@ -779,13 +786,14 @@ class TestDisparity(unittest.TestCase):
         sec = xr.Dataset({'im': (['row', 'col'], data),
                           'msk': (['row', 'col'], sec_mask)},
                          coords={'row': np.arange(5, data.shape[0] + 5), 'col': np.arange(4, data.shape[1] + 4)})
+        sec.attrs = {'valid_pixels': 1, 'no_data_mask': 0}
 
         stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
-        cv = stereo_plugin.compute_cost_volume(ref, sec, -3, 2, **{'valid_pixels': 1, 'no_data': 0})
+        cv = stereo_plugin.compute_cost_volume(ref, sec, -3, 2)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
-        dataset = disparity_.validity_mask(dataset, ref, sec, cv, **{'valid_pixels': 1, 'no_data': 0})
+        dataset = disparity_.validity_mask(dataset, ref, sec, cv)
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE +

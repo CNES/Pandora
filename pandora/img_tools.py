@@ -75,6 +75,11 @@ def read_img(img: str, no_data: float, cfg: Dict, mask: xr.Dataset = None) -> xr
     # If a pixel is invalid due to the input mask, and it is also no_data, then the value of this pixel in the
     # generated mask will be = no_data
     dataset['msk'].data[no_data_pixels] = int(cfg['no_data'])
+
+    # Add image conf to the image dataset
+    dataset.attrs = {'no_data_img': no_data,
+                     'valid_pixels': cfg["valid_pixels"],
+                     'no_data_mask': cfg["no_data"]}
     return dataset
 
 
