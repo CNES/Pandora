@@ -76,10 +76,10 @@ class AbstractOptimization(object):
         return decorator
 
     @abstractmethod
-    def desc(self):
+    def desc(self) -> None:
         """
         Describes the optimization method
-
+        :return: None
         """
         print('Optimization method description')
 

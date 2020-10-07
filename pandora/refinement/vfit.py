@@ -39,10 +39,11 @@ class Vfit(refinement.AbstractRefinement):
     Vfit class allows to perform the subpixel cost refinement step
     """
 
-    def __init__(self, **cfg: str):
+    def __init__(self, **cfg: str) -> None:
         """
         :param cfg: optional configuration, {}
         :type cfg: dict
+        :return: None
         """
         self.cfg = self.check_conf(**cfg)
 
@@ -64,9 +65,10 @@ class Vfit(refinement.AbstractRefinement):
         checker.validate(cfg)
         return cfg
 
-    def desc(self):
+    def desc(self) -> None:
         """
         Describes the subpixel refinement method
+        :return: None
         """
         print('Vfit refinement method')
 

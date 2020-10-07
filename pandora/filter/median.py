@@ -111,7 +111,7 @@ class MedianFilter(filter.AbstractFilter):
         del disp_median, masked_data,
 
 
-    def median_filter(self, data):
+    def median_filter(self, data) -> np.ndarray:
         """
         Apply median filter on valid pixels (pixels that are not nan).
         Invalid pixels are not filtered. If a valid pixel contains an invalid pixel in its filter, the invalid pixel is

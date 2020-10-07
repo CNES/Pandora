@@ -80,9 +80,10 @@ class AbstractRefinement(object):
         return decorator
 
     @abstractmethod
-    def desc(self):
+    def desc(self) -> None:
         """
         Describes the subpixel method
+        :return: None
         """
         print('Subpixel method description')
 

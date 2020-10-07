@@ -59,6 +59,7 @@ def check_images(img_left: str, img_right: str, msk_left: str, msk_right: str) -
     :type msk_left: string
     :param msk_right: path to the mask of the right image
     :type msk_right: string
+    :return: None
     """
     # verify that the images have 1 channel
     left_ = rasterio.open(img_left)
@@ -95,7 +96,7 @@ def check_images(img_left: str, img_right: str, msk_left: str, msk_right: str) -
 
 
 def check_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str, None],
-                               right_disp_min: Union[str, None], right_disp_max: Union[str, None], img_left: str):
+                               right_disp_min: Union[str, None], right_disp_max: Union[str, None], img_left: str) -> None:
     """
     Check left and right disparities.
 
@@ -109,6 +110,7 @@ def check_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str,
     :type right_disp_max: str or None
     :param img_left: path to the left image
     :type img_left: str
+    :return: None
     """
     # --- Check left disparities
     # left disparity are integers

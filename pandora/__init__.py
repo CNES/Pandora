@@ -108,6 +108,7 @@ def setup_logging(verbose: bool) -> None:
 
     :param verbose: verbose mode
     :type verbose: bool
+    :return: None
     """
     if verbose:
         logging.basicConfig(format="[%(asctime)s][%(levelname)s] %(message)s", level=logging.INFO)
@@ -117,7 +118,7 @@ def setup_logging(verbose: bool) -> None:
 def import_plugin() -> None:
     """
     Load all the registered entry points
-
+    :return: None
     """
     for entry_point in iter_entry_points(group='pandora.plugin'):
         entry_point.load()
@@ -133,6 +134,7 @@ def main(cfg_path: str, output: str, verbose: bool) -> None:
     :type output: string
     :param verbose: verbose mode
     :type verbose: bool
+    :return: None
     """
 
     # Read the user configuration file

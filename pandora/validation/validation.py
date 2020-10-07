@@ -80,9 +80,10 @@ class AbstractValidation(object):
         return decorator
 
     @abstractmethod
-    def desc(self):
+    def desc(self) -> None:
         """
         Describes the validation method
+        :return: None
         """
         print('Validation method description')
 
@@ -139,11 +140,12 @@ class CrossChecking(AbstractValidation):
     # Default configuration, do not change this value
     _THRESHOLD = 1.
 
-    def __init__(self, **cfg):
+    def __init__(self, **cfg) -> None:
         """
         :param cfg: optional configuration, {'cross_checking_threshold': value,
                                             'interpolated_disparity': value, 'filter_interpolated_disparities': value}
         :type cfg: dictionary
+        :return: None
         """
         self.cfg = self.check_conf(**cfg)
         self._threshold = self.cfg['cross_checking_threshold']
@@ -174,9 +176,10 @@ class CrossChecking(AbstractValidation):
         checker.validate(cfg)
         return cfg
 
-    def desc(self):
+    def desc(self) -> None:
         """
         Describes the validation method
+        :return: None
         """
         print('Cross-checking method')
 

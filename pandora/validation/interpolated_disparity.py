@@ -82,9 +82,10 @@ class AbstractInterpolation(object):
         return decorator
 
     @abstractmethod
-    def desc(self):
+    def desc(self) -> None:
         """
         Describes the disparity interpolation method for the validation step
+        :return: None
         """
         print('Disparity interpolation method description for the validation step')
 
@@ -126,9 +127,9 @@ class McCnnInterpolation(AbstractInterpolation):
 
     def __init__(self, **cfg: dict) -> None:
         """
-
         :param cfg: optional configuration, {}
         :type cfg: dictionary
+        :return: None
         """
         self.check_config(**cfg)
 
@@ -138,12 +139,14 @@ class McCnnInterpolation(AbstractInterpolation):
 
         :param cfg: optional configuration, {}
         :type cfg: dictionary
+        :return: None
         """
         # No optional configuration
 
-    def desc(self):
+    def desc(self) -> None:
         """
         Describes the disparity interpolation method
+        :return: None
         """
         print('MC-CNN interpolation method')
 
@@ -308,26 +311,28 @@ class SgmInterpolation(AbstractInterpolation):
         SgmInterpolation class allows to perform the interpolation of the disparity map
         """
 
-    def __init__(self, **cfg: dict):
+    def __init__(self, **cfg: dict) -> None:
         """
-
         :param cfg: optional configuration, {}
         :type cfg: dictionary
+        :return: None
         """
         self.check_config(**cfg)
 
-    def check_config(self, **cfg: dict):
+    def check_config(self, **cfg: dict) -> None:
         """
         Check and update the configuration
 
         :param cfg: optional configuration, {}
         :type cfg: dictionary
+        :return: None
         """
         # No optional configuration
 
-    def desc(self):
+    def desc(self) -> None:
         """
         Describes the disparity interpolation method
+        :return: None
         """
         print('SGM interpolation method')
 

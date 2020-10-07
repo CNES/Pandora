@@ -410,9 +410,10 @@ class WinnerTakesAll(AbstractDisparity):
         checker.validate(cfg)
         return cfg
 
-    def desc(self):
+    def desc(self) -> None:
         """
         Describes the disparity method
+        :return: None
         """
         print('Winner takes all method')
 

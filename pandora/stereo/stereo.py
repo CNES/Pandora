@@ -87,9 +87,10 @@ class AbstractStereo(object):
         return decorator
 
     @abstractmethod
-    def desc(self):
+    def desc(self) -> None:
         """
         Describes the stereo method
+        :return: None
         """
         print('Stereo matching description')
 

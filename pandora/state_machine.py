@@ -51,7 +51,7 @@ class PandoraMachine(Machine):
 
     def __init__(self, left_img: xr.Dataset =None, right_img: xr.Dataset =None,
                  disp_min: Union[int, np.ndarray] =None, disp_max: Union[int, np.ndarray] =None,
-                 right_disp_min: Union[int, np.ndarray] =None, right_disp_max: Union[int, np.ndarray] =None):
+                 right_disp_min: Union[int, np.ndarray] =None, right_disp_max: Union[int, np.ndarray] =None) -> None:
         """
         Initialize Pandora Machine
 
@@ -73,6 +73,7 @@ class PandoraMachine(Machine):
         :type right_disp_min: None, int or np.ndarray
         :param right_disp_max: maximal disparity of the right image
         :type right_disp_max: None, int or np.ndarray
+        :return: None
         """
 
         self.left_img = left_img
@@ -105,14 +106,14 @@ class PandoraMachine(Machine):
         logging.getLogger("transitions").setLevel(logging.WARNING)
 
 
-    def stereo_run(self, cfg: Dict[str, dict], input_step: str):
+    def stereo_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Matching cost computation
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
         :type input_step: str
-        :return:
+        :return: None
         """
 
         logging.info('Matching cost computation...')
@@ -137,14 +138,14 @@ class PandoraMachine(Machine):
                                               self.right_disp_max)
 
 
-    def aggregation_run(self, cfg: Dict[str, dict], input_step: str):
+    def aggregation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
          Cost (support) aggregation
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
         :type input_step: str
-        :return:
+        :return: None
         """
         aggregation_ = aggregation.AbstractAggregation(**cfg['pipeline'][input_step])
         if not self.right_disp_map == "accurate":
@@ -153,14 +154,14 @@ class PandoraMachine(Machine):
             aggregation_.cost_volume_aggregation(self.left_img, self.right_img, self.left_cv)
             aggregation_.cost_volume_aggregation(self.right_img, self.left_img, self.right_cv)
 
-    def optimization_run(self, cfg: Dict[str, dict], input_step: str):
+    def optimization_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
          Cost optimization
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
         :type input_step: str
-        :return:
+        :return: None
         """
         optimization_ = optimization.AbstractOptimization(**cfg['pipeline'][input_step])
         logging.info('Cost optimization...')
@@ -170,14 +171,14 @@ class PandoraMachine(Machine):
             self.left_cv = optimization_.optimize_cv(self.left_cv, self.left_img, self.right_img)
             self.right_cv = optimization_.optimize_cv(self.right_cv, self.right_img, self.left_img)
 
-    def disparity_run(self, cfg: Dict[str, dict], input_step: str):
+    def disparity_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Disparity computation and validity mask
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
         :type input_step: str
-        :return:
+        :return: None
         """
         logging.info('Disparity computation...')
         disparity_ = disparity.AbstractDisparity(**cfg['pipeline'][input_step])
@@ -194,14 +195,14 @@ class PandoraMachine(Machine):
                                                          self.right_cv)
 
 
-    def filter_run(self, cfg: Dict[str, dict], input_step: str):
+    def filter_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Disparity filter
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
         :type input_step: str
-        :return:
+        :return: None
         """
         logging.info('Disparity filtering...')
         filter_ = filter.AbstractFilter(**cfg['pipeline'][input_step])
@@ -211,14 +212,14 @@ class PandoraMachine(Machine):
             filter_.filter_disparity(self.left_disparity)
             filter_.filter_disparity(self.right_disparity)
 
-    def refinement_run(self, cfg: Dict[str, dict], input_step: str):
+    def refinement_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
          Subpixel disparity refinement
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
         :type input_step: str
-        :return:
+        :return: None
         """
         refinement_ = refinement.AbstractRefinement(**cfg['pipeline'][input_step])
         logging.info('Subpixel refinement...')
@@ -229,14 +230,14 @@ class PandoraMachine(Machine):
             refinement_.subpixel_refinement(self.right_cv, self.right_disparity)
 
 
-    def validation_run(self, cfg: Dict[str, dict], input_step: str):
+    def validation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
          Validation of disparity map
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
         :type input_step: str
-        :return:
+        :return: None
         """
         validation_ = validation.AbstractValidation(**cfg['pipeline'][input_step])
 
@@ -254,14 +255,14 @@ class PandoraMachine(Machine):
                 interpolate_.interpolated_disparity(self.left_disparity)
                 interpolate_.interpolated_disparity(self.right_disparity)
 
-    def resize_run(self, cfg: Dict[str, dict], input_step: str):
+    def resize_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
          Resize left disparity map
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
         :type input_step: str
-        :return:
+        :return: None
         """
         logging.info('Resize disparity map...')
         if self.right_disp_map == "none":
@@ -274,7 +275,7 @@ class PandoraMachine(Machine):
 
     def run_prepare(self,cfg: Dict[str, dict], left_img: xr.Dataset, right_img: xr.Dataset, disp_min: Union[int, np.ndarray],
                     disp_max: Union[int, np.ndarray], right_disp_min: Union[None, int, np.ndarray] = None,
-                    right_disp_max: Union[None, int, np.ndarray] = None):
+                    right_disp_max: Union[None, int, np.ndarray] = None) -> None:
         """
         Prepare the machine before running
         :param cfg:  configuration
@@ -297,6 +298,7 @@ class PandoraMachine(Machine):
         :type right_disp_min: None, int or np.ndarray
         :param right_disp_max: maximal disparity of the right image
         :type right_disp_max: None, int or np.ndarray
+        :return: None
         """
 
         self.left_img = left_img
@@ -312,7 +314,7 @@ class PandoraMachine(Machine):
 
         self.add_transitions(self._transitions_run)
 
-    def run(self, input_step: str, cfg: Dict[str, dict]):
+    def run(self, input_step: str, cfg: Dict[str, dict]) -> None:
         """
         Run pandora step by triggering the corresponding machine transition
 
@@ -320,7 +322,7 @@ class PandoraMachine(Machine):
         :type input_step: str
         :param cfg: pipeline configuration
         :type  cfg: dict
-        :return:
+        :return: None
         """
         try:
             # There may be steps that are repeated several times, for example:
@@ -342,13 +344,17 @@ class PandoraMachine(Machine):
                   '. Be sure of your sequencement step  \n')
             raise
 
-    def run_exit(self):
+    def run_exit(self) -> None:
+        """
+        Clear transitions and return to state begin
 
+        :return: None
+        """
         self.remove_transitions(self._transitions_run)
         self.set_state('begin')
 
 
-    def right_disp_map_check_conf(self, cfg: Dict[str, dict], input_step: str):
+    def right_disp_map_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Check the right_disp_map configuration
 
@@ -356,7 +362,7 @@ class PandoraMachine(Machine):
         :type cfg: dict
         :param input_step: current step
         :type input_step: string
-        :return:
+        :return: None
         """
 
         schema = {
@@ -370,7 +376,7 @@ class PandoraMachine(Machine):
         self.right_disp_map = cfg['right_disp_map']['method']
 
 
-    def stereo_check_conf(self, cfg: Dict[str, dict], input_step: str):
+    def stereo_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Check the stereo configuration
 
@@ -378,13 +384,13 @@ class PandoraMachine(Machine):
         :type cfg: dict
         :param input_step: current step
         :type input_step: string
-        :return:
+        :return: None
         """
 
         stereo_ = stereo.AbstractStereo(**cfg[input_step])
         self.pipeline_cfg['pipeline'][input_step] = stereo_.cfg
 
-    def disparity_check_conf(self, cfg: Dict[str, dict], input_step: str):
+    def disparity_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Check the disparity computation configuration
 
@@ -392,12 +398,12 @@ class PandoraMachine(Machine):
         :type cfg: dict
         :param input_step: current step
         :type input_step: string
-        :return:
+        :return: None
         """
         disparity_ = disparity.AbstractDisparity(**cfg[input_step])
         self.pipeline_cfg['pipeline'][input_step] = disparity_.cfg
 
-    def filter_check_conf(self, cfg: Dict[str, dict], input_step: str):
+    def filter_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Check the filter configuration
 
@@ -405,12 +411,12 @@ class PandoraMachine(Machine):
         :type cfg: dict
         :param input_step: current step
         :type input_step: string
-        :return:
+        :return: None
         """
         filter_ = filter.AbstractFilter(**cfg[input_step])
         self.pipeline_cfg['pipeline'][input_step] = filter_.cfg
 
-    def refinement_check_conf(self, cfg: Dict[str, dict], input_step: str):
+    def refinement_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Check the refinement configuration
 
@@ -418,12 +424,12 @@ class PandoraMachine(Machine):
         :type cfg: dict
         :param input_step: current step
         :type input_step: string
-        :return:
+        :return: None
         """
         refinement_ = refinement.AbstractRefinement(**cfg[input_step])
         self.pipeline_cfg['pipeline'][input_step] = refinement_.cfg
 
-    def aggregation_check_conf(self, cfg: Dict[str, dict], input_step: str):
+    def aggregation_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Check the aggregation configuration
 
@@ -431,12 +437,12 @@ class PandoraMachine(Machine):
         :type cfg: dict
         :param input_step: current step
         :type input_step: string
-        :return:
+        :return: None
         """
         aggregation_ = aggregation.AbstractAggregation(**cfg[input_step])
         self.pipeline_cfg['pipeline'][input_step] = aggregation_.cfg
 
-    def optimization_check_conf(self, cfg: Dict[str, dict], input_step: str):
+    def optimization_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Check the optimization configuration
 
@@ -444,12 +450,12 @@ class PandoraMachine(Machine):
         :type cfg: dict
         :param input_step: current step
         :type input_step: string
-        :return:
+        :return: None
         """
         optimization_ = optimization.AbstractOptimization(**cfg[input_step])
         self.pipeline_cfg['pipeline'][input_step] = optimization_.cfg
 
-    def validation_check_conf(self, cfg: Dict[str, dict], input_step: str):
+    def validation_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Check the validation configuration
 
@@ -457,7 +463,7 @@ class PandoraMachine(Machine):
         :type cfg: dict
         :param input_step: current step
         :type input_step: string
-        :return:
+        :return: None
         """
 
         validation_ = validation.AbstractValidation(**cfg[input_step])
@@ -470,7 +476,7 @@ class PandoraMachine(Machine):
                                + self.right_disp_map )
 
 
-    def resize_check_conf(self, cfg: Dict[str, dict], input_step: str):
+    def resize_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Check the resize configuration
 
@@ -478,7 +484,7 @@ class PandoraMachine(Machine):
         :type cfg: dict
         :param input_step: current step
         :type input_step: string
-        :return:
+        :return: None
         """
 
         schema = {
@@ -488,13 +494,13 @@ class PandoraMachine(Machine):
         checker = Checker(schema)
         checker.validate(cfg[input_step])
 
-    def check_conf(self, cfg: Dict[str, dict]):
+    def check_conf(self, cfg: Dict[str, dict]) -> None:
         """
         Check configuration and transitions
 
         :param cfg: pipeline configuration
         :type  cfg: dict
-        :return:
+        :return: None
         """
 
         # Add transitions to the empty machine.
@@ -531,16 +537,15 @@ class PandoraMachine(Machine):
         # Coming back to the initial state
         self.set_state('begin')
 
-    def remove_transitions(self, transition_list: Dict[str, dict]):
+    def remove_transitions(self, transition_list: Dict[str, dict]) -> None:
         """
         Delete all transitions defined in the input list
 
         :param transition_list: list of transitions
         :type transition_list: dict
-        :return:
+        :return: None
         """
         # Transition is removed using trigger name. But one trigger name can be used by multiple transitions
-        # In this case, the "remove_transition" function removes all transitions using this trigger name
         # In this case, the "remove_transition" function removes all transitions using this trigger name
         # deleted_triggers list is used to avoid multiple call of "remove_transition" with the same trigger name.
         deleted_triggers = []
