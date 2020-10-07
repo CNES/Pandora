@@ -85,7 +85,7 @@ class AbstractFilter(object):
 
     @abstractmethod
     def filter_disparity(self, disp: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None,
-                         cv: xr.Dataset = None) -> xr.Dataset:
+                         cv: xr.Dataset = None) -> None:
         """
         Post processing the disparity map by applying a filter on valid pixels
 
@@ -101,10 +101,5 @@ class AbstractFilter(object):
         :type img_right: xarray.Dataset
         :param cv: cost volume dataset
         :type cv: xarray.Dataset
-        :return: the Dataset with the filtered DataArray disparity_map
-        :rtype:
-            xarray.Dataset with the variables :
-                - disparity_map 2D xarray.DataArray (row, col)
-                - confidence_measure 3D xarray.DataArray (row, col, indicator)
-                - validity_mask 2D xarray.DataArray (row, col)
+        :return: None
         """

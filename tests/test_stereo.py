@@ -89,7 +89,7 @@ class TestStereo(unittest.TestCase):
         # Computes the sd cost for the whole images
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'ssd', 'window_size': 5, 'subpix': 1})
         ssd = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1)
-        ssd = stereo_matcher.cv_masked(self.left, self.right, ssd, -1, 1)
+        stereo_matcher.cv_masked(self.left, self.right, ssd, -1, 1)
 
         # Check if the calculated sd cost is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(ssd['cost_volume'].sel(disp=0), ssd_ground_truth)
@@ -119,7 +119,7 @@ class TestStereo(unittest.TestCase):
         # Computes the ad cost for the whole images
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 5, 'subpix': 1})
         sad = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1)
-        sad = stereo_matcher.cv_masked(self.left, self.right, sad, -1, 1)
+        stereo_matcher.cv_masked(self.left, self.right, sad, -1, 1)
 
         # Check if the calculated ad cost is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(sad['cost_volume'].sel(disp=0), sad_ground_truth)
@@ -158,7 +158,7 @@ class TestStereo(unittest.TestCase):
         # Computes the census transform for the images with window size = 3
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'census', 'window_size': 3, 'subpix': 1})
         census = stereo_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        census = stereo_matcher.cv_masked(left, right, census, -1, 1)
+        stereo_matcher.cv_masked(left, right, census, -1, 1)
 
         # Check if the calculated census cost is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(census['cost_volume'].sel(disp=-1), census_ground_truth_d1)
@@ -223,7 +223,7 @@ class TestStereo(unittest.TestCase):
         # with disp_min = -2, disp_max = 1, sad measure, window_size = 3 and subpix = 1
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
         cv = stereo_matcher.compute_cost_volume(left, right, disp_min=-2, disp_max=1)
-        cv = stereo_matcher.cv_masked(left, right, cv, -2, 1)
+        stereo_matcher.cv_masked(left, right, cv, -2, 1)
 
         # Check if the calculated mean is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv['cost_volume'].data, ground_truth)
@@ -243,7 +243,7 @@ class TestStereo(unittest.TestCase):
 
         # compute with compute_cost_volume
         cv = stereo_matcher.compute_cost_volume(self.left, self.right, disp_min=-2, disp_max=1)
-        cv = stereo_matcher.cv_masked(self.left, self.right, cv, -2, 1)
+        stereo_matcher.cv_masked(self.left, self.right, cv, -2, 1)
 
         # Check if the calculated confidence_measure is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv['confidence_measure'].data, std_bright_ground_truth)
@@ -274,7 +274,7 @@ class TestStereo(unittest.TestCase):
         # with zncc measure, disp = -1, 1 window size = 5 and subpix = 1
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'zncc', 'window_size': 5, 'subpix': 1})
         cost_volume_zncc = stereo_matcher.compute_cost_volume(self.left, self.right, disp_min=-1, disp_max=1)
-        cost_volume_zncc = stereo_matcher.cv_masked(self.left, self.right, cost_volume_zncc, -1, 1)
+        stereo_matcher.cv_masked(self.left, self.right, cost_volume_zncc, -1, 1)
 
         # Ground truth zncc cost for the disparity -1
         x = self.left['im'].data[:, 1:]
@@ -312,7 +312,7 @@ class TestStereo(unittest.TestCase):
         # Computes the cost volume for disp min -2 disp max 2 and subpix = 2
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 2})
         cv_zncc_subpixel = stereo_matcher.compute_cost_volume(left, right, disp_min=-2, disp_max=2)
-        cv_zncc_subpixel = stereo_matcher.cv_masked(left, right, cv_zncc_subpixel, -2, 1)
+        stereo_matcher.cv_masked(left, right, cv_zncc_subpixel, -2, 1)
         # Test the disparity range
         disparity_range_compute = cv_zncc_subpixel.coords['disp'].data
         disparity_range_ground_truth = [-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]
@@ -374,7 +374,7 @@ class TestStereo(unittest.TestCase):
         # exit()
         # Compute the cost volume and invalidate pixels if need
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
-        cv = stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
+        stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
 
         # Cost volume before invalidation
         #  disp       -1    0   1
@@ -438,7 +438,7 @@ class TestStereo(unittest.TestCase):
         stereo_ = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
         # Compute the cost volume and invalidate pixels if need
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
-        cv = stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
+        stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
         # Cost volume before invalidation
         #  disp       -1    0   1
         # Row 1
@@ -504,7 +504,7 @@ class TestStereo(unittest.TestCase):
         stereo_ = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
         # Compute the cost volume and invalidate pixels if need
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
-        cv = stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
+        stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
         # Cost volume before invalidation
         #  disp       -1    0   1
         # Row 1
@@ -576,7 +576,7 @@ class TestStereo(unittest.TestCase):
         stereo_ = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 5, 'subpix': 1})
         # Compute the cost volume and invalidate pixels if need
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
-        cv = stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
+        stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
 
         # Cost volume ground truth after invalidation
         cv_ground_truth = np.array([[[np.nan, np.nan, 24.],
@@ -621,7 +621,7 @@ class TestStereo(unittest.TestCase):
         stereo_ = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
         # Compute the cost volume and invalidate pixels if need
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
-        cv = stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
+        stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
 
         # Cost volume ground truth after invalidation
         cv_ground_truth = np.array([[[np.nan, np.nan, np.nan],
@@ -680,7 +680,7 @@ class TestStereo(unittest.TestCase):
         stereo_ = stereo.AbstractStereo(**{'stereo_method': 'zncc', 'window_size': 3, 'subpix': 1})
         # Compute the cost volume and invalidate pixels if need
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
-        cv = stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
+        stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
 
         # Cost volume ground truth after invalidation
         cv_ground_truth = np.array([[[np.nan, np.nan, np.nan],
@@ -732,7 +732,7 @@ class TestStereo(unittest.TestCase):
         stereo_ = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 2})
         # Compute the cost volume and invalidate pixels if need
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
-        cv = stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
+        stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
 
         # The cost volume before invalidation
         # <xarray.DataArray 'cost_volume' (row: 2, col: 5, disp: 5)>
@@ -800,7 +800,7 @@ class TestStereo(unittest.TestCase):
         stereo_ = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 4})
         # Compute the cost volume and invalidate pixels if need
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
-        cv = stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
+        stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
 
         # The cost volume before invalidation
         # <xarray.DataArray 'cost_volume' (row: 2, col: 5, disp: 5)>
@@ -869,7 +869,7 @@ class TestStereo(unittest.TestCase):
         stereo_ = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 2})
         # Compute the cost volume and invalidate pixels if need
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
-        cv = stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
+        stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
 
         # Cost volume before invalidation
         # array([[[ nan,  nan,  6. ,  6. ,  8. ],
@@ -942,7 +942,7 @@ class TestStereo(unittest.TestCase):
         # Computes the census transform for the images with window size = 3
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'census', 'window_size': 3, 'subpix': 2})
         census = stereo_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
-        census = stereo_matcher.cv_masked(img_left=left, img_right=right, cost_volume=census, disp_min=dmin, disp_max=dmax)
+        stereo_matcher.cv_masked(img_left=left, img_right=right, cost_volume=census, disp_min=dmin, disp_max=dmax)
 
         # Check if the calculated census cost is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(census['cost_volume'], census_ground_truth)
@@ -984,7 +984,7 @@ class TestStereo(unittest.TestCase):
         stereo_ = stereo.AbstractStereo(**{'stereo_method': 'zncc', 'window_size': 3, 'subpix': 2})
         # Compute the cost volume and invalidate pixels if need
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
-        cv = stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
+        stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
 
         # Cost volume ground truth after invalidation
         cv_ground_truth = np.array([[[np.nan, np.nan, np.nan, np.nan, np.nan],
@@ -1206,7 +1206,7 @@ class TestStereo(unittest.TestCase):
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin_int, disp_max=dmax_int)
 
         # Compute the masked cost volume
-        cv = stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin_grid, disp_max=dmax_grid)
+        stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin_grid, disp_max=dmax_grid)
 
         # Cost volume ground truth
         gt_cv_masked = np.array([[[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
@@ -1243,7 +1243,7 @@ class TestStereo(unittest.TestCase):
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin_int, disp_max=dmax_int)
 
         # Compute the masked cost volume
-        cv = stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin_grid, disp_max=dmax_grid)
+        stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin_grid, disp_max=dmax_grid)
 
         # Cost volume ground truth
         gt_cv_masked = np.array([[[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,

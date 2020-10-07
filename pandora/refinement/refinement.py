@@ -88,7 +88,7 @@ class AbstractRefinement(object):
 
     @abstractmethod
     def subpixel_refinement(self, cv: xr.Dataset, disp: xr.Dataset, img_left: xr.Dataset = None,
-                            img_right: xr.Dataset = None) -> Tuple[xr.Dataset, xr.Dataset]:
+                            img_right: xr.Dataset = None) -> None:
         """
         Subpixel refinement of disparities and costs.
 
@@ -112,17 +112,7 @@ class AbstractRefinement(object):
             xarray.Dataset containing:
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :return:
-            cv Dataset with the variables (unchanged):
-                - cost_volume 3D xarray.DataArray (row, col, disp)
-                - confidence_measure 3D xarray.DataArray (row, col, indicator)
-            disp Dataset with the variables:
-                - disparity_map 2D xarray.DataArray (row, col) that contains the refined disparities
-                - confidence_measure 3D xarray.DataArray (row, col, indicator) (unchanged)
-                - validity_mask 2D xarray.DataArray (row, col) with the state of the pixel ( Information:
-                    calculations stopped at the pixel step, sub-pixel interpolation did not succeed )
-                - interpolated_coeff 2D xarray.DataArray (row, col) that contains the refined cost
-        :rtype: tuple(Dataset cv, Dataset disp)
+        :return: None
         """
 
     @abstractmethod

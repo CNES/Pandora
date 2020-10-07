@@ -76,14 +76,14 @@ class TestAggregation(unittest.TestCase):
         """
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 2})
         sad = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1)
-        sad = stereo_matcher.cv_masked(self.left, self.right, sad, -1, 1)
+        stereo_matcher.cv_masked(self.left, self.right, sad, -1, 1)
 
         # Computes the cost aggregation with the cross-based cost aggregation method,
         # with cbca_intensity=5 and cbca_distance=3
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                       'cbca_intensity': 5., 'cbca_distance': 3})
 
-        cv_aggreg = cbca_obj.cost_volume_aggregation(self.left, self.right, sad)
+        cbca_obj.cost_volume_aggregation(self.left, self.right, sad)
 
         # Aggregate cost volume ground truth with the cross-based cost aggregation method for the stereo image
         aggregated_ground_truth = np.array([[[np.nan, np.nan, (4 + 4 + 8 + 1) / 4, (2 + 2 + 4 + 0.5 + 1) / 5, 0.],
@@ -126,7 +126,7 @@ class TestAggregation(unittest.TestCase):
                                               (2 + 2 + 3 + 1 + 4) / 5, np.nan, np.nan]]])
 
         # Check if the calculated standard deviation is equal (upto the desired tolerance of 1e-07) to the ground truth
-        np.testing.assert_allclose(cv_aggreg['cost_volume'].data, aggregated_ground_truth, rtol=1e-07)
+        np.testing.assert_allclose(sad['cost_volume'].data, aggregated_ground_truth, rtol=1e-07)
 
     def test_cross_support_region(self):
         """
@@ -178,7 +178,7 @@ class TestAggregation(unittest.TestCase):
         # with cbca_intensity=5 and cbca_distance=3
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                       'cbca_intensity': 5., 'cbca_distance': 3})
-        cv_aggreg = cbca_obj.cost_volume_aggregation(self.left, self.right, self.cv)
+        cbca_obj.cost_volume_aggregation(self.left, self.right, self.cv)
 
         # Aggregate cost volume ground truth with the cross-based cost aggregation method for the stereo image
 
@@ -204,7 +204,7 @@ class TestAggregation(unittest.TestCase):
                                              [(0 + 5 + 13 + 5) / 4, (2 + 2 + 3 + 1 + 4) / 5, np.nan]]])
 
         # Check if the calculated standard deviation is equal (upto the desired tolerance of 1e-07) to the ground truth
-        np.testing.assert_allclose(cv_aggreg['cost_volume'].data, aggregated_ground_truth, rtol=1e-07)
+        np.testing.assert_allclose(self.cv['cost_volume'].data, aggregated_ground_truth, rtol=1e-07)
 
     def test_cmax(self):
         """
@@ -214,10 +214,10 @@ class TestAggregation(unittest.TestCase):
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                       'cbca_intensity': 5., 'cbca_distance': 3})
 
-        cv_aggreg = cbca_obj.cost_volume_aggregation(self.left, self.right, self.cv)
+        cbca_obj.cost_volume_aggregation(self.left, self.right, self.cv)
 
         # Check if the calculated maximal cost is equal to the ground truth
-        assert (np.nanmax(cv_aggreg['cost_volume'].data) <= (24 * 18))
+        assert (np.nanmax(self.cv['cost_volume'].data) <= (24 * 18))
 
     def test_compute_cbca_with_invalid_cost(self):
         """
@@ -255,12 +255,12 @@ class TestAggregation(unittest.TestCase):
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
         sad = stereo_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        sad = stereo_matcher.cv_masked(left, right, sad, -1, 1)
+        stereo_matcher.cv_masked(left, right, sad, -1, 1)
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                       'cbca_intensity': 5., 'cbca_distance': 3})
 
-        cv_aggreg = cbca_obj.cost_volume_aggregation(left, right, sad, **{'valid_pixels': 0, 'no_data': 1})
+        cbca_obj.cost_volume_aggregation(left, right, sad, **{'valid_pixels': 0, 'no_data': 1})
 
         # Aggregate cost volume ground truth with the cross-based cost aggregation method for the stereo image disp = 0
         aggregated_ground_truth = np.array([[(4 + 8 + 1) / 3, np.nan, (14 + 8) / 2, (8 + 14 + 4) / 3, (4 + 8 + 3) / 3],
@@ -272,7 +272,7 @@ class TestAggregation(unittest.TestCase):
                                              (14 + 8 + 4) / 3, (4 + 4 + 8) / 3]])
 
         # Check if the calculated aggregated cost volume is equal (upto the desired tolerance of 1e-07) to the ground truth
-        np.testing.assert_allclose(cv_aggreg['cost_volume'].data[:, :, 1], aggregated_ground_truth, rtol=1e-07)
+        np.testing.assert_allclose(sad['cost_volume'].data[:, :, 1], aggregated_ground_truth, rtol=1e-07)
 
     def test_compute_cbca_with_offset(self):
         """
@@ -297,12 +297,12 @@ class TestAggregation(unittest.TestCase):
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
         sad = stereo_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        sad = stereo_matcher.cv_masked(left, right, sad, -1, 1)
+        stereo_matcher.cv_masked(left, right, sad, -1, 1)
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                       'cbca_intensity': 5., 'cbca_distance': 3})
 
-        cv_aggreg = cbca_obj.cost_volume_aggregation(left, right, sad, **{'valid_pixels': 5, 'no_data': 7})
+        cbca_obj.cost_volume_aggregation(left, right, sad, **{'valid_pixels': 5, 'no_data': 7})
 
         # Aggregate cost volume ground truth with the cross-based cost aggregation method for the stereo image
         aggregated_ground_truth = np.array([[[np.nan, (66. + 63 + 66 + 63) / 4, 0.],
@@ -313,7 +313,7 @@ class TestAggregation(unittest.TestCase):
                                              [55., (63 + 63 + 52 + 52) / 4, np.nan]]])
 
         # Check if the calculated aggregated cost volume is equal (upto the desired tolerance of 1e-07) to the ground truth
-        np.testing.assert_allclose(cv_aggreg['cost_volume'].data, aggregated_ground_truth, rtol=1e-07)
+        np.testing.assert_allclose(sad['cost_volume'].data, aggregated_ground_truth, rtol=1e-07)
 
     def test_computes_cross_support(self):
         """
@@ -338,7 +338,7 @@ class TestAggregation(unittest.TestCase):
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
         sad = stereo_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        sad = stereo_matcher.cv_masked(left, right, sad, -1, 1)
+        stereo_matcher.cv_masked(left, right, sad, -1, 1)
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                       'cbca_intensity': 5., 'cbca_distance': 3})
@@ -420,7 +420,7 @@ class TestAggregation(unittest.TestCase):
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
         sad = stereo_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        sad = stereo_matcher.cv_masked(left, right, sad, -1, 1)
+        stereo_matcher.cv_masked(left, right, sad, -1, 1)
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                       'cbca_intensity': 6., 'cbca_distance': 3})
@@ -504,7 +504,7 @@ class TestAggregation(unittest.TestCase):
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 2})
         sad = stereo_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        sad = stereo_matcher.cv_masked(left, right, sad, -1, 1)
+        stereo_matcher.cv_masked(left, right, sad, -1, 1)
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                       'cbca_intensity': 5., 'cbca_distance': 3})
@@ -560,7 +560,7 @@ class TestAggregation(unittest.TestCase):
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 2})
         sad = stereo_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        sad = stereo_matcher.cv_masked(left, right, sad, -1, 1)
+        stereo_matcher.cv_masked(left, right, sad, -1, 1)
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                       'cbca_intensity': 6., 'cbca_distance': 3})
@@ -618,7 +618,7 @@ class TestAggregation(unittest.TestCase):
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
         sad = stereo_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        sad = stereo_matcher.cv_masked(left, right, sad, -1, 1)
+        stereo_matcher.cv_masked(left, right, sad, -1, 1)
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                       'cbca_intensity': 5., 'cbca_distance': 3})

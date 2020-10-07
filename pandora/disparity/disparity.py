@@ -227,7 +227,7 @@ class AbstractDisparity(object):
 
         return disp_map
 
-    def validity_mask(self, disp: xr.Dataset, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset) -> xr.Dataset:
+    def validity_mask(self, disp: xr.Dataset, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset) -> None:
         """
         Create the validity mask of the disparity map
 
@@ -251,15 +251,11 @@ class AbstractDisparity(object):
             xarray.Dataset, with the data variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :return: the dataset disparity with the data variable validity_mask
-        :rtype :
-            xarray.Dataset with the data variables :
-                - disparity_map 2D xarray.DataArray (row, col)
-                - confidence_measure 3D xarray.DataArray (row, col, indicator)
-                - validity_mak 2D xarray.DataArray (row, col)
+        :return: None
         """
         # Allocate the validity mask
-        disp['validity_mask'] = xr.DataArray(np.zeros(disp['disparity_map'].shape, dtype=np.uint16), dims=['row', 'col'])
+        disp['validity_mask'] = xr.DataArray(np.zeros(disp['disparity_map'].shape, dtype=np.uint16),
+                                             dims=['row', 'col'])
 
         d_min = int(disp.attrs['disp_min'])
         d_max = int(disp.attrs['disp_max'])
@@ -270,21 +266,21 @@ class AbstractDisparity(object):
         if d_max < 0:
             bit_1 = np.where((col + d_max) < col[0])
             # Information: the disparity interval is incomplete (border reached in the right image)
-            disp['validity_mask'].data[:, np.where(((col + d_max) >= col[0]) & ((col + d_min) < col[0]))] +=\
+            disp['validity_mask'].data[:, np.where(((col + d_max) >= col[0]) & ((col + d_min) < col[0]))] += \
                 PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
         else:
             # Positive disparity range
             if d_min > 0:
                 bit_1 = np.where((col + d_min) > col[-1])
                 # Information: the disparity interval is incomplete (border reached in the right image)
-                disp['validity_mask'].data[:, np.where(((col + d_min) <= col[-1]) & ((col + d_max) > col[-1]))] +=\
+                disp['validity_mask'].data[:, np.where(((col + d_min) <= col[-1]) & ((col + d_max) > col[-1]))] += \
                     PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
 
             # Disparity range contains 0
             else:
-                bit_1 = ([], )
+                bit_1 = ([],)
                 # Information: the disparity interval is incomplete (border reached in the right image)
-                disp['validity_mask'].data[:, np.where(((col + d_min) < col[0]) | (col + d_max > col[-1]))] +=\
+                disp['validity_mask'].data[:, np.where(((col + d_min) < col[0]) | (col + d_max > col[-1]))] += \
                     PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
 
         # Invalid pixel : the disparity interval is missing in the right image ( disparity range
@@ -315,7 +311,8 @@ class AbstractDisparity(object):
 
             # Dilatation : pixels that contains no_data in their aggregation window become no_data
             dil = binary_dilation(img_left['msk'].data == img_left.attrs['no_data_mask'],
-                                  structure=np.ones((disp.attrs['window_size'], disp.attrs['window_size'])), iterations=1)
+                                  structure=np.ones((disp.attrs['window_size'], disp.attrs['window_size'])),
+                                  iterations=1)
             offset = disp.attrs['offset_row_col']
             if offset != 0:
                 dil = dil[offset:-offset, offset:-offset]
@@ -324,20 +321,23 @@ class AbstractDisparity(object):
             disp['validity_mask'] += dil.astype(np.uint16) * PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
 
             # Invalid pixel : invalidated by the validity mask of the left image given as input
-            disp['validity_mask'] += xr.where((r_mask != img_left.attrs['no_data_mask']) & (r_mask != img_left.attrs['valid_pixels']),
-                                              PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, 0).astype(np.uint16)
+            disp['validity_mask'] += xr.where(
+                (r_mask != img_left.attrs['no_data_mask']) & (r_mask != img_left.attrs['valid_pixels']),
+                PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, 0).astype(np.uint16)
 
         if 'msk' in img_right.data_vars:
             _, r_mask = xr.align(disp['validity_mask'], img_right['msk'])
 
             # Dilatation : pixels that contains no_data in their aggregation window become no_data
             dil = binary_dilation(img_right['msk'].data == img_right.attrs['no_data_mask'],
-                                  structure=np.ones((disp.attrs['window_size'], disp.attrs['window_size'])), iterations=1)
+                                  structure=np.ones((disp.attrs['window_size'], disp.attrs['window_size'])),
+                                  iterations=1)
             offset = disp.attrs['offset_row_col']
             if offset != 0:
                 dil = dil[offset:-offset, offset:-offset]
 
-            r_mask = xr.where((r_mask != img_right.attrs['no_data_mask']) & (r_mask != img_right.attrs['valid_pixels']), 1, 0).data
+            r_mask = xr.where((r_mask != img_right.attrs['no_data_mask']) & (r_mask != img_right.attrs['valid_pixels']),
+                              1, 0).data
 
             # Useful to calculate the case where the disparity interval is incomplete, and all remaining right
             # positions are invalidated by the right mask
@@ -346,7 +346,7 @@ class AbstractDisparity(object):
             no_data_right = np.zeros((len(row), len(col)), dtype=np.uint16)
 
             col_range = np.arange(len(col))
-            for d in range(d_min, d_max+1):
+            for d in range(d_min, d_max + 1):
                 # Diagonal in the cost volume
                 col_d = col_range + d
                 valid_index = np.where((col_d >= col_range[0]) & (col_d <= col_range[-1]))
@@ -363,15 +363,13 @@ class AbstractDisparity(object):
             no_data_right[:, bit_1[0]] = 0
 
             # Invalid pixel: right positions invalidated by the mask of the right image given as input
-            disp['validity_mask'].data[np.where(b_2_7 == len(range(d_min, d_max+1)))] +=\
+            disp['validity_mask'].data[np.where(b_2_7 == len(range(d_min, d_max + 1)))] += \
                 PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT
 
             # If Invalid pixel : the disparity interval is missing in the right image (disparity interval
             # is invalidated by no_data in the right image )
-            disp['validity_mask'].data[np.where(no_data_right == len(range(d_min, d_max + 1)))] +=\
+            disp['validity_mask'].data[np.where(no_data_right == len(range(d_min, d_max + 1)))] += \
                 PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
-
-        return disp
 
 
 @AbstractDisparity.register_subclass('wta')

@@ -71,7 +71,7 @@ class Vfit(refinement.AbstractRefinement):
         print('Vfit refinement method')
 
     def subpixel_refinement(self, cv: xr.Dataset, disp: xr.Dataset, img_left: xr.Dataset = None,
-                            img_right: xr.Dataset = None) -> Tuple[xr.Dataset, xr.Dataset]:
+                            img_right: xr.Dataset = None) -> None:
         """
         Subpixel refinement of disparities and costs.
 
@@ -95,17 +95,7 @@ class Vfit(refinement.AbstractRefinement):
             xarray.Dataset containing:
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :return:
-            cv Dataset with the variables (unchanged):
-                - cost_volume 3D xarray.DataArray (row, col, disp)
-                - confidence_measure 3D xarray.DataArray (row, col, indicator)
-            disp Dataset with the variables:
-                - disparity_map 2D xarray.DataArray (row, col) that contains the refined disparities
-                - confidence_measure 3D xarray.DataArray (row, col, indicator) (unchanged)
-                - validity_mask 2D xarray.DataArray (row, col) with the state of the pixel ( Information:
-                    calculations stopped at the pixel step, sub-pixel interpolation did not succeed )
-                - interpolated_coeff 2D xarray.DataArray (row, col) that contains the refined cost
-        :rtype: tuple(Dataset cv, Dataset disp)
+        :return: None
         """
         d_min = cv.coords['disp'].data[0]
         d_max = cv.coords['disp'].data[-1]
@@ -119,9 +109,9 @@ class Vfit(refinement.AbstractRefinement):
 
         disp.attrs['refinement'] = 'vfit'
         disp['interpolated_coeff'] = xr.DataArray(itp_coeff,
-                                                      coords=[disp.coords['row'], disp.coords['col']],
-                                                      dims=['row', 'col'])
-        return cv, disp
+                                                  coords=[disp.coords['row'], disp.coords['col']],
+                                                  dims=['row', 'col'])
+
 
     def approximate_subpixel_refinement(self, cv_left: xr.Dataset, disp_right: xr.Dataset, img_left: xr.Dataset = None,
                                         img_right: xr.Dataset = None) -> xr.Dataset:

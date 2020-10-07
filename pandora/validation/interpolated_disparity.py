@@ -90,7 +90,7 @@ class AbstractInterpolation(object):
 
     @abstractmethod
     def interpolated_disparity(self, left: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None,
-                               cv: xr.Dataset = None) -> xr.Dataset:
+                               cv: xr.Dataset = None) -> None:
         """
         Interpolation of the left disparity map to resolve occlusion and mismatch conflicts.
 
@@ -114,13 +114,7 @@ class AbstractInterpolation(object):
             xarray.Dataset with the variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :return: the interpolated disparity map, with the validity mask update :
-            - If bit 4 == 1: Invalid pixel : filled occlusion
-            - If bit 5 == 1: Invalid pixel : filled mismatch
-        :rtype: xarray.Dataset with the variables :
-            - disparity_map 2D xarray.DataArray (row, col)
-            - confidence_measure 3D xarray.DataArray (row, col, indicator)
-            - validity_mask 2D xarray.DataArray (row, col)
+        :return: None
         """
 
 
@@ -154,7 +148,7 @@ class McCnnInterpolation(AbstractInterpolation):
         print('MC-CNN interpolation method')
 
     def interpolated_disparity(self, left: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None,
-                               cv: xr.Dataset = None) -> xr.Dataset:
+                               cv: xr.Dataset = None) -> None:
         """
         Interpolation of the left disparity map to resolve occlusion and mismatch conflicts.
 
@@ -178,24 +172,16 @@ class McCnnInterpolation(AbstractInterpolation):
             xarray.Dataset with the variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :return: the interpolated disparity map, with the validity mask update :
-            - If bit 4 == 1: Invalid pixel : filled occlusion
-            - If bit 5 == 1: Invalid pixel : filled mismatch
-        :rtype: xarray.Dataset with the variables :
-            - disparity_map 2D xarray.DataArray (row, col)
-            - confidence_measure 3D xarray.DataArray (row, col, indicator)
-            - validity_mask 2D xarray.DataArray (row, col)
+        :return: None
         """
-        out = left.copy(deep=True)
 
-        out['disparity_map'].data, out['validity_mask'].data = \
+        left['disparity_map'].data, left['validity_mask'].data = \
             self.interpolate_occlusion_mc_cnn(left['disparity_map'].data, left['validity_mask'].data)
-        out['disparity_map'].data, out['validity_mask'].data = \
-            self.interpolate_mismatch_mc_cnn(out['disparity_map'].data, out['validity_mask'].data)
+        left['disparity_map'].data, left['validity_mask'].data = \
+            self.interpolate_mismatch_mc_cnn(left['disparity_map'].data, left['validity_mask'].data)
 
-        out.attrs['interpolated_disparity'] = 'mc-cnn'
+        left.attrs['interpolated_disparity'] = 'mc-cnn'
 
-        return out
 
     @staticmethod
     @njit()
@@ -346,7 +332,7 @@ class SgmInterpolation(AbstractInterpolation):
         print('SGM interpolation method')
 
     def interpolated_disparity(self, left: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None,
-                               cv: xr.Dataset = None) -> xr.Dataset:
+                               cv: xr.Dataset = None) -> None:
         """
         Interpolation of the left disparity map to resolve occlusion and mismatch conflicts.
 
@@ -370,23 +356,15 @@ class SgmInterpolation(AbstractInterpolation):
             xarray.Dataset with the variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :return: the interpolated disparity map, with the validity mask update :
-            - If bit 4 == 1: Invalid pixel : filled occlusion
-            - If bit 5 == 1: Invalid pixel : filled mismatch
-        :rtype: xarray.Dataset with the variables :
-            - disparity_map 2D xarray.DataArray (row, col)
-            - confidence_measure 3D xarray.DataArray (row, col, indicator)
-            - validity_mask 2D xarray.DataArray (row, col)
+        :return: None
         """
-        out = left.copy(deep=True)
 
-        out['disparity_map'].data, out['validity_mask'].data = self.interpolate_mismatch_sgm(left['disparity_map'].data,
+        left['disparity_map'].data, left['validity_mask'].data = self.interpolate_mismatch_sgm(left['disparity_map'].data,
                                                                                              left['validity_mask'].data)
-        out['disparity_map'].data, out['validity_mask'].data = self.interpolate_occlusion_sgm(out['disparity_map'].data,
-                                                                                              out['validity_mask'].data)
-        out.attrs['interpolated_disparity'] = 'sgm'
+        left['disparity_map'].data, left['validity_mask'].data = self.interpolate_occlusion_sgm(left['disparity_map'].data,
+                                                                                              left['validity_mask'].data)
+        left.attrs['interpolated_disparity'] = 'sgm'
 
-        return out
 
     @staticmethod
     @njit()

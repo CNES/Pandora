@@ -97,6 +97,7 @@ class TestValidation(unittest.TestCase):
         # Check if the calculated mask is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(left['validity_mask'].data, gt_mask)
 
+
     def test_cross_checking_float_disparity(self):
         """
         Test the validity_mask for the cross checking method with floating disparity,
@@ -156,7 +157,7 @@ class TestValidation(unittest.TestCase):
 
         # Interpolate occlusions
         interpolation_matcher = validation.AbstractInterpolation(**{'interpolated_disparity': 'mc-cnn'})
-        left = interpolation_matcher.interpolated_disparity(left)
+        interpolation_matcher.interpolated_disparity(left)
 
         # validity mask after interpolation
         gt_mask_after_int = np.array([[PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING, PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
@@ -198,7 +199,7 @@ class TestValidation(unittest.TestCase):
 
         # Interpolate mistmatch
         interpolation_matcher = validation.AbstractInterpolation(**{'interpolated_disparity': 'mc-cnn'})
-        left = interpolation_matcher.interpolated_disparity(left)
+        interpolation_matcher.interpolated_disparity(left)
 
         # validity mask after interpolation
         gt_mask_after_int = np.array([[PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
@@ -246,7 +247,7 @@ class TestValidation(unittest.TestCase):
 
         # Interpolate occlusion
         interpolation_matcher = validation.AbstractInterpolation(**{'interpolated_disparity': 'sgm'})
-        left = interpolation_matcher.interpolated_disparity(left)
+        interpolation_matcher.interpolated_disparity(left)
 
         # validity mask after interpolation
         gt_mask_after_int = np.array([[PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
@@ -294,7 +295,7 @@ class TestValidation(unittest.TestCase):
 
         # Interpolate mismatch
         interpolation_matcher = validation.AbstractInterpolation(**{'interpolated_disparity': 'sgm'})
-        left = interpolation_matcher.interpolated_disparity(left)
+        interpolation_matcher.interpolated_disparity(left)
 
         # validity mask after interpolation
         gt_mask_after_int = np.array([[PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
@@ -341,7 +342,7 @@ class TestValidation(unittest.TestCase):
 
         # Interpolate mismatch
         interpolation_matcher = validation.AbstractInterpolation(**{'interpolated_disparity': 'sgm'})
-        left = interpolation_matcher.interpolated_disparity(left)
+        interpolation_matcher.interpolated_disparity(left)
 
         # validity mask after interpolation
         gt_mask_after_int = np.array([[PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,

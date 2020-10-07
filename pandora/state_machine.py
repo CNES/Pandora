@@ -121,20 +121,19 @@ class PandoraMachine(Machine):
 
         if not self.right_disp_map == "accurate":
             self.left_cv = stereo_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max)
-            self.left_cv = stereo_.cv_masked(self.left_img, self.right_img, self.left_cv, self.disp_min, self.disp_max)
+            stereo_.cv_masked(self.left_img, self.right_img, self.left_cv, self.disp_min, self.disp_max)
 
         else:
             self.left_cv = stereo_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max)
-            self.left_cv = stereo_.cv_masked(self.left_img, self.right_img, self.left_cv, self.disp_min, self.disp_max)
+            stereo_.cv_masked(self.left_img, self.right_img, self.left_cv, self.disp_min, self.disp_max)
 
             if self.right_disp_min is None:
                 self.right_disp_min = -self.disp_max
                 self.right_disp_max = -self.disp_min
 
             dmin_min_right, dmax_max_right = stereo_.dmin_dmax(self.right_disp_min, self.right_disp_max)
-            self.right_cv = stereo_.compute_cost_volume(self.right_img, self.left_img, dmin_min_right, dmax_max_right,
-)
-            self.right_cv = stereo_.cv_masked(self.right_img, self.left_img, self.right_cv, self.right_disp_min,
+            self.right_cv = stereo_.compute_cost_volume(self.right_img, self.left_img, dmin_min_right, dmax_max_right)
+            stereo_.cv_masked(self.right_img, self.left_img, self.right_cv, self.right_disp_min,
                                               self.right_disp_max)
 
 
@@ -149,10 +148,10 @@ class PandoraMachine(Machine):
         """
         aggregation_ = aggregation.AbstractAggregation(**cfg['pipeline'][input_step])
         if not self.right_disp_map == "accurate":
-            self.left_cv = aggregation_.cost_volume_aggregation(self.left_img, self.right_img, self.left_cv)
+            aggregation_.cost_volume_aggregation(self.left_img, self.right_img, self.left_cv)
         else:
-            self.left_cv = aggregation_.cost_volume_aggregation(self.left_img, self.right_img, self.left_cv)
-            self.right_cv = aggregation_.cost_volume_aggregation(self.right_img, self.left_img, self.right_cv)
+            aggregation_.cost_volume_aggregation(self.left_img, self.right_img, self.left_cv)
+            aggregation_.cost_volume_aggregation(self.right_img, self.left_img, self.right_cv)
 
     def optimization_run(self, cfg: Dict[str, dict], input_step: str):
         """
@@ -184,14 +183,14 @@ class PandoraMachine(Machine):
         disparity_ = disparity.AbstractDisparity(**cfg['pipeline'][input_step])
         if self.right_disp_map == "none":
             self.left_disparity = disparity_.to_disp(self.left_cv, self.left_img, self.right_img)
-            self.left_disparity = disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img,
+            disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img,
                                                            self.left_cv)
         elif self.right_disp_map == "accurate":
             self.left_disparity = disparity_.to_disp(self.left_cv, self.left_img, self.right_img)
-            self.left_disparity = disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img,
+            disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img,
                                                            self.left_cv)
             self.right_disparity = disparity_.to_disp(self.right_cv, self.right_img, self.left_img)
-            self.right_disparity = disparity_.validity_mask(self.right_disparity, self.right_img, self.left_img,
+            disparity_.validity_mask(self.right_disparity, self.right_img, self.left_img,
                                                          self.right_cv)
 
 
@@ -207,10 +206,10 @@ class PandoraMachine(Machine):
         logging.info('Disparity filtering...')
         filter_ = filter.AbstractFilter(**cfg['pipeline'][input_step])
         if self.right_disp_map == "none":
-            self.left_disparity = filter_.filter_disparity(self.left_disparity)
+            filter_.filter_disparity(self.left_disparity)
         else:
-            self.left_disparity = filter_.filter_disparity(self.left_disparity)
-            self.right_disparity = filter_.filter_disparity(self.right_disparity)
+            filter_.filter_disparity(self.left_disparity)
+            filter_.filter_disparity(self.right_disparity)
 
     def refinement_run(self, cfg: Dict[str, dict], input_step: str):
         """
@@ -224,10 +223,10 @@ class PandoraMachine(Machine):
         refinement_ = refinement.AbstractRefinement(**cfg['pipeline'][input_step])
         logging.info('Subpixel refinement...')
         if self.right_disp_map == "none":
-            self.left_cv, self.left_disparity = refinement_.subpixel_refinement(self.left_cv, self.left_disparity)
+            refinement_.subpixel_refinement(self.left_cv, self.left_disparity)
         else:
-            self.left_cv, self.left_disparity = refinement_.subpixel_refinement(self.left_cv, self.left_disparity)
-            self.right_cv, self.right_disparity = refinement_.subpixel_refinement(self.right_cv, self.right_disparity)
+            refinement_.subpixel_refinement(self.left_cv, self.left_disparity)
+            refinement_.subpixel_refinement(self.right_cv, self.right_disparity)
 
 
     def validation_run(self, cfg: Dict[str, dict], input_step: str):
@@ -249,12 +248,11 @@ class PandoraMachine(Machine):
         else:
             self.left_disparity = validation_.disparity_checking(self.left_disparity, self.right_disparity)
             self.right_disparity = validation_.disparity_checking(self.right_disparity, self.left_disparity)
-
             # Interpolated mismatch and occlusions
             if 'interpolated_disparity' in cfg:
                 interpolate_ = validation.AbstractInterpolation(**cfg['pipeline'][input_step])
-                self.left_disparity = interpolate_.interpolated_disparity(self.left_disparity)
-                self.right_disparity = interpolate_.interpolated_disparity(self.right_disparity)
+                interpolate_.interpolated_disparity(self.left_disparity)
+                interpolate_.interpolated_disparity(self.right_disparity)
 
     def resize_run(self, cfg: Dict[str, dict], input_step: str):
         """
@@ -542,6 +540,7 @@ class PandoraMachine(Machine):
         :return:
         """
         # Transition is removed using trigger name. But one trigger name can be used by multiple transitions
+        # In this case, the "remove_transition" function removes all transitions using this trigger name
         # In this case, the "remove_transition" function removes all transitions using this trigger name
         # deleted_triggers list is used to avoid multiple call of "remove_transition" with the same trigger name.
         deleted_triggers = []
