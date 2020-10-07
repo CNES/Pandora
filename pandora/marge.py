@@ -12,6 +12,20 @@
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
+# !/usr/bin/env python
+# coding: utf8
+#
+# Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
+#
+# This file is part of PANDORA
+#
+#     https://github.com/CNES/Pandora_pandora
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,7 +44,7 @@ from typing import Dict
 
 def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.DataArray:
     """
-    Calculates the margins for the reference and secondary images according to the configuration
+    Calculates the margins for the left and right images according to the configuration
 
     :param disp_min: minimal disparity
     :type disp_min: int
@@ -39,14 +53,15 @@ def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.DataAr
     :param cfg: user configuration
     :type cfg: dict of dict
     :return: margin for the images
-    :rtype: 2D (image, corner) DataArray, with the dimensions image = ['ref_margin', 'sec_margin'],
+    :rtype: 2D (image, corner) DataArray, with the dimensions image = ['left_margin', 'right_margin'],
         corner = ['left', 'up', 'right', 'down']
     """
-    margin = xr.DataArray(np.zeros((2, 4), dtype=int), coords=[['ref_margin', 'sec_margin'], ['left','up','right','down']],
+    margin = xr.DataArray(np.zeros((2, 4), dtype=int),
+                          coords=[['left_margin', 'right_margin'], ['left', 'up', 'right', 'down']],
                           dims=['image', 'corner'])
     margin.name = 'Margins'
 
-    # Margins for the reference image and for the secondary image
+    # Margins for the left image and for the right image
 
     # Pandora margins depends on the steps configured
     if cfg['optimization']['optimization_method'] == 'sgm':
@@ -73,10 +88,10 @@ def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.DataAr
             r_marg += int(cfg['filter']['filter_size'] / 2)
             s_marg += int(cfg['filter']['filter_size'] / 2)
 
-    # Same margin for ref and sec: take the larger
+    # Same margin for left and right: take the larger
     same_margin = list(map(lambda x: max(x[0], x[1]), zip(r_marg, s_marg)))
-    margin.loc[dict(image='ref_margin')] = same_margin
-    margin.loc[dict(image='sec_margin')] = same_margin
+    margin.loc[dict(image='left_margin')] = same_margin
+    margin.loc[dict(image='right_margin')] = same_margin
 
     # Save disp_min and disp_max
     margin.attrs['disp_min'] = disp_min

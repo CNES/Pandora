@@ -29,7 +29,7 @@ from typing import Dict, Union, Tuple
 import xarray as xr
 
 from pandora.stereo import stereo
-from pandora.img_tools import shift_sec_img, census_transform
+from pandora.img_tools import shift_right_img, census_transform
 
 
 @stereo.AbstractStereo.register_subclass('census')
@@ -81,18 +81,18 @@ class Census(stereo.AbstractStereo):
         """
         print('census similarity measure')
 
-    def compute_cost_volume(self, img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: int,
+    def compute_cost_volume(self, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: int,
                             disp_max: int) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
 
-        :param img_ref: reference Dataset image
-        :type img_ref:
+        :param img_left: left Dataset image
+        :type img_left:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
+        :param img_right: right Dataset image
+        :type img_right:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
@@ -106,8 +106,8 @@ class Census(stereo.AbstractStereo):
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
-        # Contains the shifted secondary images
-        img_sec_shift = shift_sec_img(img_sec, self._subpix)
+        # Contains the shifted right images
+        img_right_shift = shift_right_img(img_right, self._subpix)
 
         # Maximal cost of the cost volume with census measure
         cmax = int(self._window_size ** 2)
@@ -117,9 +117,9 @@ class Census(stereo.AbstractStereo):
                     "type_measure": "min", "cmax": cmax}
 
         # Apply census transformation
-        ref = census_transform(img_ref, self._window_size)
-        for i in range(0, len(img_sec_shift)):
-            img_sec_shift[i] = census_transform(img_sec_shift[i], self._window_size)
+        left = census_transform(img_left, self._window_size)
+        for i in range(0, len(img_right_shift)):
+            img_right_shift[i] = census_transform(img_right_shift[i], self._window_size)
 
         # Disparity range
         if self._subpix == 1:
@@ -129,7 +129,7 @@ class Census(stereo.AbstractStereo):
             disparity_range = np.append(disparity_range, [disp_max])
 
         # Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
-        cv = np.zeros((len(disparity_range), ref['im'].shape[1], ref['im'].shape[0]), dtype=np.float32)
+        cv = np.zeros((len(disparity_range), left['im'].shape[1], left['im'].shape[0]), dtype=np.float32)
         cv += np.nan
 
         # Giving the 2 images, the matching cost will be calculated as :
@@ -151,7 +151,7 @@ class Census(stereo.AbstractStereo):
         #                        nan  (1-2) (1-5)
         #                        nan  (1-1) (4-1)
         #                        nan  (3-6) (1-1)
-        # , nan correspond to the first column of the reference image that cannot be calculated,
+        # , nan correspond to the first column of the left image that cannot be calculated,
         #  because there is no corresponding column for the disparity -1.
         #
         # In the following loop, the tuples p,q describe to which part of the image the difference will be applied,
@@ -162,44 +162,44 @@ class Census(stereo.AbstractStereo):
         # In the loop, cv is of shape (disp, col, row) and images / masks of shape (row, col)
         # np.swapaxes allow to interchange row and col in images and masks
         for disp in disparity_range:
-            i_sec = int((disp % 1) * self._subpix)
-            p, q = self.point_interval(ref, img_sec_shift[i_sec], disp)
+            i_right = int((disp % 1) * self._subpix)
+            p, q = self.point_interval(left, img_right_shift[i_right], disp)
             d = int((disp - disp_min) * self._subpix)
 
-            cv[d, p[0]:p[1], :] = np.swapaxes(self.census_cost(p, q, ref, img_sec_shift[i_sec]), 0, 1)
+            cv[d, p[0]:p[1], :] = np.swapaxes(self.census_cost(p, q, left, img_right_shift[i_right]), 0, 1)
 
         # Create the xarray.DataSet that will contain the cost_volume of dimensions (row, col, disp)
-        cv = self.allocate_costvolume(img_ref, self._subpix, disp_min, disp_max, self._window_size, metadata,
+        cv = self.allocate_costvolume(img_left, self._subpix, disp_min, disp_max, self._window_size, metadata,
                                       np.swapaxes(cv, 0, 2))
 
         # Remove temporary values
-        del ref, img_sec_shift
+        del left, img_right_shift
 
         return cv
 
-    def census_cost(self, p: Tuple[int, int], q: Tuple[int, int], img_ref: xr.Dataset, img_sec: xr.Dataset) ->\
+    def census_cost(self, p: Tuple[int, int], q: Tuple[int, int], img_left: xr.Dataset, img_right: xr.Dataset) ->\
             np.ndarray:
         """
         Computes xor pixel-wise between pre-processed images by census transform
 
-        :param p: Point interval, in the reference image, over which the squared difference will be applied
+        :param p: Point interval, in the left image, over which the squared difference will be applied
         :type p: tuple
-        :param q: Point interval, in the secondary image, over which the squared difference will be applied
+        :param q: Point interval, in the right image, over which the squared difference will be applied
         :type q: tuple
-        :param img_ref: reference Dataset image
-        :type img_ref:
+        :param img_left: left Dataset image
+        :type img_left:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
+        :param img_right: right Dataset image
+        :type img_right:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :return: the xor pixel-wise between elements in the interval
         :rtype: numpy array
         """
-        xor_ = img_ref['im'].data[:, p[0]:p[1]].astype('uint32') ^ img_sec['im'].data[:, q[0]:q[1]].astype('uint32')
+        xor_ = img_left['im'].data[:, p[0]:p[1]].astype('uint32') ^ img_right['im'].data[:, q[0]:q[1]].astype('uint32')
         return list(map(self.popcount32b, xor_))
 
     def popcount32b(self, x: int) -> int:

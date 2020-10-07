@@ -15,20 +15,20 @@ Different measures of similarity are available in Pandora :
 - ZNCC (Zero mean Normalized Cross Correlation)
 
 It is possible to oversample the cost volume by a factor of 2 or 4 ( with the *subpix* parameter ) compared to
-to the input images. It can be useful for :ref:`disparity_refinement`
+to the input images. It can be useful for :left:`disparity_refinement`
 
 Pandora can take into account a mask and a nodata value for each image. The masks and nodata are used during
 the matching cost computation  :
 
-- Nodata pixel management: if the reference window contains nodata, the center pixel of the window is invalidated.
+- Nodata pixel management: if the left window contains nodata, the center pixel of the window is invalidated.
   Therefore,the disparity range is invalidated : :math:`cost(x, y, \forall d) = nan`.
-  If the secondary window contains nodata, the center pixel is invalidated. As a result, the pixels of the reference image
+  If the right window contains nodata, the center pixel is invalidated. As a result, the pixels of the left image
   such as :math:`I_{L}(x, y) = I_{R}(x + d, y)`, are invalidated :math:`cost(x, y, d) = nan`
 
 
-- Management of hidden pixels: if the center pixel of the reference window is hidden, the disparity range is
+- Management of hidden pixels: if the center pixel of the left window is hidden, the disparity range is
   invalidated : :math:`cost(x, y, \forall d) = nan`.
-  If the pixel in the center of the secondary window is hidden, the pixels of the reference image such as
+  If the pixel in the center of the right window is hidden, the pixels of the left image such as
   :math:`I_{L}(x, y) = I_{R}(x + d, y)` are invalidated :math:`cost(x, y, d) = nan`
 
 
@@ -40,10 +40,10 @@ The second step is to aggregate the matching costs:
 - Cross-based Cost Aggregation [2]_. This method consists in creating aggregation support regions that adapt to the structures
   present in the scene, it is performed in 5 steps:
 
-    - a 3x3 median filter is applied to the reference image (left image) and the secondary image (right image),
-    - cross support region computation of each pixel of the reference image,
-    - cross support region computation of each pixel of the secondary image,
-    - combination of the reference and secondary support region,
+    - a 3x3 median filter is applied to the left image (left image) and the right image (right image),
+    - cross support region computation of each pixel of the left image,
+    - cross support region computation of each pixel of the right image,
+    - combination of the left and right support region,
     - the matching cost is averaged over the combined support region.
 
 Optimisation
@@ -53,7 +53,7 @@ The third step is to minimize a global energy defined by
 
     :math:`E(d) = E_{data}(d) + \lambda E_{smooth}(d)`
 
-First term, called data term represents raw matching cost measurement. The second one, the smoothness term, represents smoothness assumptions made
+First term, called data term represents raw matching cost measurement. The right one, the smoothness term, represents smoothness assumptions made
 by the algorithm.
 
 The methods available in Pandora are
@@ -70,7 +70,7 @@ The disparity calculated by Pandora is such that:
 
     :math:`I_{L}(x, y) = I_{R}(x + d, y)`
 
-avec :math:`I_{L}` , :math:`I_{R}` the reference image (left image) and the secondary image (right image), and
+avec :math:`I_{L}` , :math:`I_{R}` the left image (left image) and the right image (right image), and
 :math:`d` the disparity.
 
 .. _disparity_refinement:
@@ -136,15 +136,15 @@ Validation methods provide a confidence index on the calculated disparity, those
 
 
 - The cross checking ( cross checking [3]_ ), which allows to invalidate disparities. It consists in reversing the role
-  of the images (the reference image becomes the secondary image, and vice versa) and to compare the disparity :math:`disp_{L}`
-  (corresponding to the reference image  :math:`I_{L}` ) with :math:`disp_{R}` (corresponding to the secondary image :math:`I_{R}` ) :
+  of the images (the left image becomes the right image, and vice versa) and to compare the disparity :math:`disp_{L}`
+  (corresponding to the left image  :math:`I_{L}` ) with :math:`disp_{R}` (corresponding to the right image :math:`I_{R}` ) :
 
     - Si :math:`| disp_{L}(p) + disp_{R}(p + disp_{L}(p)) | \leq threshold`, then point p is valid
     - Si :math:`| disp_{L}(p) + disp_{R}(p + disp_{L}(p)) | \geq threshold`, then point p is invalid
 
   The threshold is 1 by default, but it can be changed with the *cross_checking_threshold* parameter.
   Pandora will then distinguish between occlusion and mismatch by following the methodology outlined in [5]_.
-  For each pixel p of the reference image invalidated by the cross-checking :
+  For each pixel p of the left image invalidated by the cross-checking :
 
     - If there is a disparity d such as :math:`disp_{R}(p+d)=-d`, it is a mismatch.
     - Otherwise, it's an occlusion.
@@ -164,7 +164,7 @@ It is possible to fill in occlusions and mismatches detected during cross-valida
         :width: 300px
         :height: 200px
 
-- using the method proposed in [5]_ : the disparity of an occluded pixel is modified using the second method in [5]_ :
+- using the method proposed in [5]_ : the disparity of an occluded pixel is modified using the right method in [5]_ :
   Smallest disparity (the disparity closest to 0) in 8 directions. The disparity of a pixel considered to be a
   mismatch becomes the median of the first 8 valid pixels in the directions shown below. Mismatches that are direct neighbours of
   occluded pixel are treated as occlusions.

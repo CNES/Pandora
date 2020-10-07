@@ -29,7 +29,7 @@ Each subpackage of Pandora, representing one particular step, defines an `abstra
         """
         print('My similarity measure')
 
-    def compute_cost_volume(self, img_ref, img_sec, disp_min, disp_max, **cfg)
+    def compute_cost_volume(self, img_left, img_right, disp_min, disp_max, **cfg)
         """
         """
         print ("Just an example")

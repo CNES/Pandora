@@ -30,7 +30,7 @@ from math import ceil, floor
 from abc import ABCMeta, abstractmethod
 from scipy.ndimage.morphology import binary_dilation
 from typing import Tuple, Dict, List, Union
-from pandora.img_tools import shift_sec_img
+from pandora.img_tools import shift_right_img
 from json_checker import Or
 import rasterio
 
@@ -94,18 +94,18 @@ class AbstractStereo(object):
         print('Stereo matching description')
 
     @abstractmethod
-    def compute_cost_volume(self, img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: int, disp_max: int
+    def compute_cost_volume(self, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: int, disp_max: int
                             ) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
 
-        :param img_ref: reference Dataset image
-        :type img_ref:
+        :param img_left: left Dataset image
+        :type img_left:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
+        :param img_right: right Dataset image
+        :type img_right:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
@@ -120,13 +120,13 @@ class AbstractStereo(object):
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
 
-    def allocate_costvolume(self, img_ref: xr.Dataset, subpix: int, disp_min: int, disp_max: int, window_size: int,
+    def allocate_costvolume(self, img_left: xr.Dataset, subpix: int, disp_min: int, disp_max: int, window_size: int,
                             metadata: dict, np_data: np.ndarray = None) -> xr.Dataset:
         """
         Allocate the cost volume
 
-        :param img_ref: reference Dataset image
-        :type img_ref:
+        :param img_left: left Dataset image
+        :type img_left:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
@@ -148,8 +148,8 @@ class AbstractStereo(object):
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
-        c_row = img_ref['im'].coords['row']
-        c_col = img_ref['im'].coords['col']
+        c_row = img_left['im'].coords['row']
+        c_col = img_left['im'].coords['col']
 
         # First pixel in the image that is fully computable (aggregation windows are complete)
         offset_row_col = int((window_size - 1) / 2)
@@ -172,40 +172,40 @@ class AbstractStereo(object):
         cost_volume.attrs = metadata
 
         # Allocate the confidence measure in the cost volume Dataset
-        confidence_measure = compute_std_raster(img_ref, window_size).reshape(len(row), len(col), 1)
+        confidence_measure = compute_std_raster(img_left, window_size).reshape(len(row), len(col), 1)
         cost_volume = cost_volume.assign_coords(indicator=['stereo_pandora_intensityStd'])
         cost_volume['confidence_measure'] = xr.DataArray(data=confidence_measure.astype(np.float32),
                                                          dims=['row', 'col', 'indicator'])
 
         return cost_volume
 
-    def point_interval(self, img_ref: xr.Dataset, img_sec: xr.Dataset, disp: float) -> \
+    def point_interval(self, img_left: xr.Dataset, img_right: xr.Dataset, disp: float) -> \
             Tuple[Tuple[int, int], Tuple[int, int]]:
         """
         Computes the range of points over which the similarity measure will be applied
 
-        :param img_ref: reference Dataset image
-        :type img_ref:
+        :param img_left: left Dataset image
+        :type img_left:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
+        :param img_right: right Dataset image
+        :type img_right:
              xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :param disp: current disparity
         :type disp: float
-        :return: the range of the reference and secondary image over which the similarity measure will be applied
+        :return: the range of the left and right image over which the similarity measure will be applied
         :rtype: tuple
         """
-        _, nx_ref = img_ref['im'].shape
-        _, nx_sec = img_sec['im'].shape
+        _, nx_left = img_left['im'].shape
+        _, nx_right = img_right['im'].shape
 
-        # range in the reference image
-        p = (max(0 - disp, 0), min(nx_ref - disp, nx_ref))
-        # range in the secondary image
-        q = (max(0 + disp, 0), min(nx_sec + disp, nx_sec))
+        # range in the left image
+        p = (max(0 - disp, 0), min(nx_left - disp, nx_left))
+        # range in the right image
+        q = (max(0 + disp, 0), min(nx_right + disp, nx_right))
 
         # Because the disparity can be floating
         if disp < 0:
@@ -217,10 +217,10 @@ class AbstractStereo(object):
 
         return p, q
 
-    def masks_dilatation(self, img_ref: xr.Dataset, img_sec: xr.Dataset, offset_row_col: int, window_size: int,
+    def masks_dilatation(self, img_left: xr.Dataset, img_right: xr.Dataset, offset_row_col: int, window_size: int,
                          subp: int) -> Tuple[xr.DataArray, List[xr.DataArray]]:
         """
-        Return the reference and secondary mask with the convention :
+        Return the left and right mask with the convention :
             - Invalid pixels are nan
             - No_data pixels are nan
             - Valid pixels are 0
@@ -228,13 +228,13 @@ class AbstractStereo(object):
         Apply dilation on no_data : if a pixel contains a no_data in its aggregation window, then the central pixel
         becomes no_data
 
-        :param img_ref: reference Dataset image
-        :type img_ref:
+        :param img_left: left Dataset image
+        :type img_left:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
+        :param img_right: right Dataset image
+        :type img_right:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
@@ -246,75 +246,77 @@ class AbstractStereo(object):
         :type subp: int
         :param cfg: images configuration containing the mask convention : valid_pixels, no_data
         :type cfg: dict
-        :return: the reference mask and the secondary masks
+        :return: the left mask and the right masks
         :rtype:
-            tuple (reference mask, list[secondary mask, secondary mask shifted by 0.5])
-                - reference mask :  xarray.DataArray msk 2D(row, col)
-                - secondary mask :  xarray.DataArray msk 2D(row, col)
-                - secondary mask shifted :  xarray.DataArray msk 2D(row, shifted col by 0.5)
+            tuple (left mask, list[right mask, right mask shifted by 0.5])
+                - left mask :  xarray.DataArray msk 2D(row, col)
+                - right mask :  xarray.DataArray msk 2D(row, col)
+                - right mask shifted :  xarray.DataArray msk 2D(row, shifted col by 0.5)
         """
-        # Create the reference mask with the convention : 0 = valid, nan = invalid and no_data
-        if 'msk' in img_ref.data_vars:
-            dilatate_ref_mask = np.zeros(img_ref['msk'].shape)
+        # Create the left mask with the convention : 0 = valid, nan = invalid and no_data
+        if 'msk' in img_left.data_vars:
+            dilatate_left_mask = np.zeros(img_left['msk'].shape)
             # Invalid pixels are nan
-            dilatate_ref_mask[
-                np.where((img_ref['msk'].data != img_ref.attrs['valid_pixels']) & (img_ref['msk'].data != img_ref.attrs['no_data_mask']))] = np.nan
+            dilatate_left_mask[
+                np.where((img_left['msk'].data != img_left.attrs['valid_pixels']) & (
+                            img_left['msk'].data != img_left.attrs['no_data_mask']))] = np.nan
             # Dilatation : pixels that contains no_data in their aggregation window become no_data = nan
-            dil = binary_dilation(img_ref['msk'].data == img_ref.attrs['no_data_mask'],
+            dil = binary_dilation(img_left['msk'].data == img_left.attrs['no_data_mask'],
                                   structure=np.ones((window_size, window_size)), iterations=1)
-            dilatate_ref_mask[dil] = np.nan
+            dilatate_left_mask[dil] = np.nan
         else:
             # All pixels are valid
-            dilatate_ref_mask = np.zeros(img_ref['im'].shape)
+            dilatate_left_mask = np.zeros(img_left['im'].shape)
 
-        # Create the secondary mask with the convention : 0 = valid, nan = invalid and no_datassssss
-        if 'msk' in img_sec.data_vars:
-            dilatate_sec_mask = np.zeros(img_sec['msk'].shape)
+        # Create the right mask with the convention : 0 = valid, nan = invalid and no_datassssss
+        if 'msk' in img_right.data_vars:
+            dilatate_right_mask = np.zeros(img_right['msk'].shape)
             # Invalid pixels are nan
-            dilatate_sec_mask[
-                np.where((img_sec['msk'].data != img_sec.attrs['valid_pixels']) & (img_sec['msk'].data != img_sec.attrs['no_data_mask']))] = np.nan
+            dilatate_right_mask[
+                np.where((img_right['msk'].data != img_right.attrs['valid_pixels']) & (
+                            img_right['msk'].data != img_right.attrs['no_data_mask']))] = np.nan
             # Dilatation : pixels that contains no_data in their aggregation window become no_data = nan
-            dil = binary_dilation(img_sec['msk'].data == img_sec.attrs['no_data_mask'],
+            dil = binary_dilation(img_right['msk'].data == img_right.attrs['no_data_mask'],
                                   structure=np.ones((window_size, window_size)), iterations=1)
-            dilatate_sec_mask[dil] = np.nan
+            dilatate_right_mask[dil] = np.nan
 
         else:
             # All pixels are valid
-            dilatate_sec_mask = np.zeros(img_ref['im'].shape)
+            dilatate_right_mask = np.zeros(img_left['im'].shape)
 
         if offset_row_col != 0:
             # Truncate the masks to the size of the cost volume
-            dilatate_ref_mask = dilatate_ref_mask[offset_row_col:-offset_row_col, offset_row_col:-offset_row_col]
-            dilatate_sec_mask = dilatate_sec_mask[offset_row_col:-offset_row_col, offset_row_col:-offset_row_col]
+            dilatate_left_mask = dilatate_left_mask[offset_row_col:-offset_row_col, offset_row_col:-offset_row_col]
+            dilatate_right_mask = dilatate_right_mask[offset_row_col:-offset_row_col, offset_row_col:-offset_row_col]
 
-        ny_, nx_ = img_ref['im'].shape
+        ny_, nx_ = img_left['im'].shape
         row = np.arange(0 + offset_row_col, ny_ - offset_row_col)
         col = np.arange(0 + offset_row_col, nx_ - offset_row_col)
 
-        # Shift the secondary mask, for sub-pixel precision. If an no_data or invalid pixel was used to create the
+        # Shift the right mask, for sub-pixel precision. If an no_data or invalid pixel was used to create the
         # sub-pixel point, then the sub-pixel point is invalidated / no_data.
-        dilatate_sec_mask_shift = xr.DataArray()
+        dilatate_right_mask_shift = xr.DataArray()
         if subp != 1:
-            # Since the interpolation of the secondary image is of order 1, the shifted secondary mask corresponds
-            # to an aggregation of two columns of the dilated secondary mask
-            str_row, str_col = dilatate_sec_mask.strides
-            shape_windows = (dilatate_sec_mask.shape[0], dilatate_sec_mask.shape[1] - 1, 2)
+            # Since the interpolation of the right image is of order 1, the shifted right mask corresponds
+            # to an aggregation of two columns of the dilated right mask
+            str_row, str_col = dilatate_right_mask.strides
+            shape_windows = (dilatate_right_mask.shape[0], dilatate_right_mask.shape[1] - 1, 2)
             strides_windows = (str_row, str_col, str_col)
-            aggregation_window = np.lib.stride_tricks.as_strided(dilatate_sec_mask, shape_windows, strides_windows)
-            dilatate_sec_mask_shift = np.sum(aggregation_window, 2)
+            aggregation_window = np.lib.stride_tricks.as_strided(dilatate_right_mask, shape_windows, strides_windows)
+            dilatate_right_mask_shift = np.sum(aggregation_window, 2)
 
             # Whatever the sub-pixel precision, only one sub-pixel mask is created,
             # since 0.5 shifted mask == 0.25 shifted mask
             col_shift = np.arange(0 + offset_row_col + 0.5, nx_ - 1 - offset_row_col, step=1)
-            dilatate_sec_mask_shift = xr.DataArray(dilatate_sec_mask_shift,
+            dilatate_right_mask_shift = xr.DataArray(dilatate_right_mask_shift,
                                                    coords=[row, col_shift], dims=['row', 'col'])
 
-        dilatate_ref_mask = xr.DataArray(dilatate_ref_mask,
+        dilatate_left_mask = xr.DataArray(dilatate_left_mask,
                                          coords=[row, col], dims=['row', 'col'])
-        dilatate_sec_mask = xr.DataArray(dilatate_sec_mask,
+        dilatate_right_mask = xr.DataArray(dilatate_right_mask,
                                          coords=[row, col], dims=['row', 'col'])
 
-        return dilatate_ref_mask, [dilatate_sec_mask, dilatate_sec_mask_shift]
+        return dilatate_left_mask, [dilatate_right_mask, dilatate_right_mask_shift]
 
     @staticmethod
     def dmin_dmax(disp_min: Union[int, np.ndarray], disp_max: Union[int, np.ndarray]) -> Tuple[int, int]:
@@ -348,7 +350,7 @@ class AbstractStereo(object):
 
         return dmin_min, dmax_max
 
-    def cv_masked(self, img_ref: xr.Dataset, img_sec: xr.Dataset, cost_volume: xr.Dataset,
+    def cv_masked(self, img_left: xr.Dataset, img_right: xr.Dataset, cost_volume: xr.Dataset,
                   disp_min: Union[int, np.ndarray], disp_max: Union[int, np.ndarray]) -> xr.Dataset:
         """
         Masks the cost volume :
@@ -357,13 +359,13 @@ class AbstractStereo(object):
             - costs of no_data pixels, are masked with a nan value. If a valid pixel contains a no_data in its
                 aggregation window, then the cost of the central pixel is masked with a nan value
 
-        :param img_ref: reference Dataset image
-        :type img_ref:
+        :param img_left: left Dataset image
+        :type img_left:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
+        :param img_right: right Dataset image
+        :type img_right:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
@@ -387,30 +389,30 @@ class AbstractStereo(object):
 
         # ----- Masking invalid pixels -----
 
-        # Contains the shifted secondary images
-        img_sec_shift = shift_sec_img(img_sec, self._subpix)
+        # Contains the shifted right images
+        img_right_shift = shift_right_img(img_right, self._subpix)
 
         # Computes the validity mask of the cost volume : invalid pixels or no_data are masked with the value nan.
         # Valid pixels are = 0
         offset = int((self._window_size - 1) / 2)
-        mask_ref, mask_sec = self.masks_dilatation(img_ref, img_sec, offset, self._window_size, self._subpix)
+        mask_left, mask_right = self.masks_dilatation(img_left, img_right, offset, self._window_size, self._subpix)
         offset_mask = (int(self._window_size / 2) * 2)
 
         for disp in cost_volume.coords['disp'].data:
-            i_sec = int((disp % 1) * self._subpix)
-            p, q = self.point_interval(img_ref, img_sec_shift[i_sec], disp)
+            i_right = int((disp % 1) * self._subpix)
+            p, q = self.point_interval(img_left, img_right_shift[i_right], disp)
 
-            # Point interval in the reference image
+            # Point interval in the left image
             p_mask = (p[0], p[1] - offset_mask)
-            # Point interval in the secondary image
+            # Point interval in the right image
             q_mask = (q[0], q[1] - offset_mask)
 
-            i_mask_sec = min(1, i_sec)
+            i_mask_right = min(1, i_right)
             d = int((disp - dmin) * self._subpix)
 
             # Invalid costs in the cost volume
             cost_volume['cost_volume'].data[:, p_mask[0]:p_mask[1], d] += (
-                    mask_sec[i_mask_sec].data[:, q_mask[0]:q_mask[1]] + mask_ref.data[:, p_mask[0]:p_mask[1]])
+                    mask_right[i_mask_right].data[:, q_mask[0]:q_mask[1]] + mask_left.data[:, p_mask[0]:p_mask[1]])
 
         # ----- Masking disparity range -----
 

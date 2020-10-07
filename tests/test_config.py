@@ -46,55 +46,55 @@ class TestConfig(unittest.TestCase):
         Test the method check_input_section
         """
 
-        # Test configuration with reference disparity grids and secondary disparity = none
+        # Test configuration with left disparity grids and right disparity = none
         cfg = {
             "input": {
-                "img_ref": "tests/pandora/ref.png",
-                "img_sec": "tests/pandora/sec.png",
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
                 "disp_min": "tests/pandora/disp_min_grid.tif",
                 "disp_max": "tests/pandora/disp_max_grid.tif"
             }
         }
         cfg_return = JSON_checker.check_input_section(cfg)
-        if (cfg_return['input']['disp_min_sec'] is not None) and (cfg_return['input']['disp_max_sec'] is not None):
+        if (cfg_return['input']['disp_min_right'] is not None) and (cfg_return['input']['disp_max_right'] is not None):
             raise AssertionError
 
-        # Test configuration with reference disparity as integer
+        # Test configuration with left disparity as integer
         cfg = {
             "input": {
-                "img_ref": "tests/pandora/ref.png",
-                "img_sec": "tests/pandora/sec.png",
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
                 "disp_min": -60,
                 "disp_max": 0
             }
         }
         cfg_return = JSON_checker.check_input_section(cfg)
 
-        # Test configuration with reference and secondary disparity grids
+        # Test configuration with left and right disparity grids
         cfg = {
             "input": {
-                "img_ref": "tests/pandora/ref.png",
-                "img_sec": "tests/pandora/sec.png",
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
                 "disp_min": "tests/pandora/disp_min_grid.tif",
                 "disp_max": "tests/pandora/disp_max_grid.tif",
-                "disp_min_sec": "tests/pandora/disp_min_grid.tif",
-                "disp_max_sec": "tests/pandora/disp_max_grid.tif"
+                "disp_min_right": "tests/pandora/disp_min_grid.tif",
+                "disp_max_right": "tests/pandora/disp_max_grid.tif"
             }
         }
         cfg_return = JSON_checker.check_input_section(cfg)
-        if (cfg_return['input']['disp_min_sec'] != "tests/pandora/disp_min_grid.tif") and \
-                (cfg_return['input']['disp_max_sec'] != "tests/pandora/disp_max_grid.tif"):
+        if (cfg_return['input']['disp_min_right'] != "tests/pandora/disp_min_grid.tif") and \
+                (cfg_return['input']['disp_max_right'] != "tests/pandora/disp_max_grid.tif"):
             raise AssertionError
 
     def test_check_input_section_with_error(self):
         """
         Test the method check_input_section that must raise an error
         """
-        # Test configuration with reference disparity min as grids and reference disparity max as integer
+        # Test configuration with left disparity min as grids and left disparity max as integer
         cfg = {
             "input": {
-                "img_ref": "tests/pandora/ref.png",
-                "img_sec": "tests/pandora/sec.png",
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
                 "disp_min": "tests/pandora/disp_min_grid.tif",
                 "disp_max": 45,
             }
@@ -102,55 +102,55 @@ class TestConfig(unittest.TestCase):
         # Json checker must raise an error
         self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
 
-        # Test configuration with reference disparity grids and secondary disparity max as integer
+        # Test configuration with left disparity grids and right disparity max as integer
         cfg = {
             "input": {
-                "img_ref": "tests/pandora/ref.png",
-                "img_sec": "tests/pandora/sec.png",
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
                 "disp_min": "tests/pandora/disp_min_grid.tif",
                 "disp_max": "tests/pandora/disp_max_grid.tif",
-                "disp_max_sec": -4
+                "disp_max_right": -4
             }
         }
         # Json checker must raise an error
         self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
 
-        # Test configuration with reference disparity grids and secondary disparity max as integer
+        # Test configuration with left disparity grids and right disparity max as integer
         cfg = {
             "input": {
-                "img_ref": "tests/pandora/ref.png",
-                "img_sec": "tests/pandora/sec.png",
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
                 "disp_min": "tests/pandora/disp_min_grid.tif",
                 "disp_max": "tests/pandora/disp_max_grid.tif",
-                "disp_max_sec": -4,
-                "disp_min_sec": "tests/pandora/disp_max_grid.tif"
+                "disp_max_right": -4,
+                "disp_min_right": "tests/pandora/disp_max_grid.tif"
             }
         }
         # Json checker must raise an error
         self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
 
-        # Test configuration with reference disparity grids and secondary disparity min as integer
+        # Test configuration with left disparity grids and right disparity min as integer
         cfg = {
             "input": {
-                "img_ref": "tests/pandora/ref.png",
-                "img_sec": "tests/pandora/sec.png",
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
                 "disp_min": "tests/pandora/disp_min_grid.tif",
                 "disp_max": "tests/pandora/disp_max_grid.tif",
-                "disp_min_sec": -4
+                "disp_min_right": -4
             }
         }
         # Json checker must raise an error
         self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
 
-        # Test configuration with reference disparity grids and secondary disparities as integer
+        # Test configuration with left disparity grids and right disparities as integer
         cfg = {
             "input": {
-                "img_ref": "tests/pandora/ref.png",
-                "img_sec": "tests/pandora/sec.png",
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
                 "disp_min": "tests/pandora/disp_min_grid.tif",
                 "disp_max": "tests/pandora/disp_max_grid.tif",
-                "disp_min_sec": -4,
-                "disp_max_sec": 0
+                "disp_min_right": -4,
+                "disp_max_right": 0
             }
         }
         # Json checker must raise an error
@@ -162,13 +162,13 @@ class TestConfig(unittest.TestCase):
         """
 
 
-        # Check the configuration returned with reference disparity grids
+        # Check the configuration returned with left disparity grids
 
         pandora_machine = PandoraMachine()
         cfg = {
             "input": {
-                "img_ref": "tests/pandora/ref.png",
-                "img_sec": "tests/pandora/sec.png",
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
                 "disp_min": "tests/pandora/disp_min_grid.tif",
                 "disp_max": "tests/pandora/disp_max_grid.tif"
             },
@@ -193,12 +193,12 @@ class TestConfig(unittest.TestCase):
                 "no_data": 1
             },
             "input": {
-                "ref_mask": None,
-                "sec_mask": None,
-                "disp_min_sec": None,
-                "disp_max_sec": None,
-                "img_ref": "tests/pandora/ref.png",
-                "img_sec": "tests/pandora/sec.png",
+                "left_mask": None,
+                "right_mask": None,
+                "disp_min_right": None,
+                "disp_max_right": None,
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
                 "disp_min": "tests/pandora/disp_min_grid.tif",
                 "disp_max": "tests/pandora/disp_max_grid.tif"
             },
@@ -221,15 +221,15 @@ class TestConfig(unittest.TestCase):
         }
         assert (cfg_return == cfg_gt)
 
-        # Check the configuration returned with reference and secondary disparity grids
+        # Check the configuration returned with left and right disparity grids
         cfg = {
             "input": {
-                "img_ref": "tests/pandora/ref.png",
-                "img_sec": "tests/pandora/sec.png",
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
                 "disp_min": "tests/pandora/disp_min_grid.tif",
                 "disp_max": "tests/pandora/disp_max_grid.tif",
-                "disp_min_sec": "tests/pandora/disp_min_grid.tif",
-                "disp_max_sec": "tests/pandora/disp_max_grid.tif"
+                "disp_min_right": "tests/pandora/disp_min_grid.tif",
+                "disp_max_right": "tests/pandora/disp_max_grid.tif"
             },
             "pipeline": {
                 "stereo": {
@@ -252,12 +252,12 @@ class TestConfig(unittest.TestCase):
                 "no_data": 1
             },
             "input": {
-                "ref_mask": None,
-                "sec_mask": None,
-                "disp_min_sec": "tests/pandora/disp_min_grid.tif",
-                "disp_max_sec": "tests/pandora/disp_max_grid.tif",
-                "img_ref": "tests/pandora/ref.png",
-                "img_sec": "tests/pandora/sec.png",
+                "left_mask": None,
+                "right_mask": None,
+                "disp_min_right": "tests/pandora/disp_min_grid.tif",
+                "disp_max_right": "tests/pandora/disp_max_grid.tif",
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
                 "disp_min": "tests/pandora/disp_min_grid.tif",
                 "disp_max": "tests/pandora/disp_max_grid.tif"
             },
@@ -282,11 +282,11 @@ class TestConfig(unittest.TestCase):
 
         assert (cfg_return == cfg_gt)
 
-        # Check the configuration returned with reference disparity grids and cross checking method
+        # Check the configuration returned with left disparity grids and cross checking method
         cfg = {
             "input": {
-                "img_ref": "tests/pandora/ref.png",
-                "img_sec": "tests/pandora/sec.png",
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
                 "disp_min": "tests/pandora/disp_min_grid.tif",
                 "disp_max": "tests/pandora/disp_max_grid.tif"
             },
@@ -309,18 +309,18 @@ class TestConfig(unittest.TestCase):
                 }
         }
 
-        # When reference disparities are grids and secondary are none, cross checking method cannot be used : the program exits
+        # When left disparities are grids and right are none, cross checking method cannot be used : the program exits
         self.assertRaises(SystemExit, JSON_checker.check_conf, cfg, pandora_machine)
 
-        # Check the configuration returned with reference and secondary disparity grids and cross checking method
+        # Check the configuration returned with left and right disparity grids and cross checking method
         cfg = {
             "input": {
-                "img_ref": "tests/pandora/ref.png",
-                "img_sec": "tests/pandora/sec.png",
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
                 "disp_min": "tests/pandora/disp_min_grid.tif",
                 "disp_max": "tests/pandora/disp_max_grid.tif",
-                "disp_min_sec": "tests/pandora/disp_min_grid.tif",
-                "disp_max_sec": "tests/pandora/disp_max_grid.tif",
+                "disp_min_right": "tests/pandora/disp_min_grid.tif",
+                "disp_max_right": "tests/pandora/disp_max_grid.tif",
             },
             "pipeline": {
                 "right_disp_map": {
@@ -341,7 +341,7 @@ class TestConfig(unittest.TestCase):
             }
 
         }
-        # When reference and secondary disparities are grids, cross checking method can be used
+        # When left and right disparities are grids, cross checking method can be used
         cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
         cfg_gt = {
             "image": {
@@ -351,12 +351,12 @@ class TestConfig(unittest.TestCase):
                 "no_data": 1
             },
             "input": {
-                "ref_mask": None,
-                "sec_mask": None,
-                "disp_min_sec": "tests/pandora/disp_min_grid.tif",
-                "disp_max_sec": "tests/pandora/disp_max_grid.tif",
-                "img_ref": "tests/pandora/ref.png",
-                "img_sec": "tests/pandora/sec.png",
+                "left_mask": None,
+                "right_mask": None,
+                "disp_min_right": "tests/pandora/disp_min_grid.tif",
+                "disp_max_right": "tests/pandora/disp_max_grid.tif",
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
                 "disp_min": "tests/pandora/disp_min_grid.tif",
                 "disp_max": "tests/pandora/disp_max_grid.tif"
             },
@@ -419,3 +419,4 @@ class TestConfig(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

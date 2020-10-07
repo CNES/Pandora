@@ -12,6 +12,7 @@ The pipeline performs the following steps:
     3. disparity computation
     4. subpixel cost refinement
     5. disparity filter, validation
+    6. multiscale
 
 ## Dependencies
 
@@ -68,25 +69,25 @@ The config file `config.json` is formatted as :
 
     {
         "input" : {
-            "img_ref" : "PATH/TO/img_ref.tif",
-            "img_sec" : "PATH/TO/img_sec.tif",
+            "img_left" : "PATH/TO/img_left.tif",
+            "img_right" : "PATH/TO/img_right.tif",
             "disp_min" : -100,
             "disp_max" : 100,
-            "ref_mask" : "PATH/TO/ref_mask.tif",
-            "sec_mask" : "PATH/TO/sec_mask.tif"
+            "left_mask" : "PATH/TO/left_mask.tif",
+            "right_mask" : "PATH/TO/right_mask.tif"
         }
     }
 
 Mandatory fields are :
-   - `img_ref` : Path to the reference image
-   - `img_sec` : Path to the secondary image
+   - `img_left` : Path to the left image
+   - `img_right` : Path to the right image
    - `disp_min` : Minimal disparity
    - `disp_max` : Maximal disparity
 
 
 Optional fields are :
-   - `ref_mask` : Path to the reference mask
-   - `sec_mask` : Path to the secondary mask
+   - `left_mask` : Path to the left mask
+   - `right_mask` : Path to the right mask
 
 
 
@@ -95,7 +96,7 @@ Pandora can also be used as a package :
     import pandora
 
 Input stereo images must be grayscale images. Parameters `nodata1` and `nodata2` of the json configuration file allow to specify
-the value of no data in the reference and secondary images.
+the value of no data in the left and right images.
 
 The masks are optional, and have the following convention: 0 is a valid pixel, everything else is considered as masked.
 
@@ -149,7 +150,14 @@ Post-processing the computed disparities:
     - cross checking     
     - mismatches and occlusions detection
 
+#### Multiscale processing
 
+Doing the whole pipeline for each number of scales
+
+    - image pyramid computation
+    - processing from coarse to fine
+    - disparity range refinement with the results from the previous coarser scale
+    
 ## Notes
 
 For tests, we use images coming from 2003 Middleburry dataset 

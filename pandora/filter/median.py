@@ -29,7 +29,7 @@ import warnings
 from json_checker import Checker, And
 from typing import Dict, Union, cast
 import xarray as xr
-
+from ..common import sliding_window
 from . import filter
 from pandora.constants import *
 
@@ -78,7 +78,7 @@ class MedianFilter(filter.AbstractFilter):
         """
         print('Median filter description')
 
-    def filter_disparity(self, disp: xr.Dataset, img_ref: xr.Dataset = None, img_sec: xr.Dataset = None,
+    def filter_disparity(self, disp: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None,
                          cv: xr.Dataset = None) -> xr.Dataset:
         """
         Apply a median filter on valid pixels.
@@ -91,10 +91,10 @@ class MedianFilter(filter.AbstractFilter):
                 - disparity_map 2D xarray.DataArray (row, col)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
                 - validity_mask 2D xarray.DataArray (row, col)
-        :param img_ref: reference Dataset image
-        :tye img_ref: xarray.Dataset
-        :param img_sec: secondary Dataset image
-        :type img_sec: xarray.Dataset
+        :param img_left: left Dataset image
+        :tye img_left: xarray.Dataset
+        :param img_right: right Dataset image
+        :type img_right: xarray.Dataset
         :param cv: cost volume dataset
         :type cv: xarray.Dataset
         :return: the Dataset with the filtered DataArray disparity_map
@@ -116,6 +116,7 @@ class MedianFilter(filter.AbstractFilter):
         del disp_median, masked_data,
         return disp
 
+
     def median_filter(self, data):
         """
         Apply median filter on valid pixels (pixels that are not nan).
@@ -131,14 +132,7 @@ class MedianFilter(filter.AbstractFilter):
         invalid = np.isnan(data_median)
         ny_, nx_ = data.shape
 
-        # Create a sliding window of using as_strided function : this function create a new a view (by manipulating
-        # data pointer) of the data array with a different shape. The new view pointing to the same memory block as
-        # data so it does not consume any additional memory.
-        str_row, str_col = data.strides
-        shape_windows = (
-            ny_ - (self._filter_size - 1), nx_ - (self._filter_size - 1), self._filter_size, self._filter_size)
-        strides_windows = (str_row, str_col, str_row, str_col)
-        aggregation_window = np.lib.stride_tricks.as_strided(data, shape_windows, strides_windows, writeable=False)
+        aggregation_window = sliding_window(data, (self._filter_size, self._filter_size))
 
         radius = int(self._filter_size / 2)
 

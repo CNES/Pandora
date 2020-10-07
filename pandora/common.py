@@ -28,7 +28,7 @@ import errno
 import os
 import rasterio
 import xarray as xr
-from typing import Dict, Union
+from typing import Dict, Union, Tuple
 import numpy as np
 
 from .output_tree_design import get_out_dir, get_out_file_path
@@ -55,9 +55,10 @@ def write_data_array(data_array: xr.DataArray, filename: str,
 
     else:
         row, col, depth = data_array.shape
-        with rasterio.open(filename, mode='w+', driver='GTiff', width=col, height=row, count=depth, dtype=dtype) as source_ds:
+        with rasterio.open(filename, mode='w+', driver='GTiff', width=col, height=row, count=depth,
+                           dtype=dtype) as source_ds:
             for d in range(1, depth + 1):
-                source_ds.write(data_array.data[:, :, d-1], d)
+                source_ds.write(data_array.data[:, :, d - 1], d)
 
 
 def mkdir_p(path: str) -> None:
@@ -66,46 +67,65 @@ def mkdir_p(path: str) -> None:
     """
     try:
         os.makedirs(path)
-    except OSError as exc:   # requires Python > 2.5
+    except OSError as exc:  # requires Python > 2.5
         if exc.errno == errno.EEXIST and os.path.isdir(path):
             pass
         else:
             raise
 
 
-def save_results(ref: xr.Dataset, sec: xr.Dataset, output: str) -> None:
+def save_results(left: xr.Dataset, right: xr.Dataset, output: str) -> None:
     """
     Save results in the output directory
 
-    :param ref: reference dataset, which contains the variables :
-                - disparity_map : the disparity map in the geometry of the reference image 2D DataArray (row, col)
-                - confidence_measure : the confidence measure in the geometry of the reference image 3D DataArray (row, col, indicator)
-                - validity_mask : the validity mask in the geometry of the reference image 2D DataArray (row, col)
-    :type ref: xr.Dataset
-    :param sec: secondary dataset. If there is no validation step, the secondary Dataset will be empty.
+    :param left: left dataset, which contains the variables :
+                - disparity_map : the disparity map in the geometry of the left image 2D DataArray (row, col)
+                - confidence_measure : the confidence measure in the geometry of the left image 3D DataArray (row, col, indicator)
+                - validity_mask : the validity mask in the geometry of the left image 2D DataArray (row, col)
+    :type left: xr.Dataset
+    :param right: right dataset. If there is no validation step, the right Dataset will be empty.
                 If a validation step is configured, the dataset will contain the variables :
-                - disparity_map : the disparity map in the geometry of the secondary image 2D DataArray (row, col)
-                - confidence_measure : the confidence in the geometry of the secondary image 3D DataArray (row, col, indicator)
-                - validity_mask : the validity mask in the geometry of the reference image 2D DataArray (row, col)
-    :type sec: xr.Dataset
+                - disparity_map : the disparity map in the geometry of the right image 2D DataArray (row, col)
+                - confidence_measure : the confidence in the geometry of the right image 3D DataArray (row, col, indicator)
+                - validity_mask : the validity mask in the geometry of the left image 2D DataArray (row, col)
+    :type right: xr.Dataset
     :param output: output directory
     :type output: string
     """
     # Create the output dir
     mkdir_p(output)
 
-    # Save the reference results
-    write_data_array(ref['disparity_map'], os.path.join(output, get_out_file_path('ref_disparity.tif')))
-    write_data_array(ref['confidence_measure'], os.path.join(output, get_out_file_path('ref_confidence_measure.tif')))
-    write_data_array(ref['validity_mask'], os.path.join(output, get_out_file_path('ref_validity_mask.tif')),
+    # Save the left results
+    write_data_array(left['disparity_map'], os.path.join(output, get_out_file_path('left_disparity.tif')))
+    write_data_array(left['confidence_measure'], os.path.join(output, get_out_file_path('left_confidence_measure.tif')))
+    write_data_array(left['validity_mask'], os.path.join(output, get_out_file_path('left_validity_mask.tif')),
                      dtype=rasterio.dtypes.uint16)
 
-    # If a validation step is configured, save the secondary results
-    if len(sec.sizes) != 0:
-        write_data_array(sec['disparity_map'], os.path.join(output, get_out_file_path('sec_disparity.tif')))
-        write_data_array(sec['confidence_measure'], os.path.join(output, get_out_file_path('sec_confidence_measure.tif')))
-        write_data_array(sec['validity_mask'], os.path.join(output, get_out_file_path('sec_validity_mask.tif')),
+    # If a validation step is configured, save the right results
+    if len(right.sizes) != 0:
+        write_data_array(right['disparity_map'], os.path.join(output, get_out_file_path('right_disparity.tif')))
+        write_data_array(right['confidence_measure'],
+                         os.path.join(output, get_out_file_path('right_confidence_measure.tif')))
+        write_data_array(right['validity_mask'], os.path.join(output, get_out_file_path('right_validity_mask.tif')),
                          dtype=rasterio.dtypes.uint16)
+
+
+def sliding_window(base_array: np.array, shape: Tuple[int, int]) -> np.array:
+    """
+    Create a sliding window of using as_strided function : this function create a new a view (by manipulating
+    data pointer) of the data array with a different shape. The new view pointing to the same memory block as
+    data so it does not consume any additional memory.
+
+    :param base_array: the 2D array through which slide the window
+    :type base_array: np.array
+    :param shape: shape of the sliding window
+    :type shape: Tuple[int,int]
+
+    :rtype: np.array
+    """
+    s = (base_array.shape[0] - shape[0] + 1,) + (base_array.shape[1] - shape[1] + 1,) + shape
+    strides = base_array.strides + base_array.strides
+    return np.lib.stride_tricks.as_strided(base_array, shape=s, strides=strides)
 
 
 def save_config(output: str, user_cfg: Dict) -> None:
@@ -117,7 +137,7 @@ def save_config(output: str, user_cfg: Dict) -> None:
     :param user_cfg: user configuration
     :type user_cfg: dict
     """
-    
+
     # Create the output dir
     mkdir_p(os.path.join(output, get_out_dir('config.json')))
 
@@ -128,10 +148,10 @@ def save_config(output: str, user_cfg: Dict) -> None:
 
 def resize(dataset: xr.Dataset, border_disparity: Union[int, float]) -> xr.Dataset:
     """
-    Pixels whose aggregation window exceeds the reference image are truncated in the output products.
+    Pixels whose aggregation window exceeds the left image are truncated in the output products.
     This function returns the output products with the size of the input images : add rows and columns that
     have been
-    truncated. These added pixels will have bit 0 = 1 ( Invalid pixel : border of the reference image )
+    truncated. These added pixels will have bit 0 = 1 ( Invalid pixel : border of the left image )
     in the validity_mask  and will have the disparity = invalid_value in the disparity map.
 
     :param dataset: Dataset which contains the output products
@@ -177,8 +197,8 @@ def resize(dataset: xr.Dataset, border_disparity: Union[int, float]) -> xr.Datas
             data = xr.DataArray(np.zeros((len(row), len(col)), dtype=np.uint16), coords=[row, col],
                                 dims=['row', 'col'])
 
-            # Invalid pixel : border of the reference image
-            data += PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER
+            # Invalid pixel : border of the left image
+            data += PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
 
             resize_disparity[array] = dataset[array].combine_first(data).astype(np.uint16)
 

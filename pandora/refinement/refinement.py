@@ -87,8 +87,8 @@ class AbstractRefinement(object):
         print('Subpixel method description')
 
     @abstractmethod
-    def subpixel_refinement(self, cv: xr.Dataset, disp: xr.Dataset, img_ref: xr.Dataset = None,
-                            img_sec: xr.Dataset = None) -> Tuple[xr.Dataset, xr.Dataset]:
+    def subpixel_refinement(self, cv: xr.Dataset, disp: xr.Dataset, img_left: xr.Dataset = None,
+                            img_right: xr.Dataset = None) -> Tuple[xr.Dataset, xr.Dataset]:
         """
         Subpixel refinement of disparities and costs.
 
@@ -102,13 +102,13 @@ class AbstractRefinement(object):
             - disparity_map 2D xarray.DataArray (row, col)
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
-        :param img_ref: reference Dataset image
-        :type img_ref:
+        :param img_left: left Dataset image
+        :type img_left:
             xarray.Dataset containing:
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
+        :param img_right: right Dataset image
+        :type img_right:
             xarray.Dataset containing:
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
@@ -126,34 +126,34 @@ class AbstractRefinement(object):
         """
 
     @abstractmethod
-    def approximate_subpixel_refinement(self, cv_ref: xr.Dataset, disp_sec: xr.Dataset, img_ref: xr.Dataset = None,
-                                        img_sec: xr.Dataset = None) -> xr.Dataset:
+    def approximate_subpixel_refinement(self, cv_left: xr.Dataset, disp_right: xr.Dataset, img_left: xr.Dataset = None,
+                                        img_right: xr.Dataset = None) -> xr.Dataset:
         """
-        Subpixel refinement of the secondary disparities map, which was created with the approximate method : a diagonal
-        search for the minimum on the reference cost volume
+        Subpixel refinement of the right disparities map, which was created with the approximate method : a diagonal
+        search for the minimum on the left cost volume
 
-        :param cv_ref: the reference cost volume dataset
-        :type cv_ref:
+        :param cv_leftf: the left cost volume dataset
+        :type cv_left:
             xarray.Dataset, with the data variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :param disp_sec: secondary disparity map
-        :type disp_sec: xarray.Dataset with the variables :
+        :param disp_right: right disparity map
+        :type disp_right: xarray.Dataset with the variables :
             - disparity_map 2D xarray.DataArray (row, col)
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
-        :param img_ref: reference Dataset image
-        :type img_ref:
+        :param img_left: left Dataset image
+        :type img_left:
             xarray.Dataset containing:
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
+        :param img_right: right Dataset image
+        :type img_right:
             xarray.Dataset containing:
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :return:
-            disp_sec Dataset with the variables :
+            disp_right Dataset with the variables :
                 - disparity_map 2D xarray.DataArray (row, col) that contains the refined disparities
                 - confidence_measure 3D xarray.DataArray (row, col, indicator) (unchanged)
                 - validity_mask 2D xarray.DataArray (row, col) with the value of bit 3 ( Information:
@@ -226,14 +226,14 @@ class AbstractRefinement(object):
                                     np.ndarray, str], Tuple[int, int, int]]) -> Tuple[np.ndarray, np.ndarray,
                                                                                        np.ndarray]:
         """
-         Apply for each pixels the refinement method on the secondary disparity map which was created with the approximate
-          method : a diagonal search for the minimum on the reference cost volume
+         Apply for each pixels the refinement method on the right disparity map which was created with the approximate
+          method : a diagonal search for the minimum on the left cost volume
 
-        :param cv: the reference cost volume
+        :param cv: the left cost volume
         :type cv: 3D numpy array (row, col, disp)
-        :param disp: secondary disparity map
+        :param disp: right disparity map
         :type disp: 2D numpy array (row, col)
-        :param mask: secondary validity mask
+        :param mask: right validity mask
         :type mask: 2D numpy array (row, col)
         :param d_min: minimal disparity
         :type d_min: int
@@ -259,13 +259,13 @@ class AbstractRefinement(object):
                 else:
                     # Conversion to numpy indexing
                     d = int((-disp[r, c] - d_min) * subpixel)
-                    # Position of the best cost in the reference cost volume is cv[r, diagonal, d]
+                    # Position of the best cost in the left cost volume is cv[r, diagonal, d]
                     diagonal = int(c + disp[r, c])
                     itp_coeff[r, c] = cv[r, diagonal, d]
                     if not (np.isnan(cv[r, diagonal, d])):
                         if (disp[r, c] != -d_min) and (disp[r, c] != -d_max) and (diagonal != 0) and (
                                 diagonal != (col - 1)):
-                            # (1 * subpixel) because in fast mode, we can not have sub-pixel disparity for the secondary
+                            # (1 * subpixel) because in fast mode, we can not have sub-pixel disparity for the right
                             # image.
                             # We therefore interpolate between pixel disparities
                             sub_disp, cost, valid = method([cv[r, diagonal - 1, d + (1 * subpixel)], cv[r, diagonal, d],

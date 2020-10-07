@@ -87,8 +87,8 @@ class AbstractValidation(object):
         print('Validation method description')
 
     @abstractmethod
-    def disparity_checking(self, dataset_ref: xr.Dataset, dataset_sec: xr.Dataset, img_ref: xr.Dataset = None,
-                           img_sec: xr.Dataset = None, cv: xr.Dataset = None) -> xr.Dataset:
+    def disparity_checking(self, dataset_left: xr.Dataset, dataset_right: xr.Dataset, img_left: xr.Dataset = None,
+                           img_right: xr.Dataset = None, cv: xr.Dataset = None) -> xr.Dataset:
         """
         Determination of occlusions and false matches by performing a consistency check on valid pixels. \
         Update the validity_mask :
@@ -96,23 +96,23 @@ class AbstractValidation(object):
             - If out & MSK_PIXEL_MISMATCH  != 0  : Invalid pixel : mismatched pixel
         Update the measure map: add the disp RL / disp LR distances
 
-        :param dataset_ref: Reference Dataset
-        :type dataset_ref: xarray.Dataset with the variables :
+        :param dataset_left: left Dataset
+        :type dataset_left: xarray.Dataset with the variables :
             - disparity_map 2D xarray.DataArray (row, col)
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
-        :param dataset_sec: Secondary Dataset
-        :type dataset_sec: xarray.Dataset with the variables :
+        :param dataset_right: right Dataset
+        :type dataset_right: xarray.Dataset with the variables :
             - disparity_map 2D xarray.DataArray (row, col)
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
-        :param img_ref: reference Datset image
-        :type img_ref:
+        :param img_left: left Datset image
+        :type img_left:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
+        :param img_right: right Dataset image
+        :type img_right:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
@@ -121,7 +121,7 @@ class AbstractValidation(object):
             xarray.Dataset with the variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :return: the reference dataset, with the bit 8 and 9 of the validity_mask :
+        :return: the left dataset, with the bit 8 and 9 of the validity_mask :
             - If out & MSK_PIXEL_OCCLUSION != 0 : Invalid pixel : occluded pixel
             - If out & MSK_PIXEL_MISMATCH  != 0  : Invalid pixel : mismatched pixel
         :rtype : xarray.Dataset with the variables :
@@ -180,8 +180,8 @@ class CrossChecking(AbstractValidation):
         """
         print('Cross-checking method')
 
-    def disparity_checking(self, dataset_ref: xr.Dataset, dataset_sec: xr.Dataset, img_ref: xr.Dataset = None,
-                           img_sec: xr.Dataset = None, cv: xr.Dataset = None) -> xr.Dataset:
+    def disparity_checking(self, dataset_left: xr.Dataset, dataset_right: xr.Dataset, img_left: xr.Dataset = None,
+                           img_right: xr.Dataset = None, cv: xr.Dataset = None) -> xr.Dataset:
         """
         Determination of occlusions and false matches by performing a consistency check on valid pixels. \
         Update the validity_mask :
@@ -189,23 +189,23 @@ class CrossChecking(AbstractValidation):
             - If out & MSK_PIXEL_MISMATCH  != 0  : Invalid pixel : mismatched pixel
         Update the measure map: add the disp RL / disp LR distances
 
-        :param dataset_ref: Reference Dataset
-        :type dataset_ref: xarray.Dataset with the variables :
+        :param dataset_left: left Dataset
+        :type dataset_left: xarray.Dataset with the variables :
             - disparity_map 2D xarray.DataArray (row, col)
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
-        :param dataset_sec: Secondary Dataset
-        :type dataset_sec: xarray.Dataset with the variables :
+        :param dataset_right: right Dataset
+        :type dataset_right: xarray.Dataset with the variables :
             - disparity_map 2D xarray.DataArray (row, col)
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
-        :param img_ref: reference Datset image
-        :type img_ref:
+        :param img_left: left Datset image
+        :type img_left:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
+        :param img_right: right Dataset image
+        :type img_right:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
@@ -214,7 +214,7 @@ class CrossChecking(AbstractValidation):
             xarray.Dataset with the variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :return: the reference dataset, with the bit 8 and 9 of the validity_mask :
+        :return: the left dataset, with the bit 8 and 9 of the validity_mask :
             - If out & MSK_PIXEL_OCCLUSION != 0 : Invalid pixel : occluded pixel
             - If out & MSK_PIXEL_MISMATCH  != 0  : Invalid pixel : mismatched pixel
         :rtype : xarray.Dataset with the variables :
@@ -222,82 +222,82 @@ class CrossChecking(AbstractValidation):
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
         """
-        nb_row, nb_col, nb_indicator = dataset_ref['confidence_measure'].shape
-        disparity_range = np.arange(dataset_ref.attrs['disp_min'], dataset_ref.attrs['disp_max'] + 1)
+        nb_row, nb_col, nb_indicator = dataset_left['confidence_measure'].shape
+        disparity_range = np.arange(dataset_left.attrs['disp_min'], dataset_left.attrs['disp_max'] + 1)
 
         # Add a new indicator to the confidence measure DataArray
         conf_measure = np.zeros((nb_row, nb_col, nb_indicator + 1), dtype=np.float32)
-        conf_measure[:, :, :-1] = dataset_ref['confidence_measure'].data
+        conf_measure[:, :, :-1] = dataset_left['confidence_measure'].data
 
-        indicator = np.copy(dataset_ref.coords['indicator'])
+        indicator = np.copy(dataset_left.coords['indicator'])
         indicator = np.append(indicator, 'validation_pandora_distanceOfDisp')
 
         # Remove confidence_measure dataArray from the dataset to update it
-        dataset_ref = dataset_ref.drop_dims('indicator')
-        dataset_ref = dataset_ref.assign_coords(indicator=indicator)
-        dataset_ref['confidence_measure'] = xr.DataArray(data=conf_measure, dims=['row', 'col', 'indicator'])
+        dataset_left = dataset_left.drop_dims('indicator')
+        dataset_left = dataset_left.assign_coords(indicator=indicator)
+        dataset_left['confidence_measure'] = xr.DataArray(data=conf_measure, dims=['row', 'col', 'indicator'])
 
         for row in range(0, nb_row):
             # Exclude invalid pixel :
-            valid_pixel = np.where((dataset_ref['validity_mask'].data[row, :] & PANDORA_MSK_PIXEL_INVALID) == 0)
+            valid_pixel = np.where((dataset_left['validity_mask'].data[row, :] & PANDORA_MSK_PIXEL_INVALID) == 0)
 
-            col_ref = np.arange(nb_col, dtype=np.int)
-            col_ref = col_ref[valid_pixel]
+            col_left = np.arange(nb_col, dtype=np.int)
+            col_left = col_left[valid_pixel]
 
-            col_sec = col_ref + dataset_ref['disparity_map'].data[row, col_ref]
+            col_right = col_left + dataset_left['disparity_map'].data[row, col_left]
             # Round elements of the array to the nearest integer
-            col_sec = np.rint(col_sec).astype(int)
+            col_right = np.rint(col_right).astype(int)
 
             # Left-Right consistency, for pixel i :
-            # If | Disp_sec(i + rint(Disp_ref(i)) + Disp_ref(i) | > self._threshold : i is invalid, mismatched or occlusion detected
-            # If | Disp_sec(i + rint(Disp_ref(i)) + Disp_ref(i) | <= self._threshold : i is valid
+            # If | Disp_right(i + rint(Disp_left(i)) + Disp_left(i) | > self._threshold : i is invalid, mismatched or occlusion detected
+            # If | Disp_right(i + rint(Disp_left(i)) + Disp_left(i) | <= self._threshold : i is valid
 
-            # Apply cross checking on pixels i + round(Disp_ref(i) inside the secondary image
-            inside_sec = np.where((col_sec >= 0) & (col_sec < nb_col))
+            # Apply cross checking on pixels i + round(Disp_left(i) inside the right image
+            inside_right = np.where((col_right >= 0) & (col_right < nb_col))
 
             # Conversion from nan to inf
-            sec_disp = dataset_sec['disparity_map'].data[row, col_sec[inside_sec]]
-            sec_disp[np.isnan(sec_disp)] = np.inf
-            ref_disp = dataset_ref['disparity_map'].data[row, col_ref[inside_sec]]
-            ref_disp[np.isnan(ref_disp)] = np.inf
+            right_disp = dataset_right['disparity_map'].data[row, col_right[inside_right]]
+            right_disp[np.isnan(right_disp)] = np.inf
+            left_disp = dataset_left['disparity_map'].data[row, col_left[inside_right]]
+            left_disp[np.isnan(left_disp)] = np.inf
 
             # Allocate to the measure map, the distance disp LR / disp RL indicator
-            dataset_ref['confidence_measure'].data[row, inside_sec[0], -1] = np.abs(sec_disp + ref_disp)
+            dataset_left['confidence_measure'].data[row, inside_right[0], -1] = np.abs(right_disp + left_disp)
 
-            # Reference image pixels invalidated by the cross checking
-            invalid = np.abs(sec_disp + ref_disp) > self._threshold
+            # left image pixels invalidated by the cross checking
+            invalid = np.abs(right_disp + left_disp) > self._threshold
 
             # Detect mismatched and occlusion :
-            # For a reference image pixel i invalidated by the cross checking :
-            # mismatch if : Disp_sec(i + d) = -d, for any other d
+            # For a left image pixel i invalidated by the cross checking :
+            # mismatch if : Disp_right(i + d) = -d, for any other d
             # occlusion otherwise
 
             # Index : i + d, for any other d. 2D np array (nb invalid pixels, nb disparity )
-            index = np.tile(disparity_range, (len(col_ref[inside_sec][invalid]), 1)).astype(np.float32) + \
-                    np.tile(col_ref[inside_sec][invalid], (len(disparity_range), 1)).transpose()
+            index = np.tile(disparity_range, (len(col_left[inside_right][invalid]), 1)).astype(np.float32) + \
+                    np.tile(col_left[inside_right][invalid], (len(disparity_range), 1)).transpose()
 
             inside_col_disp = np.where((index >= 0) & (index < nb_col))
 
-            # disp_sec : Disp_sec(i + d)
-            disp_sec = np.full(index.shape, np.inf, dtype=np.float32)
-            disp_sec[inside_col_disp] = dataset_sec['disparity_map'].data[row, index[inside_col_disp].astype(int)]
+            # disp_right : Disp_right(i + d)
+            disp_right = np.full(index.shape, np.inf, dtype=np.float32)
+            disp_right[inside_col_disp] = dataset_right['disparity_map'].data[row, index[inside_col_disp].astype(int)]
 
-            # Check if rint(Disp_sec(i + d)) == -d
-            comp = (np.rint(disp_sec) == np.tile(-1 * disparity_range, (len(col_ref[inside_sec][invalid]), 1)).astype(
+            # Check if rint(Disp_right(i + d)) == -d
+            comp = (np.rint(disp_right) == np.tile(-1 * disparity_range, (len(col_left[inside_right][invalid]), 1)).astype(
                 np.float32))
             comp = np.sum(comp, axis=1)
             comp[comp > 1] = 1
 
-            dataset_ref['validity_mask'].data[row, col_ref[inside_sec][invalid]] += PANDORA_MSK_PIXEL_OCCLUSION
-            dataset_ref['validity_mask'].data[row, col_ref[inside_sec][invalid]] += \
+            dataset_left['validity_mask'].data[row, col_left[inside_right][invalid]] += PANDORA_MSK_PIXEL_OCCLUSION
+            dataset_left['validity_mask'].data[row, col_left[inside_right][invalid]] += \
                 (PANDORA_MSK_PIXEL_MISMATCH * comp).astype(np.uint16)
-            dataset_ref['validity_mask'].data[row, col_ref[inside_sec][invalid]] -= \
+            dataset_left['validity_mask'].data[row, col_left[inside_right][invalid]] -= \
                 (PANDORA_MSK_PIXEL_OCCLUSION * comp).astype(np.uint16)
 
-            # Pixels i + round(Disp_ref(i) outside the secondary image are occlusions
-            outside_sec = np.where((col_sec < 0) & (col_sec >= nb_col))
-            dataset_ref['validity_mask'].data[row, col_ref[outside_sec]] += PANDORA_MSK_PIXEL_OCCLUSION
+            # Pixels i + round(Disp_left(i) outside the right image are occlusions
+            outside_right = np.where((col_right < 0) & (col_right >= nb_col))
+            dataset_left['validity_mask'].data[row, col_left[outside_right]] += PANDORA_MSK_PIXEL_OCCLUSION
 
-        dataset_ref.attrs['validation'] = 'cross_checking'
+        dataset_left.attrs['validation'] = 'cross_checking'
 
-        return dataset_ref
+        return dataset_left

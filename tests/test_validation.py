@@ -45,25 +45,25 @@ class TestValidation(unittest.TestCase):
         Method called to prepare the test fixture
 
         """
-        # Create reference and secondary disparity map
-        self.ref = xr.Dataset({'disparity_map': (['row', 'col'], np.array([[0, -1, 1, -2],
+        # Create left and right disparity map
+        self.left = xr.Dataset({'disparity_map': (['row', 'col'], np.array([[0, -1, 1, -2],
                                                                            [2, 2, -1, 0]], dtype=np.float32)),
                                'confidence_measure': (['row', 'col', 'indicator'], np.full((2, 4, 1), np.nan)),
                                'validity_mask': (['row', 'col'],
-                                                 np.array([[0, 0, 0, PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING],
+                                                 np.array([[0, 0, 0, PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
                                                                            [0, 0, 0, 0]], dtype=np.uint16))},
                               coords={'row': [0, 1], 'col': np.arange(4)})
-        self.ref.attrs['disp_min'] = -2
-        self.ref.attrs['disp_max'] = 2
+        self.left.attrs['disp_min'] = -2
+        self.left.attrs['disp_max'] = 2
 
-        self.sec = xr.Dataset({'disparity_map': (['row', 'col'], np.array([[0, 2, -1, -1],
+        self.right = xr.Dataset({'disparity_map': (['row', 'col'], np.array([[0, 2, -1, -1],
                                                                            [1, 1, -2, -1]], dtype=np.float32)),
                                'confidence_measure': (['row', 'col', 'indicator'], np.full((2, 4, 1), np.nan)),
                                'validity_mask': (['row', 'col'], np.array([[0, 0, 0, 0],
                                                                            [0, 0, 0, 0]], dtype=np.uint16))},
                               coords={'row': [0, 1], 'col': np.arange(4)})
-        self.sec.attrs['disp_min'] = -2
-        self.sec.attrs['disp_max'] = 2
+        self.right.attrs['disp_min'] = -2
+        self.right.attrs['disp_max'] = 2
 
     def test_cross_checking(self):
         """
@@ -75,7 +75,7 @@ class TestValidation(unittest.TestCase):
         validation_matcher = validation.AbstractValidation(**{'validation_method': 'cross_checking',
                                                               'cross_checking_threshold': 0.})
 
-        ref = validation_matcher.disparity_checking(self.ref, self.sec)
+        left = validation_matcher.disparity_checking(self.left, self.right)
 
         # Confidence measure ground truth
         gt_dist = np.array([[[np.nan, 0.],
@@ -88,14 +88,14 @@ class TestValidation(unittest.TestCase):
                              [np.nan, 1.]]], dtype=np.float32)
 
         # Check if the calculated confidence measure is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(ref['confidence_measure'].data, gt_dist)
+        np.testing.assert_array_equal(left['confidence_measure'].data, gt_dist)
 
         # validity mask ground truth
-        gt_mask = np.array([[0, PANDORA_MSK_PIXEL_MISMATCH, 0, PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING],
+        gt_mask = np.array([[0, PANDORA_MSK_PIXEL_MISMATCH, 0, PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
                             [0, PANDORA_MSK_PIXEL_MISMATCH, 0, PANDORA_MSK_PIXEL_OCCLUSION]], dtype=np.uint16)
 
         # Check if the calculated mask is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(ref['validity_mask'].data, gt_mask)
+        np.testing.assert_array_equal(left['validity_mask'].data, gt_mask)
 
     def test_cross_checking_float_disparity(self):
         """
@@ -103,38 +103,38 @@ class TestValidation(unittest.TestCase):
                 - If out & MSK_PIXEL_OCCLUSION != 0 : Invalid pixel : occluded pixel
                 - If out & MSK_PIXEL_MISMATCH  != 0  : Invalid pixel : mismatched pixel
         """
-        # Create reference and secondary disparity map
-        ref = xr.Dataset({'disparity_map': (['row', 'col'], np.array([[0, -1.2, 1, -2],
+        # Create left and right disparity map
+        left = xr.Dataset({'disparity_map': (['row', 'col'], np.array([[0, -1.2, 1, -2],
                                                                       [2, 1.8, -1, 0]], dtype=np.float32)),
                           'confidence_measure': (['row', 'col', 'indicator'], np.full((2, 4, 1), np.nan)),
                           'validity_mask': (['row', 'col'],
-                                            np.array([[0, 0, 0, PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING],
+                                            np.array([[0, 0, 0, PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
                                                       [0, 0, 0, 0]], dtype=np.uint16))},
                               coords={'row': [0, 1], 'col': np.arange(4)})
-        ref.attrs['disp_min'] = -2
-        ref.attrs['disp_max'] = 2
+        left.attrs['disp_min'] = -2
+        left.attrs['disp_max'] = 2
 
-        sec = xr.Dataset({'disparity_map': (['row', 'col'], np.array([[0, 2, -1.2, -1],
+        right = xr.Dataset({'disparity_map': (['row', 'col'], np.array([[0, 2, -1.2, -1],
                                                                       [0.8, 1, -2, -1]], dtype=np.float32)),
                           'confidence_measure': (['row', 'col', 'indicator'], np.full((2, 4, 1), np.nan)),
                           'validity_mask': (['row', 'col'], np.array([[0, 0, 0, 0],
                                                                       [0, 0, 0, 0]], dtype=np.uint16))},
                          coords={'row': [0, 1], 'col': np.arange(4)})
-        sec.attrs['disp_min'] = -2
-        sec.attrs['disp_max'] = 2
+        right.attrs['disp_min'] = -2
+        right.attrs['disp_max'] = 2
 
         # Compute the cross checking confidence measure and validity mask
         validation_matcher = validation.AbstractValidation(**{'validation_method': 'cross_checking',
                                                               'cross_checking_threshold': 0.})
 
-        ref = validation_matcher.disparity_checking(ref, sec)
+        left = validation_matcher.disparity_checking(left, right)
 
         # validity mask ground truth
-        gt_mask = np.array([[0, PANDORA_MSK_PIXEL_MISMATCH, 0, PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING],
+        gt_mask = np.array([[0, PANDORA_MSK_PIXEL_MISMATCH, 0, PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
                             [0, PANDORA_MSK_PIXEL_MISMATCH, 0, PANDORA_MSK_PIXEL_OCCLUSION]], dtype=np.uint16)
 
         # Check if the calculated mask is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(ref['validity_mask'].data, gt_mask)
+        np.testing.assert_array_equal(left['validity_mask'].data, gt_mask)
 
     def test_interpolate_occlusion_mc_cnn(self):
         """
@@ -143,36 +143,36 @@ class TestValidation(unittest.TestCase):
         disp_data = np.array([[0, -1, 1, -2.1],
                               [2, 2, -1.7, 0]], dtype=np.float32)
 
-        msk_data = np.array([[PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING, PANDORA_MSK_PIXEL_OCCLUSION,
-                              PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING, 0],
-                             [PANDORA_MSK_PIXEL_OCCLUSION, PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_REF, 0, PANDORA_MSK_PIXEL_OCCLUSION]],
+        msk_data = np.array([[PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING, PANDORA_MSK_PIXEL_OCCLUSION,
+                              PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING, 0],
+                             [PANDORA_MSK_PIXEL_OCCLUSION, PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, 0, PANDORA_MSK_PIXEL_OCCLUSION]],
                             dtype=np.uint16)
-        # Create reference and secondary disparity map
-        ref = xr.Dataset({'disparity_map': (['row', 'col'], disp_data),
+        # Create left and right disparity map
+        left = xr.Dataset({'disparity_map': (['row', 'col'], disp_data),
                                'validity_mask': (['row', 'col'], msk_data)},
                               coords={'row': [0, 1], 'col': np.arange(4)})
-        ref.attrs['disp_min'] = -2
-        ref.attrs['disp_max'] = 2
+        left.attrs['disp_min'] = -2
+        left.attrs['disp_max'] = 2
 
         # Interpolate occlusions
         interpolation_matcher = validation.AbstractInterpolation(**{'interpolated_disparity': 'mc-cnn'})
-        ref = interpolation_matcher.interpolated_disparity(ref)
+        left = interpolation_matcher.interpolated_disparity(left)
 
         # validity mask after interpolation
-        gt_mask_after_int = np.array([[PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING, PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
-                                       PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING, 0],
-                                      [PANDORA_MSK_PIXEL_FILLED_OCCLUSION, PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_REF, 0,
+        gt_mask_after_int = np.array([[PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING, PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
+                                       PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING, 0],
+                                      [PANDORA_MSK_PIXEL_FILLED_OCCLUSION, PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, 0,
                                        PANDORA_MSK_PIXEL_FILLED_OCCLUSION]], dtype=np.uint16)
 
         # Check if the calculated mask is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(ref['validity_mask'].data, gt_mask_after_int)
+        np.testing.assert_array_equal(left['validity_mask'].data, gt_mask_after_int)
 
-        # reference disparity map after interpolation
+        # left disparity map after interpolation
         gt_disp_after_int = np.array([[0, -2.1, 1, -2.1],
                                       [-1.7, 2, -1.7, -1.7]], dtype=np.float32)
 
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(ref['disparity_map'].data, gt_disp_after_int)
+        np.testing.assert_array_equal(left['disparity_map'].data, gt_disp_after_int)
 
     def test_interpolate_mismatch_mc_cnn(self):
         """
@@ -183,37 +183,37 @@ class TestValidation(unittest.TestCase):
                               [2, 1, -1, -2, -1],
                               [1, -1, 1, -1, -1.3]], dtype=np.float32)
 
-        msk_data = np.array([[PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE,
+        msk_data = np.array([[PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                               0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0],
                              [0, 0, PANDORA_MSK_PIXEL_MISMATCH, 0, 0],
                              [0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, PANDORA_MSK_PIXEL_MISMATCH,
-                              PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_REF, PANDORA_MSK_PIXEL_MISMATCH],
+                              PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, PANDORA_MSK_PIXEL_MISMATCH],
                              [0, PANDORA_MSK_PIXEL_MISMATCH, 0, 0, 0]], dtype=np.uint16)
-        # Create reference and secondary disparity map
-        ref = xr.Dataset({'disparity_map': (['row', 'col'], disp_data),
+        # Create left and right disparity map
+        left = xr.Dataset({'disparity_map': (['row', 'col'], disp_data),
                                'validity_mask': (['row', 'col'], msk_data)},
                               coords={'row': np.arange(4), 'col': np.arange(5)})
-        ref.attrs['disp_min'] = -2
-        ref.attrs['disp_max'] = 2
+        left.attrs['disp_min'] = -2
+        left.attrs['disp_max'] = 2
 
         # Interpolate mistmatch
         interpolation_matcher = validation.AbstractInterpolation(**{'interpolated_disparity': 'mc-cnn'})
-        ref = interpolation_matcher.interpolated_disparity(ref)
+        left = interpolation_matcher.interpolated_disparity(left)
 
         # validity mask after interpolation
-        gt_mask_after_int = np.array([[PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER,
-                                       PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE, 0,
+        gt_mask_after_int = np.array([[PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                       PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
                                        PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0],
                                       [0, 0, PANDORA_MSK_PIXEL_FILLED_MISMATCH, 0, 0],
                                       [0, (1 << 3), PANDORA_MSK_PIXEL_FILLED_MISMATCH,
-                                       PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_REF,
+                                       PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
                                        PANDORA_MSK_PIXEL_FILLED_MISMATCH],
                                       [0, PANDORA_MSK_PIXEL_FILLED_MISMATCH, 0, 0, 0]], dtype=np.uint16)
 
         # Check if the calculated mask is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(ref['validity_mask'].data, gt_mask_after_int)
+        np.testing.assert_array_equal(left['validity_mask'].data, gt_mask_after_int)
 
-        # reference disparity map after interpolation
+        # left disparity map after interpolation
         gt_disp_after_int = np.array([[0, 1.2, -2, -1, -2],
                                       [1, 0, np.median([1.2, 1, 0, 0, 0, 1, -2, -2, -2, -1, 0, 0, 0, -1, -1.3]), 0, 0],
                                       [2, 1,  np.median([1, 1, 1, 1, 1, 0, 1, -2, -1, 0, 0, -1, -1, 1]), -2,
@@ -221,7 +221,7 @@ class TestValidation(unittest.TestCase):
                                       [1, np.median([1, 1, 1, 2, 1, 1, 1, 0, 1, 1, 1]), 1, -1, -1.3]], dtype=np.float32)
 
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(ref['disparity_map'].data, gt_disp_after_int)
+        np.testing.assert_array_equal(left['disparity_map'].data, gt_disp_after_int)
 
     def test_interpolate_occlusion_sgm(self):
         """
@@ -232,43 +232,43 @@ class TestValidation(unittest.TestCase):
                               [2, 1, -1, -2, -1],
                               [1, -1, 1, -1, -1.3]], dtype=np.float32)
 
-        msk_data = np.array([[PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE, 0,
+        msk_data = np.array([[PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
                               PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0],
                              [0, 0, PANDORA_MSK_PIXEL_OCCLUSION, 0, 0],
                              [0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, PANDORA_MSK_PIXEL_OCCLUSION,
-                              PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_REF, PANDORA_MSK_PIXEL_OCCLUSION],
+                              PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, PANDORA_MSK_PIXEL_OCCLUSION],
                              [0, PANDORA_MSK_PIXEL_OCCLUSION, 0, 0, 0]], dtype=np.uint16)
-        # Create reference and secondary disparity map
-        ref = xr.Dataset({'disparity_map': (['row', 'col'], disp_data), 'validity_mask': (['row', 'col'], msk_data)},
+        # Create left and right disparity map
+        left = xr.Dataset({'disparity_map': (['row', 'col'], disp_data), 'validity_mask': (['row', 'col'], msk_data)},
                          coords={'row': np.arange(4), 'col': np.arange(5)})
-        ref.attrs['disp_min'] = -2
-        ref.attrs['disp_max'] = 2
+        left.attrs['disp_min'] = -2
+        left.attrs['disp_max'] = 2
 
         # Interpolate occlusion
         interpolation_matcher = validation.AbstractInterpolation(**{'interpolated_disparity': 'sgm'})
-        ref = interpolation_matcher.interpolated_disparity(ref)
+        left = interpolation_matcher.interpolated_disparity(left)
 
         # validity mask after interpolation
-        gt_mask_after_int = np.array([[PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER,
-                                       PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE, 0,
+        gt_mask_after_int = np.array([[PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                       PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
                                        PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0],
                                       [0, 0, PANDORA_MSK_PIXEL_FILLED_OCCLUSION, 0, 0],
                                       [0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
-                                       PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_REF,
+                                       PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
                                        PANDORA_MSK_PIXEL_FILLED_OCCLUSION],
                                       [0, PANDORA_MSK_PIXEL_FILLED_OCCLUSION, 0, 0, 0]], dtype=np.uint16)
 
         # Check if the calculated mask is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(ref['validity_mask'].data, gt_mask_after_int)
+        np.testing.assert_array_equal(left['validity_mask'].data, gt_mask_after_int)
 
-        # reference disparity map after interpolation
+        # left disparity map after interpolation
         gt_disp_after_int = np.array([[0, 1.2, -2, -1, -2],
                                       [1, 0, 0, 0, 0],
                                       [2, 1, 0, -2, 0],
                                       [1, 1, 1, -1, -1.3]], dtype=np.float32)
 
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(ref['disparity_map'].data, gt_disp_after_int)
+        np.testing.assert_array_equal(left['disparity_map'].data, gt_disp_after_int)
 
     def test_interpolate_mismatch_sgm(self):
         """
@@ -279,43 +279,43 @@ class TestValidation(unittest.TestCase):
                               [2, 1, -1, -2, -1],
                               [1, -1, 1, -1, -1.3]], dtype=np.float32)
 
-        msk_data = np.array([[PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE,
+        msk_data = np.array([[PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                               0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0],
                              [0, 0, PANDORA_MSK_PIXEL_MISMATCH, 0, 0],
                              [0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, PANDORA_MSK_PIXEL_MISMATCH,
-                              PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_REF,
+                              PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
                               PANDORA_MSK_PIXEL_MISMATCH],
                              [0, PANDORA_MSK_PIXEL_MISMATCH, 0, 0, 0]], dtype=np.uint16)
-        # Create reference and secondary disparity map
-        ref = xr.Dataset({'disparity_map': (['row', 'col'], disp_data), 'validity_mask': (['row', 'col'], msk_data)},
+        # Create left and right disparity map
+        left = xr.Dataset({'disparity_map': (['row', 'col'], disp_data), 'validity_mask': (['row', 'col'], msk_data)},
                          coords={'row': np.arange(4), 'col': np.arange(5)})
-        ref.attrs['disp_min'] = -2
-        ref.attrs['disp_max'] = 2
+        left.attrs['disp_min'] = -2
+        left.attrs['disp_max'] = 2
 
         # Interpolate mismatch
         interpolation_matcher = validation.AbstractInterpolation(**{'interpolated_disparity': 'sgm'})
-        ref = interpolation_matcher.interpolated_disparity(ref)
+        left = interpolation_matcher.interpolated_disparity(left)
 
         # validity mask after interpolation
-        gt_mask_after_int = np.array([[PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER,
-                                       PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE, 0,
+        gt_mask_after_int = np.array([[PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                       PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
                                        PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0],
                                       [0, 0, PANDORA_MSK_PIXEL_FILLED_MISMATCH, 0, 0],
                                       [0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, PANDORA_MSK_PIXEL_FILLED_MISMATCH,
-                                       PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_REF, PANDORA_MSK_PIXEL_FILLED_MISMATCH],
+                                       PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, PANDORA_MSK_PIXEL_FILLED_MISMATCH],
                                       [0, PANDORA_MSK_PIXEL_FILLED_MISMATCH, 0, 0, 0]], dtype=np.uint16)
 
         # Check if the calculated mask is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(ref['validity_mask'].data, gt_mask_after_int)
+        np.testing.assert_array_equal(left['validity_mask'].data, gt_mask_after_int)
 
-        # reference disparity map after interpolation
+        # left disparity map after interpolation
         gt_disp_after_int = np.array([[0, 1.2, -2, -1, -2],
                                       [1, 0, np.median([1.2, -2, -1, 0, 0, 1, 1, -1.3]), 0, 0],
                                       [2, 1, np.median([-2, 0, -1, -1, 1, 1, 0]), -2, np.median([0, -1.3, -1, 1, 0])],
                                       [1, np.median([2, 1, 0, 1, 1]), 1, -1, -1.3]], dtype=np.float32)
 
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(ref['disparity_map'].data, gt_disp_after_int)
+        np.testing.assert_array_equal(left['disparity_map'].data, gt_disp_after_int)
 
     def test_interpolate_mismatch_and_occlusion_sgm(self):
         """
@@ -327,44 +327,44 @@ class TestValidation(unittest.TestCase):
                               [2, 1, -1, -2, -1],
                               [1, -1, 1, -1, -1]], dtype=np.float32)
 
-        msk_data = np.array([[PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE,
+        msk_data = np.array([[PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                               0,  PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, PANDORA_MSK_PIXEL_OCCLUSION],
                              [0, 0, PANDORA_MSK_PIXEL_MISMATCH, 0, 0],
                              [0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, PANDORA_MSK_PIXEL_MISMATCH,
-                              PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_REF, PANDORA_MSK_PIXEL_MISMATCH],
+                              PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, PANDORA_MSK_PIXEL_MISMATCH],
                              [PANDORA_MSK_PIXEL_OCCLUSION, PANDORA_MSK_PIXEL_MISMATCH, 0, 0, 0]], dtype=np.uint16)
-        # Create reference and secondary disparity map
-        ref = xr.Dataset({'disparity_map': (['row', 'col'], disp_data), 'validity_mask': (['row', 'col'], msk_data)},
+        # Create left and right disparity map
+        left = xr.Dataset({'disparity_map': (['row', 'col'], disp_data), 'validity_mask': (['row', 'col'], msk_data)},
                          coords={'row': np.arange(4), 'col': np.arange(5)})
-        ref.attrs['disp_min'] = -2
-        ref.attrs['disp_max'] = 2
+        left.attrs['disp_min'] = -2
+        left.attrs['disp_max'] = 2
 
         # Interpolate mismatch
         interpolation_matcher = validation.AbstractInterpolation(**{'interpolated_disparity': 'sgm'})
-        ref = interpolation_matcher.interpolated_disparity(ref)
+        left = interpolation_matcher.interpolated_disparity(left)
 
         # validity mask after interpolation
-        gt_mask_after_int = np.array([[PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER,
-                                       PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE, 0,
+        gt_mask_after_int = np.array([[PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                       PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
                                        PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, PANDORA_MSK_PIXEL_FILLED_OCCLUSION],
                                       [0, 0, PANDORA_MSK_PIXEL_FILLED_MISMATCH, 0, 0],
                                       [0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, PANDORA_MSK_PIXEL_FILLED_MISMATCH,
-                                       PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_REF, PANDORA_MSK_PIXEL_FILLED_MISMATCH],
+                                       PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, PANDORA_MSK_PIXEL_FILLED_MISMATCH],
                                       [PANDORA_MSK_PIXEL_FILLED_OCCLUSION, PANDORA_MSK_PIXEL_FILLED_OCCLUSION, 0, 0,
                                        0]],
                                      dtype=np.uint16)
 
         # Check if the calculated mask is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(ref['validity_mask'].data, gt_mask_after_int)
+        np.testing.assert_array_equal(left['validity_mask'].data, gt_mask_after_int)
 
-        # reference disparity map after interpolation
+        # left disparity map after interpolation
         gt_disp_after_int = np.array([[0, 1, -2, -1, 0],
                                       [1, 0, np.median([1, 1, 0, 1, -2, -1, 0, -1]), 0, 0],
                                       [2, 1, np.median([1, 1, 0, -2, 0, -1]), -2, np.median([-1, -1, 1, 0, 0])],
                                       [1, 1, 1, -1, -1]], dtype=np.float32)
 
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(ref['disparity_map'].data, gt_disp_after_int)
+        np.testing.assert_array_equal(left['disparity_map'].data, gt_disp_after_int)
 
 
 def setup_logging(path='logging.json', default_level=logging.WARNING,):

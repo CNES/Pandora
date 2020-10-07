@@ -84,7 +84,7 @@ class AbstractOptimization(object):
         print('Optimization method description')
 
     @abstractmethod
-    def optimize_cv(self, cv: xr.Dataset, img_ref: xr.Dataset, img_sec: xr.Dataset) -> xr.Dataset:
+    def optimize_cv(self, cv: xr.Dataset, img_left: xr.Dataset, img_right: xr.Dataset) -> xr.Dataset:
         """
         Optimizes the cost volume
 
@@ -93,10 +93,10 @@ class AbstractOptimization(object):
             xarray.Dataset, with the data variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :param img_ref: reference Dataset image
-        :type img_ref: xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec: xarray.DataArray
+        :param img_left: left Dataset image
+        :type img_left: xarray.DataArray
+        :param img_right: right Dataset image
+        :type img_right: xarray.DataArray
         :return: the cost volume dataset
         :rtype:
             xarray.Dataset, with the data variables:

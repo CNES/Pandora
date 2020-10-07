@@ -39,26 +39,26 @@ from . import refinement
 from . import optimization
 from .img_tools import read_img, read_disp
 from .JSON_checker import check_conf, read_config_file
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple, Union, List
 import numpy as np
 from .state_machine import PandoraMachine
 
 
-def run(pandora_machine: PandoraMachine, img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: Union[int, np.ndarray],
-        disp_max: Union[int, np.ndarray], cfg: Dict[str, dict], disp_min_sec: Union[None, int, np.ndarray] = None,
-        disp_max_sec: Union[None, int, np.ndarray] = None) -> Tuple[xr.Dataset, xr.Dataset]:
+def run(pandora_machine: PandoraMachine, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: Union[int, np.ndarray],
+        disp_max: Union[int, np.ndarray], cfg: Dict[str, dict], disp_min_right: Union[None, int, np.ndarray] = None,
+        disp_max_right: Union[None, int, np.ndarray] = None) -> Tuple[xr.Dataset, xr.Dataset]:
     """
     Run the pandora pipeline
 
     :param pandora_machine: instance of PandoraMachine
     :type pandora_machine: PandoraMachine
-    :param img_ref: reference Dataset image
-    :type img_ref:
+    :param img_left: left Dataset image
+    :type img_left:
         xarray.Dataset containing :
             - im : 2D (row, col) xarray.DataArray
             - msk (optional): 2D (row, col) xarray.DataArray
-    :param img_sec: secondary Dataset image
-    :type img_sec:
+    :param img_right: right Dataset image
+    :type img_right:
         xarray.Dataset containing :
             - im : 2D (row, col) xarray.DataArray
             - msk (optional): 2D (row, col) xarray.DataArray
@@ -68,27 +68,27 @@ def run(pandora_machine: PandoraMachine, img_ref: xr.Dataset, img_sec: xr.Datase
     :type disp_max: int or np.ndarray
     :param cfg: configuration
     :type cfg: dict
-    :param disp_min_sec: minimal disparity of the secondary image
-    :type disp_min_sec: None, int or np.ndarray
-    :param disp_max_sec: maximal disparity of the secondary image
-    :type disp_max_sec: None, int or np.ndarray
+    :param disp_min_right: minimal disparity of the right image
+    :type disp_min_right: None, int or np.ndarray
+    :param disp_max_right: maximal disparity of the right image
+    :type disp_max_right: None, int or np.ndarray
     :return:
         Two xarray.Dataset :
-            - ref : the reference dataset, which contains the variables :
-                - disparity_map : the disparity map in the geometry of the reference image 2D DataArray (row, col)
-                - confidence_measure : the confidence measure in the geometry of the reference image 3D DataArray (row, col, indicator)
-                - validity_mask : the validity mask in the geometry of the reference image 2D DataArray (row, col)
+            - left : the left dataset, which contains the variables :
+                - disparity_map : the disparity map in the geometry of the left image 2D DataArray (row, col)
+                - confidence_measure : the confidence measure in the geometry of the left image 3D DataArray (row, col, indicator)
+                - validity_mask : the validity mask in the geometry of the left image 2D DataArray (row, col)
 
-            - sec : the secondary dataset. If there is no validation step, the secondary Dataset will be empty.
+            - right : the right dataset. If there is no validation step, the right Dataset will be empty.
                 If a validation step is configured, the dataset will contain the variables :
-                - disparity_map : the disparity map in the geometry of the secondary image 2D DataArray (row, col)
-                - confidence_measure : the confidence measure in the geometry of the reference image 3D DataArray (row, col, indicator)
-                - validity_mask : the validity mask in the geometry of the reference image 2D DataArray (row, col)
+                - disparity_map : the disparity map in the geometry of the right image 2D DataArray (row, col)
+                - confidence_measure : the confidence measure in the geometry of the left image 3D DataArray (row, col, indicator)
+                - validity_mask : the validity mask in the geometry of the left image 2D DataArray (row, col)
 
     :rtype: tuple (xarray.Dataset, xarray.Dataset)
     """
     # Prepare machine before running
-    pandora_machine.run_prepare(cfg, img_ref, img_sec, disp_min, disp_max, disp_min_sec, disp_max_sec)
+    pandora_machine.run_prepare(cfg, img_left, img_right, disp_min, disp_max, disp_min_right, disp_max_right)
 
     # Trigger the machine step by step
     # Warning: first element of cfg dictionary is not a transition. It contains information about the way to
@@ -113,7 +113,6 @@ def setup_logging(verbose: bool) -> None:
         logging.basicConfig(format="[%(asctime)s][%(levelname)s] %(message)s", level=logging.INFO)
     else:
         logging.basicConfig(format="[%(asctime)s][%(levelname)s] %(message)s", level=logging.ERROR)
-
 
 def import_plugin() -> None:
     """
@@ -152,22 +151,22 @@ def main(cfg_path: str, output: str, verbose: bool) -> None:
     setup_logging(verbose)
 
     # Read images and masks
-    img_ref = read_img(cfg['input']['img_ref'], no_data=cfg['image']['nodata1'], cfg=cfg['image'],
-                       mask=cfg['input']['ref_mask'])
-    img_sec = read_img(cfg['input']['img_sec'], no_data=cfg['image']['nodata2'], cfg=cfg['image'],
-                       mask=cfg['input']['sec_mask'])
+    img_left = read_img(cfg['input']['img_left'], no_data=cfg['image']['nodata1'], cfg=cfg['image'],
+                       mask=cfg['input']['left_mask'])
+    img_right = read_img(cfg['input']['img_right'], no_data=cfg['image']['nodata2'], cfg=cfg['image'],
+                       mask=cfg['input']['right_mask'])
 
     # Read range of disparities
     disp_min = read_disp(cfg['input']['disp_min'])
     disp_max = read_disp(cfg['input']['disp_max'])
-    disp_min_sec = read_disp(cfg['input']['disp_min_sec'])
-    disp_max_sec = read_disp(cfg['input']['disp_max_sec'])
+    disp_min_right = read_disp(cfg['input']['disp_min_right'])
+    disp_max_right = read_disp(cfg['input']['disp_max_right'])
 
     # Run the Pandora pipeline
-    ref, sec = run(pandora_machine, img_ref, img_sec, disp_min, disp_max, cfg, disp_min_sec, disp_max_sec)
+    left, right = run(pandora_machine, img_left, img_right, disp_min, disp_max, cfg, disp_min_right, disp_max_right)
 
-    # Save the reference and secondary DataArray in tiff files
-    common.save_results(ref, sec, output)
+    # Save the left and right DataArray in tiff files
+    common.save_results(left, right, output)
 
     # Save the configuration
     common.save_config(output, cfg)

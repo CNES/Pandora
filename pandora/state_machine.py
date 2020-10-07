@@ -121,8 +121,7 @@ class PandoraMachine(Machine):
 
         if not self.right_disp_map == "accurate":
             self.left_cv = stereo_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max)
-            self.left_cv = stereo_.cv_masked(self.left_img, self.right_img, self.left_cv, self.disp_min, self.disp_max,
-)
+            self.left_cv = stereo_.cv_masked(self.left_img, self.right_img, self.left_cv, self.disp_min, self.disp_max)
 
         else:
             self.left_cv = stereo_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max)
@@ -132,8 +131,8 @@ class PandoraMachine(Machine):
                 self.right_disp_min = -self.disp_max
                 self.right_disp_max = -self.disp_min
 
-            dmin_min_sec, dmax_max_sec = stereo_.dmin_dmax(self.right_disp_min, self.right_disp_max)
-            self.right_cv = stereo_.compute_cost_volume(self.right_img, self.left_img, dmin_min_sec, dmax_max_sec,
+            dmin_min_right, dmax_max_right = stereo_.dmin_dmax(self.right_disp_min, self.right_disp_max)
+            self.right_cv = stereo_.compute_cost_volume(self.right_img, self.left_img, dmin_min_right, dmax_max_right,
 )
             self.right_cv = stereo_.cv_masked(self.right_img, self.left_img, self.right_cv, self.right_disp_min,
                                               self.right_disp_max)

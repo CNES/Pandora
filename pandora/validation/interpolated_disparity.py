@@ -89,23 +89,23 @@ class AbstractInterpolation(object):
         print('Disparity interpolation method description for the validation step')
 
     @abstractmethod
-    def interpolated_disparity(self, ref: xr.Dataset, img_ref: xr.Dataset = None, img_sec: xr.Dataset = None,
+    def interpolated_disparity(self, left: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None,
                                cv: xr.Dataset = None) -> xr.Dataset:
         """
         Interpolation of the left disparity map to resolve occlusion and mismatch conflicts.
 
-        :param ref: Reference Dataset
-        :type ref: xarray.Dataset with the variables :
+        :param left: left Dataset
+        :type left: xarray.Dataset with the variables :
             - disparity_map 2D xarray.DataArray (row, col)
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
-        :param img_ref: reference Datset image
-        :type img_ref:
+        :param img_left: left Datset image
+        :type img_left:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
+        :param img_right: right Dataset image
+        :type img_right:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
@@ -153,23 +153,23 @@ class McCnnInterpolation(AbstractInterpolation):
         """
         print('MC-CNN interpolation method')
 
-    def interpolated_disparity(self, ref: xr.Dataset, img_ref: xr.Dataset = None, img_sec: xr.Dataset = None,
+    def interpolated_disparity(self, left: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None,
                                cv: xr.Dataset = None) -> xr.Dataset:
         """
         Interpolation of the left disparity map to resolve occlusion and mismatch conflicts.
 
-        :param ref: Reference Dataset
-        :type ref: xarray.Dataset with the variables :
+        :param left: left Dataset
+        :type left: xarray.Dataset with the variables :
             - disparity_map 2D xarray.DataArray (row, col)
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
-        :param img_ref: reference Datset image
-        :type img_ref:
+        :param img_left: left Datset image
+        :type img_left:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
+        :param img_right: right Dataset image
+        :type img_right:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
@@ -186,10 +186,10 @@ class McCnnInterpolation(AbstractInterpolation):
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
         """
-        out = ref.copy(deep=True)
+        out = left.copy(deep=True)
 
         out['disparity_map'].data, out['validity_mask'].data = \
-            self.interpolate_occlusion_mc_cnn(ref['disparity_map'].data, ref['validity_mask'].data)
+            self.interpolate_occlusion_mc_cnn(left['disparity_map'].data, left['validity_mask'].data)
         out['disparity_map'].data, out['validity_mask'].data = \
             self.interpolate_mismatch_mc_cnn(out['disparity_map'].data, out['validity_mask'].data)
 
@@ -211,7 +211,7 @@ class McCnnInterpolation(AbstractInterpolation):
         :type disp: 2D np.array (row, col)
         :param valid: validity mask
         :type valid: 2D np.array (row, col)
-        :return: the interpolate reference disparity map, with the validity mask update :
+        :return: the interpolate left disparity map, with the validity mask update :
             - If out & MSK_PIXEL_FILLED_OCCLUSION != 0 : Invalid pixel : filled occlusion
         :rtype : tuple(2D np.array (row, col), 2D np.array (row, col))
         """
@@ -266,7 +266,7 @@ class McCnnInterpolation(AbstractInterpolation):
         :type disp: 2D np.array (row, col)
         :param valid: validity mask
         :type valid: 2D np.array (row, col)
-        :return: the interpolate reference disparity map, with the validity mask update :
+        :return: the interpolate left disparity map, with the validity mask update :
             - If out & MSK_PIXEL_FILLED_MISMATCH != 0 : Invalid pixel : filled mismatch
         :rtype : tuple(2D np.array (row, col), 2D np.array (row, col))
         """
@@ -345,23 +345,23 @@ class SgmInterpolation(AbstractInterpolation):
         """
         print('SGM interpolation method')
 
-    def interpolated_disparity(self, ref: xr.Dataset, img_ref: xr.Dataset = None, img_sec: xr.Dataset = None,
+    def interpolated_disparity(self, left: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None,
                                cv: xr.Dataset = None) -> xr.Dataset:
         """
         Interpolation of the left disparity map to resolve occlusion and mismatch conflicts.
 
-        :param ref: Reference Dataset
-        :type ref: xarray.Dataset with the variables :
+        :param left: left Dataset
+        :type left: xarray.Dataset with the variables :
             - disparity_map 2D xarray.DataArray (row, col)
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
-        :param img_ref: reference Datset image
-        :type img_ref:
+        :param img_left: left Datset image
+        :type img_left:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
+        :param img_right: right Dataset image
+        :type img_right:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
@@ -378,10 +378,10 @@ class SgmInterpolation(AbstractInterpolation):
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
         """
-        out = ref.copy(deep=True)
+        out = left.copy(deep=True)
 
-        out['disparity_map'].data, out['validity_mask'].data = self.interpolate_mismatch_sgm(ref['disparity_map'].data,
-                                                                                             ref['validity_mask'].data)
+        out['disparity_map'].data, out['validity_mask'].data = self.interpolate_mismatch_sgm(left['disparity_map'].data,
+                                                                                             left['validity_mask'].data)
         out['disparity_map'].data, out['validity_mask'].data = self.interpolate_occlusion_sgm(out['disparity_map'].data,
                                                                                               out['validity_mask'].data)
         out.attrs['interpolated_disparity'] = 'sgm'
@@ -393,7 +393,7 @@ class SgmInterpolation(AbstractInterpolation):
     def interpolate_occlusion_sgm(disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Interpolation of the left disparity map to resolve occlusion conflicts. Interpolate occlusion by moving by selecting
-        the second lowest value along paths from 8 directions.
+        the right lowest value along paths from 8 directions.
 
         HIRSCHMULLER, Heiko. Stereo processing by semiglobal matching and mutual information.
         IEEE Transactions on pattern analysis and machine intelligence, 2007, vol. 30, no 2, p. 328-341.
@@ -402,7 +402,7 @@ class SgmInterpolation(AbstractInterpolation):
         :type disp: 2D np.array (row, col)
         :param valid: validity mask
         :type valid: 2D np.array (row, col)
-        :return: the interpolate reference disparity map, with the validity mask update :
+        :return: the interpolate left disparity map, with the validity mask update :
             - If out & MSK_PIXEL_FILLED_OCCLUSION != 0 : Invalid pixel : filled occlusion
         :rtype : tuple(2D np.array (row, col), 2D np.array (row, col))
         """
@@ -444,10 +444,10 @@ class SgmInterpolation(AbstractInterpolation):
                                 break
 
                     # Returns the indices that would sort the absolute array
-                    # The absolute value is used to search for the second value closest to 0
+                    # The absolute value is used to search for the right value closest to 0
                     valid_neighbors_argsort = np.argsort(np.abs(valid_neighbors))
 
-                    # Second lowest value
+                    # right lowest value
                     out_disp[y, x] = valid_neighbors[valid_neighbors_argsort[1]]
 
                     # Update the validity mask : Information : filled occlusion
@@ -471,7 +471,7 @@ class SgmInterpolation(AbstractInterpolation):
         :type disp: 2D np.array (row, col)
         :param valid: validity mask
         :type valid: 2D np.array (row, col)
-        :return: the interpolate reference disparity map, with the validity mask update :
+        :return: the interpolate left disparity map, with the validity mask update :
             - If out & MSK_PIXEL_FILLED_MISMATCH != 0 : Invalid pixel : filled mismatch
         :rtype : tuple(2D np.array (row, col), 2D np.array (row, col))
         """

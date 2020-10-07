@@ -28,7 +28,7 @@ import xarray as xr
 from json_checker import Checker, And
 from typing import Dict, Union
 
-from pandora.img_tools import shift_sec_img, compute_mean_raster, compute_std_raster
+from pandora.img_tools import shift_right_img, compute_mean_raster, compute_std_raster
 from . import stereo
 
 
@@ -82,18 +82,18 @@ class Zncc(stereo.AbstractStereo):
         """
         print('zncc similarity measure')
 
-    def compute_cost_volume(self, img_ref: xr.Dataset, img_sec: xr.Dataset, disp_min: int,
+    def compute_cost_volume(self, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: int,
                             disp_max: int) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
 
-        :param img_ref: reference Dataset image
-        :type img_ref:
+        :param img_left: left Dataset image
+        :type img_left:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_sec: secondary Dataset image
-        :type img_sec:
+        :param img_right: right Dataset image
+        :type img_right:
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
@@ -107,22 +107,22 @@ class Zncc(stereo.AbstractStereo):
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
-        # Contains the shifted secondary images
-        img_sec_shift = shift_sec_img(img_sec, self._subpix)
+        # Contains the shifted right images
+        img_right_shift = shift_right_img(img_right, self._subpix)
 
         # Computes the standard deviation raster for the whole images
         # The standard deviation raster is truncated for points that are not calculable
-        img_ref_std = compute_std_raster(img_ref, self._window_size)
-        img_sec_std = []
-        for i in range(0, len(img_sec_shift)):
-            img_sec_std.append(compute_std_raster(img_sec_shift[i], self._window_size))
+        img_left_std = compute_std_raster(img_left, self._window_size)
+        img_right_std = []
+        for i in range(0, len(img_right_shift)):
+            img_right_std.append(compute_std_raster(img_right_shift[i], self._window_size))
 
         # Computes the mean raster for the whole images
         # The standard mean raster is truncated for points that are not calculable
-        img_ref_mean = compute_mean_raster(img_ref, self._window_size)
-        img_sec_mean = []
-        for i in range(0, len(img_sec_shift)):
-            img_sec_mean.append(compute_mean_raster(img_sec_shift[i], self._window_size))
+        img_left_mean = compute_mean_raster(img_left, self._window_size)
+        img_right_mean = []
+        for i in range(0, len(img_right_shift)):
+            img_right_mean.append(compute_mean_raster(img_right_shift[i], self._window_size))
 
         # Maximal cost of the cost volume with zncc measure
         cmax = 1
@@ -140,33 +140,33 @@ class Zncc(stereo.AbstractStereo):
             disparity_range = np.append(disparity_range, [disp_max])
 
         # Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
-        cv = np.zeros((len(disparity_range), img_ref['im'].shape[1] - (self._window_size - 1),
-                       img_sec['im'].shape[0] - (self._window_size - 1)), dtype=np.float32)
+        cv = np.zeros((len(disparity_range), img_left['im'].shape[1] - (self._window_size - 1),
+                       img_right['im'].shape[0] - (self._window_size - 1)), dtype=np.float32)
         cv += np.nan
 
         # Computes the matching cost
         for disp in disparity_range:
-            i_sec = int((disp % 1) * self._subpix)
-            p, q = self.point_interval(img_ref, img_sec_shift[i_sec], disp)
+            i_right = int((disp % 1) * self._subpix)
+            p, q = self.point_interval(img_left, img_right_shift[i_right], disp)
             d = int((disp - disp_min) * self._subpix)
 
-            # Point interval in the reference standard deviation image
+            # Point interval in the left standard deviation image
             # -  (win_radius * 2) because img_std is truncated for points that are not calculable
             p_std = (p[0], p[1] - (int(self._window_size / 2) * 2))
-            # Point interval in the secondary standard deviation image
+            # Point interval in the right standard deviation image
             q_std = (q[0], q[1] - (int(self._window_size / 2) * 2))
 
             # Compute the normalized summation of the product of intensities
-            zncc_ = img_ref['im'].data[:, p[0]:p[1]] * img_sec_shift[i_sec]['im'].data[:, q[0]:q[1]]
+            zncc_ = img_left['im'].data[:, p[0]:p[1]] * img_right_shift[i_right]['im'].data[:, q[0]:q[1]]
             zncc_ = xr.Dataset({'im': (['row', 'col'], zncc_)},
                                coords={'row': np.arange(zncc_.shape[0]), 'col': np.arange(zncc_.shape[1])})
             zncc_ = compute_mean_raster(zncc_, self._window_size)
             # Subtracting  the  local mean  value  of  intensities
-            zncc_ -= (img_ref_mean[:, p_std[0]:p_std[1]] * img_sec_mean[i_sec][:, q_std[0]:q_std[1]])
+            zncc_ -= (img_left_mean[:, p_std[0]:p_std[1]] * img_right_mean[i_right][:, q_std[0]:q_std[1]])
 
             # Divide by the standard deviation of the intensities of the images :
             # If the standard deviation of the intensities of the images is greater than 0
-            divide_standard = np.multiply(img_ref_std[:, p_std[0]:p_std[1]], img_sec_std[i_sec][:, q_std[0]:q_std[1]])
+            divide_standard = np.multiply(img_left_std[:, p_std[0]:p_std[1]], img_right_std[i_right][:, q_std[0]:q_std[1]])
             valid = np.where(divide_standard > 0)
             zncc_[valid] /= divide_standard[valid]
             # Else, zncc = 0
@@ -176,7 +176,7 @@ class Zncc(stereo.AbstractStereo):
             cv[d, p[0]:p_std[1], :] = np.swapaxes(zncc_, 0, 1)
 
         # Create the xarray.DataSet that will contain the cost_volume of dimensions (row, col, disp)
-        cv = self.allocate_costvolume(img_ref, self._subpix, disp_min, disp_max, self._window_size, metadata,
+        cv = self.allocate_costvolume(img_left, self._subpix, disp_min, disp_max, self._window_size, metadata,
                                       np.swapaxes(cv, 0, 2))
 
         return cv
