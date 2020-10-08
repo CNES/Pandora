@@ -1,16 +1,9 @@
 repos:
   - repo: local
     hooks:
-    -   id: system
+    -   id: pylint
         name: PyLint
         entry: python -m pylint --rcfile=.pylintrc
         language: system
         files: \.py$
         stages: [commit]
-
-
-#  Temporarily disabling hooks ¶
-
-# Not all hooks are perfect so sometimes you may need to skip execution of one or more hooks. pre-commit solves this by querying a SKIP environment variable. The SKIP environment variable is a comma separated list of hook ids. This allows you to skip a single hook instead of --no-verifying the entire commit.
-
-# $ SKIP=flake8 git commit -m "foo"
