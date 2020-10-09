@@ -79,7 +79,7 @@ class MedianFilter(filter.AbstractFilter):
         print('Median filter description')
 
     def filter_disparity(self, disp: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None,
-                         cv: xr.Dataset = None) -> xr.Dataset:
+                         cv: xr.Dataset = None) -> None:
         """
         Apply a median filter on valid pixels.
         Invalid pixels are not filtered. If a valid pixel contains an invalid pixel in its filter, the invalid pixel is
@@ -97,12 +97,7 @@ class MedianFilter(filter.AbstractFilter):
         :type img_right: xarray.Dataset
         :param cv: cost volume dataset
         :type cv: xarray.Dataset
-        :return: the Dataset with the filtered DataArray disparity_map
-        :rtype:
-            xarray.Dataset with the variables :
-                - disparity_map 2D xarray.DataArray (row, col)
-                - confidence_measure 3D xarray.DataArray (row, col, indicator)
-                - validity_mask 2D xarray.DataArray (row, col)
+        :return: None
         """
         # Invalid pixels are nan
         masked_data = disp['disparity_map'].copy(deep=True).data
@@ -114,10 +109,9 @@ class MedianFilter(filter.AbstractFilter):
         disp['disparity_map'].data[valid] = disp_median[valid]
         disp.attrs['filter'] = 'median'
         del disp_median, masked_data,
-        return disp
 
 
-    def median_filter(self, data):
+    def median_filter(self, data) -> np.ndarray:
         """
         Apply median filter on valid pixels (pixels that are not nan).
         Invalid pixels are not filtered. If a valid pixel contains an invalid pixel in its filter, the invalid pixel is

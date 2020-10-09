@@ -46,6 +46,7 @@ def write_data_array(data_array: xr.DataArray, filename: str,
     :type filename: string
     :param dtype: band types
     :type dtype: GDALDataType
+    :return: None
     """
     if len(data_array.shape) == 2:
         row, col = data_array.shape
@@ -64,6 +65,7 @@ def write_data_array(data_array: xr.DataArray, filename: str,
 def mkdir_p(path: str) -> None:
     """
     Create a directory without complaining if it already exists.
+    :return: None
     """
     try:
         os.makedirs(path)
@@ -91,6 +93,7 @@ def save_results(left: xr.Dataset, right: xr.Dataset, output: str) -> None:
     :type right: xr.Dataset
     :param output: output directory
     :type output: string
+    :return: None
     """
     # Create the output dir
     mkdir_p(output)
@@ -136,6 +139,7 @@ def save_config(output: str, user_cfg: Dict) -> None:
     :type output: string
     :param user_cfg: user configuration
     :type user_cfg: dict
+    :return: None
     """
 
     # Create the output dir

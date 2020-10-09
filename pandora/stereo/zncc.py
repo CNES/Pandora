@@ -46,6 +46,7 @@ class Zncc(stereo.AbstractStereo):
         """
         :param cfg: optional configuration,  {'window_size': value, 'subpix': value}
         :type cfg: dictionary
+        :return: None
         """
         self.cfg = self.check_conf(**cfg)
         self._window_size = self.cfg['window_size']
@@ -76,9 +77,10 @@ class Zncc(stereo.AbstractStereo):
         checker.validate(cfg)
         return cfg
 
-    def desc(self):
+    def desc(self) -> None:
         """
         Describes the stereo method
+        :return: None
         """
         print('zncc similarity measure')
 

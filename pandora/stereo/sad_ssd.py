@@ -42,10 +42,11 @@ class SadSsd(stereo.AbstractStereo):
     _WINDOW_SIZE = 5
     _SUBPIX = 1
 
-    def __init__(self, **cfg: Union[str, int]):
+    def __init__(self, **cfg: Union[str, int]) -> None:
         """
         :param cfg: optional configuration,  {'stereo_method': value, 'window_size': value, 'subpix': value}
         :type cfg: dict
+        :return: None
         """
         self.cfg = self.check_conf(**cfg)
         self._method = str(self.cfg['stereo_method'])
@@ -78,9 +79,10 @@ class SadSsd(stereo.AbstractStereo):
         checker.validate(cfg)
         return cfg
 
-    def desc(self):
+    def desc(self) -> None:
         """
         Describes the stereo method
+        :return: None
         """
         print(str(self._method) + ' similarity measure')
 

@@ -83,18 +83,19 @@ class TestRefinement(unittest.TestCase):
 
             # -------- Compute the refinement with quadratic by calling subpixel_refinement --------
             quadratic_refinement = refinement.AbstractRefinement(**{'refinement_method': 'quadratic'})
-            sub_cv, sub_disp = quadratic_refinement.subpixel_refinement(self.cv, self.disp)
+            orig_cv = self.cv.copy()
+            quadratic_refinement.subpixel_refinement(self.cv, self.disp)
             # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-            np.testing.assert_array_equal(sub_disp['disparity_map'].data, gt_sub_disp)
+            np.testing.assert_array_equal(self.disp['disparity_map'].data, gt_sub_disp)
 
             # Check if the calculated coefficients is equal to the ground truth (same shape and all elements equals)
-            np.testing.assert_array_equal(sub_disp['interpolated_coeff'].data, gt_sub_cost)
+            np.testing.assert_array_equal(self.disp['interpolated_coeff'].data, gt_sub_cost)
 
             # Check if the calculated validity mask  is equal to the ground truth (same shape and all elements equals)
-            np.testing.assert_array_equal(sub_disp['validity_mask'].data, gt_mask)
+            np.testing.assert_array_equal(self.disp['validity_mask'].data, gt_mask)
 
             # Check if the cost volume is not change
-            np.testing.assert_array_equal(sub_cv['cost_volume'].data, self.cv['cost_volume'].data)
+            np.testing.assert_array_equal(self.cv['cost_volume'].data, orig_cv['cost_volume'].data)
 
     def test_vfit(self):
         """
@@ -117,18 +118,19 @@ class TestRefinement(unittest.TestCase):
 
         # -------- Compute the refinement with vfit by calling subpixel_refinement --------
         vfit_refinement = refinement.AbstractRefinement(**{'refinement_method': 'vfit'})
-        sub_cv, sub_disp = vfit_refinement.subpixel_refinement(self.cv, self.disp)
+        orig_cv = self.cv.copy()
+        vfit_refinement.subpixel_refinement(self.cv, self.disp)
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(sub_disp['disparity_map'].data, gt_sub_disp)
+        np.testing.assert_array_equal(self.disp['disparity_map'].data, gt_sub_disp)
 
         # Check if the calculated coefficients is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(sub_disp['interpolated_coeff'].data, gt_sub_cost)
+        np.testing.assert_array_equal(self.disp['interpolated_coeff'].data, gt_sub_cost)
 
         # Check if the calculated validity mask  is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(sub_disp['validity_mask'].data, gt_mask)
+        np.testing.assert_array_equal(self.disp['validity_mask'].data, gt_mask)
 
         # Check if the cost volume is not change
-        np.testing.assert_array_equal(sub_cv['cost_volume'].data, self.cv['cost_volume'].data)
+        np.testing.assert_array_equal(self.cv['cost_volume'].data, orig_cv['cost_volume'].data)
 
     def test_vfit_approximate_subpixel_refinement(self):
         """
@@ -208,19 +210,20 @@ class TestRefinement(unittest.TestCase):
 
         # -------- Compute the refinement with vfit by calling subpixel_refinement --------
         vfit_refinement = refinement.AbstractRefinement(**{'refinement_method': 'vfit'})
-        sub_cv, sub_disp = vfit_refinement.subpixel_refinement(cv, disp)
+        orig_cv = cv.copy()
+        vfit_refinement.subpixel_refinement(cv, disp)
 
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(sub_disp['disparity_map'].data, gt_sub_disp)
+        np.testing.assert_array_equal(disp['disparity_map'].data, gt_sub_disp)
 
         # Check if the calculated coefficients is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(sub_disp['interpolated_coeff'].data, gt_sub_cost)
+        np.testing.assert_array_equal(disp['interpolated_coeff'].data, gt_sub_cost)
 
         # Check if the calculated validity mask is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(sub_disp['validity_mask'].data, gt_mask)
+        np.testing.assert_array_equal(disp['validity_mask'].data, gt_mask)
 
         # Check if the cost volume is not change
-        np.testing.assert_array_equal(sub_cv['cost_volume'].data, cv['cost_volume'].data)
+        np.testing.assert_array_equal(cv['cost_volume'].data, orig_cv['cost_volume'].data)
 
 
 def setup_logging(path='logging.json', default_level=logging.WARNING,):

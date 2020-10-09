@@ -84,7 +84,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         print('CrossBasedCostAggregation method')
 
     def cost_volume_aggregation(self, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset,
-                                **cfg: Union[str, int]) -> xr.Dataset:
+                                **cfg: Union[str, int]) -> None:
         """
         Aggregated the cost volume with Cross-Based Cost Aggregation, using the pipeline define in
         Zhang, K., Lu, J., & Lafruit, G. (2009).
@@ -108,11 +108,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         :param cfg: images configuration containing the mask convention : valid_pixels, no_data
         :type cfg: dict
-        :return: the cost volume aggregated in the dataset
-        :rtype:
-            xarray.Dataset, with the data variables:
-                - cost_volume 3D xarray.DataArray (row, col, disp)
-                - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :return: None
         """
         cross_left, cross_right = self.computes_cross_supports(img_left, img_right, cv)
 
@@ -166,8 +162,6 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         # Maximal cost of the cost volume after agregation
         cmax = cv.attrs['cmax'] * ((self._cbca_distance * 2) - 1) ** 2
         cv.attrs['cmax'] = cmax
-
-        return cv
 
     def computes_cross_supports(self, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset) -> Tuple[np.ndarray, List[np.ndarray]]:
         """

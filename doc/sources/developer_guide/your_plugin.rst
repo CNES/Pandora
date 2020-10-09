@@ -24,8 +24,7 @@ Each subpackage of Pandora, representing one particular step, defines an `abstra
 
     def desc(self):
         """
-        Describes the stere method
-
+        Describes the stereo method
         """
         print('My similarity measure')
 

@@ -37,10 +37,11 @@ import pandora
 from pandora.constants import *
 
 
-class TestDisparity(unittest.TestCase):
+class TestFilter(unittest.TestCase):
     """
-    TestDisparity class allows to test the disparity module
+    TestFilter class allows to test the filter module
     """
+
     def setUp(self):
         """
         Method called to prepare the test fixture
@@ -70,7 +71,7 @@ class TestDisparity(unittest.TestCase):
         filter_median = flt.AbstractFilter(**{'filter_method': 'median', 'filter_size': 3})
 
         # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
-        disp_filter = filter_median.filter_disparity(disp_dataset)
+        filter_median.filter_disparity(disp_dataset)
 
         # Filtered disparity map ground truth
         gt_disp = np.array([[5, 6, 7, 8, 9],
@@ -79,7 +80,7 @@ class TestDisparity(unittest.TestCase):
                             [6, 1, 9, 2, 4]], dtype=np.float32)
 
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(disp_filter['disparity_map'].data, gt_disp)
+        np.testing.assert_array_equal(disp_dataset['disparity_map'].data, gt_disp)
 
         disp = np.array([[7, 8, 4, 5, 5],
                          [5, 9, 4, 3, 8],
@@ -107,7 +108,7 @@ class TestDisparity(unittest.TestCase):
         filter_median = flt.AbstractFilter(**{'filter_method': 'median', 'filter_size': 3})
 
         # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
-        disp_filter = filter_median.filter_disparity(disp_dataset)
+        filter_median.filter_disparity(disp_dataset)
 
         # Filtered disparity map ground truth
         gt_disp = np.array([[7, 8, 4, 5, 5],
@@ -116,7 +117,7 @@ class TestDisparity(unittest.TestCase):
                             [6, 1, 9, 2, 4]], dtype=np.float32)
 
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(disp_filter['disparity_map'].data, gt_disp)
+        np.testing.assert_array_equal(disp_dataset['disparity_map'].data, gt_disp)
 
         disp = np.array([[7, 8, 4, 5, 5],
                          [5, 9, 4, 3, 8],
@@ -138,7 +139,7 @@ class TestDisparity(unittest.TestCase):
         filter_median = flt.AbstractFilter(**{'filter_method': 'median', 'filter_size': 3})
 
         # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
-        disp_filter = filter_median.filter_disparity(disp_dataset)
+        filter_median.filter_disparity(disp_dataset)
 
         # Filtered disparity map ground truth
         gt_disp = np.array([[7, 8, 4, 5, 5],
@@ -147,7 +148,7 @@ class TestDisparity(unittest.TestCase):
                             [6, 1, 9, 2, 4]], dtype=np.float32)
 
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(disp_filter['disparity_map'].data, gt_disp)
+        np.testing.assert_array_equal(disp_dataset['disparity_map'].data, gt_disp)
 
         # Test with window size 5
         disp = np.array([[7, 8, 4, 5, 5],
@@ -176,7 +177,7 @@ class TestDisparity(unittest.TestCase):
         filter_median = flt.AbstractFilter(**{'filter_method': 'median', 'filter_size': 5})
 
         # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
-        disp_filter = filter_median.filter_disparity(disp_dataset)
+        filter_median.filter_disparity(disp_dataset)
 
         # Filtered disparity map ground truth
         gt_disp = np.array([[7, 8, 4, 5, 5],
@@ -186,7 +187,7 @@ class TestDisparity(unittest.TestCase):
                             [1, 6, 2, 7, 8]], dtype=np.float32)
 
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(disp_filter['disparity_map'].data, gt_disp)
+        np.testing.assert_array_equal(disp_dataset['disparity_map'].data, gt_disp)
 
     def test_bilateral_filter(self):
         """
@@ -227,7 +228,7 @@ class TestDisparity(unittest.TestCase):
         filter_bilateral.filter_disparity(disp_dataset)
 
 
-def setup_logging(path='logging.json', default_level=logging.WARNING,):
+def setup_logging(path='logging.json', default_level=logging.WARNING, ):
     """
     Setup the logging configuration
 

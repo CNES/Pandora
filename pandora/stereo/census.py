@@ -45,6 +45,7 @@ class Census(stereo.AbstractStereo):
         """
         :param cfg: optional configuration,  {'window_size': value, 'subpix': value}
         :type cfg: dict
+        :return: None
         """
         self.cfg = self.check_conf(**cfg)
         self._window_size = self.cfg['window_size']
@@ -75,9 +76,10 @@ class Census(stereo.AbstractStereo):
         checker.validate(cfg)
         return cfg
 
-    def desc(self):
+    def desc(self) -> None:
         """
         Describes the stereo method
+        :return: None
         """
         print('census similarity measure')
 

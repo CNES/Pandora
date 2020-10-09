@@ -87,9 +87,10 @@ class AbstractStereo(object):
         return decorator
 
     @abstractmethod
-    def desc(self):
+    def desc(self) -> None:
         """
         Describes the stereo method
+        :return: None
         """
         print('Stereo matching description')
 
@@ -351,7 +352,7 @@ class AbstractStereo(object):
         return dmin_min, dmax_max
 
     def cv_masked(self, img_left: xr.Dataset, img_right: xr.Dataset, cost_volume: xr.Dataset,
-                  disp_min: Union[int, np.ndarray], disp_max: Union[int, np.ndarray]) -> xr.Dataset:
+                  disp_min: Union[int, np.ndarray], disp_max: Union[int, np.ndarray]) -> None:
         """
         Masks the cost volume :
             - costs which are not inside their disparity range, are masked with a nan value
@@ -380,8 +381,7 @@ class AbstractStereo(object):
         :type disp_max: int or np.ndarray
         :param cfg: images configuration containing the mask convention : valid_pixels, no_data
         :type cfg: dict
-        :return: the cost_volume DataArray masked
-        :rtype: 3D xarray.DataArray (row, col, disp)
+        :return: None
         """
         ny_, nx_, nd_ = cost_volume['cost_volume'].shape
 
@@ -418,7 +418,7 @@ class AbstractStereo(object):
 
         # Fixed range of disparities
         if type(disp_min) == int and type(disp_max) == int:
-            return cost_volume
+            return
 
         # Variable range of disparities
         # Resize disparity grids : disparity grids size and cost volume size must be equal
@@ -435,5 +435,3 @@ class AbstractStereo(object):
             masking = np.where(np.logical_or(cost_volume.coords['disp'].data[d] < disp_min_crop,
                                              cost_volume.coords['disp'].data[d] > disp_max_crop))
             cost_volume['cost_volume'].data[masking[0], masking[1], d] = np.nan
-
-        return cost_volume
