@@ -25,22 +25,22 @@ This module contains functions to run Pandora pipeline.
 
 import logging
 import logging.config
-import sys
+from typing import Dict, Tuple, Union
+
+import numpy as np
 import xarray as xr
 from pkg_resources import iter_entry_points
 
-from . import common
-from . import stereo
 from . import aggregation
-from . import filter
+from . import common
 from . import disparity
-from . import validation
-from . import refinement
+from . import filter
 from . import optimization
-from .img_tools import read_img, read_disp
+from . import refinement
+from . import stereo
+from . import validation
 from .JSON_checker import check_conf, read_config_file
-from typing import Dict, Tuple, Union, List
-import numpy as np
+from .img_tools import read_img, read_disp
 from .state_machine import PandoraMachine
 
 
@@ -76,13 +76,15 @@ def run(pandora_machine: PandoraMachine, img_left: xr.Dataset, img_right: xr.Dat
         Two xarray.Dataset :
             - left : the left dataset, which contains the variables :
                 - disparity_map : the disparity map in the geometry of the left image 2D DataArray (row, col)
-                - confidence_measure : the confidence measure in the geometry of the left image 3D DataArray (row, col, indicator)
+                - confidence_measure : the confidence measure in the geometry of the left image 3D DataArray
+                    (row, col, indicator)
                 - validity_mask : the validity mask in the geometry of the left image 2D DataArray (row, col)
 
             - right : the right dataset. If there is no validation step, the right Dataset will be empty.
                 If a validation step is configured, the dataset will contain the variables :
                 - disparity_map : the disparity map in the geometry of the right image 2D DataArray (row, col)
-                - confidence_measure : the confidence measure in the geometry of the left image 3D DataArray (row, col, indicator)
+                - confidence_measure : the confidence measure in the geometry of the left image 3D DataArray
+                    (row, col, indicator)
                 - validity_mask : the validity mask in the geometry of the left image 2D DataArray (row, col)
 
     :rtype: tuple (xarray.Dataset, xarray.Dataset)
@@ -114,6 +116,7 @@ def setup_logging(verbose: bool) -> None:
         logging.basicConfig(format="[%(asctime)s][%(levelname)s] %(message)s", level=logging.INFO)
     else:
         logging.basicConfig(format="[%(asctime)s][%(levelname)s] %(message)s", level=logging.ERROR)
+
 
 def import_plugin() -> None:
     """
@@ -154,9 +157,9 @@ def main(cfg_path: str, output: str, verbose: bool) -> None:
 
     # Read images and masks
     img_left = read_img(cfg['input']['img_left'], no_data=cfg['image']['nodata1'], cfg=cfg['image'],
-                       mask=cfg['input']['left_mask'])
+                        mask=cfg['input']['left_mask'])
     img_right = read_img(cfg['input']['img_right'], no_data=cfg['image']['nodata2'], cfg=cfg['image'],
-                       mask=cfg['input']['right_mask'])
+                         mask=cfg['input']['right_mask'])
 
     # Read range of disparities
     disp_min = read_disp(cfg['input']['disp_min'])

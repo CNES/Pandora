@@ -23,14 +23,14 @@
 This module contains classes and functions associated to the interpolation of the disparity map for the validation step.
 """
 
-import numpy as np
-import xarray as xr
 import logging
-from numba import njit
 import math
+from abc import ABCMeta, abstractmethod
 from typing import Tuple
 
-from abc import ABCMeta, abstractmethod
+import numpy as np
+import xarray as xr
+from numba import njit
 from pandora.constants import *
 
 
@@ -39,7 +39,7 @@ class AbstractInterpolation(object):
 
     interpolation_methods_avail = {}
 
-    def __new__(cls, **cfg: dict):
+    def __new__(cls, **cfg: dict) -> object:
         """
         Return the plugin associated with the interpolated_disparity given in the configuration
 
@@ -61,7 +61,8 @@ class AbstractInterpolation(object):
                         return super(AbstractInterpolation, cls).__new__(
                             cls.interpolation_methods_avail[cfg['interpolated_disparity'].encode('utf-8')])
                     except KeyError:
-                        logging.error("No interpolation method named {} supported".format(cfg['interpolated_disparity']))
+                        logging.error(
+                            "No interpolation method named {} supported".format(cfg['interpolated_disparity']))
                         raise KeyError
         else:
             return super(AbstractInterpolation, cls).__new__(cls)
@@ -76,6 +77,12 @@ class AbstractInterpolation(object):
         """
 
         def decorator(subclass):
+            """
+            Registers the subclass in the available methods
+
+            :param subclass: the subclass to be registered
+            :type subclass: object
+            """
             cls.interpolation_methods_avail[short_name] = subclass
             return subclass
 
@@ -185,12 +192,12 @@ class McCnnInterpolation(AbstractInterpolation):
 
         left.attrs['interpolated_disparity'] = 'mc-cnn'
 
-
     @staticmethod
     @njit()
     def interpolate_occlusion_mc_cnn(disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Interpolation of the left disparity map to resolve occlusion conflicts. Interpolate occlusion by moving left until
+        Interpolation of the left disparity map to resolve occlusion conflicts.
+        Interpolate occlusion by moving left until
         we find a position labeled correct.
 
         Žbontar, J., & LeCun, Y. (2016). Stereo matching by training a convolutional neural network to compare image
@@ -245,7 +252,8 @@ class McCnnInterpolation(AbstractInterpolation):
     @njit()
     def interpolate_mismatch_mc_cnn(disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Interpolation of the left disparity map to resolve mismatch conflicts. Interpolate mismatch by finding the nearest
+        Interpolation of the left disparity map to resolve mismatch conflicts.
+        Interpolate mismatch by finding the nearest
         correct pixels in 16 different directions and use the median of their disparities.
 
         Žbontar, J., & LeCun, Y. (2016). Stereo matching by training a convolutional neural network to compare image
@@ -266,8 +274,8 @@ class McCnnInterpolation(AbstractInterpolation):
         ny, nx = disp.shape
 
         # 16 directions : [x, y]
-        dir = np.array([[0., 1.], [-0.5, 1.], [-1., 1.], [-1., 0.5], [-1., 0.], [-1., -0.5], [-1., -1.], [-0.5, -1.],
-                        [0., -1.], [0.5, -1.], [1., -1.], [1., -0.5], [1., 0.], [1., 0.5], [1., 1.], [0.5, 1.]])
+        dirs = np.array([[0., 1.], [-0.5, 1.], [-1., 1.], [-1., 0.5], [-1., 0.], [-1., -0.5], [-1., -1.], [-0.5, -1.],
+                         [0., -1.], [0.5, -1.], [1., -1.], [1., -0.5], [1., 0.], [1., 0.5], [1., 1.], [0.5, 1.]])
 
         # Maximum path length
         max_path_length = max(nx, ny)
@@ -281,8 +289,8 @@ class McCnnInterpolation(AbstractInterpolation):
                     for d in range(16):
                         # Find the first valid pixel in the current path
                         for i in range(1, max_path_length):
-                            xx = x + int(dir[d][0] * i)
-                            yy = y + int(dir[d][1] * i)
+                            xx = x + int(dirs[d][0] * i)
+                            yy = y + int(dirs[d][1] * i)
                             xx = math.floor(xx)
                             yy = math.floor(yy)
 
@@ -364,18 +372,18 @@ class SgmInterpolation(AbstractInterpolation):
         :return: None
         """
 
-        left['disparity_map'].data, left['validity_mask'].data = self.interpolate_mismatch_sgm(left['disparity_map'].data,
-                                                                                             left['validity_mask'].data)
-        left['disparity_map'].data, left['validity_mask'].data = self.interpolate_occlusion_sgm(left['disparity_map'].data,
-                                                                                              left['validity_mask'].data)
+        left['disparity_map'].data, left['validity_mask'].data = self.interpolate_mismatch_sgm(
+            left['disparity_map'].data,
+            left['validity_mask'].data)
+        left['disparity_map'].data, left['validity_mask'].data = self.interpolate_occlusion_sgm(
+            left['disparity_map'].data,
+            left['validity_mask'].data)
         left.attrs['interpolated_disparity'] = 'sgm'
 
-
-    @staticmethod
-    @njit()
-    def interpolate_occlusion_sgm(disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def interpolate_occlusion_sgm(self, disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Interpolation of the left disparity map to resolve occlusion conflicts. Interpolate occlusion by moving by selecting
+        Interpolation of the left disparity map to resolve occlusion conflicts.
+        Interpolate occlusion by moving by selecting
         the right lowest value along paths from 8 directions.
 
         HIRSCHMULLER, Heiko. Stereo processing by semiglobal matching and mutual information.
@@ -393,38 +401,15 @@ class SgmInterpolation(AbstractInterpolation):
         out_disp = np.copy(disp)
         out_val = np.copy(valid)
 
-        ny, nx = disp.shape
-
         # 8 directions : [x, y]
-        dir = np.array([[0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0], [1, 1]])
-
-        # Maximum path length
-        max_path_length = max(nx, ny)
+        dirs = np.array([[0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0], [1, 1]])
 
         ny, nx = disp.shape
         for y in range(ny):
             for x in range(nx):
                 # Occlusion
                 if (valid[y, x] & PANDORA_MSK_PIXEL_OCCLUSION) != 0:
-                    valid_neighbors = np.zeros(8, dtype=np.float32)
-                    # For each directions
-                    for d in range(8):
-                        # Find the first valid pixel in the current path
-                        xx = x
-                        yy = y
-                        for i in range(max_path_length):
-                            xx += dir[d][0]
-                            yy += dir[d][1]
-
-                            # Edge of the image reached: there is no valid pixel in the current path
-                            if (yy < 0) | (yy >= ny) | (xx < 0) | (xx >= nx):
-                                valid_neighbors[d] = np.nan
-                                break
-
-                            # First valid pixel
-                            if (valid[yy, xx] & PANDORA_MSK_PIXEL_INVALID) == 0:
-                                valid_neighbors[d] = disp[yy, xx]
-                                break
+                    valid_neighbors = self.find_valid_neighbors(dirs, disp, valid, x, y)
 
                     # Returns the indices that would sort the absolute array
                     # The absolute value is used to search for the right value closest to 0
@@ -436,15 +421,12 @@ class SgmInterpolation(AbstractInterpolation):
                     # Update the validity mask : Information : filled occlusion
                     out_val[y, x] -= PANDORA_MSK_PIXEL_OCCLUSION
                     out_val[y, x] += PANDORA_MSK_PIXEL_FILLED_OCCLUSION
-
         return out_disp, out_val
 
-    @staticmethod
-    @njit()
-    def interpolate_mismatch_sgm(disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def interpolate_mismatch_sgm(self, disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Interpolation of the left disparity map to resolve mismatch conflicts. Interpolate mismatch by finding the nearest
-        correct pixels in 8 different directions and use the median of their disparities.
+        Interpolation of the left disparity map to resolve mismatch conflicts. Interpolate mismatch by finding the
+        nearest correct pixels in 8 different directions and use the median of their disparities.
         Mismatched pixel areas that are direct neighbors of occluded pixels are treated as occlusions.
 
         HIRSCHMULLER, Heiko. Stereo processing by semiglobal matching and mutual information.
@@ -462,13 +444,8 @@ class SgmInterpolation(AbstractInterpolation):
         out_disp = np.copy(disp)
         out_val = np.copy(valid)
 
-        ny, nx = disp.shape
-
         # 8 directions : [x, y]
-        dir = np.array([[0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0], [1, 1]])
-
-        # Maximum path length
-        max_path_length = max(nx, ny)
+        dirs = np.array([[0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0], [1, 1]])
 
         ny, nx = disp.shape
         for y in range(ny):
@@ -483,25 +460,7 @@ class SgmInterpolation(AbstractInterpolation):
                         out_val[y, x] += PANDORA_MSK_PIXEL_OCCLUSION
 
                     else:
-                        # For each directions
-                        valid_neighbors = np.zeros(8, dtype=np.float32)
-                        for d in range(8):
-                            # Find the first valid pixel in the current path
-                            xx = x
-                            yy = y
-                            for i in range(max_path_length):
-                                xx += dir[d][0]
-                                yy += dir[d][1]
-
-                                # Edge of the image reached: there is no valid pixel in the current path
-                                if (yy < 0) | (yy >= ny) | (xx < 0) | (xx >= nx):
-                                    valid_neighbors[d] = np.nan
-                                    break
-
-                                # First valid pixel
-                                if (valid[yy, xx] & PANDORA_MSK_PIXEL_INVALID) == 0:
-                                    valid_neighbors[d] = disp[yy, xx]
-                                    break
+                        valid_neighbors = self.find_valid_neighbors(dirs, disp, valid, x, y)
 
                         # Median of the 8 pixels
                         out_disp[y, x] = np.nanmedian(valid_neighbors)
@@ -510,3 +469,44 @@ class SgmInterpolation(AbstractInterpolation):
                         out_val[y, x] += PANDORA_MSK_PIXEL_FILLED_MISMATCH
 
         return out_disp, out_val
+
+    @staticmethod
+    @njit()
+    def find_valid_neighbors(dirs: np.ndarray, disp: np.ndarray, valid: np.ndarray,
+                             x: int, y: int):
+        """
+        :param dirs: directions
+        :type dirs: 2D np.array (row, col)
+        :param disp: disparity map
+        :type disp: 2D np.array (row, col)
+        :param valid: validity mask
+        :type valid: 2D np.array (row, col)
+        :param x: x current value
+        :type x: int
+        :param y: y current value
+        :type y: int
+        :return: valid neighbors
+        :rtype : 2D np.array
+        """
+        ny, nx = disp.shape
+        # Maximum path length
+        max_path_length = max(nx, ny)
+        # For each directions
+        valid_neighbors = np.zeros(8, dtype=np.float32)
+        for d in range(8):
+            # Find the first valid pixel in the current path
+            xx = x
+            yy = y
+            for i in range(max_path_length):
+                xx += dirs[d][0]
+                yy += dirs[d][1]
+
+                # Edge of the image reached: there is no valid pixel in the current path
+                if (yy < 0) | (yy >= ny) | (xx < 0) | (xx >= nx):
+                    valid_neighbors[d] = np.nan
+                    break
+                # First valid pixel
+                if (valid[yy, xx] & PANDORA_MSK_PIXEL_INVALID) == 0:
+                    valid_neighbors[d] = disp[yy, xx]
+                    break
+        return valid_neighbors

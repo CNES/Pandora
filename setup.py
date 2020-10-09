@@ -27,10 +27,11 @@ from setuptools import setup, find_packages
 import subprocess
 from codecs import open
 
-cmdclass={}
+cmdclass = {}
 
 try:
     from sphinx.setup_command import BuildDoc
+
     cmdclass['build_sphinx'] = BuildDoc
 except ImportError:
     print('WARNING: sphinx not available. Doc cannot be built')
@@ -44,6 +45,7 @@ requirements = ['numpy',
                 'numba>=0.47.*',
                 'opencv-python-headless',
                 'transitions']
+
 
 def readme():
     with open('README.md', "r", "utf-8") as f:

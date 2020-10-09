@@ -23,16 +23,17 @@
 This module contains functions allowing to save the results and the configuration of Pandora pipeline.
 """
 
-import json
 import errno
+import json
 import os
+from typing import Dict, Union, Tuple
+
+import numpy as np
 import rasterio
 import xarray as xr
-from typing import Dict, Union, Tuple
-import numpy as np
+from pandora.constants import *
 
 from .output_tree_design import get_out_dir, get_out_file_path
-from pandora.constants import *
 
 
 def write_data_array(data_array: xr.DataArray, filename: str,
@@ -81,15 +82,16 @@ def save_results(left: xr.Dataset, right: xr.Dataset, output: str) -> None:
     Save results in the output directory
 
     :param left: left dataset, which contains the variables :
-                - disparity_map : the disparity map in the geometry of the left image 2D DataArray (row, col)
-                - confidence_measure : the confidence measure in the geometry of the left image 3D DataArray (row, col, indicator)
-                - validity_mask : the validity mask in the geometry of the left image 2D DataArray (row, col)
+        - disparity_map : the disparity map in the geometry of the left image 2D DataArray (row, col)
+        - confidence_measure : the confidence measure in the geometry of the left image 3D DataArray
+            (row, col, indicator)
+        - validity_mask : the validity mask in the geometry of the left image 2D DataArray (row, col)
     :type left: xr.Dataset
     :param right: right dataset. If there is no validation step, the right Dataset will be empty.
-                If a validation step is configured, the dataset will contain the variables :
-                - disparity_map : the disparity map in the geometry of the right image 2D DataArray (row, col)
-                - confidence_measure : the confidence in the geometry of the right image 3D DataArray (row, col, indicator)
-                - validity_mask : the validity mask in the geometry of the left image 2D DataArray (row, col)
+        If a validation step is configured, the dataset will contain the variables :
+        - disparity_map: the disparity map in the geometry of the right image 2D DataArray (row, col)
+        - confidence_measure: the confidence in the geometry of the right image 3D DataArray (row, col, indicator)
+        - validity_mask: the validity mask in the geometry of the left image 2D DataArray (row, col)
     :type right: xr.Dataset
     :param output: output directory
     :type output: string

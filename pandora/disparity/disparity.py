@@ -23,16 +23,16 @@
 This module contains functions associated to the disparity map computation step.
 """
 
-import xarray as xr
-import numpy as np
-from scipy.ndimage.morphology import binary_dilation
-from pandora.img_tools import compute_std_raster
-from pandora.constants import *
 import logging
-from json_checker import Checker, And, Or, OptionalKey
 from abc import ABCMeta, abstractmethod
-from typing import Dict, Union
+from typing import Dict, Union, Tuple
+
+import numpy as np
+import xarray as xr
+from json_checker import Checker, And, Or
+from scipy.ndimage.morphology import binary_dilation
 from pandora.constants import *
+from pandora.img_tools import compute_std_raster
 
 
 class AbstractDisparity(object):
@@ -40,7 +40,7 @@ class AbstractDisparity(object):
 
     disparity_methods_avail = {}
 
-    def __new__(cls, **cfg: dict):
+    def __new__(cls, **cfg: dict) -> object:
         """
         Return the plugin associated with the validation_method given in the configuration
 
@@ -61,7 +61,8 @@ class AbstractDisparity(object):
                         return super(AbstractDisparity, cls).__new__(
                             cls.disparity_methods_avail[cfg['disparity_method'].encode('utf-8')])
                     except KeyError:
-                        logging.error("No disparity computing method named {} supported".format(cfg['disparity_method']))
+                        logging.error(
+                            "No disparity computing method named {} supported".format(cfg['disparity_method']))
                         raise KeyError
         else:
             return super(AbstractDisparity, cls).__new__(cls)
@@ -76,6 +77,12 @@ class AbstractDisparity(object):
         """
 
         def decorator(subclass):
+            """
+            Registers the subclass in the available methods
+
+            :param subclass: the subclass to be registered
+            :type subclass: object
+            """
             cls.disparity_methods_avail[short_name] = subclass
             return subclass
 
@@ -115,7 +122,8 @@ class AbstractDisparity(object):
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
 
-    def coefficient_map(self, cv: xr.DataArray) -> xr.DataArray:
+    @staticmethod
+    def coefficient_map(cv: xr.DataArray) -> xr.DataArray:
         """
         Return the coefficient map
 
@@ -135,8 +143,8 @@ class AbstractDisparity(object):
 
         return coeff_map
 
-    def approximate_right_disparity(self, cv: xr.Dataset, img_right: xr.Dataset, invalid_value: float = 0,
-                                    img_left: xr.Dataset = None) -> xr.Dataset:
+    @staticmethod
+    def approximate_right_disparity(cv: xr.Dataset, img_right: xr.Dataset, invalid_value: float = 0) -> xr.Dataset:
         """
         Create the right disparity map, by a diagonal search for the minimum in the left cost volume
 
@@ -156,11 +164,6 @@ class AbstractDisparity(object):
                 - msk : 2D (row, col) xarray.DataArray
         :param invalid_value: disparity to assign to invalid pixels
         :type invalid_value: float
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing :
-                - im : 2D (row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
         :return: Dataset with the right disparity map, the confidence measure and the validity mask
         :rtype:
             xarray.Dataset with the data variables :
@@ -180,8 +183,8 @@ class AbstractDisparity(object):
                               coords={'row': cv.coords['row'], 'col': cv.coords['col']})
 
         # Allocate the confidence measure
-        confidence_measure = compute_std_raster(img_right, cv.attrs['window_size']).reshape(len(row_range),
-                                                                                          len(col_range), 1)
+        confidence_measure = compute_std_raster(img_right, cv.attrs['window_size']).reshape((len(row_range),
+                                                                                             len(col_range), 1))
         disp_map = disp_map.assign_coords(indicator=['disparity_pandora_intensityStd'])
         disp_map['confidence_measure'] = xr.DataArray(data=confidence_measure.astype(np.float32),
                                                       dims=['row', 'col', 'indicator'])
@@ -260,7 +263,6 @@ class AbstractDisparity(object):
         d_min = int(disp.attrs['disp_min'])
         d_max = int(disp.attrs['disp_max'])
         col = disp.coords['col'].data
-        row = disp.coords['row'].data
 
         # Negative disparity range
         if d_max < 0:
@@ -287,10 +289,36 @@ class AbstractDisparity(object):
         # outside the image )
         disp['validity_mask'].data[:, bit_1] += PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
 
-        # The disp_min and disp_max used to search missing disparity interval are not the local disp_min and disp_max in
-        # case of a variable range of disparities. So there may be pixels that have missing disparity range (all cost are
-        # np.nan), but are not detected in the code block above. To find the pixels that have a missing disparity range, we
-        # search in the cost volume pixels where cost_volume(x,y, for all d) = np.nan
+        # The disp_min and disp_max used to search missing disparity interval are not the local disp_min and disp_max
+        # in case of a variable range of disparities. So there may be pixels that have missing disparity range (all
+        # cost are np.nan), but are not detected in the code block above. To find the pixels that have a missing
+        # disparity range, we search in the cost volume pixels where cost_volume(x,y, for all d) = np.nan
+        self.mask_invalid_variable_disparity_range(disp, cv)
+
+        if 'msk' in img_left.data_vars:
+            self.allocate_left_mask(disp, img_left)
+
+        if 'msk' in img_right.data_vars:
+            self.allocate_right_mask(disp, img_right, bit_1)
+
+    @staticmethod
+    def mask_invalid_variable_disparity_range(disp, cv) -> None:
+        """
+        Mask the pixels that have a missing disparity range, searching in the cost volume
+        the pixels where cost_volume(x,y, for all d) = np.nan
+
+        :param disp: dataset with the disparity map and the confidence measure
+        :type disp:
+            xarray.Dataset with the data variables :
+                - disparity_map 2D xarray.DataArray (row, col)
+                - confidence_measure 3D xarray.DataArray(row, col, indicator)
+        :param cv: cost volume dataset
+        :type cv:
+            xarray.Dataset, with the data variables:
+                - cost_volume 3D xarray.DataArray (row, col, disp)
+                - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :return: None
+        """
         indices_nan = np.isnan(cv['cost_volume'].data)
         missing_disparity_range = np.min(indices_nan, axis=2)
         missing_range_y, missing_range_x = np.where(missing_disparity_range == True)
@@ -299,64 +327,102 @@ class AbstractDisparity(object):
         condition_to_mask = (disp['validity_mask'].data[missing_range_y, missing_range_x] &
                              PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING) == 0
         masking_value = disp['validity_mask'].data[missing_range_y, missing_range_x] + \
-                        PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
+            PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
         no_masking_value = disp['validity_mask'].data[missing_range_y, missing_range_x]
 
         disp['validity_mask'].data[missing_range_y, missing_range_x] = np.where(condition_to_mask,
                                                                                 masking_value,
                                                                                 no_masking_value)
 
-        if 'msk' in img_left.data_vars:
-            _, r_mask = xr.align(disp['validity_mask'], img_left['msk'])
+    @staticmethod
+    def allocate_left_mask(disp: xr.Dataset, img_left: xr.Dataset) -> None:
+        """
+        Allocate the left image mask
 
-            # Dilatation : pixels that contains no_data in their aggregation window become no_data
-            dil = binary_dilation(img_left['msk'].data == img_left.attrs['no_data_mask'],
-                                  structure=np.ones((disp.attrs['window_size'], disp.attrs['window_size'])),
-                                  iterations=1)
-            offset = disp.attrs['offset_row_col']
-            if offset != 0:
-                dil = dil[offset:-offset, offset:-offset]
+        :param disp: dataset with the disparity map and the confidence measure
+        :type disp:
+            xarray.Dataset with the data variables :
+                - disparity_map 2D xarray.DataArray (row, col)
+                - confidence_measure 3D xarray.DataArray(row, col, indicator)
+        :param img_left: left Dataset image
+        :type img_left:
+            xarray.Dataset containing :
+                - im : 2D (row, col) xarray.DataArray
+                - msk : 2D (row, col) xarray.DataArray
+        :return: None
+        """
+        _, r_mask = xr.align(disp['validity_mask'], img_left['msk'])
 
-            # Invalid pixel : no_data in the left image
-            disp['validity_mask'] += dil.astype(np.uint16) * PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
+        # Dilatation : pixels that contains no_data in their aggregation window become no_data
+        dil = binary_dilation(img_left['msk'].data == img_left.attrs['no_data_mask'],
+                              structure=np.ones((disp.attrs['window_size'], disp.attrs['window_size'])),
+                              iterations=1)
+        offset = disp.attrs['offset_row_col']
+        if offset != 0:
+            dil = dil[offset:-offset, offset:-offset]
 
-            # Invalid pixel : invalidated by the validity mask of the left image given as input
-            disp['validity_mask'] += xr.where(
-                (r_mask != img_left.attrs['no_data_mask']) & (r_mask != img_left.attrs['valid_pixels']),
-                PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, 0).astype(np.uint16)
+        # Invalid pixel : no_data in the left image
+        disp['validity_mask'] += dil.astype(np.uint16) * PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
 
-        if 'msk' in img_right.data_vars:
-            _, r_mask = xr.align(disp['validity_mask'], img_right['msk'])
+        # Invalid pixel : invalidated by the validity mask of the left image given as input
+        disp['validity_mask'] += xr.where(
+            (r_mask != img_left.attrs['no_data_mask']) & (r_mask != img_left.attrs['valid_pixels']),
+            PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, 0).astype(np.uint16)
 
-            # Dilatation : pixels that contains no_data in their aggregation window become no_data
-            dil = binary_dilation(img_right['msk'].data == img_right.attrs['no_data_mask'],
-                                  structure=np.ones((disp.attrs['window_size'], disp.attrs['window_size'])),
-                                  iterations=1)
-            offset = disp.attrs['offset_row_col']
-            if offset != 0:
-                dil = dil[offset:-offset, offset:-offset]
+    @staticmethod
+    def allocate_right_mask(disp: xr.Dataset, img_right: xr.Dataset, bit_1: Union[np.ndarray, Tuple]) -> None:
+        """
+        Allocate the right image mask
 
-            r_mask = xr.where((r_mask != img_right.attrs['no_data_mask']) & (r_mask != img_right.attrs['valid_pixels']),
-                              1, 0).data
+        :param disp: dataset with the disparity map and the confidence measure
+        :type disp:
+            xarray.Dataset with the data variables :
+                - disparity_map 2D xarray.DataArray (row, col)
+                - confidence_measure 3D xarray.DataArray(row, col, indicator)
+        :param img_right: left Dataset image
+        :type img_right:
+            xarray.Dataset containing :
+                - im : 2D (row, col) xarray.DataArray
+                - msk : 2D (row, col) xarray.DataArray
+        :param bit_1: where the disparity interval is missing in the right image ( disparity range outside the image )
+        :type: ndarray or Tuple
+        :return: None
+        """
+        _, r_mask = xr.align(disp['validity_mask'], img_right['msk'])
+        d_min = int(disp.attrs['disp_min'])
+        d_max = int(disp.attrs['disp_max'])
+        col = disp.coords['col'].data
+        row = disp.coords['row'].data
 
-            # Useful to calculate the case where the disparity interval is incomplete, and all remaining right
-            # positions are invalidated by the right mask
-            b_2_7 = np.zeros((len(row), len(col)), dtype=np.uint16)
-            # Useful to calculate the case where no_data in the right image invalidated the disparity interval
-            no_data_right = np.zeros((len(row), len(col)), dtype=np.uint16)
+        # Dilatation : pixels that contains no_data in their aggregation window become no_data
+        dil = binary_dilation(img_right['msk'].data == img_right.attrs['no_data_mask'],
+                              structure=np.ones((disp.attrs['window_size'], disp.attrs['window_size'])),
+                              iterations=1)
+        offset = disp.attrs['offset_row_col']
+        if offset != 0:
+            dil = dil[offset:-offset, offset:-offset]
 
-            col_range = np.arange(len(col))
-            for d in range(d_min, d_max + 1):
-                # Diagonal in the cost volume
-                col_d = col_range + d
-                valid_index = np.where((col_d >= col_range[0]) & (col_d <= col_range[-1]))
+        r_mask = xr.where((r_mask != img_right.attrs['no_data_mask']) & (r_mask != img_right.attrs['valid_pixels']),
+                          1, 0).data
 
-                # No_data and masked pixels do not raise the same flag, we need to treat them differently
-                b_2_7[:, col_range[valid_index]] += r_mask[:, col_d[valid_index]].astype(np.uint16)
-                b_2_7[:, col_range[np.setdiff1d(col_range, valid_index)]] += 1
+        # Useful to calculate the case where the disparity interval is incomplete, and all remaining right
+        # positions are invalidated by the right mask
+        b_2_7 = np.zeros((len(row), len(col)), dtype=np.uint16)
+        # Useful to calculate the case where no_data in the right image invalidated the disparity interval
+        no_data_right = np.zeros((len(row), len(col)), dtype=np.uint16)
 
-                no_data_right[:, col_range[valid_index]] += dil[:, col_d[valid_index]]
-                no_data_right[:, col_range[np.setdiff1d(col_range, valid_index)]] += 1
+        col_range = np.arange(len(col))
+        for d in range(d_min, d_max + 1):
+            # Diagonal in the cost volume
+            col_d = col_range + d
+            valid_index = np.where((col_d >= col_range[0]) & (col_d <= col_range[-1]))
+
+            # No_data and masked pixels do not raise the same flag, we need to treat them differently
+            b_2_7[:, col_range[valid_index]] += r_mask[:, col_d[valid_index]].astype(np.uint16)
+            b_2_7[:, col_range[np.setdiff1d(col_range, valid_index)]] += 1
+
+            no_data_right[:, col_range[valid_index]] += dil[:, col_d[valid_index]]
+            no_data_right[:, col_range[np.setdiff1d(col_range, valid_index)]] += 1
 
             # Exclusion of pixels that have flag 1 already enabled
             b_2_7[:, bit_1[0]] = 0
@@ -416,7 +482,6 @@ class WinnerTakesAll(AbstractDisparity):
         :return: None
         """
         print('Winner takes all method')
-
 
     def to_disp(self, cv: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None) -> xr.Dataset:
         """
@@ -507,11 +572,11 @@ class WinnerTakesAll(AbstractDisparity):
         y_begin = 0
 
         for y in range(len(cv_chunked_y)):
-            # To reduce memory, the cost volume is split (along the col axis) into multiple sub-arrays with a step of 100
+            # To reduce memory, the cost volume is split (along the col axis) into
+            # multiple sub-arrays with a step of 100
             cv_chunked_x = np.array_split(cv_chunked_y[y], np.arange(100, nx, 100), axis=1)
             x_begin = 0
             for x in range(len(cv_chunked_x)):
-
                 disp[y_begin:y_begin + cv_chunked_y[y].shape[0], x_begin: x_begin + cv_chunked_x[x].shape[1]] = \
                     cost_volume.coords['disp'].data[np.argmin(cv_chunked_x[x], axis=2)]
                 x_begin += cv_chunked_x[x].shape[1]
@@ -542,11 +607,11 @@ class WinnerTakesAll(AbstractDisparity):
         y_begin = 0
 
         for y in range(len(cv_chunked_y)):
-            # To reduce memory, the cost volume is split (along the col axis) into multiple sub-arrays with a step of 100
+            # To reduce memory, the cost volume is split (along the col axis)
+            # into multiple sub-arrays with a step of 100
             cv_chunked_x = np.array_split(cv_chunked_y[y], np.arange(100, nx, 100), axis=1)
             x_begin = 0
             for x in range(len(cv_chunked_x)):
-
                 disp[y_begin:y_begin + cv_chunked_y[y].shape[0], x_begin: x_begin + cv_chunked_x[x].shape[1]] = \
                     cost_volume.coords['disp'].data[np.argmax(cv_chunked_x[x], axis=2)]
                 x_begin += cv_chunked_x[x].shape[1]
@@ -554,5 +619,3 @@ class WinnerTakesAll(AbstractDisparity):
             y_begin += cv_chunked_y[y].shape[0]
 
         return disp
-
-

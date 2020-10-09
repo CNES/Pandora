@@ -23,20 +23,19 @@
 This module contains functions to test the Pandora pipeline.
 """
 
-import unittest
+import json
 import logging
 import logging.config
 import os
-import json
-import rasterio
-import numpy as np
-import xarray as xr
-
-import pandora
-from pandora.img_tools import read_img
-from pandora import import_plugin
+import unittest
 from tempfile import TemporaryDirectory
-import pandora.common as common
+
+import numpy as np
+import pandora
+import rasterio
+import xarray as xr
+from pandora import import_plugin
+from pandora.img_tools import read_img
 from pandora.state_machine import PandoraMachine
 
 
@@ -151,25 +150,25 @@ class TestPandora(unittest.TestCase):
 
         # Create left and right images
         data_left = np.array([[2, 5, 3, 1, 6, 1, 3, 3],
-                             [5, 3, 2, 1, 4, 3, 3, 2],
-                             [4, 2, 3, 2, 2, 3, 4, 6],
-                             [4, 5, 3, 2, 0, 1, 0, 1],
-                             [1, 3, 2, 1, 0, 2, 1, 3],
-                             [5, 2, 1, 0, 1, 2, 3, 5],
-                             [3, 3, 2, 3, 0, 4, 1, 2]], dtype=np.float32)
+                              [5, 3, 2, 1, 4, 3, 3, 2],
+                              [4, 2, 3, 2, 2, 3, 4, 6],
+                              [4, 5, 3, 2, 0, 1, 0, 1],
+                              [1, 3, 2, 1, 0, 2, 1, 3],
+                              [5, 2, 1, 0, 1, 2, 3, 5],
+                              [3, 3, 2, 3, 0, 4, 1, 2]], dtype=np.float32)
 
         img_left = xr.Dataset({'im': (['row', 'col'], data_left)},
-                             coords={'row': np.arange(data_left.shape[0]), 'col': np.arange(data_left.shape[1])})
+                              coords={'row': np.arange(data_left.shape[0]), 'col': np.arange(data_left.shape[1])})
 
         data_right = np.array([[1, 2, 1, 2, 5, 3, 1, 6],
-                             [2, 3, 5, 3, 2, 1, 4, 3],
-                             [0, 2, 4, 2, 3, 2, 2, 3],
-                             [5, 3, 1, 4, 5, 3, 2, 0],
-                             [2, 1, 3, 2, 1, 0, 2, 1],
-                             [5, 5, 5, 2, 1, 0, 1, 2],
-                             [1, 2, 2, 3, 3, 2, 3, 0]], dtype=np.float32)
+                               [2, 3, 5, 3, 2, 1, 4, 3],
+                               [0, 2, 4, 2, 3, 2, 2, 3],
+                               [5, 3, 1, 4, 5, 3, 2, 0],
+                               [2, 1, 3, 2, 1, 0, 2, 1],
+                               [5, 5, 5, 2, 1, 0, 1, 2],
+                               [1, 2, 2, 3, 3, 2, 3, 0]], dtype=np.float32)
         img_right = xr.Dataset({'im': (['row', 'col'], data_right)},
-                             coords={'row': np.arange(data_right.shape[0]), 'col': np.arange(data_right.shape[1])})
+                               coords={'row': np.arange(data_right.shape[0]), 'col': np.arange(data_right.shape[1])})
 
         # Load a configuration
         user_cfg = {
@@ -206,28 +205,28 @@ class TestPandora(unittest.TestCase):
 
         # Run the Pandora pipeline
         left, right = pandora.run(pandora_machine, img_left, img_right, cfg['input']['disp_min'],
-                               cfg['input']['disp_max'], cfg)
+                                  cfg['input']['disp_max'], cfg)
 
         # Ground truth confidence measure
         gt_left_indicator_stereo = np.array([[1.57175062, 1.46969385, 1.39484766, 1.6],
-                                            [1.51578363, 1.2, 1.1892855, 1.54712637],
-                                            [1.43331783, 1.24835892, 1.21720992, 1.58694675]], dtype=np.float32)
+                                             [1.51578363, 1.2, 1.1892855, 1.54712637],
+                                             [1.43331783, 1.24835892, 1.21720992, 1.58694675]], dtype=np.float32)
 
         gt_left_indicator_validation = np.array([[0, 0, 2, 3],
-                                                [0, 0, 0, 2],
-                                                [0, 0, 0, 1]], dtype=np.float32)
+                                                 [0, 0, 0, 2],
+                                                 [0, 0, 0, 1]], dtype=np.float32)
 
         gt_left_confidence_measure = np.full((7, 8, 2), np.nan, dtype=np.float32)
         gt_left_confidence_measure[2:-2, 2:-2, 0] = gt_left_indicator_stereo
         gt_left_confidence_measure[2:-2, 2:-2, 1] = gt_left_indicator_validation
 
         gt_right_indicator_stereo = np.array([[1.4164745, 1.33026313, 1.36, 1.47295621],
-                                            [1.5147277, 1.49986666, 1.44222051, 1.24835892],
-                                            [1.48916084, 1.38794813, 1.28747816, 1.24835892]], dtype=np.float32)
+                                              [1.5147277, 1.49986666, 1.44222051, 1.24835892],
+                                              [1.48916084, 1.38794813, 1.28747816, 1.24835892]], dtype=np.float32)
 
         gt_right_indicator_validation = np.array([[2, 1, 0, 0],
-                                                [0, 1, 0, 0],
-                                                [0, 1, 0, 0]], dtype=np.float32)
+                                                  [0, 1, 0, 0],
+                                                  [0, 1, 0, 0]], dtype=np.float32)
 
         gt_right_confidence_measure = np.full((7, 8, 2), np.nan, dtype=np.float32)
         gt_right_confidence_measure[2:-2, 2:-2, 0] = gt_right_indicator_stereo
@@ -402,4 +401,3 @@ def setup_logging(path='logging.json', default_level=logging.WARNING, ):
 if __name__ == '__main__':
     setup_logging()
     unittest.main()
-

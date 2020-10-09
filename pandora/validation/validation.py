@@ -24,12 +24,13 @@ This module contains classes and functions associated to the validation step.
 """
 
 import logging
+from abc import ABCMeta, abstractmethod
+from typing import Dict, Union
+
 import numpy as np
 import xarray as xr
 from json_checker import Checker, And, Or, OptionalKey
 from pandora import JSON_checker as jcheck
-from abc import ABCMeta, abstractmethod
-from typing import Dict, Union
 from pandora.constants import *
 
 
@@ -38,7 +39,7 @@ class AbstractValidation(object):
 
     validation_methods_avail = {}
 
-    def __new__(cls, **cfg: dict):
+    def __new__(cls, **cfg: dict) -> object:
         """
         Return the plugin associated with the validation_method given in the configuration
 
@@ -48,7 +49,8 @@ class AbstractValidation(object):
         if cls is AbstractValidation:
             if type(cfg['validation_method']) is str:
                 try:
-                    return super(AbstractValidation, cls).__new__(cls.validation_methods_avail[cfg['validation_method']])
+                    return super(AbstractValidation, cls).__new__(
+                        cls.validation_methods_avail[cfg['validation_method']])
                 except KeyError:
                     logging.error("No validation method named {} supported".format(cfg['validation_method']))
                     raise KeyError
@@ -59,7 +61,8 @@ class AbstractValidation(object):
                         return super(AbstractValidation, cls).__new__(
                             cls.validation_methods_avail[cfg['validation_method'].encode('utf-8')])
                     except KeyError:
-                        logging.error("No validation matching method named {} supported".format(cfg['validation_method']))
+                        logging.error(
+                            "No validation matching method named {} supported".format(cfg['validation_method']))
                         raise KeyError
         else:
             return super(AbstractValidation, cls).__new__(cls)
@@ -74,6 +77,12 @@ class AbstractValidation(object):
         """
 
         def decorator(subclass):
+            """
+            Registers the subclass in the available methods
+
+            :param subclass: the subclass to be registered
+            :type subclass: object
+            """
             cls.validation_methods_avail[short_name] = subclass
             return subclass
 
@@ -252,7 +261,8 @@ class CrossChecking(AbstractValidation):
             col_right = np.rint(col_right).astype(int)
 
             # Left-Right consistency, for pixel i :
-            # If | Disp_right(i + rint(Disp_left(i)) + Disp_left(i) | > self._threshold : i is invalid, mismatched or occlusion detected
+            # If | Disp_right(i + rint(Disp_left(i)) + Disp_left(i) | > self._threshold :
+            # i is invalid, mismatched or occlusion detected
             # If | Disp_right(i + rint(Disp_left(i)) + Disp_left(i) | <= self._threshold : i is valid
 
             # Apply cross checking on pixels i + round(Disp_left(i) inside the right image
@@ -277,7 +287,7 @@ class CrossChecking(AbstractValidation):
 
             # Index : i + d, for any other d. 2D np array (nb invalid pixels, nb disparity )
             index = np.tile(disparity_range, (len(col_left[inside_right][invalid]), 1)).astype(np.float32) + \
-                    np.tile(col_left[inside_right][invalid], (len(disparity_range), 1)).transpose()
+                np.tile(col_left[inside_right][invalid], (len(disparity_range), 1)).transpose()
 
             inside_col_disp = np.where((index >= 0) & (index < nb_col))
 
@@ -286,7 +296,8 @@ class CrossChecking(AbstractValidation):
             disp_right[inside_col_disp] = dataset_right['disparity_map'].data[row, index[inside_col_disp].astype(int)]
 
             # Check if rint(Disp_right(i + d)) == -d
-            comp = (np.rint(disp_right) == np.tile(-1 * disparity_range, (len(col_left[inside_right][invalid]), 1)).astype(
+            comp = (np.rint(disp_right) == np.tile(-1 * disparity_range,
+                                                   (len(col_left[inside_right][invalid]), 1)).astype(
                 np.float32))
             comp = np.sum(comp, axis=1)
             comp[comp > 1] = 1

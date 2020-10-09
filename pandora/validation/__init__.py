@@ -18,5 +18,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from .validation import AbstractValidation
 from .interpolated_disparity import AbstractInterpolation
+from .validation import AbstractValidation

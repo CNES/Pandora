@@ -37,9 +37,10 @@
 This module contains the function which defines the images margins.
 """
 
+from typing import Dict
+
 import numpy as np
 import xarray as xr
-from typing import Dict
 
 
 def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.DataArray:

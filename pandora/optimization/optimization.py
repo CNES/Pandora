@@ -23,11 +23,11 @@
 This module contains classes and functions associated to the cost volume optimization step.
 """
 
-import sys
 import logging
+import sys
 from abc import ABCMeta, abstractmethod
-from json_checker import Checker, And
 from typing import Dict
+
 import xarray as xr
 
 
@@ -36,7 +36,7 @@ class AbstractOptimization(object):
 
     optimization_methods_avail = {}
 
-    def __new__(cls, **cfg: Dict[str, dict]) -> None:
+    def __new__(cls, **cfg: Dict[str, dict]) -> object:
         """
         Return the plugin associated with the optimization_method given in the configuration
 
@@ -46,7 +46,8 @@ class AbstractOptimization(object):
         if cls is AbstractOptimization:
             if type(cfg['optimization_method']) is str:
                 try:
-                    return super(AbstractOptimization, cls).__new__(cls.optimization_methods_avail[cfg['optimization_method']])
+                    return super(AbstractOptimization, cls).__new__(
+                        cls.optimization_methods_avail[cfg['optimization_method']])
                 except KeyError:
                     logging.error("No optimization method named {} supported".format(cfg['optimization_method']))
                     sys.exit(1)
@@ -54,7 +55,8 @@ class AbstractOptimization(object):
                 if type(cfg['optimization_method']) is unicode:
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
-                        return super(AbstractOptimization, cls).__new__(cls.optimization_methods_avail[cfg['optimization_method'].encode('utf-8')])
+                        return super(AbstractOptimization, cls).__new__(
+                            cls.optimization_methods_avail[cfg['optimization_method'].encode('utf-8')])
                     except KeyError:
                         logging.error("No optimization method named {} supported".format(cfg['optimization_method']))
                         sys.exit(1)
@@ -69,7 +71,14 @@ class AbstractOptimization(object):
         :param short_name: the subclass to be registered
         :type short_name: string
         """
+
         def decorator(subclass):
+            """
+            Registers the subclass in the available methods
+
+            :param subclass: the subclass to be registered
+            :type subclass: object
+            """
             cls.optimization_methods_avail[short_name] = subclass
             return subclass
 

@@ -24,13 +24,11 @@ This module contains functions to test the configuration
 """
 
 import unittest
+
 import json_checker
-
 import pandora.JSON_checker as JSON_checker
-
 from pandora.state_machine import PandoraMachine
 from transitions import MachineError
-import transitions
 
 
 class TestConfig(unittest.TestCase):
@@ -160,7 +158,6 @@ class TestConfig(unittest.TestCase):
         """
         Test the method check_conf
         """
-
 
         # Check the configuration returned with left disparity grids
 
@@ -292,7 +289,7 @@ class TestConfig(unittest.TestCase):
             },
             "pipeline":
                 {
-                    "right_disp_map":{
+                    "right_disp_map": {
                         "method": "accurate"
                     },
                     "stereo": {
@@ -400,7 +397,7 @@ class TestConfig(unittest.TestCase):
                     "subpix": 2
                 },
                 'filter': {
-                  'filter_method': 'median'
+                    'filter_method': 'median'
                 },
                 "disparity": {
                     "disparity_method": "wta",
@@ -419,4 +416,3 @@ class TestConfig(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

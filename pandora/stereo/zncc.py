@@ -23,12 +23,13 @@
 This module contains functions associated to ZNCC method used in the cost volume measure step.
 """
 
+from typing import Dict, Union
+
 import numpy as np
 import xarray as xr
 from json_checker import Checker, And
-from typing import Dict, Union
-
 from pandora.img_tools import shift_right_img, compute_mean_raster, compute_std_raster
+
 from . import stereo
 
 
@@ -168,7 +169,8 @@ class Zncc(stereo.AbstractStereo):
 
             # Divide by the standard deviation of the intensities of the images :
             # If the standard deviation of the intensities of the images is greater than 0
-            divide_standard = np.multiply(img_left_std[:, p_std[0]:p_std[1]], img_right_std[i_right][:, q_std[0]:q_std[1]])
+            divide_standard = np.multiply(img_left_std[:, p_std[0]:p_std[1]],
+                                          img_right_std[i_right][:, q_std[0]:q_std[1]])
             valid = np.where(divide_standard > 0)
             zncc_[valid] /= divide_standard[valid]
             # Else, zncc = 0

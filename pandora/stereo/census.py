@@ -23,13 +23,13 @@
 This module contains functions associated to census method used in the cost volume measure step.
 """
 
-import numpy as np
-from json_checker import Checker, And
-from typing import Dict, Union, Tuple
-import xarray as xr
+from typing import Dict, Union, Tuple, List
 
-from pandora.stereo import stereo
+import numpy as np
+import xarray as xr
+from json_checker import Checker, And
 from pandora.img_tools import shift_right_img, census_transform
+from pandora.stereo import stereo
 
 
 @stereo.AbstractStereo.register_subclass('census')
@@ -179,8 +179,8 @@ class Census(stereo.AbstractStereo):
 
         return cv
 
-    def census_cost(self, p: Tuple[int, int], q: Tuple[int, int], img_left: xr.Dataset, img_right: xr.Dataset) ->\
-            np.ndarray:
+    def census_cost(self, p: Tuple[int, int], q: Tuple[int, int], img_left: xr.Dataset, img_right: xr.Dataset) -> \
+            List[int]:
         """
         Computes xor pixel-wise between pre-processed images by census transform
 
@@ -204,7 +204,8 @@ class Census(stereo.AbstractStereo):
         xor_ = img_left['im'].data[:, p[0]:p[1]].astype('uint32') ^ img_right['im'].data[:, q[0]:q[1]].astype('uint32')
         return list(map(self.popcount32b, xor_))
 
-    def popcount32b(self, x: int) -> int:
+    @staticmethod
+    def popcount32b(x: int) -> int:
         """
         Computes the Hamming weight for the input x,
         Hamming weight is the number of symbols that are different from the zero

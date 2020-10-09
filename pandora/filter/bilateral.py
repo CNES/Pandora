@@ -23,10 +23,11 @@
 This module contains functions associated to the bilateral filter used to filter the disparity map.
 """
 
-import cv2
-from json_checker import Checker, And
 from typing import Dict, Union
+
+import cv2
 import xarray as xr
+from json_checker import Checker, And
 
 from . import filter
 

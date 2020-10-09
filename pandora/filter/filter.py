@@ -26,8 +26,7 @@ This module contains classes and functions associated to the disparity map filte
 import logging
 import sys
 from abc import ABCMeta, abstractmethod
-from json_checker import Checker, And
-from typing import Dict
+
 import xarray as xr
 
 
@@ -36,7 +35,7 @@ class AbstractFilter(object):
 
     filter_methods_avail = {}
 
-    def __new__(cls, **cfg: dict):
+    def __new__(cls, **cfg: dict) -> object:
         """
         Return the plugin associated with the filter_method given in the configuration
 
@@ -54,7 +53,8 @@ class AbstractFilter(object):
                 if type(cfg['filter_method']) is unicode:
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
-                        return super(AbstractFilter, cls).__new__(cls.filter_methods_avail[cfg['filter_method'].encode('utf-8')])
+                        return super(AbstractFilter, cls).__new__(
+                            cls.filter_methods_avail[cfg['filter_method'].encode('utf-8')])
                     except KeyError:
                         logging.error("No filter method named {} supported".format(cfg['filter_method']))
                         sys.exit(1)
@@ -69,7 +69,14 @@ class AbstractFilter(object):
         :param short_name: the subclass to be registered
         :type short_name: string
         """
+
         def decorator(subclass):
+            """
+            Registers the subclass in the available methods
+
+            :param subclass: the subclass to be registered
+            :type subclass: object
+            """
             cls.filter_methods_avail[short_name] = subclass
             return subclass
 
