@@ -9,7 +9,7 @@ The use as a binary is as follows:
 
 Required arguments are :
 
-- *config.json*: configuration file. Paramaters are described in :left:`config_file`
+- *config.json*: configuration file. Paramaters are described in :ref:`config_file`
 - *output_dir*: le chemin vers le dossier de sortie
 
 The other optional arguments, also available, are :
@@ -75,14 +75,14 @@ Pandora works with JSON formatted data with the following nested structures.
       }
     }
 
-+---------------------+-----------------------------------+------+---------------+------------------------------+---------+
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
 | Name                | Description                       | Type | Default value | Sub structures              | Required |
 +=====================+===================================+======+===============+=============================+==========+
-| *input*             | Input data to process             | dict |               | :left:`input_parameters`     | Yes      |
+| *input*             | Input data to process             | dict |               | :ref:`input_parameters`     | Yes      |
 +---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *image*             | Images and masks parameters       | dict |               | :left:`image_parameters`     | No       |
+| *image*             | Images and masks parameters       | dict |               | :ref:`image_parameters`     | No       |
 +---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *pipeline*          | Pipeline steps parameters         | dict |               | :left:`pipeline_parameters`  | Yes      |
+| *pipeline*          | Pipeline steps parameters         | dict |               | :ref:`pipeline_parameters`  | Yes      |
 +---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
 
 
@@ -91,25 +91,25 @@ Pandora works with JSON formatted data with the following nested structures.
 Input parameters
 ----------------
 
-+----------------+-----------------------------------------------------------+---------------+---------------+----------+
-| Name           | Description                                               | Type          | Default value | Required |
-+================+===========================================================+===============+===============+==========+
-|*img_left*       | Path to the left image                               | string        |               | Yes      |
-+----------------+-----------------------------------------------------------+---------------+---------------+----------+
-| *img_right*      | Path to the right image                               | string        |               | Yes      |
-+----------------+-----------------------------------------------------------+---------------+---------------+----------+
-| *disp_min*     | minimal disparity                                         | int or string |               | Yes      |
-+----------------+-----------------------------------------------------------+---------------+---------------+----------+
-| *disp_max*     | maximal disparity                                         | int or string |               | Yes      |
-+----------------+-----------------------------------------------------------+---------------+---------------+----------+
-| *left_mask*     | path to the left mask                                | string        | "none"        | No       |
-+----------------+-----------------------------------------------------------+---------------+---------------+----------+
-| *right_mask*     | path to the right mask                                | string        | "none"        | No       |
-+----------------+-----------------------------------------------------------+---------------+---------------+----------+
-| *disp_min_right* | Path to the minimal disparity grid of the right image | string        | "none"        | No       |
-+----------------+-----------------------------------------------------------+---------------+---------------+----------+
-| *disp_max_right* | Path to the maximal disparity grid of the right image | string        | "none"        | No       |
-+----------------+-----------------------------------------------------------+---------------+---------------+----------+
++------------------+-----------------------------------------------------------+---------------+---------------+----------+
+| Name             | Description                                               | Type          | Default value | Required |
++==================+===========================================================+===============+===============+==========+
+| *img_left*       | Path to the left image                                    | string        |               | Yes      |
++------------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *img_right*      | Path to the right image                                   | string        |               | Yes      |
++------------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *disp_min*       | minimal disparity                                         | int or string |               | Yes      |
++------------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *disp_max*       | maximal disparity                                         | int or string |               | Yes      |
++------------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *left_mask*      | path to the left mask                                     | string        | "none"        | No       |
++------------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *right_mask*     | path to the right mask                                    | string        | "none"        | No       |
++------------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *disp_min_right* | Path to the minimal disparity grid of the right image     | string        | "none"        | No       |
++------------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *disp_max_right* | Path to the maximal disparity grid of the right image     | string        | "none"        | No       |
++------------------+-----------------------------------------------------------+---------------+---------------+----------+
 
 .. note::
     - Parameters *disp_min* and *disp_max* can be the disparity range (type int) or the path to the grids
@@ -129,9 +129,9 @@ Image parameters
 +--------------+----------------------------------+------+---------------+----------+
 | Name         | Description                      | Type | Default value | Required |
 +==============+==================================+======+===============+==========+
-| nodata1      | Nodata value for left image | int  | 0             | No       |
+| nodata1      | Nodata value for left image      | int  | 0             | No       |
 +--------------+----------------------------------+------+---------------+----------+
-| nodata2      | Nodata value for right image | int  | 0             | No       |
+| nodata2      | Nodata value for right image     | int  | 0             | No       |
 +--------------+----------------------------------+------+---------------+----------+
 | valid_pixels | Valid pixel value in the mask    | int  | 0             | No       |
 +--------------+----------------------------------+------+---------------+----------+
@@ -146,26 +146,26 @@ Pipeline parameters
 
 "Pipeline" parameters define steps sequencing to be run. Pandora will check if sub-parameters of each mentioned step are correct.
 
-+---------------------+-----------------------------------+------+---------------+------------------------------+---------+
++---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
 | Name                | Description                       | Type | Default value | Sub structures              | Required |
 +=====================+===================================+======+===============+=============================+==========+
-| *right_disp_map*    | Input data to process             | dict |               | :left:`rdm_parameters`       | No       |
+| *right_disp_map*    | Input data to process             | dict |               | :ref:`rdm_parameters`       | No       |
 +---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *stereo*            | Pixel and mask parameters         | dict |               | :left:`stereo_parameters`    | Yes      |
+| *stereo*            | Pixel and mask parameters         | dict |               | :ref:`stereo_parameters`    | Yes      |
 +---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *aggregation*       | Aggregation step parameters       | dict |               | :left:`aggreg_parameters`    | No       |
+| *aggregation*       | Aggregation step parameters       | dict |               | :ref:`aggreg_parameters`    | No       |
 +---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *optimization*      | Optimization step parameters      | dict |               | :left:`optim_parameters`     | No       |
+| *optimization*      | Optimization step parameters      | dict |               | :ref:`optim_parameters`     | No       |
 +---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *disparity *        | Disparity  step parameters        | dict |               | :left:`disparity_parameters` | Yes      |
+| *disparity*         | Disparity  step parameters        | dict |               | :ref:`disparity_parameters` | Yes      |
 +---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *refinement*        | Refinement step parameters        | dict |               | :left:`refine_parameters`    | No       |
+| *refinement*        | Refinement step parameters        | dict |               | :ref:`refine_parameters`    | No       |
 +---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *filter*            | Filtering step parameters         | dict |               | :left:`filter_parameters`    | No       |
+| *filter*            | Filtering step parameters         | dict |               | :ref:`filter_parameters`    | No       |
 +---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *validation*        | Validation step parameters        | dict |               | :left:`valid_parameters`     | No       |
+| *validation*        | Validation step parameters        | dict |               | :ref:`valid_parameters`     | No       |
 +---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *resize*            | Resize step parameters            | dict |               | :left:`resize_parameters`    | No       |
+| *resize*            | Resize step parameters            | dict |               | :ref:`resize_parameters`    | No       |
 +---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
 
 .. _rdm_parameters:
@@ -296,7 +296,7 @@ Validation parameters
 +-----------------------------------+---------------------------------------------------------------------------------------------------------+--------+---------------+---------------------------+----------+
 
 .. note::
-  Cross-checking method cannot be choosen if right disparity map is not calculated. See  :left:`rdm_parameters` to activate it.
+  Cross-checking method cannot be choosen if right disparity map is not calculated. See  :ref:`rdm_parameters` to activate it.
 
 .. _resize_parameters:
 
@@ -310,7 +310,7 @@ Resize  parameters
 +---------------------+--------------------------+------------+---------------+---------------------+----------+
 
 .. note::
-  See :left:`border_management` to understand the goal of this step.
+  See :ref:`border_management` to understand the goal of this step.
 
 Sequencing of Pandora steps (Pandora Machine)
 ---------------------------------------------
@@ -333,7 +333,7 @@ The following diagram highligts all states and possible transitions.
 
 A transition (i.e a pandora's step) can be triggered several times. You must respect the following
 naming convention: *stepname_xxx* . xxx can be the string you want.
-See :left:`multiple_filters_example`
+See :ref:`multiple_filters_example`
 
 Examples
 ========
@@ -472,7 +472,7 @@ Saved images
 
 - *left_disparity.tif*, *right_disparity.tif* : disparity maps in left and right image geometry.
 
-- *left_validity_mask.tif*, *right_validity_mask.tif* : the :left:`validity_mask` in left image geometry, and
+- *left_validity_mask.tif*, *right_validity_mask.tif* : the :ref:`validity_mask` in left image geometry, and
   right. Note that bits 4, 5, 8 and 9 can only be calculated if a validation step is set.
 
 .. note::
@@ -493,15 +493,15 @@ represents a rejection / information criterion (= 1 if rejection / information, 
  +---------+--------------------------------------------------------------------------------------------------------+
  |         | The point is invalid, there are two possible cases:                                                    |
  |         |                                                                                                        |
- |    0    |   * border of left image                                                                          |
- |         |   * nodata of left image                                                                          |
+ |    0    |   * border of left image                                                                               |
+ |         |   * nodata of left image                                                                               |
  +---------+--------------------------------------------------------------------------------------------------------+
  |         | The point is invalid, there are two possible cases:                                                    |
  |         |                                                                                                        |
- |    1    |   - Disparity range does not permit to find any point on the right image                           |
- |         |   - nodata of right image                                                                          |
+ |    1    |   - Disparity range does not permit to find any point on the right image                               |
+ |         |   - nodata of right image                                                                              |
  +---------+--------------------------------------------------------------------------------------------------------+
- |    2    | Information : disparity range cannot be used completely , reaching border of right image           |
+ |    2    | Information : disparity range cannot be used completely , reaching border of right image               |
  +---------+--------------------------------------------------------------------------------------------------------+
  |    3    | Information: calculations stopped at the pixel stage, sub-pixel interpolation was not successful       |
  |         | (for vfit: pixels d-1 and/or d+1 could not be calculated)                                              |
@@ -510,9 +510,9 @@ represents a rejection / information criterion (= 1 if rejection / information, 
  +---------+--------------------------------------------------------------------------------------------------------+
  |    5    | Information : closed mismatch                                                                          |
  +---------+--------------------------------------------------------------------------------------------------------+
- |    6    | The point is invalid: invalidated by the validity mask associated to the left image               |
+ |    6    | The point is invalid: invalidated by the validity mask associated to the left image                    |
  +---------+--------------------------------------------------------------------------------------------------------+
- |    7    | The point is invalid: right positions to be scanned invalidated by the mask of the right image |
+ |    7    | The point is invalid: right positions to be scanned invalidated by the mask of the right image         |
  +---------+--------------------------------------------------------------------------------------------------------+
  |    8    | The Point is invalid: point located in an occlusion area                                               |
  +---------+--------------------------------------------------------------------------------------------------------+

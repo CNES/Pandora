@@ -74,7 +74,7 @@ This Dataset also has a :
 
   - standard deviation of the intensities within the a window: "stereo_pandora_intensityStd"
   - distance between left-right (or right-left) disparities: "validation_pandora_distanceOfDisp", if "cross_checking" validation is enabled
-- xarray.DataArray validity_mask which represents the :left:`validity_mask_data`.
+- xarray.DataArray validity_mask which represents the :ref:`validity_mask_data`.
 - xarray.DataArray interpolated_coeff, which contains the similarity coefficients interpolated by the Disparity Refinement Method.
 
 
@@ -121,7 +121,7 @@ The disparity maps correspond to the variables left, right in the pandora file _
 
 .. _validity_mask_data:
 
-Validaty mask
+Validity mask
 -------------
 
 Validity masks are 2D xarray.DataArray and are 16-bit encoded: each bit represents a
@@ -132,15 +132,15 @@ rejection criterion (= 1 if rejection, = 0 otherwise):
  +---------+--------------------------------------------------------------------------------------------------------+
  |         | The point is invalid, there are two possible cases:                                                    |
  |         |                                                                                                        |
- |    0    |   * border of left image                                                                          |
- |         |   * nodata of left image                                                                          |
+ |    0    |   * border of left image                                                                               |
+ |         |   * nodata of left image                                                                               |
  +---------+--------------------------------------------------------------------------------------------------------+
  |         | The point is invalid, there are two possible cases:                                                    |
  |         |                                                                                                        |
- |    1    |   - Disparity range does not permit to find any point on the right image                           |
- |         |   - nodata of right image                                                                          |
+ |    1    |   - Disparity range does not permit to find any point on the right image                               |
+ |         |   - nodata of right image                                                                              |
  +---------+--------------------------------------------------------------------------------------------------------+
- |    2    | Information : disparity range cannot be used completely , reaching border of right image           |
+ |    2    | Information : disparity range cannot be used completely , reaching border of right image               |
  +---------+--------------------------------------------------------------------------------------------------------+
  |    3    | Information: calculations stopped at the pixel stage, sub-pixel interpolation was not successful       |
  |         | (for vfit: pixels d-1 and/or d+1 could not be calculated)                                              |
@@ -149,9 +149,9 @@ rejection criterion (= 1 if rejection, = 0 otherwise):
  +---------+--------------------------------------------------------------------------------------------------------+
  |    5    | Information : closed mismatch                                                                          |
  +---------+--------------------------------------------------------------------------------------------------------+
- |    6    | The point is invalid: invalidated by the validity mask associated to the left image               |
+ |    6    | The point is invalid: invalidated by the validity mask associated to the left image                    |
  +---------+--------------------------------------------------------------------------------------------------------+
- |    7    | The point is invalid: right positions to be scanned invalidated by the mask of the right image |
+ |    7    | The point is invalid: right positions to be scanned invalidated by the mask of the right image         |
  +---------+--------------------------------------------------------------------------------------------------------+
  |    8    | The Point is invalid: point located in an occlusion zone                                               |
  +---------+--------------------------------------------------------------------------------------------------------+
@@ -198,8 +198,8 @@ The resize method of the common module, allows to restitute disparity maps and m
    Attributes:
        offset_row_col:  0
 
-These pixels will have bit 0 set, *The point is invalid: left image edge*, in the :left:`validity_mask` and
-will be assigned the *border_disparity* ( configurable in the json configuration file , see :left:`resize_parameters`  )
+These pixels will have bit 0 set, *The point is invalid: left image edge*, in the :ref:`validity_mask` and
+will be assigned the *border_disparity* ( configurable in the json configuration file , see :ref:`resize_parameters`  )
 in the disparity maps.
 
 Right image
