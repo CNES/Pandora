@@ -19,4 +19,3 @@
 # limitations under the License.
 #
 from .disparity import AbstractDisparity
-

@@ -18,7 +18,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from .stereo import AbstractStereo
 from . import census
 from . import sad_ssd
 from . import zncc
+from .stereo import AbstractStereo

@@ -18,6 +18,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from .refinement import AbstractRefinement
 from . import quadratic
 from . import vfit
+from .refinement import AbstractRefinement

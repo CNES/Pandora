@@ -23,14 +23,14 @@
 This module contains functions associated to raster images.
 """
 
-import xarray as xr
-import numpy as np
 import logging
-from scipy.ndimage.interpolation import zoom
-import rasterio
 from typing import Dict, List, Union, Tuple
-from .common import sliding_window
+
 import cv2
+import numpy as np
+import rasterio
+import xarray as xr
+from scipy.ndimage.interpolation import zoom
 
 
 def read_img(img: str, no_data: float, cfg: Dict, mask: xr.Dataset = None) -> xr.Dataset:
@@ -114,7 +114,7 @@ def prepare_pyramid(img_left: xr.Dataset, img_right: xr.Dataset, num_scales: int
 
     scales = np.arange(num_scales - 1)
     for scale in scales:
-        # Downsample the previous layer
+        # Downscale the previous layer
         pyramid_left.append(create_downsampled_dataset(pyramid_left[-1], scale_factor))
         pyramid_right.append(create_downsampled_dataset(pyramid_right[-1], scale_factor))
 
@@ -143,13 +143,13 @@ def create_downsampled_dataset(img_orig: xr.Dataset, scale_factor: int) -> xr.Da
 
     img = cv2.GaussianBlur(img_orig['im'].data, ksize=(5, 5), sigmaX=1.2, sigmaY=1.2)
     img_downs = cv2.resize(img, dsize=(
-    int(img_orig['im'].data.shape[1] / scale_factor), int(img_orig['im'].data.shape[0] / scale_factor)),
+        int(img_orig['im'].data.shape[1] / scale_factor), int(img_orig['im'].data.shape[0] / scale_factor)),
                            interpolation=cv2.INTER_AREA)
 
     # Downsampling mask if exists, otherwise create mask of all valid
     if 'msk' in img_orig:
         mask_downs = cv2.resize(img, dsize=(
-        int(img_orig['msk'].data.shape[1] / scale_factor), int(img_orig['msk'].data.shape[0] / scale_factor)),
+            int(img_orig['msk'].data.shape[1] / scale_factor), int(img_orig['msk'].data.shape[0] / scale_factor)),
                                 interpolation=cv2.INTER_AREA)
     else:
         mask_downs = img_downs * 0
@@ -192,26 +192,26 @@ def shift_right_img(img_right: xr.Dataset, subpix: int) -> List[xr.Dataset]:
         data = zoom(img_right['im'].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 2::4]
         col = np.arange(img_right.coords['col'][0] + 0.5, img_right.coords['col'][-1], step=1)
         img_right_shift.append(xr.Dataset({'im': (['row', 'col'], data)},
-                                        coords={'row': np.arange(ny_), 'col': col}))
+                                          coords={'row': np.arange(ny_), 'col': col}))
 
     if subpix == 4:
         # Shift the right image for subpixel precision 0.25
         data = zoom(img_right['im'].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 1::4]
         col = np.arange(img_right.coords['col'][0] + 0.25, img_right.coords['col'][-1], step=1)
         img_right_shift.append(xr.Dataset({'im': (['row', 'col'], data)},
-                                        coords={'row': np.arange(ny_), 'col': col}))
+                                          coords={'row': np.arange(ny_), 'col': col}))
 
         # Shift the right image for subpixel precision 0.5
         data = zoom(img_right['im'].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 2::4]
         col = np.arange(img_right.coords['col'][0] + 0.5, img_right.coords['col'][-1], step=1)
         img_right_shift.append(xr.Dataset({'im': (['row', 'col'], data)},
-                                        coords={'row': np.arange(ny_), 'col': col}))
+                                          coords={'row': np.arange(ny_), 'col': col}))
 
         # Shift the right image for subpixel precision 0.75
         data = zoom(img_right['im'].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 3::4]
         col = np.arange(img_right.coords['col'][0] + 0.75, img_right.coords['col'][-1], step=1)
         img_right_shift.append(xr.Dataset({'im': (['row', 'col'], data)},
-                                        coords={'row': np.arange(ny_), 'col': col}))
+                                          coords={'row': np.arange(ny_), 'col': col}))
     return img_right_shift
 
 
@@ -320,7 +320,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
     return r_mean / float(win_size * win_size)
 
 
-def compute_mean_patch(img: xr.Dataset, x: int, y: int, win_size: int) -> float:
+def compute_mean_patch(img: xr.Dataset, x: int, y: int, win_size: int) -> np.ndarray:
     """
     Compute the mean within a window centered at position x,y
 

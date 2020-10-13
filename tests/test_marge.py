@@ -23,15 +23,17 @@
 This module contains functions to test the margin module.
 """
 
+import unittest
+
 import numpy as np
 import pandora.marge
-import unittest
 
 
 class TestMargins(unittest.TestCase):
     """
     TestMargins class allows to test the marge module
     """
+
     def setUp(self):
         pass
 
@@ -40,7 +42,8 @@ class TestMargins(unittest.TestCase):
         Test get_margins function
         """
         # Test with SGM configuration
-        cfg_sgm = {'stereo': {'stereo_method': 'census', 'window_size': 5}, 'optimization': {'optimization_method': 'sgm'},
+        cfg_sgm = {'stereo': {'stereo_method': 'census', 'window_size': 5},
+                   'optimization': {'optimization_method': 'sgm'},
                    'refinement': {'refinement_method': 'vfit'}, 'filter': {'filter_method': 'median', 'filter_size': 3},
                    'validation': {'validation_method': 'cross_checking', 'cross_checking_threshold': 1,
                                   'right_left_mode': 'accurate'}}

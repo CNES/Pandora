@@ -1,15 +1,10 @@
-
-import json
-from json_checker import Checker, And, Or
-import rasterio
-import numpy as np
-import sys
-from typing import Dict, List, Union, Tuple
-import logging
-
 import copy
+import json
+import sys
 from collections.abc import Mapping
+from typing import List
 
+import rasterio
 from pandora.state_machine import *
 
 
@@ -96,7 +91,8 @@ def check_images(img_left: str, img_right: str, msk_left: str, msk_right: str) -
 
 
 def check_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str, None],
-                               right_disp_min: Union[str, None], right_disp_max: Union[str, None], img_left: str) -> None:
+                      right_disp_min: Union[str, None], right_disp_max: Union[str, None],
+                      img_left: str) -> None:
     """
     Check left and right disparities.
 
@@ -168,6 +164,7 @@ def check_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str,
         if (dmax < dmin).any():
             logging.error('Disp_max must be bigger than Disp_min')
             sys.exit(1)
+
 
 def get_config_pipeline(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     """
@@ -432,12 +429,11 @@ default_short_configuration_input = {
 default_short_configuration_pipeline = {
     "pipeline":
         {
-            "right_disp_map":{
-                "method" : "none"
+            "right_disp_map": {
+                "method": "none"
             }
         }
 }
-
 
 default_short_configuration = concat_conf([default_short_configuration_image, default_short_configuration_input,
                                            default_short_configuration_pipeline])

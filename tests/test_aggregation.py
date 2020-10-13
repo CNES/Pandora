@@ -24,12 +24,12 @@ This module contains functions to test the cost volume aggregation step.
 """
 
 import unittest
-import numpy as np
-import xarray as xr
 
+import numpy as np
 import pandora.aggregation as aggregation
-import pandora.stereo as stereo
 import pandora.aggregation.cbca as cbca
+import pandora.stereo as stereo
+import xarray as xr
 
 
 class TestAggregation(unittest.TestCase):
@@ -47,14 +47,14 @@ class TestAggregation(unittest.TestCase):
                           [10, 9, 11, 9, 6],
                           [1, 18, 4, 5, 9]]), dtype=np.float32)
         self.left = xr.Dataset({'im': (['row', 'col'], data)},
-                              coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                               coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         self.left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         data = np.array(([[1, 5, 1, 15, 7],
                           [2, 10, 9, 11, 9],
                           [3, 1, 18, 4, 5]]), dtype=np.float32)
         self.right = xr.Dataset({'im': (['row', 'col'], data)},
-                              coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                                coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         self.right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         # Create the matching cost for the images self.left and self.right, with disp = [-1, 0, 1] and SAD measuress
@@ -238,7 +238,7 @@ class TestAggregation(unittest.TestCase):
                           [0, 0, 0, 1, 0],
                           [3, 0, 0, 0, 0]]))
         left = xr.Dataset({'im': (['row', 'col'], data), 'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         data = np.array(([[1, 5, 1, 15, 7],
@@ -250,7 +250,7 @@ class TestAggregation(unittest.TestCase):
                           [0, 0, 0, 0, 0],
                           [0, 0, 0, 0, 0]]))
         right = xr.Dataset({'im': (['row', 'col'], data), 'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
@@ -284,7 +284,7 @@ class TestAggregation(unittest.TestCase):
                           [1, 18, 4, 5, 9],
                           [5, 1, 15, 7, 3]]), dtype=np.float32)
         left = xr.Dataset({'im': (['row', 'col'], data)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         data = np.array(([[1, 5, 1, 15, 7],
@@ -292,7 +292,7 @@ class TestAggregation(unittest.TestCase):
                           [3, 1, 18, 4, 5],
                           [1, 5, 1, 15, 7]]), dtype=np.float32)
         right = xr.Dataset({'im': (['row', 'col'], data)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
@@ -325,7 +325,7 @@ class TestAggregation(unittest.TestCase):
                           [10, 9, 11, 9, 6],
                           [1, 18, 4, 5, 9]]), dtype=np.float32)
         left = xr.Dataset({'im': (['row', 'col'], data)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         data = np.array(([[1, 5, 1, 15, 7],
@@ -333,7 +333,7 @@ class TestAggregation(unittest.TestCase):
                           [3, 1, 18, 4, 5]]), dtype=np.float32)
 
         right = xr.Dataset({'im': (['row', 'col'], data)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
@@ -405,7 +405,7 @@ class TestAggregation(unittest.TestCase):
                           [0, 0, 0, 1, 0],
                           [0, 3, 0, 0, 0]]))
         left = xr.Dataset({'im': (['row', 'col'], data), 'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         data = np.array(([[1, 5, 1, 15, 7],
@@ -415,7 +415,7 @@ class TestAggregation(unittest.TestCase):
                           [0, 1, 0, 3, 0],
                           [0, 0, 0, 0, 0]]))
         right = xr.Dataset({'im': (['row', 'col'], data), 'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
@@ -490,7 +490,7 @@ class TestAggregation(unittest.TestCase):
                           [10, 9, 11, 9, 6],
                           [1, 18, 4, 5, 9]]), dtype=np.float32)
         left = xr.Dataset({'im': (['row', 'col'], data)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         data = np.array(([[1, 5, 1, 15, 7],
@@ -498,7 +498,7 @@ class TestAggregation(unittest.TestCase):
                           [3, 1, 18, 4, 5]]), dtype=np.float32)
 
         right = xr.Dataset({'im': (['row', 'col'], data)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         right.attrs['valid_pixels'] = 0
         right.attrs['no_data'] = 1
 
@@ -544,7 +544,7 @@ class TestAggregation(unittest.TestCase):
                           [0, 1, 0, 3, 0],
                           [0, 0, 0, 0, 0]]))
         left = xr.Dataset({'im': (['row', 'col'], data), 'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         data = np.array(([[1, 5, 1, 15, 7],
@@ -555,7 +555,7 @@ class TestAggregation(unittest.TestCase):
                           [0, 3, 0, 0, 0]]))
 
         right = xr.Dataset({'im': (['row', 'col'], data), 'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 2})
@@ -603,7 +603,7 @@ class TestAggregation(unittest.TestCase):
                           [1, 18, 4, 5, 9],
                           [5, 1, 15, 7, 3]]), dtype=np.float32)
         left = xr.Dataset({'im': (['row', 'col'], data)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         data = np.array(([[1, 5, 1, 15, 7],
@@ -612,7 +612,7 @@ class TestAggregation(unittest.TestCase):
                           [1, 5, 1, 15, 7]]), dtype=np.float32)
 
         right = xr.Dataset({'im': (['row', 'col'], data)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         right.attrs['valid_pixels'] = 0
         right.attrs['no_data'] = 1
 

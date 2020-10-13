@@ -23,14 +23,14 @@
 This module contains functions associated to the quadratic method used in the refinement step.
 """
 
-from numba import njit
-import numpy as np
-import xarray as xr
-from json_checker import Checker, And
 from typing import Dict, Tuple
 
-from . import refinement
+import numpy as np
+from json_checker import Checker, And
+from numba import njit
 from pandora.constants import *
+
+from . import refinement
 
 
 @refinement.AbstractRefinement.register_subclass('quadratic')
@@ -46,6 +46,7 @@ class Quadratic(refinement.AbstractRefinement):
         :return: None
         """
         self.cfg = self.check_conf(**cfg)
+        self._refinement_method_name = str(self.cfg['refinement_method'])
 
     @staticmethod
     def check_conf(**cfg: str) -> Dict[str, str]:
@@ -72,103 +73,9 @@ class Quadratic(refinement.AbstractRefinement):
         """
         print('Quadratic refinement method')
 
-    def subpixel_refinement(self, cv: xr.Dataset, disp: xr.Dataset, img_left: xr.Dataset = None,
-                            img_right: xr.Dataset = None) -> None:
-        """
-        Subpixel refinement of disparities and costs.
-
-        :param cv: the cost volume dataset
-        :type cv:
-            xarray.Dataset, with the data variables:
-                - cost_volume 3D xarray.DataArray (row, col, disp)
-                - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :param disp: Dataset
-        :type disp: xarray.Dataset with the variables :
-            - disparity_map 2D xarray.DataArray (row, col)
-            - confidence_measure 3D xarray.DataArray (row, col, indicator)
-            - validity_mask 2D xarray.DataArray (row, col)
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing:
-                - im : 2D (row, col) xarray.DataArray
-                - msk (optional): 2D (row, col) xarray.DataArray
-        :param img_right: right Dataset image
-        :type img_right:
-            xarray.Dataset containing:
-                - im : 2D (row, col) xarray.DataArray
-                - msk (optional): 2D (row, col) xarray.DataArray
-        :return: None
-        """
-        d_min = cv.coords['disp'].data[0]
-        d_max = cv.coords['disp'].data[-1]
-        subpixel = cv.attrs['subpixel']
-        measure = cv.attrs['type_measure']
-
-        # Conversion to numpy array ( .data ), because Numba does not support Xarray
-        itp_coeff, disp['disparity_map'].data, disp['validity_mask'].data = \
-            self.loop_refinement(cv['cost_volume'].data, disp['disparity_map'].data, disp['validity_mask'].data,
-                                 d_min, d_max, subpixel, measure, self.quadratic)
-
-        disp.attrs['refinement'] = 'quadratic'
-        disp['interpolated_coeff'] = xr.DataArray(itp_coeff,
-                                                  coords=[disp.coords['row'], disp.coords['col']],
-                                                  dims=['row', 'col'])
-
-
-    def approximate_subpixel_refinement(self, cv_left: xr.Dataset, disp_right: xr.Dataset, img_left: xr.Dataset = None,
-                                        img_right: xr.Dataset = None) -> xr.Dataset:
-        """
-        Subpixel refinement of the right disparities map, which was created with the approximate method : a diagonal
-        search for the minimum on the left cost volume
-
-        :param cv_left: the left cost volume dataset
-        :type cv_left:
-            xarray.Dataset, with the data variables:
-                - cost_volume 3D xarray.DataArray (row, col, disp)
-                - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :param disp_right: right disparity map
-        :type disp_right: xarray.Dataset with the variables :
-            - disparity_map 2D xarray.DataArray (row, col)
-            - confidence_measure 3D xarray.DataArray (row, col, indicator)
-            - validity_mask 2D xarray.DataArray (row, col)
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing:
-                - im : 2D (row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
-        :param img_right: right Dataset image
-        :type img_right:
-            xarray.Dataset containing:
-                - im : 2D (row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
-        :return:
-            disp_right Dataset with the variables :
-                - disparity_map 2D xarray.DataArray (row, col) that contains the refined disparities
-                - confidence_measure 3D xarray.DataArray (row, col, indicator) (unchanged)
-                - validity_mask 2D xarray.DataArray (row, col) with the value of bit 3 ( Information:
-                    calculations stopped at the pixel step, sub-pixel interpolation did not succeed )
-                - interpolated_coeff 2D xarray.DataArray (row, col) that contains the refined cost
-        :rtype: Dataset
-        """
-        d_min = cv_left.coords['disp'].data[0]
-        d_max = cv_left.coords['disp'].data[-1]
-        subpixel = cv_left.attrs['subpixel']
-        measure = cv_left.attrs['type_measure']
-
-        # Conversion to numpy array ( .data ), because Numba does not support Xarray
-        itp_coeff, disp_right['disparity_map'].data, disp_right['validity_mask'].data = self.loop_approximate_refinement(
-            cv_left['cost_volume'].data, disp_right['disparity_map'].data, disp_right['validity_mask'].data, d_min, d_max,
-            subpixel, measure, self.quadratic)
-
-        disp_right.attrs['refinement'] = 'quadratic'
-        disp_right['interpolated_coeff'] = xr.DataArray(itp_coeff,
-                                                      coords=[disp_right.coords['row'], disp_right.coords['col']],
-                                                      dims=['row', 'col'])
-        return disp_right
-
     @staticmethod
     @njit(cache=True)
-    def quadratic(cost: np.ndarray, disp: float, measure: str) -> Tuple[float, float, int]:
+    def refinement_method(cost: np.ndarray, disp: float, measure: str) -> Tuple[float, float, int]:
         """
         Return the subpixel disparity and cost, by fitting a quadratic curve
 
@@ -182,6 +89,7 @@ class Quadratic(refinement.AbstractRefinement):
         calculations stopped at the pixel step, sub-pixel interpolation did not succeed )
         :rtype: float, float, int
         """
+
         if (np.isnan(cost[0])) or (np.isnan(cost[2])):
             # Bit 3 = 1: Information: calculations stopped at the pixel step, sub-pixel interpolation did not succeed
             return disp, cost[1], PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION

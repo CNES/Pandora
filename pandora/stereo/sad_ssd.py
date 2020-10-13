@@ -23,14 +23,14 @@
 This module contains functions associated to SAD and SSD methods used in the cost volume measure step.
 """
 
-import numpy as np
-from json_checker import Checker, And
 from typing import Dict, Union, Tuple
-import xarray as xr
 
+import numpy as np
+import xarray as xr
+from json_checker import Checker, And
 from pandora.JSON_checker import is_method
-from pandora.stereo import stereo
 from pandora.img_tools import shift_right_img
+from pandora.stereo import stereo
 
 
 @stereo.AbstractStereo.register_subclass('sad', 'ssd')
@@ -120,6 +120,7 @@ class SadSsd(stereo.AbstractStereo):
 
         min_right = np.amin(img_right['im'].data)
         max_right = np.amax(img_right['im'].data)
+        cmax = None
 
         if self._method == 'sad':
             # Maximal cost of the cost volume with sad measure
@@ -189,7 +190,9 @@ class SadSsd(stereo.AbstractStereo):
 
         return cv
 
-    def ad_cost(self, p: Tuple[int, int], q: Tuple[int, int], img_left: xr.Dataset, img_right: xr.Dataset) -> np.ndarray:
+    @staticmethod
+    def ad_cost(p: Tuple[int, int], q: Tuple[int, int], img_left: xr.Dataset,
+                img_right: xr.Dataset) -> np.ndarray:
         """
         Computes the absolute difference
 
@@ -212,7 +215,8 @@ class SadSsd(stereo.AbstractStereo):
         """
         return abs(img_left['im'].data[:, p[0]:p[1]] - img_right['im'].data[:, q[0]:q[1]])
 
-    def sd_cost(self, p: Tuple, q: Tuple, img_left: xr.Dataset, img_right: xr.Dataset) -> np.ndarray:
+    @staticmethod
+    def sd_cost(p: Tuple, q: Tuple, img_left: xr.Dataset, img_right: xr.Dataset) -> np.ndarray:
         """
         Computes the square difference
 
@@ -251,7 +255,8 @@ class SadSsd(stereo.AbstractStereo):
         # as cost_volume so it does not consume any additional memory.
         str_disp, str_col, str_row = cost_volume.strides
 
-        shape_windows = (self._window_size, self._window_size, nb_disp, nx_ - (self._window_size - 1), ny_ - (self._window_size - 1))
+        shape_windows = (
+            self._window_size, self._window_size, nb_disp, nx_ - (self._window_size - 1), ny_ - (self._window_size - 1))
         strides_windows = (str_row, str_col, str_disp, str_col, str_row)
         aggregation_window = np.lib.stride_tricks.as_strided(cost_volume, shape_windows, strides_windows,
                                                              writeable=False)

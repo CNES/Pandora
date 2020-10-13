@@ -23,15 +23,15 @@
 This module contains functions to test the cost volume measure step.
 """
 
-import unittest
+import json
 import logging
 import logging.config
 import os
-import json
-import numpy as np
-import xarray as xr
+import unittest
 
+import numpy as np
 import pandora.stereo as stereo
+import xarray as xr
 
 
 class TestStereo(unittest.TestCase):
@@ -52,7 +52,7 @@ class TestStereo(unittest.TestCase):
                          [1, 1, 1, 1, 1, 1],
                          [1, 1, 1, 1, 1, 1]), dtype=np.float64)
         self.left = xr.Dataset({'im': (['row', 'col'], data)},
-                              coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                               coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         self.left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         data = np.array(([1, 1, 1, 2, 2, 2],
@@ -61,7 +61,7 @@ class TestStereo(unittest.TestCase):
                          [1, 1, 1, 1, 1, 1],
                          [1, 1, 1, 1, 1, 1]), dtype=np.float64)
         self.right = xr.Dataset({'im': (['row', 'col'], data)},
-                              coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                                coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         self.right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
     def test_ssd_cost(self):
@@ -134,14 +134,14 @@ class TestStereo(unittest.TestCase):
                          [2, 1, 0, 1],
                          [1, 1, 1, 1]), dtype=np.float64)
         left = xr.Dataset({'im': (['row', 'col'], data)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         data = np.array(([5, 1, 2, 3],
                          [1, 2, 1, 0],
                          [2, 2, 0, 1],
                          [1, 1, 1, 1]), dtype=np.float64)
         right = xr.Dataset({'im': (['row', 'col'], data)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         # census ground truth for the images left, right, window size = 3 and disp = -1
         census_ground_truth_d1 = np.array(([np.nan, 3],
@@ -206,13 +206,13 @@ class TestStereo(unittest.TestCase):
                          [6, 2, 7, 4],
                          [1, 1, 3, 6]), dtype=np.float64)
         left = xr.Dataset({'im': (['row', 'col'], data)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         data = np.array(([6, 7, 8, 10],
                          [2, 4, 1, 6],
                          [9, 10, 1, 2]), dtype=np.float64)
         right = xr.Dataset({'im': (['row', 'col'], data)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         # Cost Volume ground truth for the stereo image simple_stereo_imgs,
         # with disp_min = -2, disp_max = 1, sad measure and subpixel_offset = 0
@@ -301,13 +301,13 @@ class TestStereo(unittest.TestCase):
                          [4, 5, 2, 1, 0],
                          [8, 9, 10, 0, 0]), dtype=np.float64)
         left = xr.Dataset({'im': (['row', 'col'], data)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         data = np.array(([1, 5, 6, 3, 4],
                          [2, 5, 10, 6, 9],
                          [0, 7, 5, 3, 1]), dtype=np.float64)
         right = xr.Dataset({'im': (['row', 'col'], data)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         # Computes the cost volume for disp min -2 disp max 2 and subpix = 2
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 2})
@@ -348,8 +348,8 @@ class TestStereo(unittest.TestCase):
                          [1, 0, 0, 0, 2]), dtype=np.int16)
 
         left = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           'msk': (['row', 'col'], mask)},
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
@@ -360,8 +360,8 @@ class TestStereo(unittest.TestCase):
         # right mask contains valid pixels
         mask = np.zeros((4, 5), dtype=np.int16)
         right = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                            'msk': (['row', 'col'], mask)},
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
@@ -413,8 +413,8 @@ class TestStereo(unittest.TestCase):
         mask = np.zeros((4, 5), dtype=np.int16)
 
         left = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           'msk': (['row', 'col'], mask)},
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
@@ -427,8 +427,8 @@ class TestStereo(unittest.TestCase):
                          [0, 2, 0, 2, 0],
                          [1, 0, 0, 0, 0]), dtype=np.int16)
         right = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                            'msk': (['row', 'col'], mask)},
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
@@ -479,8 +479,8 @@ class TestStereo(unittest.TestCase):
                          [2, 0, 0, 0, 1]), dtype=np.int16)
 
         left = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           'msk': (['row', 'col'], mask)},
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
@@ -493,8 +493,8 @@ class TestStereo(unittest.TestCase):
                          [0, 0, 0, 2, 0],
                          [1, 0, 2, 0, 0]), dtype=np.int16)
         right = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                            'msk': (['row', 'col'], mask)},
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
@@ -549,8 +549,8 @@ class TestStereo(unittest.TestCase):
                          [1, 0, 0, 0, 0, 0, 2]), dtype=np.int16)
 
         left = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           'msk': (['row', 'col'], mask)},
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
         data = np.array(([0, 0, 0, 0, 0, 0, 0],
                          [0, 5, 1, 2, 3, 4, 0],
@@ -566,8 +566,8 @@ class TestStereo(unittest.TestCase):
                          [0, 0, 0, 0, 0, 0, 0],
                          [2, 0, 0, 0, 0, 0, 1]), dtype=np.int16)
         right = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                            'msk': (['row', 'col'], mask)},
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         dmin = -1
@@ -602,8 +602,8 @@ class TestStereo(unittest.TestCase):
                          [2, 0, 0, 0, 1]), dtype=np.int16)
 
         left = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           'msk': (['row', 'col'], mask)},
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         data = np.array(([5, 1, 2, 3, 4],
@@ -611,8 +611,8 @@ class TestStereo(unittest.TestCase):
         mask = np.array(([0, 2, 0, 0, 1],
                          [1, 0, 2, 0, 0]), dtype=np.int16)
         right = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                            'msk': (['row', 'col'], mask)},
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         dmin = -1
@@ -655,8 +655,8 @@ class TestStereo(unittest.TestCase):
                          [2, 0, 0, 0, 1]), dtype=np.int16)
 
         left = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           'msk': (['row', 'col'], mask)},
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
@@ -669,8 +669,8 @@ class TestStereo(unittest.TestCase):
                          [0, 0, 0, 2, 0],
                          [1, 0, 2, 0, 0]), dtype=np.int16)
         right = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                            'msk': (['row', 'col'], mask)},
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
@@ -711,8 +711,8 @@ class TestStereo(unittest.TestCase):
                          [0, 0, 0, 0, 0]), dtype=np.int16)
 
         left = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           'msk': (['row', 'col'], mask)},
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
@@ -721,8 +721,8 @@ class TestStereo(unittest.TestCase):
         mask = np.array(([0, 0, 0, 0, 1],
                          [1, 0, 2, 0, 0]), dtype=np.int16)
         right = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                            'msk': (['row', 'col'], mask)},
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
@@ -779,8 +779,8 @@ class TestStereo(unittest.TestCase):
                          [5, 5, 5]), dtype=np.int16)
 
         left = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           'msk': (['row', 'col'], mask)},
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         left.attrs = {'valid_pixels': 5, 'no_data_mask': 7}
 
@@ -789,8 +789,8 @@ class TestStereo(unittest.TestCase):
         mask = np.array(([5, 4, 7],
                          [6, 7, 5]), dtype=np.int16)
         right = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                            'msk': (['row', 'col'], mask)},
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         right.attrs = {'valid_pixels': 5, 'no_data_mask': 7}
 
@@ -844,8 +844,8 @@ class TestStereo(unittest.TestCase):
                          [3, 5, 4, 5, 7]), dtype=np.int16)
 
         left = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           'msk': (['row', 'col'], mask)},
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         left.attrs = {'valid_pixels': 5, 'no_data_mask': 7}
 
@@ -858,8 +858,8 @@ class TestStereo(unittest.TestCase):
                          [5, 5, 5, 5, 5],
                          [5, 23, 5, 5, 2]), dtype=np.int16)
         right = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                            'msk': (['row', 'col'], mask)},
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         right.attrs = {'valid_pixels': 5, 'no_data_mask': 7}
 
@@ -910,8 +910,8 @@ class TestStereo(unittest.TestCase):
                          [5, 5, 5, 0],
                          [0, 5, 5, 7]), dtype=np.int16)
         left = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           'msk': (['row', 'col'], mask)},
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         left.attrs = {'valid_pixels': 5, 'no_data_mask': 7}
 
@@ -924,8 +924,8 @@ class TestStereo(unittest.TestCase):
                          [5, 5, 5, 0],
                          [7, 5, 5, 5]), dtype=np.int16)
         right = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                            'msk': (['row', 'col'], mask)},
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         right.attrs = {'valid_pixels': 5, 'no_data_mask': 7}
 
@@ -959,8 +959,8 @@ class TestStereo(unittest.TestCase):
                          [2, 0, 0, 0, 1]), dtype=np.int16)
 
         left = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           'msk': (['row', 'col'], mask)},
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
@@ -973,8 +973,8 @@ class TestStereo(unittest.TestCase):
                          [0, 0, 0, 2, 0],
                          [1, 0, 2, 0, 0]), dtype=np.int16)
         right = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                            'msk': (['row', 'col'], mask)},
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
@@ -1017,8 +1017,8 @@ class TestStereo(unittest.TestCase):
                          [3, 5, 4, 5, 7]), dtype=np.int16)
 
         left = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           'msk': (['row', 'col'], mask)},
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         left.attrs = {'valid_pixels': 5, 'no_data_mask': 7}
 
@@ -1031,19 +1031,20 @@ class TestStereo(unittest.TestCase):
                          [5, 5, 5, 5, 5],
                          [5, 23, 5, 5, 2]), dtype=np.int16)
         right = xr.Dataset({'im': (['row', 'col'], data),
-                          'msk': (['row', 'col'], mask)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                            'msk': (['row', 'col'], mask)},
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         right.attrs = {'valid_pixels': 5, 'no_data_mask': 7}
 
         # masks_dilatation(self, img_left, img_right, offset_row_col, window_size, subp, cfg)
         stereo_ = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 4})
         # Compute the dilated / shifted masks
-        mask_left, masks_right = stereo_.masks_dilatation(img_left=left, img_right=right, offset_row_col=int((3 - 1) / 2),
-                                                       window_size=3, subp=4)
+        mask_left, masks_right = stereo_.masks_dilatation(img_left=left, img_right=right,
+                                                          offset_row_col=int((3 - 1) / 2),
+                                                          window_size=3, subp=4)
         # left mask ground truth
         gt_left = np.array([[0, 0, 0],
-                           [0, 0, np.nan]], dtype=np.float32)
+                            [0, 0, np.nan]], dtype=np.float32)
         gt_left = xr.DataArray(gt_left, coords=[[1, 2], [1, 2, 3]], dims=['row', 'col'])
 
         # Check if the calculated left masks is equal to the ground truth (same dimensions, coordinates and values)
@@ -1052,7 +1053,7 @@ class TestStereo(unittest.TestCase):
 
         # right mask ground truth with pixel precision
         gt_right_pixel = np.array([[np.nan, 0, np.nan],
-                                 [0, 0, 0]], dtype=np.float32)
+                                   [0, 0, 0]], dtype=np.float32)
         gt_right_pixel = xr.DataArray(gt_right_pixel, coords=[[1, 2], [1, 2, 3]], dims=['row', 'col'])
 
         if not masks_right[0].equals(gt_right_pixel):
@@ -1060,7 +1061,7 @@ class TestStereo(unittest.TestCase):
 
         # right mask ground truth with sub-pixel precision
         gt_right_subpixel = np.array([[np.nan, np.nan],
-                                    [0, 0]], dtype=np.float32)
+                                      [0, 0]], dtype=np.float32)
         gt_right_subpixel = xr.DataArray(gt_right_subpixel, coords=[[1, 2], [1.5, 2.5]], dims=['row', 'col'])
 
         if not masks_right[1].equals(gt_right_subpixel):
@@ -1073,46 +1074,53 @@ class TestStereo(unittest.TestCase):
         """
         # Test cmax for the census mesure
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'census', 'window_size': 3, 'subpix': 1})
-        census_cmax_w3 = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1)
+        census_cmax_w3 = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1,
+                                                            disp_max=1)
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(census_cmax_w3.attrs['cmax'], 9)
         assert (np.nanmax(census_cmax_w3['cost_volume'].data) <= 9)
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'census', 'window_size': 5, 'subpix': 1})
-        census_cmax_w5 = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1)
+        census_cmax_w5 = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1,
+                                                            disp_max=1)
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(census_cmax_w5.attrs['cmax'], 25)
         assert (np.nanmax(census_cmax_w5['cost_volume'].data) <= 25)
 
         # Test cmax for the sad mesure
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
-        sad_cmax_w3 = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1)
+        sad_cmax_w3 = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1,
+                                                         disp_max=1)
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(sad_cmax_w3.attrs['cmax'], int(abs(4 - 1) * (3 ** 2)))
         assert (np.nanmax(sad_cmax_w3['cost_volume'].data) <= int(abs(4 - 1) * (3 ** 2)))
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 5, 'subpix': 1})
-        sad_cmax_w5 = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1)
+        sad_cmax_w5 = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1,
+                                                         disp_max=1)
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(sad_cmax_w5.attrs['cmax'], int(abs(4 - 1) * (5 ** 2)))
         assert (np.nanmax(sad_cmax_w3['cost_volume'].data) <= int(abs(4 - 1) * (5 ** 2)))
 
         # Test cmax for the ssd mesure
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'ssd', 'window_size': 3, 'subpix': 1})
-        ssd_cmax_w3 = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1)
+        ssd_cmax_w3 = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1,
+                                                         disp_max=1)
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(ssd_cmax_w3.attrs['cmax'], int(abs(4 - 1) ** 2 * (3 ** 2)))
         assert (np.nanmax(sad_cmax_w3['cost_volume'].data) <= int(abs(4 - 1) ** 2 * (3 ** 2)))
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'ssd', 'window_size': 5, 'subpix': 1})
-        ssd_cmax_w5 = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1)
+        ssd_cmax_w5 = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1,
+                                                         disp_max=1)
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(ssd_cmax_w5.attrs['cmax'], int(abs(4 - 1) ** 2 * (5 ** 2)))
         assert (np.nanmax(sad_cmax_w3['cost_volume'].data) <= int(abs(4 - 1) ** 2 * (5 ** 2)))
 
         # Test cmax for the zncc mesure
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'zncc', 'window_size': 3, 'subpix': 1})
-        zncc_cmax = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1)
+        zncc_cmax = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1,
+                                                       disp_max=1)
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(zncc_cmax.attrs['cmax'], 1)
         assert (np.nanmax(zncc_cmax['cost_volume'].data) <= 1)
@@ -1171,7 +1179,7 @@ class TestStereo(unittest.TestCase):
                          [1, 5, 4, 3, 2, 6, 7, 6, 5, 2, 1]), dtype=np.float64)
 
         left = xr.Dataset({'im': (['row', 'col'], data)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
@@ -1181,7 +1189,7 @@ class TestStereo(unittest.TestCase):
                          [1, 6, 7, 5, 3, 2, 1, 0, 3, 4, 7]), dtype=np.float64)
 
         right = xr.Dataset({'im': (['row', 'col'], data)},
-                         coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 

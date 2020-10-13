@@ -23,15 +23,16 @@
 This module contains functions associated to the Cross Based Cost Aggregation (cbca) method.
 """
 
-import numpy as np
-from numba import njit
-from json_checker import Checker, And
 from typing import Dict, Union, Tuple, List
-import xarray as xr
 
-from pandora.img_tools import shift_right_img
-from . import aggregation
+import numpy as np
+import xarray as xr
+from json_checker import Checker, And
+from numba import njit
 from pandora.filter import AbstractFilter
+from pandora.img_tools import shift_right_img
+
+from . import aggregation
 
 
 @aggregation.AbstractAggregation.register_subclass('cbca')
@@ -163,7 +164,8 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         cmax = cv.attrs['cmax'] * ((self._cbca_distance * 2) - 1) ** 2
         cv.attrs['cmax'] = cmax
 
-    def computes_cross_supports(self, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset) -> Tuple[np.ndarray, List[np.ndarray]]:
+    def computes_cross_supports(self, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset) -> \
+            Tuple[np.ndarray, List[np.ndarray]]:
         """
         Prepare images and compute the cross support region of the left and right images.
         A 3x3 median filter is applied to the images before calculating the cross support region.
@@ -193,20 +195,21 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         img_right_shift = shift_right_img(img_right, subpix)
 
         # Median filter on valid pixels
-        filter = AbstractFilter(**{'filter_method': 'median', 'filter_size': 3})
+        filter_ = AbstractFilter(**{'filter_method': 'median', 'filter_size': 3})
 
-        # Invalid and nodata pixels are masked with np.nan to avoid propagating the values with the median filter
+        # Invalid and no data pixels are masked with np.nan to avoid propagating the values with the median filter
         left_masked = np.copy(img_left['im'].data)
         if 'msk' in img_left.data_vars:
             left_masked[np.where(img_left['msk'].data != img_left.attrs['valid_pixels'])] = np.nan
 
-        left_masked = filter.median_filter(left_masked)
+        left_masked = filter_.median_filter(left_masked)
         # Convert nan to inf to be able to use the comparison operators < and > in cross_support function
         np.nan_to_num(left_masked, copy=False, nan=np.inf)
         # Compute left cross support using numba to reduce running time
         if offset != 0:
             # Cross support to the size of the cost volume
-            cross_left = cross_support(left_masked[offset: -offset, offset: -offset], self._cbca_distance, self._cbca_intensity)
+            cross_left = cross_support(left_masked[offset: -offset, offset: -offset], self._cbca_distance,
+                                       self._cbca_intensity)
         else:
             cross_left = cross_support(left_masked, self._cbca_distance, self._cbca_intensity)
 
@@ -240,14 +243,14 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
                 right_masked += shift_mask
 
             #  Apply a 3×3 median filter to the input image
-            right_masked = filter.median_filter(right_masked)
+            right_masked = filter_.median_filter(right_masked)
             # Convert nan to inf to be able to use the comparison operators < and > in cross_support function
             np.nan_to_num(right_masked, copy=False, nan=np.inf)
             # Compute right cross support using numba to reduce running time
             if offset != 0:
                 # Cross support to the size of the cost volume
                 cross_right.append(cross_support(right_masked[offset: -offset, offset: -offset], self._cbca_distance,
-                                               self._cbca_intensity))
+                                                 self._cbca_intensity))
             else:
                 cross_right.append(cross_support(right_masked, self._cbca_distance, self._cbca_intensity))
 
@@ -321,7 +324,7 @@ def cbca_step_2(step1: np.ndarray, cross_left: np.ndarray, cross_right: np.ndarr
 
 
 @njit('f4[:, :](f4[:, :])', cache=True)
-def cbca_step_3(step2: xr.DataArray) -> np.ndarray:
+def cbca_step_3(step2: np.ndarray) -> np.ndarray:
     """
     Giving the horizontal matching cost, build a vertical integral image for one disparity,
     S_v = S_v(x, y - 1) + E_h(x, y)
@@ -382,9 +385,9 @@ def cbca_step_4(step3: np.ndarray, sum2: np.ndarray, cross_left: np.ndarray, cro
 
             sum4[y, range_col[x]] += (top + bot)
             if top != 0:
-                sum4[y, range_col[x]] += np.sum(sum2[y-top:y, range_col[x]])
+                sum4[y, range_col[x]] += np.sum(sum2[y - top:y, range_col[x]])
             if bot != 0:
-                sum4[y, range_col[x]] += np.sum(sum2[y+1:y+bot+1, range_col[x]])
+                sum4[y, range_col[x]] += np.sum(sum2[y + 1:y + bot + 1, range_col[x]])
 
     return step4, sum4
 
@@ -419,7 +422,7 @@ def cross_support(image: np.ndarray, len_arms: int, intensity: float) -> np.ndar
             if np.isfinite(image[y, x]):
                 left_len = 0
                 left = x
-                for left in range(x-1, max(x-len_arms, -1), -1):
+                for left in range(x - 1, max(x - len_arms, -1), -1):
                     if abs(image[y, x] - image[y, left]) >= intensity:
                         break
                     left_len += 1
@@ -428,7 +431,7 @@ def cross_support(image: np.ndarray, len_arms: int, intensity: float) -> np.ndar
 
                 right_len = 0
                 right = x
-                for right in range(x+1, min(x+len_arms, nx_)):
+                for right in range(x + 1, min(x + len_arms, nx_)):
                     if abs(image[y, x] - image[y, right]) >= intensity:
                         break
                     right_len += 1
@@ -437,7 +440,7 @@ def cross_support(image: np.ndarray, len_arms: int, intensity: float) -> np.ndar
 
                 up_len = 0
                 up = y
-                for up in range(y-1,  max(y-len_arms, -1), -1):
+                for up in range(y - 1, max(y - len_arms, -1), -1):
                     if abs(image[y, x] - image[up, x]) >= intensity:
                         break
                     up_len += 1
@@ -446,7 +449,7 @@ def cross_support(image: np.ndarray, len_arms: int, intensity: float) -> np.ndar
 
                 bot_len = 0
                 bot = y
-                for bot in range(y+1, min(y+len_arms, ny_)):
+                for bot in range(y + 1, min(y + len_arms, ny_)):
                     if abs(image[y, x] - image[bot, x]) >= intensity:
                         break
                     bot_len += 1

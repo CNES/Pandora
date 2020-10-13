@@ -24,17 +24,15 @@ This module contains functions associated to the cost volume measure step.
 """
 
 import logging
+from abc import ABCMeta, abstractmethod
+from math import ceil, floor
+from typing import Tuple, List, Union
+
 import numpy as np
 import xarray as xr
-from math import ceil, floor
-from abc import ABCMeta, abstractmethod
 from scipy.ndimage.morphology import binary_dilation
-from typing import Tuple, Dict, List, Union
-from pandora.img_tools import shift_right_img
-from json_checker import Or
-import rasterio
-
 from pandora.img_tools import compute_std_raster
+from pandora.img_tools import shift_right_img
 
 
 class AbstractStereo(object):
@@ -42,7 +40,7 @@ class AbstractStereo(object):
 
     stereo_methods_avail = {}
 
-    def __new__(cls, **cfg: Union[str, int]):
+    def __new__(cls, **cfg: Union[str, int]) -> object:
         """
         Return the plugin associated with the stereo_method given in the configuration
 
@@ -79,6 +77,12 @@ class AbstractStereo(object):
         """
 
         def decorator(subclass):
+            """
+            Registers the subclass in the available methods
+
+            :param subclass: the subclass to be registered
+            :type subclass: object
+            """
             cls.stereo_methods_avail[short_name] = subclass
             for arg in args:
                 cls.stereo_methods_avail[arg] = subclass
@@ -121,7 +125,8 @@ class AbstractStereo(object):
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
 
-    def allocate_costvolume(self, img_left: xr.Dataset, subpix: int, disp_min: int, disp_max: int, window_size: int,
+    @staticmethod
+    def allocate_costvolume(img_left: xr.Dataset, subpix: int, disp_min: int, disp_max: int, window_size: int,
                             metadata: dict, np_data: np.ndarray = None) -> xr.Dataset:
         """
         Allocate the cost volume
@@ -173,14 +178,15 @@ class AbstractStereo(object):
         cost_volume.attrs = metadata
 
         # Allocate the confidence measure in the cost volume Dataset
-        confidence_measure = compute_std_raster(img_left, window_size).reshape(len(row), len(col), 1)
+        confidence_measure = compute_std_raster(img_left, window_size).reshape((len(row), len(col), 1))
         cost_volume = cost_volume.assign_coords(indicator=['stereo_pandora_intensityStd'])
         cost_volume['confidence_measure'] = xr.DataArray(data=confidence_measure.astype(np.float32),
                                                          dims=['row', 'col', 'indicator'])
 
         return cost_volume
 
-    def point_interval(self, img_left: xr.Dataset, img_right: xr.Dataset, disp: float) -> \
+    @staticmethod
+    def point_interval(img_left: xr.Dataset, img_right: xr.Dataset, disp: float) -> \
             Tuple[Tuple[int, int], Tuple[int, int]]:
         """
         Computes the range of points over which the similarity measure will be applied
@@ -218,7 +224,8 @@ class AbstractStereo(object):
 
         return p, q
 
-    def masks_dilatation(self, img_left: xr.Dataset, img_right: xr.Dataset, offset_row_col: int, window_size: int,
+    @staticmethod
+    def masks_dilatation(img_left: xr.Dataset, img_right: xr.Dataset, offset_row_col: int, window_size: int,
                          subp: int) -> Tuple[xr.DataArray, List[xr.DataArray]]:
         """
         Return the left and right mask with the convention :
@@ -245,8 +252,6 @@ class AbstractStereo(object):
         :type window_size: int
         :param subp: subpixel precision = (1 or 2 or 4)
         :type subp: int
-        :param cfg: images configuration containing the mask convention : valid_pixels, no_data
-        :type cfg: dict
         :return: the left mask and the right masks
         :rtype:
             tuple (left mask, list[right mask, right mask shifted by 0.5])
@@ -260,7 +265,7 @@ class AbstractStereo(object):
             # Invalid pixels are nan
             dilatate_left_mask[
                 np.where((img_left['msk'].data != img_left.attrs['valid_pixels']) & (
-                            img_left['msk'].data != img_left.attrs['no_data_mask']))] = np.nan
+                        img_left['msk'].data != img_left.attrs['no_data_mask']))] = np.nan
             # Dilatation : pixels that contains no_data in their aggregation window become no_data = nan
             dil = binary_dilation(img_left['msk'].data == img_left.attrs['no_data_mask'],
                                   structure=np.ones((window_size, window_size)), iterations=1)
@@ -275,7 +280,7 @@ class AbstractStereo(object):
             # Invalid pixels are nan
             dilatate_right_mask[
                 np.where((img_right['msk'].data != img_right.attrs['valid_pixels']) & (
-                            img_right['msk'].data != img_right.attrs['no_data_mask']))] = np.nan
+                        img_right['msk'].data != img_right.attrs['no_data_mask']))] = np.nan
             # Dilatation : pixels that contains no_data in their aggregation window become no_data = nan
             dil = binary_dilation(img_right['msk'].data == img_right.attrs['no_data_mask'],
                                   structure=np.ones((window_size, window_size)), iterations=1)
@@ -310,12 +315,12 @@ class AbstractStereo(object):
             # since 0.5 shifted mask == 0.25 shifted mask
             col_shift = np.arange(0 + offset_row_col + 0.5, nx_ - 1 - offset_row_col, step=1)
             dilatate_right_mask_shift = xr.DataArray(dilatate_right_mask_shift,
-                                                   coords=[row, col_shift], dims=['row', 'col'])
+                                                     coords=[row, col_shift], dims=['row', 'col'])
 
         dilatate_left_mask = xr.DataArray(dilatate_left_mask,
-                                         coords=[row, col], dims=['row', 'col'])
+                                          coords=[row, col], dims=['row', 'col'])
         dilatate_right_mask = xr.DataArray(dilatate_right_mask,
-                                         coords=[row, col], dims=['row', 'col'])
+                                           coords=[row, col], dims=['row', 'col'])
 
         return dilatate_left_mask, [dilatate_right_mask, dilatate_right_mask_shift]
 

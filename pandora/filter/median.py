@@ -22,16 +22,16 @@
 """
 This module contains functions associated to the median filter used to filter the disparity map.
 """
-import logging
-import sys
-import numpy as np
 import warnings
-from json_checker import Checker, And
 from typing import Dict, Union, cast
+
+import numpy as np
 import xarray as xr
-from ..common import sliding_window
-from . import filter
+from json_checker import Checker, And
 from pandora.constants import *
+
+from . import filter
+from ..common import sliding_window
 
 
 @filter.AbstractFilter.register_subclass('median')
@@ -109,7 +109,6 @@ class MedianFilter(filter.AbstractFilter):
         disp['disparity_map'].data[valid] = disp_median[valid]
         disp.attrs['filter'] = 'median'
         del disp_median, masked_data,
-
 
     def median_filter(self, data) -> np.ndarray:
         """

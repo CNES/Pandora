@@ -23,16 +23,15 @@
 This module contains functions to test the subpixel refinement step.
 """
 
-import unittest
+import json
 import logging
 import logging.config
 import os
-import json
+import unittest
+
 import numpy as np
-import xarray as xr
-
 import pandora.refinement as refinement
-
+import xarray as xr
 from pandora.constants import *
 
 
@@ -40,6 +39,7 @@ class TestRefinement(unittest.TestCase):
     """
     TestRefinement class allows to test the refinement module
     """
+
     def setUp(self):
         """
         Method called to prepare the test fixture
@@ -59,43 +59,43 @@ class TestRefinement(unittest.TestCase):
                                coords={'row': [1], 'col': [0, 1, 2, 3]})
 
     def test_quadratic(self):
-            """
-            Test the quadratic_curve method
+        """
+        Test the quadratic_curve method
 
-            """
-            # Subpixel disparity map ground truth
-            gt_sub_disp = np.array([[0 - ((34.5 - 32.5) / (2*(32.5 + 34.5 - 2*28))),
-                                     1 - ((35.5 - 37) / (2*(37 + 35.5 - 2*34))),
-                                     -1 - ((45 - 42.5) / (2*(42.5 + 45 - 2*40))),
-                                     -2]], np.float32)
+        """
+        # Subpixel disparity map ground truth
+        gt_sub_disp = np.array([[0 - ((34.5 - 32.5) / (2 * (32.5 + 34.5 - 2 * 28))),
+                                 1 - ((35.5 - 37) / (2 * (37 + 35.5 - 2 * 34))),
+                                 -1 - ((45 - 42.5) / (2 * (42.5 + 45 - 2 * 40))),
+                                 -2]], np.float32)
 
-            # Subpixel cost map ground truth
-            x0 = - ((34.5 - 32.5) / (2*(32.5 + 34.5 - 2*28)))
-            x1 = - ((35.5 - 37) / (2*(37 + 35.5 - 2*34)))
-            x2 = - ((45 - 42.5) / (2*(42.5 + 45 - 2*40)))
-            gt_sub_cost = np.array([[((32.5 + 34.5 - 2*28) / 2) * x0 * x0 + ((34.5 - 32.5) / 2) * x0 + 28,
-                                     ((37 + 35.5 - 2*34) / 2) * x1 * x1 + ((35.5 - 37) / 2) * x1 + 34,
-                                     ((42.5 + 45 - 2*40) / 2) * x2 * x2 + ((45 - 42.5) / 2) * x2 + 40,
-                                     22]])
+        # Subpixel cost map ground truth
+        x0 = - ((34.5 - 32.5) / (2 * (32.5 + 34.5 - 2 * 28)))
+        x1 = - ((35.5 - 37) / (2 * (37 + 35.5 - 2 * 34)))
+        x2 = - ((45 - 42.5) / (2 * (42.5 + 45 - 2 * 40)))
+        gt_sub_cost = np.array([[((32.5 + 34.5 - 2 * 28) / 2) * x0 * x0 + ((34.5 - 32.5) / 2) * x0 + 28,
+                                 ((37 + 35.5 - 2 * 34) / 2) * x1 * x1 + ((35.5 - 37) / 2) * x1 + 34,
+                                 ((42.5 + 45 - 2 * 40) / 2) * x2 * x2 + ((45 - 42.5) / 2) * x2 + 40,
+                                 22]])
 
-            # Validity mask ground truth
-            gt_mask = np.array([[0, 0, 0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION]], dtype=np.uint16)
+        # Validity mask ground truth
+        gt_mask = np.array([[0, 0, 0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION]], dtype=np.uint16)
 
-            # -------- Compute the refinement with quadratic by calling subpixel_refinement --------
-            quadratic_refinement = refinement.AbstractRefinement(**{'refinement_method': 'quadratic'})
-            orig_cv = self.cv.copy()
-            quadratic_refinement.subpixel_refinement(self.cv, self.disp)
-            # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-            np.testing.assert_array_equal(self.disp['disparity_map'].data, gt_sub_disp)
+        # -------- Compute the refinement with quadratic by calling subpixel_refinement --------
+        quadratic_refinement = refinement.AbstractRefinement(**{'refinement_method': 'quadratic'})
+        orig_cv = self.cv.copy()
+        quadratic_refinement.subpixel_refinement(self.cv, self.disp)
+        # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(self.disp['disparity_map'].data, gt_sub_disp)
 
-            # Check if the calculated coefficients is equal to the ground truth (same shape and all elements equals)
-            np.testing.assert_array_equal(self.disp['interpolated_coeff'].data, gt_sub_cost)
+        # Check if the calculated coefficients is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(self.disp['interpolated_coeff'].data, gt_sub_cost)
 
-            # Check if the calculated validity mask  is equal to the ground truth (same shape and all elements equals)
-            np.testing.assert_array_equal(self.disp['validity_mask'].data, gt_mask)
+        # Check if the calculated validity mask  is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(self.disp['validity_mask'].data, gt_mask)
 
-            # Check if the cost volume is not change
-            np.testing.assert_array_equal(self.cv['cost_volume'].data, orig_cv['cost_volume'].data)
+        # Check if the cost volume is not change
+        np.testing.assert_array_equal(self.cv['cost_volume'].data, orig_cv['cost_volume'].data)
 
     def test_vfit(self):
         """
@@ -139,18 +139,18 @@ class TestRefinement(unittest.TestCase):
         """
         # left cost volume
         cv_left = xr.Dataset({'cost_volume': (['row', 'col', 'disp'], np.array([[[np.nan, np.nan, np.nan, 5, 0, 1],
-                                                                                [np.nan, np.nan, 4, 1, 0, 2],
-                                                                                [np.nan, 2, 3, 2, 0, np.nan],
-                                                                                [0, 5, 4, 2, np.nan, np.nan]]]))},
-                            coords={'row': [1], 'col': [0, 1, 2, 3], 'disp': [-3, -2, -1, 0, 1, 2]})
+                                                                                 [np.nan, np.nan, 4, 1, 0, 2],
+                                                                                 [np.nan, 2, 3, 2, 0, np.nan],
+                                                                                 [0, 5, 4, 2, np.nan, np.nan]]]))},
+                             coords={'row': [1], 'col': [0, 1, 2, 3], 'disp': [-3, -2, -1, 0, 1, 2]})
         cv_left.attrs['subpixel'] = 1
         cv_left.attrs['measure'] = 'sad'
         cv_left.attrs['type_measure'] = 'min'
 
         # right disparity map
         disp_right = xr.Dataset({'disparity_map': (['row', 'col'], np.array([[3, -1, -1, -1]], np.float32)),
-                               'validity_mask': (['row', 'col'], np.array([[0, 0, 0, 0]], np.uint16))},
-                              coords={'row': [1], 'col': [0, 1, 2, 3]})
+                                 'validity_mask': (['row', 'col'], np.array([[0, 0, 0, 0]], np.uint16))},
+                                coords={'row': [1], 'col': [0, 1, 2, 3]})
 
         # Compute the refinement with vfit fast by calling fast_subpixel_refinement
         vfit_refinement = refinement.AbstractRefinement(**{'refinement_method': 'vfit'})
@@ -164,9 +164,9 @@ class TestRefinement(unittest.TestCase):
 
         # Subpixel disparity map ground truth
         gt_sub_disp = np.array([[3,
-                                -1,
-                                -1 + (1 - 2) / (2 * (2 - 0)),
-                                -1 + (2 - 2) / (2 * (2 - 0))]], np.float32)
+                                 -1,
+                                 -1 + (1 - 2) / (2 * (2 - 0)),
+                                 -1 + (2 - 2) / (2 * (2 - 0))]], np.float32)
 
         # Validity mask ground truth
         gt_mask = np.array([[PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0, 0]],
@@ -200,10 +200,10 @@ class TestRefinement(unittest.TestCase):
                           coords={'row': [1], 'col': [0, 1, 2]})
 
         # Subpixel disparity map ground truth
-        gt_sub_disp = np.array([[0, 0, 0 + ((3-4) / (2*(4-1)))]], np.float32)
+        gt_sub_disp = np.array([[0, 0, 0 + ((3 - 4) / (2 * (4 - 1)))]], np.float32)
 
         # Subpixel cost map ground truth
-        gt_sub_cost = np.array([[np.nan, 2, 4 + (((3-4) / (2*(4-1))) - 1) * (4-1)]])
+        gt_sub_cost = np.array([[np.nan, 2, 4 + (((3 - 4) / (2 * (4 - 1))) - 1) * (4 - 1)]])
 
         # Validity mask ground truth
         gt_mask = np.array([[0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0]], np.uint16)
@@ -226,7 +226,7 @@ class TestRefinement(unittest.TestCase):
         np.testing.assert_array_equal(cv['cost_volume'].data, orig_cv['cost_volume'].data)
 
 
-def setup_logging(path='logging.json', default_level=logging.WARNING,):
+def setup_logging(path='logging.json', default_level=logging.WARNING, ):
     """
     Setup the logging configuration
 

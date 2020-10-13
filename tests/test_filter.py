@@ -23,17 +23,16 @@
 This module contains functions to test the disparity map filtering.
 """
 
-import unittest
+import json
 import logging
 import logging.config
 import os
-import json
+import unittest
+
 import numpy as np
-import xarray as xr
-
-import pandora.filter as flt
 import pandora
-
+import pandora.filter as flt
+import xarray as xr
 from pandora.constants import *
 
 

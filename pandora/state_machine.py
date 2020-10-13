@@ -23,32 +23,35 @@
 This module contains class associated to the pandora state machine
 """
 
-from transitions import MachineError
-from transitions import Machine
 import logging
-import xarray as xr
-import numpy as np
-from typing import Dict, Tuple, Union
-from json_checker import Checker, Or, And
+from typing import Dict, Union
 
-from pandora import stereo
+import numpy as np
+import xarray as xr
+from json_checker import Checker, Or, And
+from transitions import Machine
+from transitions import MachineError
+from pandora import aggregation
+from pandora import common
 from pandora import disparity
 from pandora import filter
-from pandora import refinement
-from pandora import aggregation
 from pandora import optimization
+from pandora import refinement
+from pandora import stereo
 from pandora import validation
-from pandora import common
+
+"""
+This module contains class associated to the pandora state machine
+"""
 
 
 class PandoraMachine(Machine):
-
     """
     PandoraMachine class to create and use a state machine
     """
 
     _transitions_run = [
-        {'trigger': 'stereo', 'source': 'begin', 'dest': 'cost_volume','after': 'stereo_run'},
+        {'trigger': 'stereo', 'source': 'begin', 'dest': 'cost_volume', 'after': 'stereo_run'},
         {'trigger': 'aggregation', 'source': 'cost_volume', 'dest': 'cost_volume', 'after': 'aggregation_run'},
         {'trigger': 'optimization', 'source': 'cost_volume', 'dest': 'cost_volume', 'after': 'optimization_run'},
         {'trigger': 'disparity', 'source': 'cost_volume', 'dest': 'disp_map', 'after': 'disparity_run'},
@@ -59,7 +62,7 @@ class PandoraMachine(Machine):
     ]
 
     _transitions_check = [
-        {'trigger': 'stereo', 'source': 'begin', 'dest': 'cost_volume','before': 'right_disp_map_check_conf',
+        {'trigger': 'stereo', 'source': 'begin', 'dest': 'cost_volume', 'before': 'right_disp_map_check_conf',
          'after': 'stereo_check_conf'},
         {'trigger': 'aggregation', 'source': 'cost_volume', 'dest': 'cost_volume', 'after': 'aggregation_check_conf'},
         {'trigger': 'optimization', 'source': 'cost_volume', 'dest': 'cost_volume', 'after': 'optimization_check_conf'},
@@ -70,9 +73,9 @@ class PandoraMachine(Machine):
         {'trigger': 'resize', 'source': 'disp_map', 'dest': 'resized_disparity', 'after': 'resize_check_conf'}
     ]
 
-    def __init__(self, left_img: xr.Dataset =None, right_img: xr.Dataset =None,
-                 disp_min: Union[int, np.ndarray] =None, disp_max: Union[int, np.ndarray] =None,
-                 right_disp_min: Union[int, np.ndarray] =None, right_disp_max: Union[int, np.ndarray] =None) -> None:
+    def __init__(self, left_img: xr.Dataset = None, right_img: xr.Dataset = None,
+                 disp_min: Union[int, np.ndarray] = None, disp_max: Union[int, np.ndarray] = None,
+                 right_disp_min: Union[int, np.ndarray] = None, right_disp_max: Union[int, np.ndarray] = None) -> None:
         """
         Initialize Pandora Machine
 
@@ -126,7 +129,6 @@ class PandoraMachine(Machine):
 
         logging.getLogger("transitions").setLevel(logging.WARNING)
 
-
     def stereo_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Matching cost computation
@@ -156,8 +158,7 @@ class PandoraMachine(Machine):
             dmin_min_right, dmax_max_right = stereo_.dmin_dmax(self.right_disp_min, self.right_disp_max)
             self.right_cv = stereo_.compute_cost_volume(self.right_img, self.left_img, dmin_min_right, dmax_max_right)
             stereo_.cv_masked(self.right_img, self.left_img, self.right_cv, self.right_disp_min,
-                                              self.right_disp_max)
-
+                              self.right_disp_max)
 
     def aggregation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -206,15 +207,14 @@ class PandoraMachine(Machine):
         if self.right_disp_map == "none":
             self.left_disparity = disparity_.to_disp(self.left_cv, self.left_img, self.right_img)
             disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img,
-                                                           self.left_cv)
+                                     self.left_cv)
         elif self.right_disp_map == "accurate":
             self.left_disparity = disparity_.to_disp(self.left_cv, self.left_img, self.right_img)
             disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img,
-                                                           self.left_cv)
+                                     self.left_cv)
             self.right_disparity = disparity_.to_disp(self.right_cv, self.right_img, self.left_img)
             disparity_.validity_mask(self.right_disparity, self.right_img, self.left_img,
-                                                         self.right_cv)
-
+                                     self.right_cv)
 
     def filter_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -249,7 +249,6 @@ class PandoraMachine(Machine):
         else:
             refinement_.subpixel_refinement(self.left_cv, self.left_disparity)
             refinement_.subpixel_refinement(self.right_cv, self.right_disparity)
-
 
     def validation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -293,8 +292,8 @@ class PandoraMachine(Machine):
             self.left_disparity = common.resize(self.left_disparity, cfg['pipeline'][input_step]['border_disparity'])
             self.right_disparity = common.resize(self.right_disparity, cfg['pipeline'][input_step]['border_disparity'])
 
-
-    def run_prepare(self,cfg: Dict[str, dict], left_img: xr.Dataset, right_img: xr.Dataset, disp_min: Union[int, np.ndarray],
+    def run_prepare(self, cfg: Dict[str, dict], left_img: xr.Dataset, right_img: xr.Dataset,
+                    disp_min: Union[int, np.ndarray],
                     disp_max: Union[int, np.ndarray], right_disp_min: Union[None, int, np.ndarray] = None,
                     right_disp_max: Union[None, int, np.ndarray] = None) -> None:
         """
@@ -374,7 +373,6 @@ class PandoraMachine(Machine):
         self.remove_transitions(self._transitions_run)
         self.set_state('begin')
 
-
     def right_disp_map_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Check the right_disp_map configuration
@@ -395,7 +393,6 @@ class PandoraMachine(Machine):
 
         # Store the righ disparity map configuration
         self.right_disp_map = cfg['right_disp_map']['method']
-
 
     def stereo_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -494,8 +491,7 @@ class PandoraMachine(Machine):
 
         if validation_.cfg['validation_method'] == "cross_checking" and self.right_disp_map == "none":
             raise MachineError("Can't trigger event cross-checking validation  if right_disp_map method equal to "
-                               + self.right_disp_map )
-
+                               + self.right_disp_map)
 
     def resize_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -549,7 +545,7 @@ class PandoraMachine(Machine):
 
             except (MachineError, KeyError):
                 print('\n Problem during Pandora checking configuration steps sequencing. '
-                    'Check your configuration file. \n')
+                      'Check your configuration file. \n')
                 raise
 
         # Remove transitions
