@@ -15,7 +15,7 @@ Different measures of similarity are available in Pandora :
 - ZNCC (Zero mean Normalized Cross Correlation)
 
 It is possible to oversample the cost volume by a factor of 2 or 4 ( with the *subpix* parameter ) compared to
-to the input images. It can be useful for :left:`disparity_refinement`
+to the input images. It can be useful for :ref:`disparity_refinement`
 
 Pandora can take into account a mask and a nodata value for each image. The masks and nodata are used during
 the matching cost computation  :
@@ -70,7 +70,7 @@ The disparity calculated by Pandora is such that:
 
     :math:`I_{L}(x, y) = I_{R}(x + d, y)`
 
-avec :math:`I_{L}` , :math:`I_{R}` the left image (left image) and the right image (right image), and
+with :math:`I_{L}` , :math:`I_{R}` the left image (left image) and the right image (right image), and
 :math:`d` the disparity.
 
 .. _disparity_refinement:
