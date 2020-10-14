@@ -20,12 +20,12 @@
 # limitations under the License.
 #
 """
-This module contains the required libraries and softwares allowing to execute the software, and setup elements to configure and identify the software. 
+This module contains the required libraries and softwares allowing to execute the software,
+and setup elements to configure and identify the software.
 """
 
+from codecs import open as copen
 from setuptools import setup, find_packages
-import subprocess
-from codecs import open
 
 cmdclass = {}
 
@@ -40,16 +40,21 @@ requirements = ['numpy',
                 'xarray>=0.13.*',
                 'scipy',
                 'rasterio',
-                'nose2',
                 'json-checker',
                 'numba>=0.47.*',
                 'opencv-python-headless',
                 'transitions']
 
+requirements_dev = {'dev': ['sphinx',
+                            'sphinx_rtd_theme',
+                            'sphinx_autoapi',
+                            'nose2',
+                            'pylint',
+                            'pre-commit']}
 
 def readme():
-    with open('README.md', "r", "utf-8") as f:
-        return f.read()
+    with copen('README.md', 'r', 'utf-8') as fstream:
+        return fstream.read()
 
 
 setup(name='pandora',
@@ -66,6 +71,7 @@ setup(name='pandora',
       },
       python_requires='>=3.6',
       install_requires=requirements,
+      extras_require=requirements_dev,
       packages=find_packages(),
       cmdclass=cmdclass,
       command_options={

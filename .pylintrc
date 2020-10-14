@@ -416,8 +416,10 @@ function-naming-style=snake_case
 good-names=i,
            j,
            k,
-           x,
-           y
+           cv,
+           p1,
+           p2,
+           gt,
            _
 
 # Good variable names regexes, separated by a comma. If names match any regex,
