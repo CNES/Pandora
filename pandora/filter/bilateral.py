@@ -29,7 +29,7 @@ import cv2
 import xarray as xr
 from json_checker import Checker, And
 
-from . import filter
+from . import filter # pylint: disable=redefined-builtin
 
 
 @filter.AbstractFilter.register_subclass('bilateral')
@@ -47,8 +47,8 @@ class BilateralFilter(filter.AbstractFilter):
         :type cfg: dict
         """
         self.cfg = self.check_conf(**cfg)
-        self._sigmaColor = self.cfg['sigma_color']
-        self._sigmaSpace = self.cfg['sigma_space']
+        self._sigma_color = self.cfg['sigma_color']
+        self._sigma_space = self.cfg['sigma_space']
 
     def check_conf(self, **cfg: Union[str, float]) -> Dict[str, Union[str, float]]:
         """
@@ -66,9 +66,9 @@ class BilateralFilter(filter.AbstractFilter):
             cfg['sigma_space'] = self._SIGMA_SPACE
 
         schema = {
-            "filter_method": And(str, lambda x: 'bilateral'),
-            "sigma_color": And(float, lambda x: x > 0),
-            "sigma_space": And(float, lambda x: x > 0)
+            'filter_method': And(str, lambda input: 'bilateral'),
+            'sigma_color': And(float, lambda input: input > 0),
+            'sigma_space': And(float, lambda input: input > 0)
         }
 
         checker = Checker(schema)
@@ -101,6 +101,6 @@ class BilateralFilter(filter.AbstractFilter):
         :type cv: xarray.Dataset
         :return: None
         """
-        disp['disparity_map'].data = cv2.bilateralFilter(disp['disparity_map'].data, d=0, sigmaColor=self._sigmaColor,
-                                                         sigmaSpace=self._sigmaSpace)
+        disp['disparity_map'].data = cv2.bilateralFilter(disp['disparity_map'].data, d=0, sigmaColor=self._sigma_color,
+                                                         sigmaSpace=self._sigma_space)
         disp.attrs['filter'] = 'bilateral'

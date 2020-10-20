@@ -30,11 +30,15 @@ from typing import Dict, Union
 import numpy as np
 import xarray as xr
 from json_checker import Checker, And, Or, OptionalKey
-from pandora import JSON_checker as jcheck
-from pandora.constants import *
+
+import pandora.constants as cst
+from pandora import json_checker as jcheck
 
 
-class AbstractValidation(object):
+class AbstractValidation():
+    """
+    Abstract Validation class
+    """
     __metaclass__ = ABCMeta
 
     validation_methods_avail = {}
@@ -47,22 +51,21 @@ class AbstractValidation(object):
         :type cfg: dictionary
         """
         if cls is AbstractValidation:
-            if type(cfg['validation_method']) is str:
+            if isinstance(cfg['validation_method'], str):
                 try:
                     return super(AbstractValidation, cls).__new__(
                         cls.validation_methods_avail[cfg['validation_method']])
                 except KeyError:
-                    logging.error("No validation method named {} supported".format(cfg['validation_method']))
+                    logging.error('No validation method named % supported', cfg['validation_method'])
                     raise KeyError
             else:
-                if type(cfg['validation_method']) is unicode:
+                if isinstance(cfg['validation_method'], unicode): # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractValidation, cls).__new__(
                             cls.validation_methods_avail[cfg['validation_method'].encode('utf-8')])
                     except KeyError:
-                        logging.error(
-                            "No validation matching method named {} supported".format(cfg['validation_method']))
+                        logging.error('No validation method named % supported', cfg['validation_method'])
                         raise KeyError
         else:
             return super(AbstractValidation, cls).__new__(cls)
@@ -175,10 +178,10 @@ class CrossChecking(AbstractValidation):
             cfg['right_left_mode'] = 'accurate'
 
         schema = {
-            "validation_method": And(str, lambda x: 'cross_checking'),
-            "cross_checking_threshold": Or(int, float),
-            "right_left_mode": And(str, lambda x: jcheck.is_method(x, ['accurate', 'approximate'])),
-            OptionalKey("interpolated_disparity"): And(str, lambda x: jcheck.is_method(x, ['mc-cnn', 'sgm']))
+            'validation_method': And(str, lambda input: 'cross_checking'),
+            'cross_checking_threshold': Or(int, float),
+            'right_left_mode': And(str, lambda input: jcheck.is_method(input, ['accurate', 'approximate'])),
+            OptionalKey('interpolated_disparity'): And(str, lambda input: jcheck.is_method(input, ['mc-cnn', 'sgm']))
         }
 
         checker = Checker(schema)
@@ -221,10 +224,10 @@ class CrossChecking(AbstractValidation):
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param cv: cost_volume Dataset
+        :param cv: cv Dataset
         :type cv:
             xarray.Dataset with the variables:
-                - cost_volume 3D xarray.DataArray (row, col, disp)
+                - cv 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         :return: the left dataset, with the bit 8 and 9 of the validity_mask :
             - If out & MSK_PIXEL_OCCLUSION != 0 : Invalid pixel : occluded pixel
@@ -251,7 +254,7 @@ class CrossChecking(AbstractValidation):
 
         for row in range(0, nb_row):
             # Exclude invalid pixel :
-            valid_pixel = np.where((dataset_left['validity_mask'].data[row, :] & PANDORA_MSK_PIXEL_INVALID) == 0)
+            valid_pixel = np.where((dataset_left['validity_mask'].data[row, :] & cst.PANDORA_MSK_PIXEL_INVALID) == 0)
 
             col_left = np.arange(nb_col, dtype=np.int)
             col_left = col_left[valid_pixel]
@@ -287,7 +290,7 @@ class CrossChecking(AbstractValidation):
 
             # Index : i + d, for any other d. 2D np array (nb invalid pixels, nb disparity )
             index = np.tile(disparity_range, (len(col_left[inside_right][invalid]), 1)).astype(np.float32) + \
-                np.tile(col_left[inside_right][invalid], (len(disparity_range), 1)).transpose()
+                    np.tile(col_left[inside_right][invalid], (len(disparity_range), 1)).transpose()
 
             inside_col_disp = np.where((index >= 0) & (index < nb_col))
 
@@ -302,15 +305,15 @@ class CrossChecking(AbstractValidation):
             comp = np.sum(comp, axis=1)
             comp[comp > 1] = 1
 
-            dataset_left['validity_mask'].data[row, col_left[inside_right][invalid]] += PANDORA_MSK_PIXEL_OCCLUSION
+            dataset_left['validity_mask'].data[row, col_left[inside_right][invalid]] += cst.PANDORA_MSK_PIXEL_OCCLUSION
             dataset_left['validity_mask'].data[row, col_left[inside_right][invalid]] += \
-                (PANDORA_MSK_PIXEL_MISMATCH * comp).astype(np.uint16)
+                (cst.PANDORA_MSK_PIXEL_MISMATCH * comp).astype(np.uint16)
             dataset_left['validity_mask'].data[row, col_left[inside_right][invalid]] -= \
-                (PANDORA_MSK_PIXEL_OCCLUSION * comp).astype(np.uint16)
+                (cst.PANDORA_MSK_PIXEL_OCCLUSION * comp).astype(np.uint16)
 
             # Pixels i + round(Disp_left(i) outside the right image are occlusions
             outside_right = np.where((col_right < 0) & (col_right >= nb_col))
-            dataset_left['validity_mask'].data[row, col_left[outside_right]] += PANDORA_MSK_PIXEL_OCCLUSION
+            dataset_left['validity_mask'].data[row, col_left[outside_right]] += cst.PANDORA_MSK_PIXEL_OCCLUSION
 
         dataset_left.attrs['validation'] = 'cross_checking'
 

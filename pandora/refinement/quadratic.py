@@ -28,8 +28,8 @@ from typing import Dict, Tuple
 import numpy as np
 from json_checker import Checker, And
 from numba import njit
-from pandora.constants import *
 
+import pandora.constants as cst
 from . import refinement
 
 
@@ -59,7 +59,7 @@ class Quadratic(refinement.AbstractRefinement):
         :rtype: dict
         """
         schema = {
-            "refinement_method": And(str, lambda x: 'quadratic')
+            'refinement_method': And(str, lambda input: 'quadratic')
         }
 
         checker = Checker(schema)
@@ -92,18 +92,18 @@ class Quadratic(refinement.AbstractRefinement):
 
         if (np.isnan(cost[0])) or (np.isnan(cost[2])):
             # Bit 3 = 1: Information: calculations stopped at the pixel step, sub-pixel interpolation did not succeed
-            return disp, cost[1], PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
+            return disp, cost[1], cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
 
-        # Solve the system: y = alpha * x ** 2 + beta * x + gamma
+        # Solve the system: col = alpha * row ** 2 + beta * row + gamma
         alpha = (cost[0] - 2 * cost[1] + cost[2]) / 2
         beta = (cost[2] - cost[0]) / 2
         gamma = cost[1]
 
         # If the costs are close, the result of -b / 2a (minimum) is bounded between [-1, 1]
-        # sub_disp is x
+        # sub_disp is row
         sub_disp = min(1.0, max(-1.0, -beta / (2 * alpha)))
 
-        # sub_cost is y
+        # sub_cost is col
         sub_cost = (alpha * sub_disp ** 2) + (beta * sub_disp) + gamma
 
         return disp + sub_disp, sub_cost, 0

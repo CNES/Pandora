@@ -31,7 +31,10 @@ from typing import Dict
 import xarray as xr
 
 
-class AbstractOptimization(object):
+class AbstractOptimization():
+    """
+    Abstract Optimizationinput class
+    """
     __metaclass__ = ABCMeta
 
     optimization_methods_avail = {}
@@ -44,21 +47,21 @@ class AbstractOptimization(object):
         :type cfg: dictionary
         """
         if cls is AbstractOptimization:
-            if type(cfg['optimization_method']) is str:
+            if isinstance(cfg['optimization_method'], str):
                 try:
                     return super(AbstractOptimization, cls).__new__(
                         cls.optimization_methods_avail[cfg['optimization_method']])
                 except KeyError:
-                    logging.error("No optimization method named {} supported".format(cfg['optimization_method']))
+                    logging.error('No optimization method named % supported', cfg['optimization_method'])
                     sys.exit(1)
             else:
-                if type(cfg['optimization_method']) is unicode:
+                if isinstance(cfg['optimization_method'], unicode): # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractOptimization, cls).__new__(
                             cls.optimization_methods_avail[cfg['optimization_method'].encode('utf-8')])
                     except KeyError:
-                        logging.error("No optimization method named {} supported".format(cfg['optimization_method']))
+                        logging.error('No optimization method named % supported', cfg['optimization_method'])
                         sys.exit(1)
         else:
             return super(AbstractOptimization, cls).__new__(cls)

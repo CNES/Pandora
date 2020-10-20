@@ -39,12 +39,12 @@ from . import optimization
 from . import refinement
 from . import stereo
 from . import validation
-from .JSON_checker import check_conf, read_config_file
 from .img_tools import read_img, read_disp
+from .json_checker import check_conf, read_config_file
 from .state_machine import PandoraMachine
 
 
-#pylint: disable=too-many-arguments
+# pylint: disable=too-many-arguments
 def run(pandora_machine: PandoraMachine, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: Union[int, np.ndarray],
         disp_max: Union[int, np.ndarray], cfg: Dict[str, dict], disp_min_right: Union[None, int, np.ndarray] = None,
         disp_max_right: Union[None, int, np.ndarray] = None) -> Tuple[xr.Dataset, xr.Dataset]:

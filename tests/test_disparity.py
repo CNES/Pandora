@@ -30,12 +30,13 @@ import os
 import unittest
 
 import numpy as np
+import xarray as xr
+
 import pandora
+import pandora.constants as cst
 import pandora.disparity as disparity
 import pandora.stereo as stereo
-import xarray as xr
 from pandora.common import resize
-from pandora.constants import *
 from pandora.img_tools import read_img
 from pandora.state_machine import PandoraMachine
 
@@ -181,7 +182,7 @@ class TestDisparity(unittest.TestCase):
 
         # Compute the disparity
         disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
-        disp = disparity_.to_disp(cv)
+        disparity_.to_disp(cv)
 
         # Coefficient map ground truth, for the images described in the setUp method
         gt_coeff = np.array([[0, 0, 0, 0],
@@ -231,67 +232,70 @@ class TestDisparity(unittest.TestCase):
         # Check if the calculated right disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(disp_r['disparity_map'].data, gt_disp)
 
-    def test_right_disparity_comparaison(self):
+    @staticmethod
+    def test_right_disparity_comparaison():
         """
         Test the right disparity method by comparing the right disparity map calculated from scratch with the one
         calculated with the fast method
 
         """
         # Build the default configuration
-        default_cfg = pandora.JSON_checker.default_short_configuration
+        default_cfg = pandora.json_checker.default_short_configuration
 
         pandora_left = read_img('tests/pandora/left.png', no_data=np.nan, cfg=default_cfg['image'], mask=None)
         pandora_right = read_img('tests/pandora/right.png', no_data=np.nan, cfg=default_cfg['image'], mask=None)
 
         fast_cfg = {
-            "pipeline": {
-                "right_disp_map": {
-                    "method": "accurate"
+            'pipeline': {
+                'right_disp_map': {
+                    'method': 'accurate'
                 },
-                "stereo": {
-                    "stereo_method": "census"
+                'stereo': {
+                    'stereo_method': 'census'
                 },
-                "disparity": {
-                    "disparity_method": "wta"
+                'disparity': {
+                    'disparity_method': 'wta'
                 },
-                "refinement": {
-                    "refinement_method": "vfit"
+                'refinement': {
+                    'refinement_method': 'vfit'
                 },
-                "validation": {
-                    "validation_method": "cross_checking",
-                    "right_left_mode": "approximate"
+                'validation': {
+                    'validation_method': 'cross_checking',
+                    'right_left_mode': 'approximate'
                 }
             }
         }
 
         pandora_machine_fast = PandoraMachine()
-        cfg = pandora.JSON_checker.update_conf(default_cfg, fast_cfg)
-        left, right_fast = pandora.run(pandora_machine_fast, pandora_left, pandora_right, -60, 0, cfg)
+        cfg = pandora.json_checker.update_conf(default_cfg, fast_cfg)
+        left, right_fast = \
+            pandora.run(pandora_machine_fast, pandora_left, pandora_right, -60, 0, cfg) # pylint: disable=unused-variable
+
 
         acc_cfg = {
-            "pipeline":
+            'pipeline':
                 {
-                    "right_disp_map": {
-                        "method": "accurate"
+                    'right_disp_map': {
+                        'method': 'accurate'
                     },
-                    "stereo": {
-                        "stereo_method": "census"
+                    'stereo': {
+                        'stereo_method': 'census'
                     },
-                    "disparity": {
-                        "disparity_method": "wta"
+                    'disparity': {
+                        'disparity_method': 'wta'
                     },
-                    "refinement": {
-                        "refinement_method": "vfit"
+                    'refinement': {
+                        'refinement_method': 'vfit'
                     },
-                    "validation": {
-                        "validation_method": "cross_checking",
-                        "right_left_mode": "accurate",
+                    'validation': {
+                        'validation_method': 'cross_checking',
+                        'right_left_mode': 'accurate',
                     }
                 }
         }
 
         pandora_machine_acc = PandoraMachine()
-        cfg = pandora.JSON_checker.update_conf(default_cfg, acc_cfg)
+        cfg = pandora.json_checker.update_conf(default_cfg, acc_cfg)
         left, right_acc = pandora.run(pandora_machine_acc, pandora_left, pandora_right, -60, 0, cfg)
         # Check if the calculated disparity map in fast mode is equal to the disparity map in accurate mode
         np.testing.assert_array_equal(right_fast['disparity_map'].data, right_acc['disparity_map'].data)
@@ -317,15 +321,15 @@ class TestDisparity(unittest.TestCase):
         disparity_.validity_mask(dataset, self.left, self.right, cv)
 
         # Validity mask ground truth
-        gt_mask = np.array([[PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0],
-                            [PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0],
-                            [PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0]], dtype=np.uint16)
+        gt_mask = np.array([[cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0],
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0],
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0]], dtype=np.uint16)
 
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
@@ -339,9 +343,10 @@ class TestDisparity(unittest.TestCase):
         disparity_.validity_mask(dataset, self.left, self.right, cv)
 
         # Validity mask ground truth
-        gt_mask = np.array([[0, 0, 1 << 2, PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
-                            [0, 0, 1 << 2, PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
-                            [0, 0, 1 << 2, PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING]], dtype=np.uint16)
+        gt_mask = np.array([[0, 0, 1 << 2, cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
+                            [0, 0, 1 << 2, cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
+                            [0, 0, 1 << 2, cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING]],
+                           dtype=np.uint16)
 
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
@@ -355,12 +360,12 @@ class TestDisparity(unittest.TestCase):
         disparity_.validity_mask(dataset, self.left, self.right, cv)
 
         # Validity mask ground truth
-        gt_mask = np.array([[PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE],
-                            [PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE],
-                            [PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE]],
+        gt_mask = np.array([[cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE],
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE],
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE]],
                            dtype=np.uint16)
 
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
@@ -387,16 +392,16 @@ class TestDisparity(unittest.TestCase):
         disparity_.validity_mask(dataset, self.left, self.right, cv)
 
         # Validity mask ground truth
-        gt_mask = np.array([[PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0],
-                            [PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0],
-                            [PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0]], dtype=np.uint16)
+        gt_mask = np.array([[cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0],
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0],
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0]], dtype=np.uint16)
 
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
@@ -415,15 +420,15 @@ class TestDisparity(unittest.TestCase):
         cv = stereo_plugin.compute_cost_volume(self.left, self.right, -2, 1)
 
         # Validity mask ground truth ( for disparities -1 0 1 2 )
-        gt_mask = np.array([[PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE],
-                            [PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE],
-                            [PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE]], dtype=np.uint16)
+        gt_mask = np.array([[cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE],
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE],
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE]], dtype=np.uint16)
 
         # Compute the right disparity map and the validity mask
         disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
@@ -436,14 +441,14 @@ class TestDisparity(unittest.TestCase):
         cv = stereo_plugin.compute_cost_volume(self.left, self.right, 1, 2)
 
         # Validity mask ground truth ( for disparities -2 -1 )
-        gt_mask = np.array([[PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+        gt_mask = np.array([[cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                              0, 0],
-                            [PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                              0, 0],
-                            [PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                              0, 0]], dtype=np.uint16)
 
         # Compute the right disparity map and the validity mask
@@ -456,12 +461,12 @@ class TestDisparity(unittest.TestCase):
         cv = stereo_plugin.compute_cost_volume(self.left, self.right, -2, -1)
 
         # Validity mask ground truth ( for disparities 1 2 )
-        gt_mask = np.array([[0, 0, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
-                            [0, 0, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
-                            [0, 0, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING]], dtype=np.uint16)
+        gt_mask = np.array([[0, 0, cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
+                            [0, 0, cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
+                            [0, 0, cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING]], dtype=np.uint16)
 
         # Compute the right disparity map and the validity mask
         dataset = disparity_.approximate_right_disparity(cv, self.right)
@@ -469,7 +474,8 @@ class TestDisparity(unittest.TestCase):
         # Check if the calculated right disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
 
-    def test_recover_size(self):
+    @staticmethod
+    def test_recover_size():
         """
         Test the recover_size method
 
@@ -479,8 +485,8 @@ class TestDisparity(unittest.TestCase):
                                                   np.array([[[1., 0., 0.], [1., 0., 0.]]],
                                                            dtype=np.float32)),
                            'validity_mask': (['row', 'col'],
-                                             np.array([[PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                                                        PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE]],
+                                             np.array([[cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                                                        cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE]],
                                                       dtype=np.uint16))},
                           coords={'row': [2], 'col': [2, 3]})
         left.attrs['offset_row_col'] = 2
@@ -525,23 +531,23 @@ class TestDisparity(unittest.TestCase):
                                    [np.nan, np.nan, np.nan]]])
 
         # Validity mask ground truth with the size of the input images
-        gt_mask = np.array([[PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                             PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                             PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
-                            [PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                             PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                             PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
-                            [PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
-                            [PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                             PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+        gt_mask = np.array([[cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
+                            [cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
+                            [cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
+                            [cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
 
-                             PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
-                            [PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                             PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                             PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER]],
+                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
+                            [cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER]],
                            dtype=np.uint16)
 
         # Resize the products
@@ -558,7 +564,7 @@ class TestDisparity(unittest.TestCase):
                                                              [[1., 0, 0], [1., 0, 0]]],
                                                             dtype=np.float32)),
                             'validity_mask': (['row', 'col'],
-                                              np.array([[0, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE],
+                                              np.array([[0, cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE],
                                                         [1 << 5, 0]], dtype=bool))},
                            coords={'row': [1, 2], 'col': [1, 2]})
 
@@ -589,16 +595,17 @@ class TestDisparity(unittest.TestCase):
                                          [np.nan, np.nan, np.nan]]])
 
         # Validity mask ground truth with the size of the input images
-        gt_mask_right = np.array([[PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                                   PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
-                                  [PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, 0,
-                                   PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                                   PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
-                                  [PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_FILLED_MISMATCH, 0,
-                                   PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
-                                  [PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                                   PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER]],
-                                 dtype=bool)
+        gt_mask_right = np.array(
+            [[cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+              cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
+             [cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, 0,
+              cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+              cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
+             [cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH, 0,
+              cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
+             [cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+              cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER]],
+            dtype=bool)
 
         # Resize the products
         right_disparity = resize(right, border_disparity=0)
@@ -608,7 +615,8 @@ class TestDisparity(unittest.TestCase):
         np.testing.assert_array_equal(right_disparity['confidence_measure'].data, gt_confidence_right)
         np.testing.assert_array_equal(right_disparity['validity_mask'].data, gt_mask_right)
 
-    def test_validity_mask(self):
+    @staticmethod
+    def test_validity_mask():
         """
         # If bit 0 == 1 : Invalid pixel : the disparity interval is missing in the right image
         # If bit 1 == 1 : Invalid pixel : the disparity interval is missing in the right image
@@ -655,15 +663,15 @@ class TestDisparity(unittest.TestCase):
 
         # Validity mask ground truth
         gt_mask = np.array(
-            [[PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE + PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+            [[cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE + cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
               0, 0,
-              PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE + PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT],
-             [PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-              PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE],
-             [PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE + PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT +
-              PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING, 0, 0,
-              PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE + PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER +
-              PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT]], dtype=np.uint16)
+              cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE + cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT],
+             [cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+              cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE],
+             [cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE + cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT +
+              cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING, 0, 0,
+              cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE + cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER +
+              cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT]], dtype=np.uint16)
 
         # Check if the calculated validity mask is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
@@ -676,19 +684,20 @@ class TestDisparity(unittest.TestCase):
         disparity_.validity_mask(dataset, left, right, cv)
 
         # Validity mask ground truth
-        gt_mask = np.array([[PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING +
-                             PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0],
-                            [PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER +
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE + PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT,
-                             PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, 0],
-                            [PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING +
-                             PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER]],
+        gt_mask = np.array([[cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING +
+                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0],
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT,
+                             cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, 0],
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING +
+                             cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER]],
                            dtype=np.uint16)
 
         # Check if the calculated validity mask is equal to the ground truth (same shape and all elements equals)
@@ -702,17 +711,19 @@ class TestDisparity(unittest.TestCase):
         disparity_.validity_mask(dataset, left, right, cv)
 
         # Validity mask ground truth
-        gt_mask = np.array([[PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT,
-                             PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT + PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
-                            [0, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
-                            [PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT,
-                             PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT + PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING]],
+        gt_mask = np.array([[cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT,
+                             cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
+                            [0, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
+                            [cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT,
+                             cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING]],
                            dtype=np.uint16)
 
         # Check if the calculated validity mask is equal to the ground truth (same shape and all elements equals)
@@ -755,15 +766,15 @@ class TestDisparity(unittest.TestCase):
 
         # Validity mask ground truth
         gt_mask = np.array(
-            [[PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE + PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER +
-              PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-              PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER +
-              PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING +
-              PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
-              PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-              PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
-             [PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE + PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-              PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE]],
+            [[cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE + cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER +
+              cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+              cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER +
+              cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING +
+              cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
+              cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+              cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
+             [cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE + cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+              cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE]],
             dtype=np.uint16)
 
         # Check if the calculated validity mask is equal to the ground truth (same shape and all elements equals)
@@ -799,80 +810,80 @@ class TestDisparity(unittest.TestCase):
         disparity_.validity_mask(dataset, left, right, cv)
 
         # Validity mask ground truth
-        gt_mask = np.array([[PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
-                            [PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
-                            [PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
-                            [PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
-                            [PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0,
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
-                            [PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
-                            [PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
-                            [PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE]],
+        gt_mask = np.array([[cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE]],
                            dtype=np.uint8)
 
         # Check if the calculated validity mask is equal to the ground truth (same shape and all elements equals)
@@ -889,8 +900,8 @@ def setup_logging(path='logging.json', default_level=logging.WARNING, ):
     :type default_level: logging level
     """
     if os.path.exists(path):
-        with open(path, 'rt') as f:
-            config = json.load(f)
+        with open(path, 'rt') as file_:
+            config = json.load(file_)
         logging.config.dictConfig(config)
     else:
         logging.basicConfig(level=default_level)

@@ -28,8 +28,8 @@ from typing import Dict, Tuple
 import numpy as np
 from json_checker import Checker, And
 from numba import njit
-from pandora.constants import *
 
+import pandora.constants as cst
 from . import refinement
 
 
@@ -59,7 +59,7 @@ class Vfit(refinement.AbstractRefinement):
         :rtype: dict
         """
         schema = {
-            "refinement_method": And(str, lambda x: 'vfit')
+            'refinement_method': And(str, lambda x: 'vfit')
         }
 
         checker = Checker(schema)
@@ -91,7 +91,7 @@ class Vfit(refinement.AbstractRefinement):
         """
         if (np.isnan(cost[0])) or (np.isnan(cost[2])):
             # Information: calculations stopped at the pixel step, sub-pixel interpolation did not succeed
-            return disp, cost[1], PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
+            return disp, cost[1], cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
 
         inverse = 1
         if measure == 'max':

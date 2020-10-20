@@ -31,7 +31,10 @@ from typing import Union
 import xarray as xr
 
 
-class AbstractAggregation(object):
+class AbstractAggregation():
+    """
+    Abstract Aggregation class
+    """
     __metaclass__ = ABCMeta
 
     aggreg_methods_avail = {}
@@ -43,21 +46,22 @@ class AbstractAggregation(object):
         :param cfg: the configuration {'aggregation_method': value}
         :type cfg: dictionary
         """
+
         if cls is AbstractAggregation:
-            if type(cfg['aggregation_method']) is str:
+            if isinstance(cfg['aggregation_method'], str):
                 try:
                     return super(AbstractAggregation, cls).__new__(cls.aggreg_methods_avail[cfg['aggregation_method']])
                 except KeyError:
-                    logging.error("No aggregation method named {} supported".format(cfg['aggregation_method']))
+                    logging.error('No aggregation method named % supported', cfg['aggregation_method'])
                     sys.exit(1)
             else:
-                if type(cfg['aggregation_method']) is unicode:
+                if isinstance(cfg['aggregation_method'], unicode): # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractAggregation, cls).__new__(
                             cls.aggreg_methods_avail[cfg['aggregation_method'].encode('utf-8')])
                     except KeyError:
-                        logging.error("No aggregation method named {} supported".format(cfg['aggregation_method']))
+                        logging.error('No aggregation method named % supported', cfg['aggregation_method'])
                         sys.exit(1)
         else:
             return super(AbstractAggregation, cls).__new__(cls)

@@ -28,9 +28,9 @@ from typing import Dict, Union, cast
 import numpy as np
 import xarray as xr
 from json_checker import Checker, And
-from pandora.constants import *
 
-from . import filter
+import pandora.constants as cst
+from . import filter # pylint: disable= redefined-builtin
 from ..common import sliding_window
 
 
@@ -64,8 +64,8 @@ class MedianFilter(filter.AbstractFilter):
             cfg['filter_size'] = self._FILTER_SIZE
 
         schema = {
-            "filter_method": And(str, lambda x: 'median'),
-            "filter_size": And(int, lambda x: x >= 1 and x % 2 != 0)
+            'filter_method': And(str, lambda input: 'median'),
+            'filter_size': And(int, lambda input: input >= 1 and input % 2 != 0)
         }
 
         checker = Checker(schema)
@@ -101,7 +101,7 @@ class MedianFilter(filter.AbstractFilter):
         """
         # Invalid pixels are nan
         masked_data = disp['disparity_map'].copy(deep=True).data
-        masked_data[np.where((disp['validity_mask'].data & PANDORA_MSK_PIXEL_INVALID) != 0)] = np.nan
+        masked_data[np.where((disp['validity_mask'].data & cst.PANDORA_MSK_PIXEL_INVALID) != 0)] = np.nan
 
         valid = np.isfinite(masked_data)
         disp_median = self.median_filter(masked_data)
@@ -138,19 +138,19 @@ class MedianFilter(filter.AbstractFilter):
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
             # numpy.nanmedian : Compute the median along the specified axis, while ignoring NaNs (i.e if valid pixel
             # contains an invalid pixel in its filter, the invalid pixel is ignored because invalid pixels are nan )
-            for y in range(len(disp_chunked_y)):
+            for col, disp_y in enumerate(disp_chunked_y): # pylint: disable= unused-variable
                 # To reduce memory, the data array is split (along the col axis) into multiple sub-arrays,
                 # with a step of 100
-                disp_chunked_x = np.array_split(disp_chunked_y[y], np.arange(chunk_size, nx_, chunk_size), axis=1)
+                disp_chunked_x = np.array_split(disp_y, np.arange(chunk_size, nx_, chunk_size), axis=1)
                 x_begin = radius
 
-                for x in range(len(disp_chunked_x)):
-                    y_end = y_begin + disp_chunked_y[y].shape[0]
-                    x_end = x_begin + disp_chunked_x[x].shape[1]
-                    data_median[y_begin:y_end, x_begin:x_end] = np.nanmedian(disp_chunked_x[x], axis=(2, 3))
-                    x_begin += disp_chunked_x[x].shape[1]
+                for rox, disp_x in enumerate(disp_chunked_x): # pylint: disable= unused-variable
+                    y_end = y_begin + disp_y.shape[0]
+                    x_end = x_begin + disp_x.shape[1]
+                    data_median[y_begin:y_end, x_begin:x_end] = np.nanmedian(disp_x, axis=(2, 3))
+                    x_begin += disp_x.shape[1]
 
-                y_begin += disp_chunked_y[y].shape[0]
+                y_begin += disp_y.shape[0]
 
         del aggregation_window
 

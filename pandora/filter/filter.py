@@ -30,7 +30,10 @@ from abc import ABCMeta, abstractmethod
 import xarray as xr
 
 
-class AbstractFilter(object):
+class AbstractFilter():
+    """
+    Abstract Filter class
+    """
     __metaclass__ = ABCMeta
 
     filter_methods_avail = {}
@@ -43,20 +46,20 @@ class AbstractFilter(object):
         :type cfg: dictionary
         """
         if cls is AbstractFilter:
-            if type(cfg['filter_method']) is str:
+            if isinstance(cfg['filter_method'], str):
                 try:
                     return super(AbstractFilter, cls).__new__(cls.filter_methods_avail[cfg['filter_method']])
                 except KeyError:
-                    logging.error("No filter method named {} supported".format(cfg['filter_method']))
+                    logging.error('No filter method named % supported', cfg['filter_method'])
                     sys.exit(1)
             else:
-                if type(cfg['filter_method']) is unicode:
+                if isinstance(cfg['filter_method'], unicode): # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractFilter, cls).__new__(
                             cls.filter_methods_avail[cfg['filter_method'].encode('utf-8')])
                     except KeyError:
-                        logging.error("No filter method named {} supported".format(cfg['filter_method']))
+                        logging.error('No filter method named % supported', cfg['filter_method'])
                         sys.exit(1)
         else:
             return super(AbstractFilter, cls).__new__(cls)

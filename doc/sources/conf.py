@@ -1,3 +1,4 @@
+# pylint: skip-file
 #
 # coding: utf8
 # Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
@@ -62,7 +63,6 @@ extensions = [
 
 autoapi_dirs = ['../../pandora']
 autoapi_root = 'api_reference'
-
 # Add any paths that contain templates here, relative to this directory.cd
 templates_path = ['_templates']
 
@@ -92,4 +92,3 @@ latex_elements = {
 }
 
 numfig = True
-

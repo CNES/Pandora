@@ -26,6 +26,7 @@ This module contains functions to test the margin module.
 import unittest
 
 import numpy as np
+
 import pandora.marge
 
 
@@ -35,9 +36,13 @@ class TestMargins(unittest.TestCase):
     """
 
     def setUp(self):
-        pass
+        """
+        Method called to prepare the test fixture
 
-    def test_get_margins(self):
+        """
+
+    @staticmethod
+    def test_get_margins():
         """
         Test get_margins function
         """
