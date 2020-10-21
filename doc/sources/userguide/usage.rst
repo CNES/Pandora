@@ -10,7 +10,7 @@ The use as a binary is as follows:
 Required arguments are :
 
 - *config.json*: configuration file. Paramaters are described in :ref:`config_file`
-- *output_dir*: le chemin vers le dossier de sortie
+- *output_dir*: output directory
 
 The other optional arguments, also available, are :
 
@@ -249,7 +249,7 @@ Refinement parameters
 +---------------------+-------------------+--------+---------------+---------------------+----------+
 | Name                | Description       | Type   | Default value | Available value     | Required |
 +=====================+===================+========+===============+=====================+==========+
-| *refinement_method* | Refinement method | string |               | "vift", "quadratic" | Yes      |
+| *refinement_method* | Refinement method | string |               | "vfit", "quadratic" | Yes      |
 +---------------------+-------------------+--------+---------------+---------------------+----------+
 
 .. _filter_parameters:
@@ -524,9 +524,9 @@ represents a rejection / information criterion (= 1 if rejection / information, 
  |    3    | Information: calculations stopped at the pixel stage, sub-pixel interpolation was not successful       |
  |         | (for vfit: pixels d-1 and/or d+1 could not be calculated)                                              |
  +---------+--------------------------------------------------------------------------------------------------------+
- |    4    | Information : closed occlusion                                                                         |
+ |    4    | Information : filled occlusion                                                                         |
  +---------+--------------------------------------------------------------------------------------------------------+
- |    5    | Information : closed mismatch                                                                          |
+ |    5    | Information : filled mismatch                                                                          |
  +---------+--------------------------------------------------------------------------------------------------------+
  |    6    | The point is invalid: invalidated by the validity mask associated to the left image                    |
  +---------+--------------------------------------------------------------------------------------------------------+

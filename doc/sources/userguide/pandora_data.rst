@@ -53,7 +53,7 @@ This Dataset also has a :
   More specifically, this indicator represents standard deviation of pixel intensity of the left image
   inside a window (the same as the window used for matching cost)
   It is generated during the first step: *Matching cost computation*.
-- xarray.DataArray disp_indices, which contains the minimum cost indices calculated in step *Disparity computation*..
+- xarray.DataArray disp_indices, which contains the minimum cost indices calculated in step *Disparity computation*.
 
 
 Example of a cost volume
@@ -164,38 +164,9 @@ Validity mask
 -------------
 
 Validity masks are 2D xarray.DataArray and are 16-bit encoded: each bit represents a
-rejection criterion (= 1 if rejection, = 0 otherwise):
+rejection criterion (= 1 if rejection, = 0 otherwise): See :ref:`validity_mask`.
 
- +---------+--------------------------------------------------------------------------------------------------------+
- | **Bit** | **Description**                                                                                        |
- +---------+--------------------------------------------------------------------------------------------------------+
- |         | The point is invalid, there are two possible cases:                                                    |
- |         |                                                                                                        |
- |    0    |   * border of left image                                                                               |
- |         |   * nodata of left image                                                                               |
- +---------+--------------------------------------------------------------------------------------------------------+
- |         | The point is invalid, there are two possible cases:                                                    |
- |         |                                                                                                        |
- |    1    |   - Disparity range does not permit to find any point on the right image                               |
- |         |   - nodata of right image                                                                              |
- +---------+--------------------------------------------------------------------------------------------------------+
- |    2    | Information : disparity range cannot be used completely , reaching border of right image               |
- +---------+--------------------------------------------------------------------------------------------------------+
- |    3    | Information: calculations stopped at the pixel stage, sub-pixel interpolation was not successful       |
- |         | (for vfit: pixels d-1 and/or d+1 could not be calculated)                                              |
- +---------+--------------------------------------------------------------------------------------------------------+
- |    4    | Information : closed occlusion                                                                         |
- +---------+--------------------------------------------------------------------------------------------------------+
- |    5    | Information : closed mismatch                                                                          |
- +---------+--------------------------------------------------------------------------------------------------------+
- |    6    | The point is invalid: invalidated by the validity mask associated to the left image                    |
- +---------+--------------------------------------------------------------------------------------------------------+
- |    7    | The point is invalid: right positions to be scanned invalidated by the mask of the right image         |
- +---------+--------------------------------------------------------------------------------------------------------+
- |    8    | The Point is invalid: point located in an occlusion zone                                               |
- +---------+--------------------------------------------------------------------------------------------------------+
- |    9    | The point is invalid: mismatch                                                                         |
- +---------+--------------------------------------------------------------------------------------------------------+
+
 
 The validity masks are stored in the xarray.Dataset left and right in the pandora/__init__.py file.
 

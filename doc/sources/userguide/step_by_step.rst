@@ -139,8 +139,8 @@ Validation methods provide a confidence index on the calculated disparity, those
   of the images (the left image becomes the right image, and vice versa) and to compare the disparity :math:`disp_{L}`
   (corresponding to the left image  :math:`I_{L}` ) with :math:`disp_{R}` (corresponding to the right image :math:`I_{R}` ) :
 
-    - Si :math:`| disp_{L}(p) + disp_{R}(p + disp_{L}(p)) | \leq threshold`, then point p is valid
-    - Si :math:`| disp_{L}(p) + disp_{R}(p + disp_{L}(p)) | \geq threshold`, then point p is invalid
+    - If :math:`| disp_{L}(p) + disp_{R}(p + disp_{L}(p)) | \leq threshold`, then point p is valid
+    - If :math:`| disp_{L}(p) + disp_{R}(p + disp_{L}(p)) | \geq threshold`, then point p is invalid
 
   The threshold is 1 by default, but it can be changed with the *cross_checking_threshold* parameter.
   Pandora will then distinguish between occlusion and mismatch by following the methodology outlined in [5]_.
@@ -153,9 +153,9 @@ Validation methods provide a confidence index on the calculated disparity, those
 .. note::  Cross checking does not modify the disparity map, it only informs bits 8 and 9 in the
            validity mask.
 
-It is possible to fill in occlusions and mismatches detected during cross-validation:.
+It is possible to fill in occlusions and mismatches detected during cross-validation:
 
-- using the method proposed in [6]_ : the disparity of a occluded pixel is modified using the
+- using the method proposed in [6]_ : the disparity of an occluded pixel is modified using the
   first valid disparity from the left. The disparity of a pixel considered as a mismatch becomes the
   median of the first 16 valid pixels in the directions shown below (note: these directions are not related to the libSGM ):
 
@@ -164,8 +164,8 @@ It is possible to fill in occlusions and mismatches detected during cross-valida
         :width: 300px
         :height: 200px
 
-- using the method proposed in [5]_ : the disparity of an occluded pixel is modified using the right method in [5]_ :
-  Smallest disparity (the disparity closest to 0) in 8 directions. The disparity of a pixel considered to be a
+- using the method proposed in [5]_ : the disparity of an occluded pixel is modified using the smallest disparity (the disparity closest to 0) in 8 directions.
+  The disparity of a pixel considered to be a
   mismatch becomes the median of the first 8 valid pixels in the directions shown below. Mismatches that are direct neighbours of
   occluded pixel are treated as occlusions.
 
