@@ -479,22 +479,3 @@ def update_conf(def_cfg: Dict[str, dict], user_cfg: Dict[str, dict]) -> Dict[str
                 value = np.nan
             config[key] = value
     return config
-
-
-def is_method(string_method: str, methods: List[str]) -> bool:
-    """
-    Test if string_method is a method in methods
-
-    :param string_method: String to test
-    :type string_method: string
-    :param methods: list of available methods
-    :type methods: list of strings
-    :returns: True if string_method a method and False otherwise
-    :rtype: bool
-    """
-
-    if string_method in methods:
-        return True
-
-    logging.error('% is not in available methods : ', string_method + ', '.join(methods))
-    return False

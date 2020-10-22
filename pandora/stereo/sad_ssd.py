@@ -30,7 +30,7 @@ import xarray as xr
 from json_checker import Checker, And
 
 from pandora.img_tools import shift_right_img
-from pandora.json_checker import is_method
+from pandora import common
 from pandora.stereo import stereo
 
 
@@ -71,7 +71,7 @@ class SadSsd(stereo.AbstractStereo):
             cfg['subpix'] = self._SUBPIX
 
         schema = {
-            'stereo_method': And(str, lambda input: is_method(input, ['ssd', 'sad'])),
+            'stereo_method': And(str, lambda input: common.is_method(input, ['ssd', 'sad'])),
             'window_size': And(int, lambda input: input > 0 and (input % 2) != 0),
             'subpix': And(int, lambda input: input in (1, 2, 4))
         }

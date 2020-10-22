@@ -32,7 +32,7 @@ import xarray as xr
 from json_checker import Checker, And, Or, OptionalKey
 
 import pandora.constants as cst
-from pandora import json_checker as jcheck
+from pandora import common
 
 
 class AbstractValidation():
@@ -180,8 +180,8 @@ class CrossChecking(AbstractValidation):
         schema = {
             'validation_method': And(str, lambda input: 'cross_checking'),
             'cross_checking_threshold': Or(int, float),
-            'right_left_mode': And(str, lambda input: jcheck.is_method(input, ['accurate', 'approximate'])),
-            OptionalKey('interpolated_disparity'): And(str, lambda input: jcheck.is_method(input, ['mc-cnn', 'sgm']))
+            'right_left_mode': And(str, lambda input: common.is_method(input, ['accurate', 'approximate'])),
+            OptionalKey('interpolated_disparity'): And(str, lambda input: common.is_method(input, ['mc-cnn', 'sgm']))
         }
 
         checker = Checker(schema)

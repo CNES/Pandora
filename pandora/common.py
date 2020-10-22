@@ -26,7 +26,8 @@ This module contains functions allowing to save the results and the configuratio
 import errno
 import json
 import os
-from typing import Dict, Union, Tuple
+from typing import Dict, Union, Tuple, List
+import logging
 
 import numpy as np
 import rasterio
@@ -217,3 +218,22 @@ def resize(dataset: xr.Dataset, border_disparity: Union[int, float]) -> xr.Datas
     resize_disparity.attrs['offset_row_col'] = 0
 
     return resize_disparity
+
+
+def is_method(string_method: str, methods: List[str]) -> bool:
+    """
+    Test if string_method is a method in methods
+
+    :param string_method: String to test
+    :type string_method: string
+    :param methods: list of available methods
+    :type methods: list of strings
+    :returns: True if string_method a method and False otherwise
+    :rtype: bool
+    """
+
+    if string_method in methods:
+        return True
+
+    logging.error('% is not in available methods : ', string_method + ', '.join(methods))
+    return False
