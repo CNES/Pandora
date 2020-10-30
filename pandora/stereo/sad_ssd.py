@@ -28,8 +28,9 @@ from typing import Dict, Union, Tuple
 import numpy as np
 import xarray as xr
 from json_checker import Checker, And
-from pandora.JSON_checker import is_method
+
 from pandora.img_tools import shift_right_img
+from pandora import common
 from pandora.stereo import stereo
 
 
@@ -63,16 +64,16 @@ class SadSsd(stereo.AbstractStereo):
         :return cfg: stereo configuration updated
         :rtype: dict
         """
-        # Give the default value if the required element is not in the configuration
+        # Give the default value if the required element is not in the conf
         if 'window_size' not in cfg:
             cfg['window_size'] = self._WINDOW_SIZE
         if 'subpix' not in cfg:
             cfg['subpix'] = self._SUBPIX
 
         schema = {
-            "stereo_method": And(str, lambda x: is_method(x, ['ssd', 'sad'])),
-            "window_size": And(int, lambda x: x > 0 and (x % 2) != 0),
-            "subpix": And(int, lambda x: x == 1 or x == 2 or x == 4)
+            'stereo_method': And(str, lambda input: common.is_method(input, ['ssd', 'sad'])),
+            'window_size': And(int, lambda input: input > 0 and (input % 2) != 0),
+            'subpix': And(int, lambda input: input in (1, 2, 4))
         }
 
         checker = Checker(schema)
@@ -129,11 +130,11 @@ class SadSsd(stereo.AbstractStereo):
             # Maximal cost of the cost volume with ssd measure
             cmax = int(max(abs(max_left - min_right) ** 2, abs(max_right - min_left) ** 2) * (self._window_size ** 2))
 
-        metadata = {"measure": self._method, "subpixel": self._subpix,
-                    "offset_row_col": int((self._window_size - 1) / 2), "window_size": self._window_size,
-                    "type_measure": "min", "cmax": cmax}
+        metadata = {'measure': self._method, 'subpixel': self._subpix,
+                    'offset_row_col': int((self._window_size - 1) / 2), 'window_size': self._window_size,
+                    'type_measure': 'min', 'cmax': cmax}
 
-        # Disparity range
+        # Disparity range # pylint: disable=undefined-variable
         if self._subpix == 1:
             disparity_range = np.arange(disp_min, disp_max + 1)
         else:
@@ -166,20 +167,22 @@ class SadSsd(stereo.AbstractStereo):
         # , nan correspond to the first column of the left image that cannot be calculated,
         #  because there is no corresponding column for the disparity -1.
         #
-        # In the following loop, the tuples p,q describe to which part of the image the difference will be applied,
-        # for disp = 0, we compute the difference on the whole images so p=(:,0:3) et q=(:,0:3),
-        # for disp = -1, we use only a part of the images so p=(:,1:3) et q=(:,0:2)
+        # In the following loop, the tuples point_p,
+        # point_q describe to which part of the image the difference will be applied,
+        # for disp = 0, we compute the difference on the whole images so point_p=(:,0:3) et point_q=(:,0:3),
+        # for disp = -1, we use only a part of the images so point_p=(:,1:3) et point_q=(:,0:2)
 
         # Computes the matching cost
         # In the loop, cv is of shape (disp, col, row) and images / masks of shape (row, col)
         # np.swapaxes allow to interchange row and col in images and masks
         for disp in disparity_range:
             i_right = int((disp % 1) * self._subpix)
-            p, q = self.point_interval(img_left, img_right_shift[i_right], disp)
-            d = int((disp - disp_min) * self._subpix)
+            point_p, point_q = self.point_interval(img_left, img_right_shift[i_right], disp)
+            dsp = int((disp - disp_min) * self._subpix)
 
-            cv[d, p[0]:p[1], :] = \
-                np.swapaxes(self._pixel_wise_methods[self._method](p, q, img_left, img_right_shift[i_right]), 0, 1)
+            cv[dsp, point_p[0]:point_p[1], :] = \
+                np.swapaxes(
+                    self._pixel_wise_methods[self._method](point_p, point_q, img_left, img_right_shift[i_right]), 0, 1)
 
         # Apply aggregation
         cv = self.pixel_wise_aggregation(cv.data)
@@ -191,15 +194,15 @@ class SadSsd(stereo.AbstractStereo):
         return cv
 
     @staticmethod
-    def ad_cost(p: Tuple[int, int], q: Tuple[int, int], img_left: xr.Dataset,
+    def ad_cost(point_p: Tuple[int, int], point_q: Tuple[int, int], img_left: xr.Dataset,
                 img_right: xr.Dataset) -> np.ndarray:
         """
         Computes the absolute difference
 
-        :param p: Point interval, in the left image, over which the squared difference will be applied
-        :type p: tuple
-        :param q: Point interval, in the right image, over which the squared difference will be applied
-        :type q: tuple
+        :param point_p: Point interval, in the left image, over which the squared difference will be applied
+        :type point_p: tuple
+        :param point_q: Point interval, in the right image, over which the squared difference will be applied
+        :type point_q: tuple
         :param img_left: left Dataset image
         :type img_left:
             xarray.Dataset containing :
@@ -213,17 +216,17 @@ class SadSsd(stereo.AbstractStereo):
         :return: the absolute difference pixel-wise between elements in the interval
         :rtype: numpy array
         """
-        return abs(img_left['im'].data[:, p[0]:p[1]] - img_right['im'].data[:, q[0]:q[1]])
+        return abs(img_left['im'].data[:, point_p[0]:point_p[1]] - img_right['im'].data[:, point_q[0]:point_q[1]])
 
     @staticmethod
-    def sd_cost(p: Tuple, q: Tuple, img_left: xr.Dataset, img_right: xr.Dataset) -> np.ndarray:
+    def sd_cost(point_p: Tuple, point_q: Tuple, img_left: xr.Dataset, img_right: xr.Dataset) -> np.ndarray:
         """
         Computes the square difference
 
-        :param p: Point interval, in the left image, over which the squared difference will be applied
-        :type p: tuple
-        :param q: Point interval, in the right image, over which the squared difference will be applied
-        :type q: tuple
+        :param point_p: Point interval, in the left image, over which the squared difference will be applied
+        :type point_p: tuple
+        :param point_q: Point interval, in the right image, over which the squared difference will be applied
+        :type point_q: tuple
         :param img_left: left Dataset image
         :type img_left:
             xarray.Dataset containing :
@@ -237,7 +240,7 @@ class SadSsd(stereo.AbstractStereo):
         :return: the squared difference pixel-wise between elements in the interval
         :rtype: numpy array
         """
-        return (img_left['im'].data[:, p[0]:p[1]] - img_right['im'].data[:, q[0]:q[1]]) ** 2
+        return (img_left['im'].data[:, point_p[0]:point_p[1]] - img_right['im'].data[:, point_q[0]:point_q[1]]) ** 2
 
     def pixel_wise_aggregation(self, cost_volume: np.ndarray) -> np.ndarray:
         """

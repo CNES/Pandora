@@ -31,10 +31,14 @@ from typing import Tuple
 import numpy as np
 import xarray as xr
 from numba import njit
-from pandora.constants import *
+
+import pandora.constants as cst
 
 
-class AbstractInterpolation(object):
+class AbstractInterpolation():
+    """
+    Abstract Interpolation class
+    """
     __metaclass__ = ABCMeta
 
     interpolation_methods_avail = {}
@@ -47,22 +51,21 @@ class AbstractInterpolation(object):
         :type cfg: dictionary
         """
         if cls is AbstractInterpolation:
-            if type(cfg['interpolated_disparity']) is str:
+            if isinstance(cfg['interpolated_disparity'], str):
                 try:
                     return super(AbstractInterpolation, cls).__new__(
                         cls.interpolation_methods_avail[cfg['interpolated_disparity']])
                 except KeyError:
-                    logging.error("No interpolation method named {} supported".format(cfg['interpolated_disparity']))
+                    logging.error('No interpolation method named % supported', cfg['interpolated_disparity'])
                     raise KeyError
             else:
-                if type(cfg['interpolated_disparity']) is unicode:
+                if isinstance(cfg['interpolated_disparity'], unicode): # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractInterpolation, cls).__new__(
                             cls.interpolation_methods_avail[cfg['interpolated_disparity'].encode('utf-8')])
                     except KeyError:
-                        logging.error(
-                            "No interpolation method named {} supported".format(cfg['interpolated_disparity']))
+                        logging.error('No interpolation method named % supported', cfg['interpolated_disparity'])
                         raise KeyError
         else:
             return super(AbstractInterpolation, cls).__new__(cls)
@@ -215,15 +218,15 @@ class McCnnInterpolation(AbstractInterpolation):
         out_disp = np.copy(disp)
         out_val = np.copy(valid)
 
-        ny, nx = disp.shape
-        for y in range(ny):
-            for x in range(nx):
+        ncol, nrow = disp.shape
+        for col in range(ncol):
+            for row in range(nrow):
                 # Occlusion
-                if (valid[y, x] & PANDORA_MSK_PIXEL_OCCLUSION) != 0:
+                if (valid[col, row] & cst.PANDORA_MSK_PIXEL_OCCLUSION) != 0:
                     # interpolate occlusion by moving left until we find a position labeled correct
 
                     #  valid pixels mask
-                    msk = (valid[y, 0:x + 1] & PANDORA_MSK_PIXEL_INVALID) == 0
+                    msk = (valid[col, 0:row + 1] & cst.PANDORA_MSK_PIXEL_INVALID) == 0
                     # Find the first valid pixel
                     msk = msk[::-1]
                     arg_valid = np.argmax(msk)
@@ -232,19 +235,19 @@ class McCnnInterpolation(AbstractInterpolation):
                     # labeled correct
                     if arg_valid == 0:
                         # valid pixels mask
-                        msk = (valid[y, x:] & PANDORA_MSK_PIXEL_INVALID) == 0
+                        msk = (valid[col, row:] & cst.PANDORA_MSK_PIXEL_INVALID) == 0
                         # Find the first valid pixel
                         arg_valid = np.argmax(msk)
 
                         # Update the validity mask Information : filled occlusion
-                        out_val[y, x] -= PANDORA_MSK_PIXEL_OCCLUSION * msk[arg_valid]
-                        out_val[y, x] += PANDORA_MSK_PIXEL_FILLED_OCCLUSION * msk[arg_valid]
-                        out_disp[y, x] = disp[y, x + arg_valid]
+                        out_val[col, row] -= cst.PANDORA_MSK_PIXEL_OCCLUSION * msk[arg_valid]
+                        out_val[col, row] += cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION * msk[arg_valid]
+                        out_disp[col, row] = disp[col, row + arg_valid]
                     else:
                         # Update the validity mask : Information : filled occlusion
-                        out_val[y, x] -= PANDORA_MSK_PIXEL_OCCLUSION * msk[arg_valid]
-                        out_val[y, x] += PANDORA_MSK_PIXEL_FILLED_OCCLUSION * msk[arg_valid]
-                        out_disp[y, x] = disp[y, x - arg_valid]
+                        out_val[col, row] -= cst.PANDORA_MSK_PIXEL_OCCLUSION * msk[arg_valid]
+                        out_val[col, row] += cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION * msk[arg_valid]
+                        out_disp[col, row] = disp[col, row - arg_valid]
 
         return out_disp, out_val
 
@@ -271,44 +274,44 @@ class McCnnInterpolation(AbstractInterpolation):
         out_disp = np.copy(disp)
         out_val = np.copy(valid)
 
-        ny, nx = disp.shape
+        ncol, nrow = disp.shape
 
-        # 16 directions : [x, y]
+        # 16 directions : [row, col]
         dirs = np.array([[0., 1.], [-0.5, 1.], [-1., 1.], [-1., 0.5], [-1., 0.], [-1., -0.5], [-1., -1.], [-0.5, -1.],
                          [0., -1.], [0.5, -1.], [1., -1.], [1., -0.5], [1., 0.], [1., 0.5], [1., 1.], [0.5, 1.]])
 
         # Maximum path length
-        max_path_length = max(nx, ny)
+        max_path_length = max(nrow, ncol)
 
-        for y in range(ny):
-            for x in range(nx):
+        for col in range(ncol):
+            for row in range(nrow):
                 # Mismatch
-                if (valid[y, x] & PANDORA_MSK_PIXEL_MISMATCH) != 0:
+                if (valid[col, row] & cst.PANDORA_MSK_PIXEL_MISMATCH) != 0:
                     interp_mismatched = np.zeros(16, dtype=np.float32)
                     # For each directions
-                    for d in range(16):
+                    for direction in range(16):
                         # Find the first valid pixel in the current path
                         for i in range(1, max_path_length):
-                            xx = x + int(dirs[d][0] * i)
-                            yy = y + int(dirs[d][1] * i)
-                            xx = math.floor(xx)
-                            yy = math.floor(yy)
+                            tmp_row = row + int(dirs[direction][0] * i)
+                            tmp_col = col + int(dirs[direction][1] * i)
+                            tmp_row = math.floor(tmp_row)
+                            tmp_col = math.floor(tmp_col)
 
                             # Edge of the image reached: there is no valid pixel in the current path
-                            if (yy < 0) | (yy >= ny) | (xx < 0) | (xx >= nx):
-                                interp_mismatched[d] = np.nan
+                            if (tmp_col < 0) | (tmp_col >= ncol) | (tmp_row < 0) | (tmp_row >= nrow):
+                                interp_mismatched[direction] = np.nan
                                 break
 
                             # First valid pixel
-                            if (valid[yy, xx] & PANDORA_MSK_PIXEL_INVALID) == 0:
-                                interp_mismatched[d] = disp[yy, xx]
+                            if (valid[tmp_col, tmp_row] & cst.PANDORA_MSK_PIXEL_INVALID) == 0:
+                                interp_mismatched[direction] = disp[tmp_col, tmp_row]
                                 break
 
                     # Median of the 16 pixels
-                    out_disp[y, x] = np.nanmedian(interp_mismatched)
+                    out_disp[col, row] = np.nanmedian(interp_mismatched)
                     # Update the validity mask : Information : filled mismatch
-                    out_val[y, x] -= PANDORA_MSK_PIXEL_MISMATCH
-                    out_val[y, x] += PANDORA_MSK_PIXEL_FILLED_MISMATCH
+                    out_val[col, row] -= cst.PANDORA_MSK_PIXEL_MISMATCH
+                    out_val[col, row] += cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH
 
         return out_disp, out_val
 
@@ -401,26 +404,26 @@ class SgmInterpolation(AbstractInterpolation):
         out_disp = np.copy(disp)
         out_val = np.copy(valid)
 
-        # 8 directions : [x, y]
+        # 8 directions : [row, col]
         dirs = np.array([[0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0], [1, 1]])
 
-        ny, nx = disp.shape
-        for y in range(ny):
-            for x in range(nx):
+        ncol, nrow = disp.shape
+        for col in range(ncol):
+            for row in range(nrow):
                 # Occlusion
-                if (valid[y, x] & PANDORA_MSK_PIXEL_OCCLUSION) != 0:
-                    valid_neighbors = self.find_valid_neighbors(dirs, disp, valid, x, y)
+                if (valid[col, row] & cst.PANDORA_MSK_PIXEL_OCCLUSION) != 0:
+                    valid_neighbors = self.find_valid_neighbors(dirs, disp, valid, row, col)
 
                     # Returns the indices that would sort the absolute array
                     # The absolute value is used to search for the right value closest to 0
                     valid_neighbors_argsort = np.argsort(np.abs(valid_neighbors))
 
                     # right lowest value
-                    out_disp[y, x] = valid_neighbors[valid_neighbors_argsort[1]]
+                    out_disp[col, row] = valid_neighbors[valid_neighbors_argsort[1]]
 
                     # Update the validity mask : Information : filled occlusion
-                    out_val[y, x] -= PANDORA_MSK_PIXEL_OCCLUSION
-                    out_val[y, x] += PANDORA_MSK_PIXEL_FILLED_OCCLUSION
+                    out_val[col, row] -= cst.PANDORA_MSK_PIXEL_OCCLUSION
+                    out_val[col, row] += cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION
         return out_disp, out_val
 
     def interpolate_mismatch_sgm(self, disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
@@ -444,36 +447,37 @@ class SgmInterpolation(AbstractInterpolation):
         out_disp = np.copy(disp)
         out_val = np.copy(valid)
 
-        # 8 directions : [x, y]
+        # 8 directions : [row, col]
         dirs = np.array([[0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0], [1, 1]])
 
-        ny, nx = disp.shape
-        for y in range(ny):
-            for x in range(nx):
+        ncol, nrow = disp.shape
+        for col in range(ncol):
+            for row in range(nrow):
                 # Mismatched
-                if valid[y, x] & PANDORA_MSK_PIXEL_MISMATCH != 0:
+                if valid[col, row] & cst.PANDORA_MSK_PIXEL_MISMATCH != 0:
 
                     # Mismatched pixel areas that are direct neighbors of occluded pixels are treated as occlusions
-                    if np.sum(valid[max(0, y - 1):min(ny - 1, y + 1) + 1, max(0, x - 1):min(nx - 1, x + 1) + 1] &
-                              PANDORA_MSK_PIXEL_OCCLUSION) != 0:
-                        out_val[y, x] -= PANDORA_MSK_PIXEL_MISMATCH
-                        out_val[y, x] += PANDORA_MSK_PIXEL_OCCLUSION
+                    if np.sum(valid[max(0, col - 1):min(ncol - 1, col + 1) + 1,
+                              max(0, row - 1):min(nrow - 1, row + 1) + 1] &
+                              cst.PANDORA_MSK_PIXEL_OCCLUSION) != 0:
+                        out_val[col, row] -= cst.PANDORA_MSK_PIXEL_MISMATCH
+                        out_val[col, row] += cst.PANDORA_MSK_PIXEL_OCCLUSION
 
                     else:
-                        valid_neighbors = self.find_valid_neighbors(dirs, disp, valid, x, y)
+                        valid_neighbors = self.find_valid_neighbors(dirs, disp, valid, row, col)
 
                         # Median of the 8 pixels
-                        out_disp[y, x] = np.nanmedian(valid_neighbors)
+                        out_disp[col, row] = np.nanmedian(valid_neighbors)
                         # Update the validity mask : Information : filled mismatch
-                        out_val[y, x] -= PANDORA_MSK_PIXEL_MISMATCH
-                        out_val[y, x] += PANDORA_MSK_PIXEL_FILLED_MISMATCH
+                        out_val[col, row] -= cst.PANDORA_MSK_PIXEL_MISMATCH
+                        out_val[col, row] += cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH
 
         return out_disp, out_val
 
     @staticmethod
     @njit()
     def find_valid_neighbors(dirs: np.ndarray, disp: np.ndarray, valid: np.ndarray,
-                             x: int, y: int):
+                             row: int, col: int):
         """
         :param dirs: directions
         :type dirs: 2D np.array (row, col)
@@ -481,32 +485,32 @@ class SgmInterpolation(AbstractInterpolation):
         :type disp: 2D np.array (row, col)
         :param valid: validity mask
         :type valid: 2D np.array (row, col)
-        :param x: x current value
-        :type x: int
-        :param y: y current value
-        :type y: int
+        :param row: row current value
+        :type row: int
+        :param col: col current value
+        :type col: int
         :return: valid neighbors
         :rtype : 2D np.array
         """
-        ny, nx = disp.shape
+        ncol, nrow = disp.shape
         # Maximum path length
-        max_path_length = max(nx, ny)
+        max_path_length = max(nrow, ncol)
         # For each directions
         valid_neighbors = np.zeros(8, dtype=np.float32)
-        for d in range(8):
+        for direction in range(8):
             # Find the first valid pixel in the current path
-            xx = x
-            yy = y
-            for i in range(max_path_length):
-                xx += dirs[d][0]
-                yy += dirs[d][1]
+            tmp_row = row
+            tmp_col = col
+            for i in range(max_path_length):  # pylint: disable= unused-variable
+                tmp_row += dirs[direction][0]
+                tmp_col += dirs[direction][1]
 
                 # Edge of the image reached: there is no valid pixel in the current path
-                if (yy < 0) | (yy >= ny) | (xx < 0) | (xx >= nx):
-                    valid_neighbors[d] = np.nan
+                if (tmp_col < 0) | (tmp_col >= ncol) | (tmp_row < 0) | (tmp_row >= nrow):
+                    valid_neighbors[direction] = np.nan
                     break
                 # First valid pixel
-                if (valid[yy, xx] & PANDORA_MSK_PIXEL_INVALID) == 0:
-                    valid_neighbors[d] = disp[yy, xx]
+                if (valid[tmp_col, tmp_row] & cst.PANDORA_MSK_PIXEL_INVALID) == 0:
+                    valid_neighbors[direction] = disp[tmp_col, tmp_row]
                     break
         return valid_neighbors

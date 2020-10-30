@@ -90,7 +90,7 @@ def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.DataAr
             s_marg += int(cfg['filter']['filter_size'] / 2)
 
     # Same margin for left and right: take the larger
-    same_margin = list(map(lambda x: max(x[0], x[1]), zip(r_marg, s_marg)))
+    same_margin = list(map(lambda input: max(input[0], input[1]), zip(r_marg, s_marg)))
     margin.loc[dict(image='left_margin')] = same_margin
     margin.loc[dict(image='right_margin')] = same_margin
 

@@ -31,9 +31,10 @@ import unittest
 from tempfile import TemporaryDirectory
 
 import numpy as np
-import pandora
 import rasterio
 import xarray as xr
+
+import pandora
 from pandora import import_plugin
 from pandora.img_tools import read_img
 from pandora.state_machine import PandoraMachine
@@ -50,7 +51,7 @@ class TestPandora(unittest.TestCase):
 
         """
         # Build the default configuration
-        default_cfg = pandora.JSON_checker.default_short_configuration
+        default_cfg = pandora.json_checker.default_short_configuration
 
         self.left = read_img('tests/pandora/left.png', no_data=np.nan, cfg=default_cfg['image'], mask=None)
         self.right = read_img('tests/pandora/right.png', no_data=np.nan, cfg=default_cfg['image'], mask=None)
@@ -63,28 +64,28 @@ class TestPandora(unittest.TestCase):
         Percentage of bad pixels whose error is > 1
 
         """
-        row, col = self.left['im'].shape
+        n_row, n_col = self.left['im'].shape
         nb_error = 0
-        for r in range(row):
-            for c in range(col):
-                if gt[r, c] != unknown_disparity:
-                    if abs((data[r, c] + gt[r, c])) > threshold:
+        for row in range(n_row):
+            for col in range(n_col):
+                if gt[row, col] != unknown_disparity:
+                    if abs((data[row, col] + gt[row, col])) > threshold:
                         nb_error += 1
 
-        return nb_error / float(row * col)
+        return nb_error / float(n_row * n_col)
 
     def error_mask(self, data, gt):
         """
         Percentage of bad pixels ( != ground truth ) in the validity mask
         """
-        row, col = self.left['im'].shape
+        n_row, n_col = self.left['im'].shape
         nb_error = 0
-        for r in range(row):
-            for c in range(col):
-                if data[r, c] != gt[r, c]:
+        for row in range(n_row):
+            for col in range(n_col):
+                if data[row, col] != gt[row, col]:
                     nb_error += 1
 
-        return nb_error / float(row * col)
+        return nb_error / float(n_row * n_col)
 
     def test_run(self):
         """
@@ -92,38 +93,38 @@ class TestPandora(unittest.TestCase):
 
         """
         user_cfg = {
-            "pipeline":
+            'pipeline':
                 {
-                    "right_disp_map": {
-                        "method": "accurate"
+                    'right_disp_map': {
+                        'method': 'accurate'
                     },
-                    "stereo": {
-                        "stereo_method": "zncc",
-                        "window_size": 5,
-                        "subpix": 2
+                    'stereo': {
+                        'stereo_method': 'zncc',
+                        'window_size': 5,
+                        'subpix': 2
                     },
-                    "disparity": {
-                        "disparity_method": "wta"
+                    'disparity': {
+                        'disparity_method': 'wta'
                     },
-                    "refinement": {
-                        "refinement_method": "vfit"
+                    'refinement': {
+                        'refinement_method': 'vfit'
                     },
-                    "filter": {
-                        "filter_method": "median"
+                    'filter': {
+                        'filter_method': 'median'
                     },
-                    "validation": {
-                        "validation_method": "cross_checking",
-                        "right_left_mode": "accurate"
+                    'validation': {
+                        'validation_method': 'cross_checking',
+                        'right_left_mode': 'accurate'
                     },
-                    "resize": {
-                        "border_disparity": -9999
+                    'resize': {
+                        'border_disparity': -9999
                     }
                 }
         }
         pandora_machine = PandoraMachine()
 
         # Update the user configuration with default values
-        cfg = pandora.JSON_checker.update_conf(pandora.JSON_checker.default_short_configuration, user_cfg)
+        cfg = pandora.json_checker.update_conf(pandora.json_checker.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
         left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
@@ -143,7 +144,8 @@ class TestPandora(unittest.TestCase):
         if self.error(-1 * right['disparity_map'].data, self.disp_right, 1) > 0.20:
             raise AssertionError
 
-    def test_confidence_measure(self):
+    @staticmethod
+    def test_confidence_measure():
         """
         Test Pandora run method on confidence_measure map
         """
@@ -172,35 +174,35 @@ class TestPandora(unittest.TestCase):
 
         # Load a configuration
         user_cfg = {
-            "input": {
-                "disp_min": -2,
-                "disp_max": 2
+            'input': {
+                'disp_min': -2,
+                'disp_max': 2
             },
-            "pipeline": {
-                "right_disp_map": {
-                    "method": "accurate"
+            'pipeline': {
+                'right_disp_map': {
+                    'method': 'accurate'
                 },
-                "stereo": {
-                    "stereo_method": "census",
-                    "window_size": 5,
-                    "subpix": 1
+                'stereo': {
+                    'stereo_method': 'census',
+                    'window_size': 5,
+                    'subpix': 1
                 },
-                "disparity": {
-                    "disparity_method": "wta"
+                'disparity': {
+                    'disparity_method': 'wta'
                 },
-                "validation": {
-                    "validation_method": "cross_checking",
-                    "right_left_mode": "accurate"
+                'validation': {
+                    'validation_method': 'cross_checking',
+                    'right_left_mode': 'accurate'
                 },
-                "resize": {
-                    "border_disparity": -9999
+                'resize': {
+                    'border_disparity': -9999
                 }
             }
         }
 
         pandora_machine = PandoraMachine()
 
-        cfg = pandora.JSON_checker.update_conf(pandora.JSON_checker.default_short_configuration, user_cfg)
+        cfg = pandora.json_checker.update_conf(pandora.json_checker.default_short_configuration, user_cfg)
         import_plugin()
 
         # Run the Pandora pipeline
@@ -260,37 +262,38 @@ class TestPandora(unittest.TestCase):
             occlusion = np.ones((out_occlusion.shape[0], out_occlusion.shape[1]))
             occlusion[out_occlusion >= 512] = 0
 
-    def test_dataset_image(self):
+    @staticmethod
+    def test_dataset_image():
         """
         Test pandora with variable coordinate in dataset image
 
         """
 
         user_cfg = {
-            "pipeline": {
-                "right_disp_map": {
-                    "method": "accurate"
+            'pipeline': {
+                'right_disp_map': {
+                    'method': 'accurate'
                 },
-                "stereo": {
-                    "stereo_method": "census",
-                    "window_size": 5,
-                    "subpix": 2
+                'stereo': {
+                    'stereo_method': 'census',
+                    'window_size': 5,
+                    'subpix': 2
                 },
-                "disparity": {
-                    "disparity_method": "wta"
+                'disparity': {
+                    'disparity_method': 'wta'
                 },
-                "refinement": {
-                    "refinement_method": "vfit"
+                'refinement': {
+                    'refinement_method': 'vfit'
                 },
-                "filter": {
-                    "filter_method": "median"
+                'filter': {
+                    'filter_method': 'median'
                 },
-                "validation": {
-                    "validation_method": "cross_checking",
-                    "right_left_mode": "accurate"
+                'validation': {
+                    'validation_method': 'cross_checking',
+                    'right_left_mode': 'accurate'
                 },
-                "resize": {
-                    "border_disparity": -9999
+                'resize': {
+                    'border_disparity': -9999
                 }
             }
         }
@@ -298,7 +301,7 @@ class TestPandora(unittest.TestCase):
         pandora_machine = PandoraMachine()
 
         # Update the user configuration with default values
-        cfg = pandora.JSON_checker.update_conf(pandora.JSON_checker.default_short_configuration, user_cfg)
+        cfg = pandora.json_checker.update_conf(pandora.json_checker.default_short_configuration, user_cfg)
 
         left_img = read_img('tests/pandora/left.png', no_data=np.nan, cfg=cfg['image'], mask=None)
         right_img = read_img('tests/pandora/right.png', no_data=np.nan, cfg=cfg['image'], mask=None)
@@ -327,38 +330,38 @@ class TestPandora(unittest.TestCase):
 
         """
         cfg = {
-            "input": {
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif",
-                "disp_min_right": "tests/pandora/right_disp_min_grid.tif",
-                "disp_max_right": "tests/pandora/right_disp_max_grid.tif",
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif',
+                'disp_min_right': 'tests/pandora/right_disp_min_grid.tif',
+                'disp_max_right': 'tests/pandora/right_disp_max_grid.tif',
             },
-            "pipeline":
+            'pipeline':
                 {
-                    "right_disp_map": {
-                        "method": "accurate"
+                    'right_disp_map': {
+                        'method': 'accurate'
                     },
-                    "stereo": {
-                        "stereo_method": "zncc",
-                        "window_size": 5,
-                        "subpix": 2
+                    'stereo': {
+                        'stereo_method': 'zncc',
+                        'window_size': 5,
+                        'subpix': 2
                     },
-                    "disparity": {
-                        "disparity_method": "wta"
+                    'disparity': {
+                        'disparity_method': 'wta'
                     },
-                    "refinement": {
-                        "refinement_method": "vfit"
+                    'refinement': {
+                        'refinement_method': 'vfit'
                     },
-                    "filter": {
-                        "filter_method": "median"
+                    'filter': {
+                        'filter_method': 'median'
                     },
-                    "validation": {
-                        "validation_method": "cross_checking"
+                    'validation': {
+                        'validation_method': 'cross_checking'
                     },
-                    "resize": {
-                        "border_disparity": -9999
+                    'resize': {
+                        'border_disparity': -9999
                     }
                 }
         }
@@ -366,8 +369,8 @@ class TestPandora(unittest.TestCase):
         # Create temporary directory
         with TemporaryDirectory() as tmp_dir:
 
-            with open(os.path.join(tmp_dir, 'config.json'), 'w') as f:
-                json.dump(cfg, f, indent=2)
+            with open(os.path.join(tmp_dir, 'config.json'), 'w') as file_:
+                json.dump(cfg, file_, indent=2)
 
             # Run Pandora pipeline
             pandora.main(tmp_dir + '/config.json', tmp_dir, verbose=False)
@@ -391,8 +394,8 @@ def setup_logging(path='logging.json', default_level=logging.WARNING, ):
     :type default_level: logging level
     """
     if os.path.exists(path):
-        with open(path, 'rt') as f:
-            config = json.load(f)
+        with open(path, 'rt') as file_:
+            config = json.load(file_)
         logging.config.dictConfig(config)
     else:
         logging.basicConfig(level=default_level)

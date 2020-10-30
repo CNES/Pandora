@@ -28,6 +28,7 @@ from typing import Dict, Union, Tuple, List
 import numpy as np
 import xarray as xr
 from json_checker import Checker, And
+
 from pandora.img_tools import shift_right_img, census_transform
 from pandora.stereo import stereo
 
@@ -60,16 +61,16 @@ class Census(stereo.AbstractStereo):
         :return cfg: stereo configuration updated
         :rtype: dict
         """
-        # Give the default value if the required element is not in the configuration
+        # Give the default value if the required element is not in the conf
         if 'window_size' not in cfg:
             cfg['window_size'] = self._WINDOW_SIZE
         if 'subpix' not in cfg:
             cfg['subpix'] = self._SUBPIX
 
         schema = {
-            "stereo_method": And(str, lambda x: 'census'),
-            "window_size": And(int, lambda x: x == 3 or x == 5),
-            "subpix": And(int, lambda x: x == 1 or x == 2 or x == 4)
+            'stereo_method': And(str, lambda input: 'census'),
+            'window_size': And(int, lambda input: input in (3, 5)),
+            'subpix': And(int, lambda input: input in (1, 2, 4))
         }
 
         checker = Checker(schema)
@@ -114,16 +115,16 @@ class Census(stereo.AbstractStereo):
         # Maximal cost of the cost volume with census measure
         cmax = int(self._window_size ** 2)
 
-        metadata = {"measure": 'census', "subpixel": self._subpix,
-                    "offset_row_col": int((self._window_size - 1) / 2), "window_size": self._window_size,
-                    "type_measure": "min", "cmax": cmax}
+        metadata = {'measure': 'census', 'subpixel': self._subpix,
+                    'offset_row_col': int((self._window_size - 1) / 2), 'window_size': self._window_size,
+                    'type_measure': 'min', 'cmax': cmax}
 
         # Apply census transformation
         left = census_transform(img_left, self._window_size)
-        for i in range(0, len(img_right_shift)):
-            img_right_shift[i] = census_transform(img_right_shift[i], self._window_size)
+        for i, img in enumerate(img_right_shift):
+            img_right_shift[i] = census_transform(img, self._window_size)
 
-        # Disparity range
+        # Disparity range # pylint: disable=undefined-variable
         if self._subpix == 1:
             disparity_range = np.arange(disp_min, disp_max + 1)
         else:
@@ -156,21 +157,23 @@ class Census(stereo.AbstractStereo):
         # , nan correspond to the first column of the left image that cannot be calculated,
         #  because there is no corresponding column for the disparity -1.
         #
-        # In the following loop, the tuples p,q describe to which part of the image the difference will be applied,
-        # for disp = 0, we compute the difference on the whole images so p=(:,0:3) et q=(:,0:3),
-        # for disp = -1, we use only a part of the images so p=(:,1:3) et q=(:,0:2)
+        # In the following loop, the tuples point_p,point_q describe
+        # to which part of the image the difference will be applied,
+        # for disp = 0, we compute the difference on the whole images so point_p=(:,0:3) et point_q=(:,0:3),
+        # for disp = -1, we use only a part of the images so point_p=(:,1:3) et point_q=(:,0:2)
 
         # Computes the matching cost
         # In the loop, cv is of shape (disp, col, row) and images / masks of shape (row, col)
         # np.swapaxes allow to interchange row and col in images and masks
         for disp in disparity_range:
             i_right = int((disp % 1) * self._subpix)
-            p, q = self.point_interval(left, img_right_shift[i_right], disp)
-            d = int((disp - disp_min) * self._subpix)
+            point_p, point_q = self.point_interval(left, img_right_shift[i_right], disp)
+            dsp = int((disp - disp_min) * self._subpix)
 
-            cv[d, p[0]:p[1], :] = np.swapaxes(self.census_cost(p, q, left, img_right_shift[i_right]), 0, 1)
+            cv[dsp, point_p[0]:point_p[1], :] = np.swapaxes(
+                self.census_cost(point_p, point_q, left, img_right_shift[i_right]), 0, 1)
 
-        # Create the xarray.DataSet that will contain the cost_volume of dimensions (row, col, disp)
+        # Create the xarray.DataSet that will contain the cv of dimensions (row, col, disp)
         cv = self.allocate_costvolume(img_left, self._subpix, disp_min, disp_max, self._window_size, metadata,
                                       np.swapaxes(cv, 0, 2))
 
@@ -179,15 +182,16 @@ class Census(stereo.AbstractStereo):
 
         return cv
 
-    def census_cost(self, p: Tuple[int, int], q: Tuple[int, int], img_left: xr.Dataset, img_right: xr.Dataset) -> \
+    def census_cost(self, point_p: Tuple[int, int], point_q: Tuple[int, int], img_left: xr.Dataset,
+                    img_right: xr.Dataset) -> \
             List[int]:
         """
         Computes xor pixel-wise between pre-processed images by census transform
 
-        :param p: Point interval, in the left image, over which the squared difference will be applied
-        :type p: tuple
-        :param q: Point interval, in the right image, over which the squared difference will be applied
-        :type q: tuple
+        :param point_p: Point interval, in the left image, over which the squared difference will be applied
+        :type point_p: tuple
+        :param point_q: Point interval, in the right image, over which the squared difference will be applied
+        :type point_q: tuple
         :param img_left: left Dataset image
         :type img_left:
             xarray.Dataset containing :
@@ -201,23 +205,24 @@ class Census(stereo.AbstractStereo):
         :return: the xor pixel-wise between elements in the interval
         :rtype: numpy array
         """
-        xor_ = img_left['im'].data[:, p[0]:p[1]].astype('uint32') ^ img_right['im'].data[:, q[0]:q[1]].astype('uint32')
+        xor_ = img_left['im'].data[:, point_p[0]:point_p[1]].astype('uint32') ^ img_right['im'].data[:,
+                                                                                point_q[0]:point_q[1]].astype('uint32')
         return list(map(self.popcount32b, xor_))
 
     @staticmethod
-    def popcount32b(x: int) -> int:
+    def popcount32b(row: int) -> int:
         """
-        Computes the Hamming weight for the input x,
+        Computes the Hamming weight for the input row,
         Hamming weight is the number of symbols that are different from the zero
 
-        :param x: 32-bit integer
-        :type x: int
+        :param row: 32-bit integer
+        :type row: int
         :return: the number of symbols that are different from the zero
         :rtype: int
         """
-        x -= (x >> 1) & 0x55555555
-        x = (x & 0x33333333) + ((x >> 2) & 0x33333333)
-        x = (x + (x >> 4)) & 0x0f0f0f0f
-        x += x >> 8
-        x += x >> 16
-        return x & 0x7f
+        row -= (row >> 1) & 0x55555555
+        row = (row & 0x33333333) + ((row >> 2) & 0x33333333)
+        row = (row + (row >> 4)) & 0x0f0f0f0f
+        row += row >> 8
+        row += row >> 16
+        return row & 0x7f

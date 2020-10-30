@@ -30,9 +30,10 @@ import os
 import unittest
 
 import numpy as np
+import xarray as xr
+
 import pandora
 import pandora.img_tools as img_tools
-import xarray as xr
 
 
 class TestImgTools(unittest.TestCase):
@@ -101,12 +102,12 @@ class TestImgTools(unittest.TestCase):
         Test the method compute_mean_patch
 
         """
-        # Computes the mean for the image self.img with window size 3 centered on y=1, x=1
+        # Computes the mean for the image self.img with window size 3 centered on col=1, row=1
         mean = img_tools.compute_mean_patch(self.img, 1, 1, 3)
         # Check if the calculated mean is equal to the ground truth 1.
         self.assertEqual(mean, 1.)
 
-        # Computes the mean for the image self.img with window size 5 centered on y=2, x=2
+        # Computes the mean for the image self.img with window size 5 centered on col=2, row=2
         mean = img_tools.compute_mean_patch(self.img, 2, 2, 5)
         # Check if the calculated mean is equal to the ground truth 31/25.
         self.assertEqual(mean, np.float32(31 / 25.))
@@ -116,12 +117,12 @@ class TestImgTools(unittest.TestCase):
         Test the method check_inside_image
 
         """
-        # Test that the coordinates x=0,y=0 are in the image self.img
+        # Test that the coordinates row=0,col=0 are in the image self.img
         self.assertTrue(img_tools.check_inside_image(self.img, 0, 0))
-        # Test that the coordinates x=-1,y=0 are not in the the image self.img
+        # Test that the coordinates row=-1,col=0 are not in the the image self.img
         self.assertFalse(img_tools.check_inside_image(self.img, -1, 0))
-        # Test that the coordinates x=0,y=6 are not in the the image self.img
-        # Because shape self.img x=6, y=5
+        # Test that the coordinates row=0,col=6 are not in the the image self.img
+        # Because shape self.img row=6, col=5
         self.assertFalse(img_tools.check_inside_image(self.img, 0, 6))
 
     def test_compute_std_raster(self):
@@ -146,13 +147,14 @@ class TestImgTools(unittest.TestCase):
         # Check if the calculated standard deviation is equal ( to desired tolerance 1e-07 ) to the ground truth
         np.testing.assert_allclose(std_r, std_ground_truth, rtol=1e-07)
 
-    def test_read_img(self):
+    @staticmethod
+    def test_read_img():
         """
         Test the method read_img
 
         """
         # Build the default configuration
-        default_cfg = pandora.JSON_checker.default_short_configuration
+        default_cfg = pandora.json_checker.default_short_configuration
         # left_img = array([[ 0.,  1.,  2.,  3.,  0.],
         #                  [ 5.,  6.,  7.,  8.,  9.],
         #                  [ 0.,  0., 23.,  5.,  6.],
@@ -191,7 +193,8 @@ class TestImgTools(unittest.TestCase):
         # Check the image
         np.testing.assert_array_equal(dst_left['im'].data, left_img)
 
-    def test_read_disp(self):
+    @staticmethod
+    def test_read_disp():
         """
         Test the method read_disp
         """
@@ -217,15 +220,14 @@ class TestImgTools(unittest.TestCase):
 def setup_logging(path='logging.json', default_level=logging.WARNING, ):
     """
     Setup the logging configuration
-
     :param path: path to the configuration file
     :type path: string
     :param default_level: default level
     :type default_level: logging level
     """
     if os.path.exists(path):
-        with open(path, 'rt') as f:
-            config = json.load(f)
+        with open(path, 'rt') as file_:
+            config = json.load(file_)
         logging.config.dictConfig(config)
     else:
         logging.basicConfig(level=default_level)

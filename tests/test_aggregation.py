@@ -26,10 +26,11 @@ This module contains functions to test the cost volume aggregation step.
 import unittest
 
 import numpy as np
+import xarray as xr
+
 import pandora.aggregation as aggregation
 import pandora.aggregation.cbca as cbca
 import pandora.stereo as stereo
-import xarray as xr
 
 
 class TestAggregation(unittest.TestCase):
@@ -67,7 +68,7 @@ class TestAggregation(unittest.TestCase):
         self.cv['cost_volume'].loc[:, :, 0] = abs(self.left['im'].data - self.right['im'].data)
         self.cv['cost_volume'].loc[:, :3, 1] = abs(self.left['im'].data[:, :4] - self.right['im'].data[:, 1:])
 
-        self.cv.attrs = {"measure": 'sad', "subpixel": 1, "offset_row_col": 0, "cmax": 18}
+        self.cv.attrs = {'measure': 'sad', 'subpixel': 1, 'offset_row_col': 0, 'cmax': 18}
 
     def test_compute_cbca_subpixel(self):
         """
@@ -217,9 +218,10 @@ class TestAggregation(unittest.TestCase):
         cbca_obj.cost_volume_aggregation(self.left, self.right, self.cv)
 
         # Check if the calculated maximal cost is equal to the ground truth
-        assert (np.nanmax(self.cv['cost_volume'].data) <= (24 * 18))
+        assert np.nanmax(self.cv['cost_volume'].data) <= (24 * 18)
 
-    def test_compute_cbca_with_invalid_cost(self):
+    @staticmethod
+    def test_compute_cbca_with_invalid_cost():
         """
         Test the cross-based cost aggregation method with invalid cost
 
@@ -271,10 +273,12 @@ class TestAggregation(unittest.TestCase):
                                             [np.nan, (4 + 2 + 17 + 14 + 14) / 5, (14 + 17 + 14 + 4 + 8) / 5,
                                              (14 + 8 + 4) / 3, (4 + 4 + 8) / 3]])
 
-        # Check if the calculated aggregated cost volume is equal (upto the desired tolerance of 1e-07) to the ground truth
+        # Check if the calculated aggregated cost volume is equal (upto the desired tolerance of 1e-07)
+        # to the ground truth
         np.testing.assert_allclose(sad['cost_volume'].data[:, :, 1], aggregated_ground_truth, rtol=1e-07)
 
-    def test_compute_cbca_with_offset(self):
+    @staticmethod
+    def test_compute_cbca_with_offset():
         """
         Test the cross-based cost aggregation method when the window_size is > 1
 
@@ -312,10 +316,12 @@ class TestAggregation(unittest.TestCase):
                                              [55., (66 + 63 + 52 + 66 + 63 + 52) / 6, 0.],
                                              [55., (63 + 63 + 52 + 52) / 4, np.nan]]])
 
-        # Check if the calculated aggregated cost volume is equal (upto the desired tolerance of 1e-07) to the ground truth
+        # Check if the calculated aggregated cost volume is equal (upto the desired tolerance of 1e-07)
+        # to the ground truth
         np.testing.assert_allclose(sad['cost_volume'].data, aggregated_ground_truth, rtol=1e-07)
 
-    def test_computes_cross_support(self):
+    @staticmethod
+    def test_computes_cross_support():
         """
         Test the method computes_cross_support
 
@@ -480,7 +486,8 @@ class TestAggregation(unittest.TestCase):
         # No subpixel precision
         assert len(cross_right) == 1
 
-    def test_computes_cross_support_with_subpixel(self):
+    @staticmethod
+    def test_computes_cross_support_with_subpixel():
         """
         Test the method computes_cross_support with subpixel precision
 
@@ -508,7 +515,7 @@ class TestAggregation(unittest.TestCase):
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                       'cbca_intensity': 5., 'cbca_distance': 3})
-        cross_left, cross_right = cbca_obj.computes_cross_supports(left, right, sad)
+        cross_left, cross_right = cbca_obj.computes_cross_supports(left, right, sad) # pylint: disable=unused-variable
 
         # Cross support region top arm ground truth for the right shifted image
         top_arm = np.array([[0, 0, 0, 0],
@@ -592,7 +599,8 @@ class TestAggregation(unittest.TestCase):
         # (same shape and all elements equals)
         np.testing.assert_array_equal(cross_right[1], gt_right_arms)
 
-    def test_computes_cross_support_with_offset(self):
+    @staticmethod
+    def test_computes_cross_support_with_offset():
         """
         Test the method computes_cross_support with window_size > 1
 

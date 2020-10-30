@@ -20,40 +20,45 @@
 # limitations under the License.
 #
 """
-This module contains the required libraries and softwares allowing to execute the software, and setup elements to configure and identify the software. 
+This module contains the required libraries and softwares allowing to execute the software,
+and setup elements to configure and identify the software.
 """
 
+from codecs import open as copen
 from setuptools import setup, find_packages
-import subprocess
-from codecs import open
 
-cmdclass = {}
+CMDCLASS = {}
 
 try:
     from sphinx.setup_command import BuildDoc
 
-    cmdclass['build_sphinx'] = BuildDoc
+    CMDCLASS['build_sphinx'] = BuildDoc
 except ImportError:
     print('WARNING: sphinx not available. Doc cannot be built')
 
-requirements = ['numpy',
+REQUIREMENTS = ['numpy',
                 'xarray>=0.13.*',
                 'scipy',
                 'rasterio',
-                'nose2',
                 'json-checker',
                 'numba>=0.47.*',
                 'opencv-python-headless',
                 'transitions']
 
+REQUIREMENTS_DEV = {'dev': ['sphinx',
+                            'sphinx_rtd_theme',
+                            'sphinx_autoapi',
+                            'nose2',
+                            'pylint',
+                            'pre-commit']}
 
 def readme():
-    with open('README.md', "r", "utf-8") as f:
-        return f.read()
+    with copen('README.md', 'r', 'utf-8') as fstream:
+        return fstream.read()
 
 
 setup(name='pandora',
-      version='x.y.z',
+      version='row.col.z',
       description='Pandora is a stereo matching framework that helps emulate state of the art algorithms',
       long_description=readme(),
       long_description_content_type='text/markdown',
@@ -65,11 +70,11 @@ setup(name='pandora',
           'console_scripts': ['pandora = bin.Pandora:main']
       },
       python_requires='>=3.6',
-      install_requires=requirements,
+      install_requires=REQUIREMENTS,
+      extras_require=REQUIREMENTS_DEV,
       packages=find_packages(),
-      cmdclass=cmdclass,
+      cmdclass=CMDCLASS,
       command_options={
           'build_sphinx': {
               'build_dir': ('setup.py', 'doc/build/'),
-              'source_dir': ('setup.py', 'doc/sources/')}},
-      )
+              'source_dir': ('setup.py', 'doc/sources/')}})

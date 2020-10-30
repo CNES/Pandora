@@ -29,9 +29,9 @@ import numpy as np
 import xarray as xr
 from json_checker import Checker, And
 from numba import njit
+
 from pandora.filter import AbstractFilter
 from pandora.img_tools import shift_right_img
-
 from . import aggregation
 
 
@@ -69,9 +69,9 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
             cfg['cbca_distance'] = self._CBCA_DISTANCE
 
         schema = {
-            "aggregation_method": And(str, lambda x: 'cbca'),
-            "cbca_intensity": And(float, lambda x: x > 0),
-            "cbca_distance": And(int, lambda x: x > 0)
+            'aggregation_method': And(str, lambda input: 'cbca'),
+            'cbca_intensity': And(float, lambda input: input > 0),
+            'cbca_distance': And(int, lambda input: input > 0)
         }
 
         checker = Checker(schema)
@@ -113,10 +113,10 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         """
         cross_left, cross_right = self.computes_cross_supports(img_left, img_right, cv)
 
-        ny_, nx_, nb_disp = cv['cost_volume'].shape
+        n_col_, n_row_, nb_disp = cv['cost_volume'].shape
 
         # Allocate the numpy aggregated cost volume cv = (disp, col, row), for efficient memory management
-        agg = np.zeros((nb_disp, nx_, ny_), dtype=np.float32)
+        agg = np.zeros((nb_disp, n_row_, n_col_), dtype=np.float32)
 
         # Add invalid costs (i.e = np.nan ) to the output aggregated cost volume (because the step 1 of cbca do not
         # propagate invalid pixels, we need to retrieve them at the end of aggregation )
@@ -128,15 +128,15 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         agg *= 0
 
         disparity_range = cv.coords['disp'].data
-        range_col = np.arange(0, nx_)
+        range_col = np.arange(0, n_row_)
 
-        for d in range(nb_disp):
-            i_right = int((disparity_range[d] % 1) * cv.attrs['subpixel'])
+        for dsp in range(nb_disp):
+            i_right = int((disparity_range[dsp] % 1) * cv.attrs['subpixel'])
 
             # Step 1 : horizontal integral image
-            step1 = cbca_step_1(cv['cost_volume'].data[:, :, d])
+            step1 = cbca_step_1(cv['cost_volume'].data[:, :, dsp])
 
-            range_col_right = range_col + disparity_range[d]
+            range_col_right = range_col + disparity_range[dsp]
             valid_index = np.where((range_col_right >= 0) & (range_col_right < cross_right[i_right].shape[1]))
 
             # Step 2 : horizontal matching cost
@@ -153,9 +153,9 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
             # Added the pixel anchor pixel to the number of support pixels used during the aggregation
             sum4 += 1
             # Add the aggregate cost to the output
-            agg[d, :, :] += np.swapaxes(step4, 0, 1)
+            agg[dsp, :, :] += np.swapaxes(step4, 0, 1)
             # Normalize the aggregated cost
-            agg[d, :, :] /= np.swapaxes(sum4, 0, 1)
+            agg[dsp, :, :] /= np.swapaxes(sum4, 0, 1)
 
         cv['cost_volume'].data = np.swapaxes(agg, 0, 2)
         cv.attrs['aggregation'] = 'cbca'
@@ -215,9 +215,9 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
 
         # Compute the right cross support. Apply a 3×3 median filter to the input image
         cross_right = []
-        for shift in range(0, len(img_right_shift)):
+        for shift, img in enumerate(img_right_shift):
             # Invalid and nodata pixels are masked with np.nan to avoid propagating the values with the median filter
-            right_masked = np.copy(img_right_shift[shift]['im'].data)
+            right_masked = np.copy(img['im'].data)
 
             # Pixel precision
             if ('msk' in img_right.data_vars) and (shift == 0):
@@ -234,8 +234,8 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
                 # Create a sliding window of shape 2 using as_strided function : this function create a new a view (by
                 # manipulating data pointer)of the shift_mask array with a different shape. The new view pointing to the
                 # same memory block as shift_mask so it does not consume any additional memory.
-                str_row, str_col = shift_mask.strides
-                shape_windows = (shift_mask.shape[0], shift_mask.shape[1] - 1, 2)
+                str_row, str_col = shift_mask.strides # pylint: disable=unpacking-non-sequence
+                shape_windows = (shift_mask.shape[0], shift_mask.shape[1] -  1, 2)
                 strides_windows = (str_row, str_col, str_col)
                 aggregation_window = np.lib.stride_tricks.as_strided(shift_mask, shape_windows, strides_windows,
                                                                      writeable=False)
@@ -261,25 +261,25 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
 def cbca_step_1(cv: np.ndarray) -> np.ndarray:
     """
     Giving the matching cost for one disparity, build a horizontal integral image storing the cumulative row sum,
-    S_h(x, y) = S_h(x-1, y) + cv(x, y)
+    S_h(row, col) = S_h(row-1, col) + cv(row, col)
 
     :param cv: cost volume for the current disparity
     :type cv: 2D np.array (row, col) dtype = np.float32
     :return: the horizontal integral image, step 1
     :rtype: 2D np.array (row, col + 1) dtype = np.float32
     """
-    ny_, nx_ = cv.shape
+    n_col_, n_row_ = cv.shape
     # Allocate the intermediate cost volume S_h
-    # added a column to manage the case in the step 2 : x - left_arm_length -1 = -1
-    step1 = np.zeros((ny_, nx_ + 1), dtype=np.float32)
+    # added a column to manage the case in the step 2 : row - left_arm_length -1 = -1
+    step1 = np.zeros((n_col_, n_row_ + 1), dtype=np.float32)
 
-    for y in range(ny_):
-        for x in range(nx_):
+    for col in range(n_col_):
+        for row in range(n_row_):
             # Do not propagate nan
-            if not np.isnan(cv[y, x]):
-                step1[y, x] = step1[y, x - 1] + cv[y, x]
+            if not np.isnan(cv[col, row]):
+                step1[col, row] = step1[col, row - 1] + cv[col, row]
             else:
-                step1[y, x] = step1[y, x - 1]
+                step1[col, row] = step1[col, row - 1]
 
     return step1
 
@@ -289,7 +289,7 @@ def cbca_step_2(step1: np.ndarray, cross_left: np.ndarray, cross_right: np.ndarr
                 range_col_right: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """
     Giving the horizontal integral image, computed the horizontal matching cost for one disparity,
-    E_h(x, y) = S_h(x + right_arm_length, y) - S_h(x - left_arm_length -1, y)
+    E_h(row, col) = S_h(row + right_arm_length, col) - S_h(row - left_arm_length -1, col)
 
     :param step1: horizontal integral image, from the cbca_step1, with an extra column that contains 0
     :type step1: 2D np.array (row, col + 1) dtype = np.float32
@@ -307,18 +307,18 @@ def cbca_step_2(step1: np.ndarray, cross_left: np.ndarray, cross_right: np.ndarr
         step 2
     :rtype: tuple (2D np.array (row, col) dtype = np.float32, 2D np.array (row, col) dtype = np.float32)
     """
-    ny_, nx_ = step1.shape
+    n_col_, n_row_ = step1.shape
     # Allocate the intermediate cost volume E_h
     # , remove the extra column from the step 1
-    step2 = np.zeros((ny_, nx_ - 1), dtype=np.float32)
-    sum_step2 = np.zeros((ny_, nx_ - 1), dtype=np.float32)
+    step2 = np.zeros((n_col_, n_row_ - 1), dtype=np.float32)
+    sum_step2 = np.zeros((n_col_, n_row_ - 1), dtype=np.float32)
 
-    for y in range(step1.shape[0]):
-        for x in range(range_col.shape[0]):
-            right = min(cross_left[y, range_col[x], 1], cross_right[y, range_col_right[x], 1])
-            left = min(cross_left[y, range_col[x], 0], cross_right[y, range_col_right[x], 0])
-            step2[y, range_col[x]] = step1[y, range_col[x] + right] - step1[y, range_col[x] - left - 1]
-            sum_step2[y, range_col[x]] += (right + left)
+    for col in range(step1.shape[0]):
+        for row in range(range_col.shape[0]):
+            right = min(cross_left[col, range_col[row], 1], cross_right[col, range_col_right[row], 1])
+            left = min(cross_left[col, range_col[row], 0], cross_right[col, range_col_right[row], 0])
+            step2[col, range_col[row]] = step1[col, range_col[row] + right] - step1[col, range_col[row] - left - 1]
+            sum_step2[col, range_col[row]] += (right + left)
 
     return step2, sum_step2
 
@@ -327,22 +327,22 @@ def cbca_step_2(step1: np.ndarray, cross_left: np.ndarray, cross_right: np.ndarr
 def cbca_step_3(step2: np.ndarray) -> np.ndarray:
     """
     Giving the horizontal matching cost, build a vertical integral image for one disparity,
-    S_v = S_v(x, y - 1) + E_h(x, y)
+    S_v = S_v(row, col - 1) + E_h(row, col)
 
     :param step2: horizontal matching cost, from the cbca_step2
     :type step2: 3D xarray.DataArray (row, col, disp)
     :return: the vertical integral image for the current disparity
     :rtype: 2D np.array (row + 1, col) dtype = np.float32
     """
-    ny_, nx_ = step2.shape
+    n_col_, n_row_ = step2.shape
     # Allocate the intermediate cost volume S_v
-    # added a row to manage the case in the step 4 : y - up_arm_length -1 = -1
-    step3 = np.zeros((ny_ + 1, nx_), dtype=np.float32)
+    # added a row to manage the case in the step 4 : col - up_arm_length -1 = -1
+    step3 = np.zeros((n_col_ + 1, n_row_), dtype=np.float32)
     step3[0, :] = step2[0, :]
 
-    for y in range(1, ny_):
-        for x in range(nx_):
-            step3[y, x] = step3[y - 1, x] + step2[y, x]
+    for col in range(1, n_col_):
+        for row in range(n_row_):
+            step3[col, row] = step3[col - 1, row] + step2[col, row]
 
     return step3
 
@@ -352,7 +352,7 @@ def cbca_step_4(step3: np.ndarray, sum2: np.ndarray, cross_left: np.ndarray, cro
                 range_col: np.ndarray, range_col_right: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """
     Giving the vertical integral image, build the fully aggregated matching cost for one disparity,
-    E = S_v(x, y + bottom_arm_length) - S_v(x, y - top_arm_length - 1)
+    E = S_v(row, col + bottom_arm_length) - S_v(row, col - top_arm_length - 1)
 
     :param step3: vertical integral image, from the cbca_step3, with an extra row that contains 0
     :type step3: 2D np.array (row + 1, col) dtype = np.float32
@@ -371,23 +371,23 @@ def cbca_step_4(step3: np.ndarray, sum2: np.ndarray, cross_left: np.ndarray, cro
     :return: the fully aggregated matching cost, and the total number of support pixels used for the aggregation
     :rtype: tuple(2D np.array (row , col) dtype = np.float32, 2D np.array (row , col) dtype = np.float32)
     """
-    ny_, nx_ = step3.shape
+    n_col_, n_row_ = step3.shape
     # Allocate the final cost volume E
     # , remove the extra row from the step 3
-    step4 = np.zeros((ny_ - 1, nx_), dtype=np.float32)
+    step4 = np.zeros((n_col_ - 1, n_row_), dtype=np.float32)
     sum4 = np.copy(sum2)
-    for y in range(step4.shape[0]):
-        for x in range(range_col.shape[0]):
-            top = min(cross_left[y, range_col[x], 2], cross_right[y, range_col_right[x], 2])
-            bot = min(cross_left[y, range_col[x], 3], cross_right[y, range_col_right[x], 3])
+    for col in range(step4.shape[0]):
+        for row in range(range_col.shape[0]):
+            top = min(cross_left[col, range_col[row], 2], cross_right[col, range_col_right[row], 2])
+            bot = min(cross_left[col, range_col[row], 3], cross_right[col, range_col_right[row], 3])
 
-            step4[y, range_col[x]] = step3[y + bot, range_col[x]] - step3[y - top - 1, range_col[x]]
+            step4[col, range_col[row]] = step3[col + bot, range_col[row]] - step3[col - top - 1, range_col[row]]
 
-            sum4[y, range_col[x]] += (top + bot)
+            sum4[col, range_col[row]] += (top + bot)
             if top != 0:
-                sum4[y, range_col[x]] += np.sum(sum2[y - top:y, range_col[x]])
+                sum4[col, range_col[row]] += np.sum(sum2[col - top:col, range_col[row]])
             if bot != 0:
-                sum4[y, range_col[x]] += np.sum(sum2[y + 1:y + bot + 1, range_col[x]])
+                sum4[col, range_col[row]] += np.sum(sum2[col + 1:col + bot + 1, range_col[row]])
 
     return step4, sum4
 
@@ -409,51 +409,51 @@ def cross_support(image: np.ndarray, len_arms: int, intensity: float) -> np.ndar
          with the four arms lengths computes for each pixel
     :rtype:  3D np.array ( row, col, [left, right, top, bot] ), dtype=np.int16
     """
-    ny_, nx_ = image.shape
+    n_col_, n_row_ = image.shape
     # By default, all cross supports are 0
-    cross = np.zeros((ny_, nx_, 4), dtype=np.int16)
+    cross = np.zeros((n_col_, n_row_, 4), dtype=np.int16)
 
-    for y in range(ny_):
-        for x in range(nx_):
+    for col in range(n_col_):
+        for row in range(n_row_):
 
             # If the pixel is valid (np.isfinite = True) compute the cross support
             # Else (np.isfinite = False) the pixel is not valid (no data or invalid) and the cross support value is 0
             # for the 4 arms (default value of the variable cross).
-            if np.isfinite(image[y, x]):
+            if np.isfinite(image[col, row]):
                 left_len = 0
-                left = x
-                for left in range(x - 1, max(x - len_arms, -1), -1):
-                    if abs(image[y, x] - image[y, left]) >= intensity:
+                left = row
+                for left in range(row - 1, max(row - len_arms, -1), -1):
+                    if abs(image[col, row] - image[col, left]) >= intensity:
                         break
                     left_len += 1
                 # enforces a minimum support region of 3×3 if pixels are valid
-                cross[y, x, 0] = max(left_len, 1 * (x >= 1) * np.isfinite(image[y, left]))
+                cross[col, row, 0] = max(left_len, 1 * (row >= 1) * np.isfinite(image[col, left]))
 
                 right_len = 0
-                right = x
-                for right in range(x + 1, min(x + len_arms, nx_)):
-                    if abs(image[y, x] - image[y, right]) >= intensity:
+                right = row
+                for right in range(row + 1, min(row + len_arms, n_row_)):
+                    if abs(image[col, row] - image[col, right]) >= intensity:
                         break
                     right_len += 1
                 # enforces a minimum support region of 3×3 if pixels are valid
-                cross[y, x, 1] = max(right_len, 1 * (x < nx_ - 1) * np.isfinite(image[y, right]))
+                cross[col, row, 1] = max(right_len, 1 * (row < n_row_ - 1) * np.isfinite(image[col, right]))
 
                 up_len = 0
-                up = y
-                for up in range(y - 1, max(y - len_arms, -1), -1):
-                    if abs(image[y, x] - image[up, x]) >= intensity:
+                up_col = col
+                for up_col in range(col - 1, max(col - len_arms, -1), -1):
+                    if abs(image[col, row] - image[up_col, row]) >= intensity:
                         break
                     up_len += 1
                 # enforces a minimum support region of 3×3 if pixels are valid
-                cross[y, x, 2] = max(up_len, 1 * (y >= 1) * np.isfinite(image[up, x]))
+                cross[col, row, 2] = max(up_len, 1 * (col >= 1) * np.isfinite(image[up_col, row]))
 
                 bot_len = 0
-                bot = y
-                for bot in range(y + 1, min(y + len_arms, ny_)):
-                    if abs(image[y, x] - image[bot, x]) >= intensity:
+                bot = col
+                for bot in range(col + 1, min(col + len_arms, n_col_)):
+                    if abs(image[col, row] - image[bot, row]) >= intensity:
                         break
                     bot_len += 1
                 # enforces a minimum support region of 3×3 if pixels are valid
-                cross[y, x, 3] = max(bot_len, 1 * (y < ny_ - 1) * np.isfinite(image[bot, x]))
+                cross[col, row, 3] = max(bot_len, 1 * (col < n_col_ - 1) * np.isfinite(image[bot, row]))
 
     return cross

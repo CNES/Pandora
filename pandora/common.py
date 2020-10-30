@@ -26,13 +26,14 @@ This module contains functions allowing to save the results and the configuratio
 import errno
 import json
 import os
-from typing import Dict, Union, Tuple
+from typing import Dict, Union, Tuple, List
+import logging
 
 import numpy as np
 import rasterio
 import xarray as xr
-from pandora.constants import *
 
+import pandora.constants as cst
 from .output_tree_design import get_out_dir, get_out_file_path
 
 
@@ -59,8 +60,8 @@ def write_data_array(data_array: xr.DataArray, filename: str,
         row, col, depth = data_array.shape
         with rasterio.open(filename, mode='w+', driver='GTiff', width=col, height=row, count=depth,
                            dtype=dtype) as source_ds:
-            for d in range(1, depth + 1):
-                source_ds.write(data_array.data[:, :, d - 1], d)
+            for dsp in range(1, depth + 1):
+                source_ds.write(data_array.data[:, :, dsp - 1], dsp)
 
 
 def mkdir_p(path: str) -> None:
@@ -128,9 +129,9 @@ def sliding_window(base_array: np.array, shape: Tuple[int, int]) -> np.array:
 
     :rtype: np.array
     """
-    s = (base_array.shape[0] - shape[0] + 1,) + (base_array.shape[1] - shape[1] + 1,) + shape
+    shp = (base_array.shape[0] - shape[0] + 1,) + (base_array.shape[1] - shape[1] + 1,) + shape
     strides = base_array.strides + base_array.strides
-    return np.lib.stride_tricks.as_strided(base_array, shape=s, strides=strides)
+    return np.lib.stride_tricks.as_strided(base_array, shape=shp, strides=strides)
 
 
 def save_config(output: str, user_cfg: Dict) -> None:
@@ -148,8 +149,8 @@ def save_config(output: str, user_cfg: Dict) -> None:
     mkdir_p(os.path.join(output, get_out_dir('config.json')))
 
     # Save user configuration in json file
-    with open(os.path.join(output, get_out_file_path('config.json')), 'w') as f:
-        json.dump(user_cfg, f, indent=2)
+    with open(os.path.join(output, get_out_file_path('config.json')), 'w') as file_:
+        json.dump(user_cfg, file_, indent=2)
 
 
 def resize(dataset: xr.Dataset, border_disparity: Union[int, float]) -> xr.Dataset:
@@ -204,7 +205,7 @@ def resize(dataset: xr.Dataset, border_disparity: Union[int, float]) -> xr.Datas
                                 dims=['row', 'col'])
 
             # Invalid pixel : border of the left image
-            data += PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
+            data += cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
 
             resize_disparity[array] = dataset[array].combine_first(data).astype(np.uint16)
 
@@ -217,3 +218,22 @@ def resize(dataset: xr.Dataset, border_disparity: Union[int, float]) -> xr.Datas
     resize_disparity.attrs['offset_row_col'] = 0
 
     return resize_disparity
+
+
+def is_method(string_method: str, methods: List[str]) -> bool:
+    """
+    Test if string_method is a method in methods
+
+    :param string_method: String to test
+    :type string_method: string
+    :param methods: list of available methods
+    :type methods: list of strings
+    :returns: True if string_method a method and False otherwise
+    :rtype: bool
+    """
+
+    if string_method in methods:
+        return True
+
+    logging.error('% is not in available methods : ', string_method + ', '.join(methods))
+    return False

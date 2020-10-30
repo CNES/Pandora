@@ -1,3 +1,4 @@
+# pylint: disable=invalid-name
 #!/usr/bin/env python
 # coding: utf8
 #
@@ -37,11 +38,14 @@ def get_parser():
     parser = argparse.ArgumentParser(description='Pandora stereo matching')
     parser.add_argument('config', help='Path to a json file containing the input files paths and algorithm parameters')
     parser.add_argument('output_dir', help='Path to the output directory')
-    parser.add_argument("-v", "--verbose", help="Increase output verbosity", action="store_true")
+    parser.add_argument('-v', '--verbose', help='Increase output verbosity', action='store_true')
     return parser
 
 
 def main():
+    """
+    Call Pandora's main
+    """
     # Get parser
     parser = get_parser()
     args = parser.parse_args()

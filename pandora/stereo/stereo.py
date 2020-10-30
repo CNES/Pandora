@@ -31,11 +31,15 @@ from typing import Tuple, List, Union
 import numpy as np
 import xarray as xr
 from scipy.ndimage.morphology import binary_dilation
+
 from pandora.img_tools import compute_std_raster
 from pandora.img_tools import shift_right_img
 
 
-class AbstractStereo(object):
+class AbstractStereo():
+    """
+    Abstract Stereo class
+    """
     __metaclass__ = ABCMeta
 
     stereo_methods_avail = {}
@@ -47,21 +51,22 @@ class AbstractStereo(object):
         :param cfg: configuration {'stereo_method': value}
         :type cfg: dictionary
         """
+
         if cls is AbstractStereo:
-            if type(cfg['stereo_method']) is str:
+            if isinstance(cfg['stereo_method'], str):
                 try:
                     return super(AbstractStereo, cls).__new__(cls.stereo_methods_avail[cfg['stereo_method']])
                 except KeyError:
-                    logging.error("No stereo matching method named {} supported".format(cfg['stereo_method']))
+                    logging.error('No stereo matching method named % supported', cfg['stereo_method'])
                     raise KeyError
             else:
-                if type(cfg['stereo_method']) is unicode:
+                if isinstance(cfg['stereo_method'], unicode): # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractStereo, cls).__new__(
                             cls.stereo_methods_avail[cfg['stereo_method'].encode('utf-8')])
                     except KeyError:
-                        logging.error("No stereo matching method named {} supported".format(cfg['stereo_method']))
+                        logging.error('No stereo matching method named % supported', cfg['stereo_method'])
                         raise KeyError
         else:
             return super(AbstractStereo, cls).__new__(cls)
@@ -210,19 +215,19 @@ class AbstractStereo(object):
         _, nx_right = img_right['im'].shape
 
         # range in the left image
-        p = (max(0 - disp, 0), min(nx_left - disp, nx_left))
+        point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))
         # range in the right image
-        q = (max(0 + disp, 0), min(nx_right + disp, nx_right))
+        point_q = (max(0 + disp, 0), min(nx_right + disp, nx_right))
 
         # Because the disparity can be floating
         if disp < 0:
-            p = (int(ceil(p[0])), int(ceil(p[1])))
-            q = (int(ceil(q[0])), int(ceil(q[1])))
+            point_p = (int(ceil(point_p[0])), int(ceil(point_p[1])))
+            point_q = (int(ceil(point_q[0])), int(ceil(point_q[1])))
         else:
-            p = (int(floor(p[0])), int(floor(p[1])))
-            q = (int(floor(q[0])), int(floor(q[1])))
+            point_p = (int(floor(point_p[0])), int(floor(point_p[1])))
+            point_q = (int(floor(point_q[0])), int(floor(point_q[1])))
 
-        return p, q
+        return point_p, point_q
 
     @staticmethod
     def masks_dilatation(img_left: xr.Dataset, img_right: xr.Dataset, offset_row_col: int, window_size: int,
@@ -339,7 +344,7 @@ class AbstractStereo(object):
         :rtype: Tuple(int, int)
         """
         # Disp_min is a fixed disparity
-        if type(disp_min) == int:
+        if isinstance(disp_min, int):
             dmin_min = disp_min
 
         # Disp_min is a variable disparity
@@ -347,7 +352,7 @@ class AbstractStereo(object):
             dmin_min = int(np.nanmin(disp_min))
 
         # Disp_max is a fixed disparity
-        if type(disp_max) == int:
+        if isinstance(disp_max, int):
             dmax_max = disp_max
 
         # Disp_max is a variable disparity
@@ -388,9 +393,9 @@ class AbstractStereo(object):
         :type cfg: dict
         :return: None
         """
-        ny_, nx_, nd_ = cost_volume['cost_volume'].shape
+        ny_, nx_, nd_ = cost_volume['cost_volume'].shape # pylint: disable=unused-variable
 
-        dmin, dmax = self.dmin_dmax(disp_min, disp_max)
+        dmin, dmax = self.dmin_dmax(disp_min, disp_max) # pylint: disable=unused-variable
 
         # ----- Masking invalid pixels -----
 
@@ -405,24 +410,24 @@ class AbstractStereo(object):
 
         for disp in cost_volume.coords['disp'].data:
             i_right = int((disp % 1) * self._subpix)
-            p, q = self.point_interval(img_left, img_right_shift[i_right], disp)
+            point_p, point_q = self.point_interval(img_left, img_right_shift[i_right], disp)
 
             # Point interval in the left image
-            p_mask = (p[0], p[1] - offset_mask)
+            p_mask = (point_p[0], point_p[1] - offset_mask)
             # Point interval in the right image
-            q_mask = (q[0], q[1] - offset_mask)
+            q_mask = (point_q[0], point_q[1] - offset_mask)
 
             i_mask_right = min(1, i_right)
-            d = int((disp - dmin) * self._subpix)
+            dsp = int((disp - dmin) * self._subpix)
 
             # Invalid costs in the cost volume
-            cost_volume['cost_volume'].data[:, p_mask[0]:p_mask[1], d] += (
+            cost_volume['cost_volume'].data[:, p_mask[0]:p_mask[1], dsp] += (
                     mask_right[i_mask_right].data[:, q_mask[0]:q_mask[1]] + mask_left.data[:, p_mask[0]:p_mask[1]])
 
         # ----- Masking disparity range -----
 
         # Fixed range of disparities
-        if type(disp_min) == int and type(disp_max) == int:
+        if isinstance(disp_min, int) and isinstance(disp_max, int):
             return
 
         # Variable range of disparities
@@ -436,7 +441,7 @@ class AbstractStereo(object):
             disp_max_crop = disp_max[offset: -offset, offset: -offset]
 
         # Mask the costs computed with a disparity lower than disp_min and higher than disp_max
-        for d in range(nd_):
-            masking = np.where(np.logical_or(cost_volume.coords['disp'].data[d] < disp_min_crop,
-                                             cost_volume.coords['disp'].data[d] > disp_max_crop))
-            cost_volume['cost_volume'].data[masking[0], masking[1], d] = np.nan
+        for dsp in range(nd_):
+            masking = np.where(np.logical_or(cost_volume.coords['disp'].data[dsp] < disp_min_crop,
+                                             cost_volume.coords['disp'].data[dsp] > disp_max_crop))
+            cost_volume['cost_volume'].data[masking[0], masking[1], dsp] = np.nan

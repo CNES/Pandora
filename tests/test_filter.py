@@ -30,10 +30,11 @@ import os
 import unittest
 
 import numpy as np
-import pandora
-import pandora.filter as flt
 import xarray as xr
-from pandora.constants import *
+
+import pandora
+import pandora.constants as cst
+import pandora.filter as flt
 
 
 class TestFilter(unittest.TestCase):
@@ -46,9 +47,9 @@ class TestFilter(unittest.TestCase):
         Method called to prepare the test fixture
 
         """
-        pass
 
-    def test_median_filter(self):
+    @staticmethod
+    def test_median_filter():
         """
         Test the median method
 
@@ -59,9 +60,9 @@ class TestFilter(unittest.TestCase):
                          [6, 1, 9, 2, 4]], dtype=np.float32)
 
         valid = np.array([[0, 0, 0, 0, 0],
-                          [0, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0],
-                          [0, PANDORA_MSK_PIXEL_FILLED_OCCLUSION, 0, 0, 0],
-                          [0, 0, 0, 0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION]], dtype=np.uint16)
+                          [0, cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0],
+                          [0, cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION, 0, 0, 0],
+                          [0, 0, 0, 0, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION]], dtype=np.uint16)
 
         disp_dataset = xr.Dataset({'disparity_map': (['row', 'col'], disp),
                                    'validity_mask': (['row', 'col'], valid)},
@@ -86,18 +87,20 @@ class TestFilter(unittest.TestCase):
                          [5, 2, 7, 2, 2],
                          [6, 1, 9, 2, 4]], dtype=np.float32)
 
-        valid = np.array([[PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
-                           PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                           PANDORA_MSK_PIXEL_FILLED_OCCLUSION + PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, 0],
-                          [PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                           PANDORA_MSK_PIXEL_OCCLUSION, 0, 0],
-                          [PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, PANDORA_MSK_PIXEL_MISMATCH,
-                           PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                           PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE + PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+        valid = np.array([[cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
+                           cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                           cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION + cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, 0],
+                          [cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                           cst.PANDORA_MSK_PIXEL_OCCLUSION, 0, 0],
+                          [cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, cst.PANDORA_MSK_PIXEL_MISMATCH,
+                           cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                           cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
+                           + cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                            0],
-                          [PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING, PANDORA_MSK_PIXEL_OCCLUSION,
-                           PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, 0,
-                           PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING]],
+                          [cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                           cst.PANDORA_MSK_PIXEL_OCCLUSION,
+                           cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, 0,
+                           cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING]],
                          dtype=np.uint16)
 
         disp_dataset = xr.Dataset({'disparity_map': (['row', 'col'], disp),
@@ -123,13 +126,13 @@ class TestFilter(unittest.TestCase):
                          [5, 2, 7, 2, 2],
                          [6, 1, 9, 2, 4]], dtype=np.float32)
 
-        valid = np.array([[PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
-                           PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                           PANDORA_MSK_PIXEL_FILLED_OCCLUSION + PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, 0],
-                          [0, 0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0, 0],
-                          [0, 0, 0, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                           PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0],
-                          [PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT, 0, 0, 0, 0]], dtype=np.uint16)
+        valid = np.array([[cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
+                           cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                           cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION + cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, 0],
+                          [0, 0, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0, 0],
+                          [0, 0, 0, cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                           cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0],
+                          [cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT, 0, 0, 0, 0]], dtype=np.uint16)
 
         disp_dataset = xr.Dataset({'disparity_map': (['row', 'col'], disp),
                                    'validity_mask': (['row', 'col'], valid)},
@@ -156,17 +159,17 @@ class TestFilter(unittest.TestCase):
                          [6, 1, 9, 2, 4],
                          [1, 6, 2, 7, 8]], dtype=np.float32)
 
-        valid = np.array([[PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
-                           PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                           PANDORA_MSK_PIXEL_FILLED_OCCLUSION + PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, 0],
-                          [0, 0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0, 0],
-                          [0, 0, 0, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                           PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0],
-                          [PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT, 0, 0, 0, 0],
-                          [PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, 0,
-                           PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                           PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING +
-                           PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0]],
+        valid = np.array([[cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
+                           cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                           cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION + cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, 0],
+                          [0, 0, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0, 0],
+                          [0, 0, 0, cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
+                           cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0],
+                          [cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT, 0, 0, 0, 0],
+                          [cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT, 0,
+                           cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                           cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING +
+                           cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0]],
                          dtype=np.uint16)
 
         disp_dataset = xr.Dataset({'disparity_map': (['row', 'col'], disp),
@@ -188,7 +191,8 @@ class TestFilter(unittest.TestCase):
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(disp_dataset['disparity_map'].data, gt_disp)
 
-    def test_bilateral_filter(self):
+    @staticmethod
+    def test_bilateral_filter():
         """
         Test the bilateral method
 
@@ -199,27 +203,27 @@ class TestFilter(unittest.TestCase):
                          [6, 1, 9, 2, 4]], dtype=np.float32)
 
         valid = np.array([[0, 0, 0, 0, 0],
-                          [0, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0],
-                          [0, PANDORA_MSK_PIXEL_FILLED_OCCLUSION, 0, 0, 0],
-                          [0, 0, 0, 0, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION]], dtype=np.uint16)
+                          [0, cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0],
+                          [0, cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION, 0, 0, 0],
+                          [0, 0, 0, 0, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION]], dtype=np.uint16)
 
         disp_dataset = xr.Dataset({'disparity_map': (['row', 'col'], disp),
                                    'validity_mask': (['row', 'col'], valid)},
                                   coords={'row': np.arange(4), 'col': np.arange(5)})
 
         user_cfg = {
-            "filter": {
-                "filter_method": "bilateral",
-                "sigma_color": 4.,
-                "sigma_space": 6.
+            'filter': {
+                'filter_method': 'bilateral',
+                'sigma_color': 4.,
+                'sigma_space': 6.
             }
         }
 
         # Build the default configuration
-        cfg = pandora.JSON_checker.default_short_configuration
+        cfg = pandora.json_checker.default_short_configuration
 
         # Update the configuration with default values
-        cfg = pandora.JSON_checker.update_conf(cfg, user_cfg)
+        cfg = pandora.json_checker.update_conf(cfg, user_cfg)
 
         filter_bilateral = flt.AbstractFilter(**cfg['filter'])
 
@@ -237,8 +241,8 @@ def setup_logging(path='logging.json', default_level=logging.WARNING, ):
     :type default_level: logging level
     """
     if os.path.exists(path):
-        with open(path, 'rt') as f:
-            config = json.load(f)
+        with open(path, 'rt') as file_:
+            config = json.load(file_)
         logging.config.dictConfig(config)
     else:
         logging.basicConfig(level=default_level)

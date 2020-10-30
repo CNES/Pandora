@@ -34,16 +34,17 @@ from pkg_resources import iter_entry_points
 from . import aggregation
 from . import common
 from . import disparity
-from . import filter
+from . import filter as filtering
 from . import optimization
 from . import refinement
 from . import stereo
 from . import validation
-from .JSON_checker import check_conf, read_config_file
 from .img_tools import read_img, read_disp
+from .json_checker import check_conf, read_config_file
 from .state_machine import PandoraMachine
 
 
+# pylint: disable=too-many-arguments
 def run(pandora_machine: PandoraMachine, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: Union[int, np.ndarray],
         disp_max: Union[int, np.ndarray], cfg: Dict[str, dict], disp_min_right: Union[None, int, np.ndarray] = None,
         disp_max_right: Union[None, int, np.ndarray] = None) -> Tuple[xr.Dataset, xr.Dataset]:
@@ -95,8 +96,8 @@ def run(pandora_machine: PandoraMachine, img_left: xr.Dataset, img_right: xr.Dat
     # Trigger the machine step by step
     # Warning: first element of cfg dictionary is not a transition. It contains information about the way to
     # compute right disparity map.
-    for e in list(cfg['pipeline'])[1:]:
-        pandora_machine.run(e, cfg)
+    for elem in list(cfg['pipeline'])[1:]:
+        pandora_machine.run(elem, cfg)
 
     # Stop the machine which returns to its initial state
     pandora_machine.run_exit()
@@ -113,9 +114,9 @@ def setup_logging(verbose: bool) -> None:
     :return: None
     """
     if verbose:
-        logging.basicConfig(format="[%(asctime)s][%(levelname)s] %(message)s", level=logging.INFO)
+        logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.INFO)
     else:
-        logging.basicConfig(format="[%(asctime)s][%(levelname)s] %(message)s", level=logging.ERROR)
+        logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.ERROR)
 
 
 def import_plugin() -> None:

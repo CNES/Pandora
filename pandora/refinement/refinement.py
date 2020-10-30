@@ -30,10 +30,14 @@ from typing import Tuple, Callable
 import numpy as np
 import xarray as xr
 from numba import njit, prange
-from pandora.constants import *
+
+import pandora.constants as cst
 
 
-class AbstractRefinement(object):
+class AbstractRefinement():
+    """
+    Abstract Refinement class
+    """
     __metaclass__ = ABCMeta
 
     subpixel_methods_avail = {}
@@ -46,20 +50,20 @@ class AbstractRefinement(object):
         :type cfg: dictionary
         """
         if cls is AbstractRefinement:
-            if type(cfg['refinement_method']) is str:
+            if isinstance(cfg['refinement_method'], str):
                 try:
                     return super(AbstractRefinement, cls).__new__(cls.subpixel_methods_avail[cfg['refinement_method']])
                 except KeyError:
-                    logging.error("No subpixel method named {} supported".format(cfg['refinement_method']))
+                    logging.error('No subpixel method named % supported', cfg['refinement_method'])
                     raise KeyError
             else:
-                if type(cfg['refinement_method']) is unicode:
+                if isinstance(cfg['refinement_method'], unicode): # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractRefinement, cls).__new__(
                             cls.subpixel_methods_avail[cfg['refinement_method'].encode('utf-8')])
                     except KeyError:
-                        logging.error("No subpixel matching method named {} supported".format(cfg['refinement_method']))
+                        logging.error('No subpixel method named % supported', cfg['refinement_method'])
                         raise KeyError
         else:
             return super(AbstractRefinement, cls).__new__(cls)
@@ -194,32 +198,33 @@ class AbstractRefinement(object):
         :return: the refine coefficient, the refine disparity map, and the validity mask
         :rtype: tuple(2D numpy array (row, col), 2D numpy array (row, col), 2D numpy array (row, col))
          """
-        row, col, _ = cv.shape
-        itp_coeff = np.zeros((row, col), dtype=np.float64)
+        n_row, n_col, _ = cv.shape
+        itp_coeff = np.zeros((n_row, n_col), dtype=np.float64)
 
-        for r in prange(row):
-            for c in prange(col):
+        for row in prange(n_row):
+            for col in prange(n_col):
                 # No interpolation on invalid points
-                if (mask[r, c] & PANDORA_MSK_PIXEL_INVALID) != 0:
-                    itp_coeff[r, c] = np.nan
+                if (mask[row, col] & cst.PANDORA_MSK_PIXEL_INVALID) != 0:
+                    itp_coeff[row, col] = np.nan
                 else:
                     # conversion to numpy indexing
-                    d = int((disp[r, c] - d_min) * subpixel)
-                    itp_coeff[r, c] = cv[r, c, d]
-                    if not (np.isnan(cv[r, c, d])):
-                        if (disp[r, c] != d_min) and (disp[r, c] != d_max):
+                    dsp = int((disp[row, col] - d_min) * subpixel)
+                    itp_coeff[row, col] = cv[row, col, dsp]
+                    if not np.isnan(cv[row, col, dsp]):
+                        if (disp[row, col] != d_min) and (disp[row, col] != d_max):
 
-                            sub_disp, sub_cost, valid = method([cv[r, c, d - 1], cv[r, c, d], cv[r, c, d + 1]],
-                                                               disp[r, c],
-                                                               measure)
+                            sub_disp, sub_cost, valid = method(
+                                [cv[row, col, dsp - 1], cv[row, col, dsp], cv[row, col, dsp + 1]],
+                                disp[row, col],
+                                measure)
 
-                            disp[r, c] = sub_disp
-                            itp_coeff[r, c] = sub_cost
-                            mask[r, c] += valid
+                            disp[row, col] = sub_disp
+                            itp_coeff[row, col] = sub_cost
+                            mask[row, col] += valid
                         else:
                             # If Information: calculations stopped at the pixel step, sub-pixel interpolation did
                             # not succeed
-                            mask[r, c] += PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
+                            mask[row, col] += cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
 
         return itp_coeff, disp, mask
 
@@ -270,36 +275,38 @@ class AbstractRefinement(object):
         :return: the refine coefficient, the refine disparity map, and the validity mask
         :rtype: tuple(2D numpy array (row, col), 2D numpy array (row, col), 2D numpy array (row, col))
          """
-        row, col, _ = cv.shape
-        itp_coeff = np.zeros((row, col), dtype=np.float64)
+        n_row, n_col, _ = cv.shape
+        itp_coeff = np.zeros((n_row, n_col), dtype=np.float64)
 
-        for r in prange(row):
-            for c in prange(col):
+        for row in prange(n_row):
+            for col in prange(n_col):
                 # No interpolation on invalid points
-                if (mask[r, c] & PANDORA_MSK_PIXEL_INVALID) != 0:
-                    itp_coeff[r, c] = np.nan
+                if (mask[row, col] & cst.PANDORA_MSK_PIXEL_INVALID) != 0:
+                    itp_coeff[row, col] = np.nan
                 else:
                     # Conversion to numpy indexing
-                    d = int((-disp[r, c] - d_min) * subpixel)
+                    dsp = int((-disp[row, col] - d_min) * subpixel)
                     # Position of the best cost in the left cost volume is cv[r, diagonal, d]
-                    diagonal = int(c + disp[r, c])
-                    itp_coeff[r, c] = cv[r, diagonal, d]
-                    if not (np.isnan(cv[r, diagonal, d])):
-                        if (disp[r, c] != -d_min) and (disp[r, c] != -d_max) and (diagonal != 0) and (
-                                diagonal != (col - 1)):
+                    diagonal = int(col + disp[row, col])
+                    itp_coeff[row, col] = cv[row, diagonal, dsp]
+                    if not np.isnan(cv[row, diagonal, dsp]):
+                        if (disp[row, col] != -d_min) and (disp[row, col] != -d_max) and (diagonal != 0) and (
+                                diagonal != (n_col - 1)):
                             # (1 * subpixel) because in fast mode, we can not have sub-pixel disparity for the right
                             # image.
                             # We therefore interpolate between pixel disparities
-                            sub_disp, cost, valid = method([cv[r, diagonal - 1, d + (1 * subpixel)], cv[r, diagonal, d],
-                                                            cv[r, diagonal + 1, d - (1 * subpixel)]], disp[r, c],
+                            sub_disp, cost, valid = method([cv[row, diagonal - 1, dsp + (1 * subpixel)],
+                                                            cv[row, diagonal, dsp],
+                                                            cv[row, diagonal + 1, dsp - (1 * subpixel)]],
+                                                           disp[row, col],
                                                            measure)
 
-                            disp[r, c] = sub_disp
-                            itp_coeff[r, c] = cost
-                            mask[r, c] += valid
+                            disp[row, col] = sub_disp
+                            itp_coeff[row, col] = cost
+                            mask[row, col] += valid
                         else:
                             # If Information: calculations stopped at the pixel step, sub-pixel interpolation did
                             # not succeed
-                            mask[r, c] += PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
+                            mask[row, col] += cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
 
         return itp_coeff, disp, mask

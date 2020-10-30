@@ -30,8 +30,9 @@ import os
 import unittest
 
 import numpy as np
-import pandora.stereo as stereo
 import xarray as xr
+
+import pandora.stereo as stereo
 
 
 class TestStereo(unittest.TestCase):
@@ -124,7 +125,8 @@ class TestStereo(unittest.TestCase):
         # Check if the calculated ad cost is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(sad['cost_volume'].sel(disp=0), sad_ground_truth)
 
-    def test_census_cost(self):
+    @staticmethod
+    def test_census_cost():
         """
         Test the census method
 
@@ -183,7 +185,7 @@ class TestStereo(unittest.TestCase):
         np.testing.assert_array_equal(calculated_range[1], q_ground_truth_disp)
 
         # for disparity = -2, the similarity measure will be applied over the range
-        #          x=2   x=6           x=0   x=4
+        #          row=2   row=6        row=0   row=4
         #           1 1 1 1             1 1 1 2
         #           1 1 2 1             1 1 1 4
         #           1 4 3 1             1 1 1 4
@@ -196,7 +198,8 @@ class TestStereo(unittest.TestCase):
         np.testing.assert_array_equal(calculated_range[0], p_ground_truth_disp)
         np.testing.assert_array_equal(calculated_range[1], q_ground_truth_disp)
 
-    def test_cost_volume(self):
+    @staticmethod
+    def test_cost_volume():
         """
         Test the cost volume method
 
@@ -239,7 +242,7 @@ class TestStereo(unittest.TestCase):
         std_bright_ground_truth = np.array([[0., np.sqrt(8 / 9), np.sqrt(10 / 9), np.sqrt(10 / 9)],
                                             [0., np.sqrt(8 / 9), np.sqrt(10 / 9), np.sqrt(10 / 9)],
                                             [0., np.sqrt(8 / 9), np.sqrt(92 / 81), np.sqrt(92 / 81)]], dtype=np.float32)
-        std_bright_ground_truth = std_bright_ground_truth.reshape(3, 4, 1)
+        std_bright_ground_truth = std_bright_ground_truth.reshape((3, 4, 1))
 
         # compute with compute_cost_volume
         cv = stereo_matcher.compute_cost_volume(self.left, self.right, disp_min=-2, disp_max=1)
@@ -277,21 +280,24 @@ class TestStereo(unittest.TestCase):
         stereo_matcher.cv_masked(self.left, self.right, cost_volume_zncc, -1, 1)
 
         # Ground truth zncc cost for the disparity -1
-        x = self.left['im'].data[:, 1:]
-        y = self.right['im'].data[:, :5]
-        ground_truth = np.array(([[np.nan, (np.mean(x * y) - (np.mean(x) * np.mean(y))) / (np.std(x) * np.std(y))]]))
+        row = self.left['im'].data[:, 1:]
+        col = self.right['im'].data[:, :5]
+        ground_truth = np.array(
+            ([[np.nan, (np.mean(row * col) - (np.mean(row) * np.mean(col))) / (np.std(row) * np.std(col))]]))
 
         # Check if the calculated cost volume for the disparity -1 is equal to the ground truth
         np.testing.assert_allclose(cost_volume_zncc['cost_volume'][:, :, 0], ground_truth, rtol=1e-05)
 
         # Ground truth zncc cost for the disparity 1
-        x = self.left['im'].data[:, :5]
-        y = self.right['im'].data[:, 1:]
-        ground_truth = np.array(([[(np.mean(x * y) - (np.mean(x) * np.mean(y))) / (np.std(x) * np.std(y)), np.nan]]))
+        row = self.left['im'].data[:, :5]
+        col = self.right['im'].data[:, 1:]
+        ground_truth = np.array(
+            ([[(np.mean(row * col) - (np.mean(row) * np.mean(col))) / (np.std(row) * np.std(col)), np.nan]]))
         # Check if the calculated cost volume for the disparity 1 is equal to the ground truth
         np.testing.assert_allclose(cost_volume_zncc['cost_volume'][:, :, 2], ground_truth, rtol=1e-05)
 
-    def test_subpixel_offset(self):
+    @staticmethod
+    def test_subpixel_offset():
         """
         Test the cost volume method with 2 subpixel disparity
 
@@ -327,7 +333,8 @@ class TestStereo(unittest.TestCase):
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv_zncc_subpixel['cost_volume'].data, cost_volume_ground_truth)
 
-    def test_masks_invalid_pixels(self):
+    @staticmethod
+    def test_masks_invalid_pixels():
         """
         Test the method masks_invalid_pixels
 
@@ -694,7 +701,8 @@ class TestStereo(unittest.TestCase):
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
 
-    def test_masks_invalid_pixels_subpixel(self):
+    @staticmethod
+    def test_masks_invalid_pixels_subpixel():
         """
         Test the method masks_invalid_pixels with subpixel precision
 
@@ -821,8 +829,7 @@ class TestStereo(unittest.TestCase):
             [np.nan, np.nan, np.nan, np.nan, 4., np.nan, np.nan, np.nan, np.nan],
             [4., np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
             [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]],
-
-            [[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+             [[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
              [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 0.],
              [np.nan, np.nan, np.nan, np.nan, 0., np.nan, np.nan, np.nan, np.nan]]], dtype=np.float32)
 
@@ -998,7 +1005,8 @@ class TestStereo(unittest.TestCase):
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
 
-    def test_masks_dilatation(self):
+    @staticmethod
+    def test_masks_dilatation():
         """
         Test the method masks_dilatation
 
@@ -1078,14 +1086,14 @@ class TestStereo(unittest.TestCase):
                                                             disp_max=1)
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(census_cmax_w3.attrs['cmax'], 9)
-        assert (np.nanmax(census_cmax_w3['cost_volume'].data) <= 9)
+        assert np.nanmax(census_cmax_w3['cost_volume'].data) <= 9
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'census', 'window_size': 5, 'subpix': 1})
         census_cmax_w5 = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1,
                                                             disp_max=1)
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(census_cmax_w5.attrs['cmax'], 25)
-        assert (np.nanmax(census_cmax_w5['cost_volume'].data) <= 25)
+        assert np.nanmax(census_cmax_w5['cost_volume'].data) <= 25
 
         # Test cmax for the sad mesure
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
@@ -1093,14 +1101,14 @@ class TestStereo(unittest.TestCase):
                                                          disp_max=1)
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(sad_cmax_w3.attrs['cmax'], int(abs(4 - 1) * (3 ** 2)))
-        assert (np.nanmax(sad_cmax_w3['cost_volume'].data) <= int(abs(4 - 1) * (3 ** 2)))
+        assert np.nanmax(sad_cmax_w3['cost_volume'].data) <= int(abs(4 - 1) * (3 ** 2))
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 5, 'subpix': 1})
         sad_cmax_w5 = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1,
                                                          disp_max=1)
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(sad_cmax_w5.attrs['cmax'], int(abs(4 - 1) * (5 ** 2)))
-        assert (np.nanmax(sad_cmax_w3['cost_volume'].data) <= int(abs(4 - 1) * (5 ** 2)))
+        assert np.nanmax(sad_cmax_w3['cost_volume'].data) <= int(abs(4 - 1) * (5 ** 2))
 
         # Test cmax for the ssd mesure
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'ssd', 'window_size': 3, 'subpix': 1})
@@ -1108,14 +1116,14 @@ class TestStereo(unittest.TestCase):
                                                          disp_max=1)
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(ssd_cmax_w3.attrs['cmax'], int(abs(4 - 1) ** 2 * (3 ** 2)))
-        assert (np.nanmax(sad_cmax_w3['cost_volume'].data) <= int(abs(4 - 1) ** 2 * (3 ** 2)))
+        assert np.nanmax(sad_cmax_w3['cost_volume'].data) <= int(abs(4 - 1) ** 2 * (3 ** 2))
 
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'ssd', 'window_size': 5, 'subpix': 1})
         ssd_cmax_w5 = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1,
                                                          disp_max=1)
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(ssd_cmax_w5.attrs['cmax'], int(abs(4 - 1) ** 2 * (5 ** 2)))
-        assert (np.nanmax(sad_cmax_w3['cost_volume'].data) <= int(abs(4 - 1) ** 2 * (5 ** 2)))
+        assert np.nanmax(sad_cmax_w3['cost_volume'].data) <= int(abs(4 - 1) ** 2 * (5 ** 2))
 
         # Test cmax for the zncc mesure
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'zncc', 'window_size': 3, 'subpix': 1})
@@ -1123,7 +1131,7 @@ class TestStereo(unittest.TestCase):
                                                        disp_max=1)
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(zncc_cmax.attrs['cmax'], 1)
-        assert (np.nanmax(zncc_cmax['cost_volume'].data) <= 1)
+        assert np.nanmax(zncc_cmax['cost_volume'].data) <= 1
 
     def test_dmin_dmax(self):
         """
@@ -1166,7 +1174,8 @@ class TestStereo(unittest.TestCase):
         compute_var_disp = stereo_matcher.dmin_dmax(dmin_grid, dmax_grid)
         self.assertEqual(gt_variable_disp, compute_var_disp)
 
-    def test_cv_masked(self):
+    @staticmethod
+    def test_cv_masked():
         """
         Test cv_masked function which masks with nan, the costs which have been computed with disparities outside
         of the range of variable disparities grid
@@ -1226,7 +1235,6 @@ class TestStereo(unittest.TestCase):
                                   [np.nan, np.nan, np.nan, 1., np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
                                   [np.nan, np.nan, 4., 5., 6., 3., np.nan, np.nan, np.nan, np.nan],
                                   [np.nan, 6., 1., 4., 7., 1., 6., np.nan, np.nan, np.nan]],
-
                                  [[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
                                   [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 5., 6.],
                                   [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 4., np.nan, np.nan],
@@ -1272,7 +1280,6 @@ class TestStereo(unittest.TestCase):
                                    np.nan, np.nan, np.nan, np.nan, np.nan],
                                   [np.nan, np.nan, 6., 2., 1., 1., 4., 6., 7., 4., 1., 2., 6., np.nan, np.nan, np.nan,
                                    np.nan, np.nan, np.nan]],
-
                                  [[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
                                    np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
                                   [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
@@ -1306,8 +1313,8 @@ def setup_logging(path='logging.json', default_level=logging.WARNING, ):
     :type default_level: logging level
     """
     if os.path.exists(path):
-        with open(path, 'rt') as f:
-            config = json.load(f)
+        with open(path, 'rt') as file_:
+            config = json.load(file_)
         logging.config.dictConfig(config)
     else:
         logging.basicConfig(level=default_level)

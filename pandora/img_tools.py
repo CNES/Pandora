@@ -58,8 +58,8 @@ def read_img(img: str, no_data: float, cfg: Dict, mask: xr.Dataset = None) -> xr
                                  'col': np.arange(data.shape[1])})
     # Add image conf to the image dataset
     dataset.attrs = {'no_data_img': no_data,
-                     'valid_pixels': cfg["valid_pixels"],
-                     'no_data_mask': cfg["no_data"]}
+                     'valid_pixels': cfg['valid_pixels'],
+                     'no_data_mask': cfg['no_data']}
     # If there is no mask, and no data in the images, do not create the mask to minimize calculation time
     no_data_pixels = np.where(data == no_data)
     if mask is None and no_data_pixels[0].size == 0:
@@ -113,7 +113,7 @@ def prepare_pyramid(img_left: xr.Dataset, img_right: xr.Dataset, num_scales: int
     pyramid_right.append(img_right)
 
     scales = np.arange(num_scales - 1)
-    for scale in scales:
+    for scale in scales: # pylint: disable=unused-variable
         # Downscale the previous layer
         pyramid_left.append(create_downsampled_dataset(pyramid_left[-1], scale_factor))
         pyramid_right.append(create_downsampled_dataset(pyramid_right[-1], scale_factor))
@@ -164,8 +164,8 @@ def create_downsampled_dataset(img_orig: xr.Dataset, scale_factor: int) -> xr.Da
 
     # Add image conf to the image dataset
     dataset.attrs = {'no_data_img': img_orig.attrs['no_data_img'],
-                     'valid_pixels': img_orig.attrs["valid_pixels"],
-                     'no_data_mask': img_orig.attrs["no_data_mask"]}
+                     'valid_pixels': img_orig.attrs['valid_pixels'],
+                     'no_data_mask': img_orig.attrs['no_data_mask']}
     return dataset
 
 
@@ -215,23 +215,23 @@ def shift_right_img(img_right: xr.Dataset, subpix: int) -> List[xr.Dataset]:
     return img_right_shift
 
 
-def check_inside_image(img: xr.Dataset, x: int, y: int) -> bool:
+def check_inside_image(img: xr.Dataset, row: int, col: int) -> bool:
     """
-    Check if the coordinates x,y are inside the image
+    Check if the coordinates row,col are inside the image
 
     :param img: Dataset image
     :type img:
         xarray.Dataset containing :
             - im : 2D (row, col) xarray.DataArray
-    :param x: row coordinates
-    :type x: int
-    :param y: column coordinates
-    :type y: int
+    :param row: row coordinates
+    :type row: int
+    :param col: column coordinates
+    :type col: int
     :return: a boolean
     :rtype: boolean
     """
     nx_, ny_ = img['im'].shape
-    return 0 <= x < nx_ and 0 <= y < ny_
+    return 0 <= row < nx_ and 0 <= col < ny_
 
 
 def census_transform(image: xr.Dataset, window_size: int) -> xr.Dataset:
@@ -320,25 +320,25 @@ def compute_mean_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
     return r_mean / float(win_size * win_size)
 
 
-def compute_mean_patch(img: xr.Dataset, x: int, y: int, win_size: int) -> np.ndarray:
+def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np.ndarray:
     """
-    Compute the mean within a window centered at position x,y
+    Compute the mean within a window centered at position row,col
 
     :param img: Dataset image
     :type img:
         xarray.Dataset containing :
             - im : 2D (row, col) xarray.DataArray
-    :param x: row coordinates
-    :type x: int
-    :param y: column coordinates
-    :type y: int
+    :param row: row coordinates
+    :type row: int
+    :param col: column coordinates
+    :type col: int
     :param win_size: window size
     :type win_size: int
     :return: mean
     :rtype : float
     """
-    begin_window = (x - int(win_size / 2), y - int(win_size / 2))
-    end_window = (x + int(win_size / 2), y + int(win_size / 2))
+    begin_window = (row - int(win_size / 2), col - int(win_size / 2))
+    end_window = (row + int(win_size / 2), col + int(win_size / 2))
 
     # Check if the window is inside the image, and compute the mean
     if check_inside_image(img, begin_window[0], begin_window[1]) and \
@@ -346,14 +346,14 @@ def compute_mean_patch(img: xr.Dataset, x: int, y: int, win_size: int) -> np.nda
         return np.mean(img['im'][begin_window[1]:end_window[1] + 1, begin_window[0]:end_window[0] + 1],
                        dtype=np.float32)
 
-    logging.error("The window is outside the image")
+    logging.error('The window is outside the image')
     raise IndexError
 
 
 def compute_std_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
     """
     Compute the standard deviation within a sliding window for the whole image
-    with the formula : std = sqrt( E[x^2] - E[x]^2 )
+    with the formula : std = sqrt( E[row^2] - E[row]^2 )
 
     :param img: Dataset image
     :type img:
@@ -364,15 +364,15 @@ def compute_std_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
     :return: std raster
     :rtype : numpy array
     """
-    # Computes E[x]
+    # Computes E[row]
     mean_ = compute_mean_raster(img, win_size)
 
-    # Computes E[x^2]
+    # Computes E[row^2]
     raster_power_two = xr.Dataset({'im': (['row', 'col'], img['im'].data ** 2)},
                                   coords={'row': np.arange(img['im'].shape[0]), 'col': np.arange(img['im'].shape[1])})
     mean_power_two = compute_mean_raster(raster_power_two, win_size)
 
-    # Compute sqrt( E[x^2] - E[x]^2 )
+    # Compute sqrt( E[row^2] - E[row]^2 )
     var = mean_power_two - mean_ ** 2
     # Avoid very small values
     var[np.where(var < (10 ** (-15) * abs(mean_power_two)))] = 0
@@ -390,7 +390,7 @@ def read_disp(disparity: Union[None, int, str]) -> Union[None, int, np.ndarray]:
     :return: the disparity
     :rtype: int or np.ndarray
     """
-    if type(disparity) == str:
+    if isinstance(disparity, str):
         disp_ = rasterio.open(disparity)
         data_disp = disp_.read(1)
     else:

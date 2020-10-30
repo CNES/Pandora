@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring
 #
 # coding: utf8
 # Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
@@ -19,3 +20,5 @@
 # limitations under the License.
 #
 from .optimization import AbstractOptimization
+
+# pylint: disable=missing-module-docstring

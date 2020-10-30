@@ -28,8 +28,8 @@ from typing import Dict, Union
 import numpy as np
 import xarray as xr
 from json_checker import Checker, And
-from pandora.img_tools import shift_right_img, compute_mean_raster, compute_std_raster
 
+from pandora.img_tools import shift_right_img, compute_mean_raster, compute_std_raster
 from . import stereo
 
 
@@ -69,9 +69,9 @@ class Zncc(stereo.AbstractStereo):
             cfg['subpix'] = self._SUBPIX
 
         schema = {
-            "stereo_method": And(str, lambda x: 'zncc'),
-            "window_size": And(int, lambda x: x > 0 and (x % 2) != 0),
-            "subpix": And(int, lambda x: x == 1 or x == 2 or x == 4)
+            'stereo_method': And(str, lambda input: 'zncc'),
+            'window_size': And(int, lambda input: input > 0 and (input % 2) != 0),
+            'subpix': And(int, lambda input: input in (1, 2, 4))
         }
 
         checker = Checker(schema)
@@ -117,23 +117,23 @@ class Zncc(stereo.AbstractStereo):
         # The standard deviation raster is truncated for points that are not calculable
         img_left_std = compute_std_raster(img_left, self._window_size)
         img_right_std = []
-        for i in range(0, len(img_right_shift)):
-            img_right_std.append(compute_std_raster(img_right_shift[i], self._window_size))
+        for i, img in enumerate(img_right_shift):  # pylint: disable=unused-variable
+            img_right_std.append(compute_std_raster(img, self._window_size))
 
         # Computes the mean raster for the whole images
         # The standard mean raster is truncated for points that are not calculable
         img_left_mean = compute_mean_raster(img_left, self._window_size)
         img_right_mean = []
-        for i in range(0, len(img_right_shift)):
-            img_right_mean.append(compute_mean_raster(img_right_shift[i], self._window_size))
+        for i, img in enumerate(img_right_shift):
+            img_right_mean.append(compute_mean_raster(img, self._window_size))
 
         # Maximal cost of the cost volume with zncc measure
         cmax = 1
 
         # Cost volume metadata
-        metadata = {"measure": 'zncc', "subpixel": self._subpix,
-                    "offset_row_col": int((self._window_size - 1) / 2), "window_size": self._window_size,
-                    "type_measure": "max", "cmax": cmax}
+        metadata = {'measure': 'zncc', 'subpixel': self._subpix,
+                    'offset_row_col': int((self._window_size - 1) / 2), 'window_size': self._window_size,
+                    'type_measure': 'max', 'cmax': cmax}
 
         # Disparity range
         if self._subpix == 1:
@@ -150,17 +150,18 @@ class Zncc(stereo.AbstractStereo):
         # Computes the matching cost
         for disp in disparity_range:
             i_right = int((disp % 1) * self._subpix)
-            p, q = self.point_interval(img_left, img_right_shift[i_right], disp)
-            d = int((disp - disp_min) * self._subpix)
+            point_p, point_q = self.point_interval(img_left, img_right_shift[i_right], disp)
+            dsp = int((disp - disp_min) * self._subpix)
 
             # Point interval in the left standard deviation image
             # -  (win_radius * 2) because img_std is truncated for points that are not calculable
-            p_std = (p[0], p[1] - (int(self._window_size / 2) * 2))
+            p_std = (point_p[0], point_p[1] - (int(self._window_size / 2) * 2))
             # Point interval in the right standard deviation image
-            q_std = (q[0], q[1] - (int(self._window_size / 2) * 2))
+            q_std = (point_q[0], point_q[1] - (int(self._window_size / 2) * 2))
 
             # Compute the normalized summation of the product of intensities
-            zncc_ = img_left['im'].data[:, p[0]:p[1]] * img_right_shift[i_right]['im'].data[:, q[0]:q[1]]
+            zncc_ = img_left['im'].data[:, point_p[0]:point_p[1]] * img_right_shift[i_right]['im'].data[:,
+                                                                    point_q[0]:point_q[1]]
             zncc_ = xr.Dataset({'im': (['row', 'col'], zncc_)},
                                coords={'row': np.arange(zncc_.shape[0]), 'col': np.arange(zncc_.shape[1])})
             zncc_ = compute_mean_raster(zncc_, self._window_size)
@@ -177,7 +178,7 @@ class Zncc(stereo.AbstractStereo):
             zncc_[np.where(divide_standard <= 0)] = 0
 
             # Places the result in the cost_volume
-            cv[d, p[0]:p_std[1], :] = np.swapaxes(zncc_, 0, 1)
+            cv[dsp, point_p[0]:p_std[1], :] = np.swapaxes(zncc_, 0, 1)
 
         # Create the xarray.DataSet that will contain the cost_volume of dimensions (row, col, disp)
         cv = self.allocate_costvolume(img_left, self._subpix, disp_min, disp_max, self._window_size, metadata,

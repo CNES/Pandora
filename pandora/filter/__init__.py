@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring
 #
 # coding: utf8
 # Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
@@ -21,3 +22,5 @@
 from . import bilateral
 from . import median
 from .filter import AbstractFilter
+
+# pylint: disable=missing-module-docstring

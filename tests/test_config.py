@@ -26,9 +26,10 @@ This module contains functions to test the configuration
 import unittest
 
 import json_checker
-import pandora.JSON_checker as JSON_checker
-from pandora.state_machine import PandoraMachine
 from transitions import MachineError
+
+import pandora.json_checker as JSON_checker
+from pandora.state_machine import PandoraMachine
 
 
 class TestConfig(unittest.TestCase):
@@ -37,20 +38,24 @@ class TestConfig(unittest.TestCase):
     """
 
     def setUp(self):
-        pass
+        """
+        Method called to prepare the test fixture
 
-    def test_check_input_section(self):
+        """
+
+    @staticmethod
+    def test_check_input_section():
         """
         Test the method check_input_section
         """
 
         # Test configuration with left disparity grids and right disparity = none
         cfg = {
-            "input": {
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif"
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif'
             }
         }
         cfg_return = JSON_checker.check_input_section(cfg)
@@ -59,29 +64,29 @@ class TestConfig(unittest.TestCase):
 
         # Test configuration with left disparity as integer
         cfg = {
-            "input": {
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": -60,
-                "disp_max": 0
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': -60,
+                'disp_max': 0
             }
         }
         cfg_return = JSON_checker.check_input_section(cfg)
 
         # Test configuration with left and right disparity grids
         cfg = {
-            "input": {
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif",
-                "disp_min_right": "tests/pandora/disp_min_grid.tif",
-                "disp_max_right": "tests/pandora/disp_max_grid.tif"
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif',
+                'disp_min_right': 'tests/pandora/disp_min_grid.tif',
+                'disp_max_right': 'tests/pandora/disp_max_grid.tif'
             }
         }
         cfg_return = JSON_checker.check_input_section(cfg)
-        if (cfg_return['input']['disp_min_right'] != "tests/pandora/disp_min_grid.tif") and \
-                (cfg_return['input']['disp_max_right'] != "tests/pandora/disp_max_grid.tif"):
+        if (cfg_return['input']['disp_min_right'] != 'tests/pandora/disp_min_grid.tif') and \
+                (cfg_return['input']['disp_max_right'] != 'tests/pandora/disp_max_grid.tif'):
             raise AssertionError
 
     def test_check_input_section_with_error(self):
@@ -90,11 +95,11 @@ class TestConfig(unittest.TestCase):
         """
         # Test configuration with left disparity min as grids and left disparity max as integer
         cfg = {
-            "input": {
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": 45,
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 45,
             }
         }
         # Json checker must raise an error
@@ -102,12 +107,12 @@ class TestConfig(unittest.TestCase):
 
         # Test configuration with left disparity grids and right disparity max as integer
         cfg = {
-            "input": {
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif",
-                "disp_max_right": -4
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif',
+                'disp_max_right': -4
             }
         }
         # Json checker must raise an error
@@ -115,13 +120,13 @@ class TestConfig(unittest.TestCase):
 
         # Test configuration with left disparity grids and right disparity max as integer
         cfg = {
-            "input": {
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif",
-                "disp_max_right": -4,
-                "disp_min_right": "tests/pandora/disp_max_grid.tif"
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif',
+                'disp_max_right': -4,
+                'disp_min_right': 'tests/pandora/disp_max_grid.tif'
             }
         }
         # Json checker must raise an error
@@ -129,12 +134,12 @@ class TestConfig(unittest.TestCase):
 
         # Test configuration with left disparity grids and right disparity min as integer
         cfg = {
-            "input": {
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif",
-                "disp_min_right": -4
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif',
+                'disp_min_right': -4
             }
         }
         # Json checker must raise an error
@@ -142,13 +147,13 @@ class TestConfig(unittest.TestCase):
 
         # Test configuration with left disparity grids and right disparities as integer
         cfg = {
-            "input": {
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif",
-                "disp_min_right": -4,
-                "disp_max_right": 0
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif',
+                'disp_min_right': -4,
+                'disp_max_right': 0
             }
         }
         # Json checker must raise an error
@@ -163,145 +168,145 @@ class TestConfig(unittest.TestCase):
 
         pandora_machine = PandoraMachine()
         cfg = {
-            "input": {
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif"
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif'
             },
-            "pipeline": {
-                "stereo": {
-                    "stereo_method": "zncc",
-                    "window_size": 5,
-                    "subpix": 2
+            'pipeline': {
+                'stereo': {
+                    'stereo_method': 'zncc',
+                    'window_size': 5,
+                    'subpix': 2
                 },
-                "disparity": {
-                    "disparity_method": "wta"
+                'disparity': {
+                    'disparity_method': 'wta'
                 }
             }
         }
 
         cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
         cfg_gt = {
-            "image": {
-                "nodata1": 0,
-                "nodata2": 0,
-                "valid_pixels": 0,
-                "no_data": 1
+            'image': {
+                'nodata1': 0,
+                'nodata2': 0,
+                'valid_pixels': 0,
+                'no_data': 1
             },
-            "input": {
-                "left_mask": None,
-                "right_mask": None,
-                "disp_min_right": None,
-                "disp_max_right": None,
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif"
+            'input': {
+                'left_mask': None,
+                'right_mask': None,
+                'disp_min_right': None,
+                'disp_max_right': None,
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif'
             },
 
-            "pipeline": {
-                "right_disp_map": {
-                    "method": "none"
+            'pipeline': {
+                'right_disp_map': {
+                    'method': 'none'
                 },
-                "stereo": {
-                    "stereo_method": "zncc",
-                    "window_size": 5,
-                    "subpix": 2
+                'stereo': {
+                    'stereo_method': 'zncc',
+                    'window_size': 5,
+                    'subpix': 2
                 },
-                "disparity": {
-                    "disparity_method": "wta",
-                    "invalid_disparity": -9999
+                'disparity': {
+                    'disparity_method': 'wta',
+                    'invalid_disparity': -9999
                 }
             }
 
         }
-        assert (cfg_return == cfg_gt)
+        assert cfg_return == cfg_gt
 
         # Check the configuration returned with left and right disparity grids
         cfg = {
-            "input": {
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif",
-                "disp_min_right": "tests/pandora/disp_min_grid.tif",
-                "disp_max_right": "tests/pandora/disp_max_grid.tif"
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif',
+                'disp_min_right': 'tests/pandora/disp_min_grid.tif',
+                'disp_max_right': 'tests/pandora/disp_max_grid.tif'
             },
-            "pipeline": {
-                "stereo": {
-                    "stereo_method": "zncc",
-                    "window_size": 5,
-                    "subpix": 2
+            'pipeline': {
+                'stereo': {
+                    'stereo_method': 'zncc',
+                    'window_size': 5,
+                    'subpix': 2
                 },
-                "disparity": {
-                    "disparity_method": "wta"
+                'disparity': {
+                    'disparity_method': 'wta'
                 }
             }
 
         }
         cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
         cfg_gt = {
-            "image": {
-                "nodata1": 0,
-                "nodata2": 0,
-                "valid_pixels": 0,
-                "no_data": 1
+            'image': {
+                'nodata1': 0,
+                'nodata2': 0,
+                'valid_pixels': 0,
+                'no_data': 1
             },
-            "input": {
-                "left_mask": None,
-                "right_mask": None,
-                "disp_min_right": "tests/pandora/disp_min_grid.tif",
-                "disp_max_right": "tests/pandora/disp_max_grid.tif",
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif"
+            'input': {
+                'left_mask': None,
+                'right_mask': None,
+                'disp_min_right': 'tests/pandora/disp_min_grid.tif',
+                'disp_max_right': 'tests/pandora/disp_max_grid.tif',
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif'
             },
 
-            "pipeline":
+            'pipeline':
                 {
-                    "right_disp_map": {
-                        "method": "none"
+                    'right_disp_map': {
+                        'method': 'none'
                     },
-                    "stereo": {
-                        "stereo_method": "zncc",
-                        "window_size": 5,
-                        "subpix": 2
+                    'stereo': {
+                        'stereo_method': 'zncc',
+                        'window_size': 5,
+                        'subpix': 2
                     },
-                    "disparity": {
-                        "disparity_method": "wta",
-                        "invalid_disparity": -9999
+                    'disparity': {
+                        'disparity_method': 'wta',
+                        'invalid_disparity': -9999
                     }
                 }
 
         }
 
-        assert (cfg_return == cfg_gt)
+        assert cfg_return == cfg_gt
 
         # Check the configuration returned with left disparity grids and cross checking method
         cfg = {
-            "input": {
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif"
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif'
             },
-            "pipeline":
+            'pipeline':
                 {
-                    "right_disp_map": {
-                        "method": "accurate"
+                    'right_disp_map': {
+                        'method': 'accurate'
                     },
-                    "stereo": {
-                        "stereo_method": "zncc",
-                        "window_size": 5,
-                        "subpix": 2
+                    'stereo': {
+                        'stereo_method': 'zncc',
+                        'window_size': 5,
+                        'subpix': 2
                     },
-                    "disparity": {
-                        "disparity_method": "wta"
+                    'disparity': {
+                        'disparity_method': 'wta'
                     },
-                    "validation": {
-                        "validation_method": "cross_checking"
+                    'validation': {
+                        'validation_method': 'cross_checking'
                     }
                 }
         }
@@ -311,29 +316,29 @@ class TestConfig(unittest.TestCase):
 
         # Check the configuration returned with left and right disparity grids and cross checking method
         cfg = {
-            "input": {
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif",
-                "disp_min_right": "tests/pandora/disp_min_grid.tif",
-                "disp_max_right": "tests/pandora/disp_max_grid.tif",
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif',
+                'disp_min_right': 'tests/pandora/disp_min_grid.tif',
+                'disp_max_right': 'tests/pandora/disp_max_grid.tif',
             },
-            "pipeline": {
-                "right_disp_map": {
-                    "method": "accurate"
+            'pipeline': {
+                'right_disp_map': {
+                    'method': 'accurate'
                 },
-                "stereo": {
-                    "stereo_method": "zncc",
-                    "window_size": 5,
-                    "subpix": 2
+                'stereo': {
+                    'stereo_method': 'zncc',
+                    'window_size': 5,
+                    'subpix': 2
                 },
-                "disparity": {
-                    "disparity_method": "wta",
-                    "invalid_disparity": -9999
+                'disparity': {
+                    'disparity_method': 'wta',
+                    'invalid_disparity': -9999
                 },
-                "validation": {
-                    "validation_method": "cross_checking"
+                'validation': {
+                    'validation_method': 'cross_checking'
                 }
             }
 
@@ -341,37 +346,37 @@ class TestConfig(unittest.TestCase):
         # When left and right disparities are grids, cross checking method can be used
         cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
         cfg_gt = {
-            "image": {
-                "nodata1": 0,
-                "nodata2": 0,
-                "valid_pixels": 0,
-                "no_data": 1
+            'image': {
+                'nodata1': 0,
+                'nodata2': 0,
+                'valid_pixels': 0,
+                'no_data': 1
             },
-            "input": {
-                "left_mask": None,
-                "right_mask": None,
-                "disp_min_right": "tests/pandora/disp_min_grid.tif",
-                "disp_max_right": "tests/pandora/disp_max_grid.tif",
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif"
+            'input': {
+                'left_mask': None,
+                'right_mask': None,
+                'disp_min_right': 'tests/pandora/disp_min_grid.tif',
+                'disp_max_right': 'tests/pandora/disp_max_grid.tif',
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif'
             },
-            "pipeline": {
-                "right_disp_map": {
-                    "method": "accurate"
+            'pipeline': {
+                'right_disp_map': {
+                    'method': 'accurate'
                 },
-                "stereo": {
-                    "stereo_method": "zncc",
-                    "window_size": 5,
-                    "subpix": 2
+                'stereo': {
+                    'stereo_method': 'zncc',
+                    'window_size': 5,
+                    'subpix': 2
                 },
-                "disparity": {
-                    "disparity_method": "wta",
-                    "invalid_disparity": -9999
+                'disparity': {
+                    'disparity_method': 'wta',
+                    'invalid_disparity': -9999
                 },
-                "validation": {
-                    "validation_method": "cross_checking",
+                'validation': {
+                    'validation_method': 'cross_checking',
                     'cross_checking_threshold': 1.0,
                     'right_left_mode': 'accurate'
                 }
@@ -379,7 +384,7 @@ class TestConfig(unittest.TestCase):
 
         }
 
-        assert (cfg_return == cfg_gt)
+        assert cfg_return == cfg_gt
 
     def test_check_pipeline_section_with_error(self):
         """
@@ -387,24 +392,24 @@ class TestConfig(unittest.TestCase):
         """
 
         cfg_pipeline = {
-            "pipeline": {
-                "right_disp_map": {
-                    "method": "accurate"
+            'pipeline': {
+                'right_disp_map': {
+                    'method': 'accurate'
                 },
-                "stereo": {
-                    "stereo_method": "zncc",
-                    "window_size": 5,
-                    "subpix": 2
+                'stereo': {
+                    'stereo_method': 'zncc',
+                    'window_size': 5,
+                    'subpix': 2
                 },
                 'filter': {
                     'filter_method': 'median'
                 },
-                "disparity": {
-                    "disparity_method": "wta",
-                    "invalid_disparity": -9999
+                'disparity': {
+                    'disparity_method': 'wta',
+                    'invalid_disparity': -9999
                 },
-                "validation": {
-                    "validation_method": "cross_checking"
+                'validation': {
+                    'validation_method': 'cross_checking'
                 }
             }
         }

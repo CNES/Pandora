@@ -7,14 +7,14 @@
 #
 #     https://github.com/CNES/Pandora_pandora
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an 'AS IS' BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
@@ -31,19 +31,18 @@ import xarray as xr
 from json_checker import Checker, Or, And
 from transitions import Machine
 from transitions import MachineError
+
 from pandora import aggregation
 from pandora import common
 from pandora import disparity
-from pandora import filter
+from pandora import filter # pylint: disable=redefined-builtin
 from pandora import optimization
 from pandora import refinement
 from pandora import stereo
 from pandora import validation
 
-"""
-This module contains class associated to the pandora state machine
-"""
 
+# This module contains class associated to the pandora state machine
 
 class PandoraMachine(Machine):
     """
@@ -118,16 +117,16 @@ class PandoraMachine(Machine):
 
         # Pandora's pipeline configuration
         self.pipeline_cfg = {'pipeline': {}}
-        # Right disparity map computation information: Can be "none" or "accurate"
+        # Right disparity map computation information: Can be 'none' or 'accurate'
         # Usefull during the running steps to choose if we must compute left and right objects.
-        self.right_disp_map = "none"
+        self.right_disp_map = 'none'
         # Define avalaible states
         states_ = ['begin', 'cost_volume', 'disp_map', 'resized_disparity']
 
         # Initiliaze a machine without any transition
         Machine.__init__(self, states=states_, initial='begin', transitions=None, auto_transitions=False)
 
-        logging.getLogger("transitions").setLevel(logging.WARNING)
+        logging.getLogger('transitions').setLevel(logging.WARNING)
 
     def stereo_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -143,7 +142,7 @@ class PandoraMachine(Machine):
         stereo_ = stereo.AbstractStereo(**cfg['pipeline'][input_step])
         dmin_min, dmax_max = stereo_.dmin_dmax(self.disp_min, self.disp_max)
 
-        if not self.right_disp_map == "accurate":
+        if self.right_disp_map != 'accurate':
             self.left_cv = stereo_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max)
             stereo_.cv_masked(self.left_img, self.right_img, self.left_cv, self.disp_min, self.disp_max)
 
@@ -170,7 +169,7 @@ class PandoraMachine(Machine):
         :return: None
         """
         aggregation_ = aggregation.AbstractAggregation(**cfg['pipeline'][input_step])
-        if not self.right_disp_map == "accurate":
+        if self.right_disp_map != 'accurate':
             aggregation_.cost_volume_aggregation(self.left_img, self.right_img, self.left_cv)
         else:
             aggregation_.cost_volume_aggregation(self.left_img, self.right_img, self.left_cv)
@@ -187,7 +186,7 @@ class PandoraMachine(Machine):
         """
         optimization_ = optimization.AbstractOptimization(**cfg['pipeline'][input_step])
         logging.info('Cost optimization...')
-        if not self.right_disp_map == "accurate":
+        if self.right_disp_map != 'accurate':
             self.left_cv = optimization_.optimize_cv(self.left_cv, self.left_img, self.right_img)
         else:
             self.left_cv = optimization_.optimize_cv(self.left_cv, self.left_img, self.right_img)
@@ -204,11 +203,11 @@ class PandoraMachine(Machine):
         """
         logging.info('Disparity computation...')
         disparity_ = disparity.AbstractDisparity(**cfg['pipeline'][input_step])
-        if self.right_disp_map == "none":
+        if self.right_disp_map == 'none':
             self.left_disparity = disparity_.to_disp(self.left_cv, self.left_img, self.right_img)
             disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img,
                                      self.left_cv)
-        elif self.right_disp_map == "accurate":
+        elif self.right_disp_map == 'accurate':
             self.left_disparity = disparity_.to_disp(self.left_cv, self.left_img, self.right_img)
             disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img,
                                      self.left_cv)
@@ -227,7 +226,7 @@ class PandoraMachine(Machine):
         """
         logging.info('Disparity filtering...')
         filter_ = filter.AbstractFilter(**cfg['pipeline'][input_step])
-        if self.right_disp_map == "none":
+        if self.right_disp_map == 'none':
             filter_.filter_disparity(self.left_disparity)
         else:
             filter_.filter_disparity(self.left_disparity)
@@ -244,7 +243,7 @@ class PandoraMachine(Machine):
         """
         refinement_ = refinement.AbstractRefinement(**cfg['pipeline'][input_step])
         logging.info('Subpixel refinement...')
-        if self.right_disp_map == "none":
+        if self.right_disp_map == 'none':
             refinement_.subpixel_refinement(self.left_cv, self.left_disparity)
         else:
             refinement_.subpixel_refinement(self.left_cv, self.left_disparity)
@@ -263,7 +262,7 @@ class PandoraMachine(Machine):
 
         logging.info('Validation...')
 
-        if self.right_disp_map == "none":
+        if self.right_disp_map == 'none':
             self.left_disparity = validation_.disparity_checking(self.left_disparity, self.right_disparity)
 
         else:
@@ -285,7 +284,7 @@ class PandoraMachine(Machine):
         :return: None
         """
         logging.info('Resize disparity map...')
-        if self.right_disp_map == "none":
+        if self.right_disp_map == 'none':
             self.left_disparity = common.resize(self.left_disparity, cfg['pipeline'][input_step]['border_disparity'])
 
         else:
@@ -346,11 +345,11 @@ class PandoraMachine(Machine):
         """
         try:
             # There may be steps that are repeated several times, for example:
-            #     "filter": {
-            #       "filter_method": "median"
+            #     'filter': {
+            #       'filter_method': 'median'
             #     },
-            #     "filter_1": {
-            #       "filter_method": "bilateral"
+            #     'filter_1': {
+            #       'filter_method': 'bilateral'
             #     }
             # But there's only a filter transition. Therefore, in the case of filter_1 we have to call the
             # filter
@@ -373,7 +372,7 @@ class PandoraMachine(Machine):
         self.remove_transitions(self._transitions_run)
         self.set_state('begin')
 
-    def right_disp_map_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def right_disp_map_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None: # pylint: disable=unused-argument
         """
         Check the right_disp_map configuration
 
@@ -385,7 +384,7 @@ class PandoraMachine(Machine):
         """
 
         schema = {
-            "method": And(str, lambda x: 'none' or 'accurate')
+            'method': And(str, lambda input: 'none' or 'accurate')
         }
 
         checker = Checker(schema)
@@ -487,13 +486,14 @@ class PandoraMachine(Machine):
         validation_ = validation.AbstractValidation(**cfg[input_step])
         self.pipeline_cfg['pipeline'][input_step] = validation_.cfg
         if 'interpolated_disparity' in validation_.cfg:
-            interpolate_ = validation.AbstractInterpolation(**cfg[input_step])
+            interpolate_ = validation.AbstractInterpolation(**cfg[input_step]) # pylint: disable=unused-variable
 
-        if validation_.cfg['validation_method'] == "cross_checking" and self.right_disp_map == "none":
-            raise MachineError("Can't trigger event cross-checking validation  if right_disp_map method equal to "
+        if validation_.cfg['validation_method'] == 'cross_checking' and self.right_disp_map == 'none':
+            raise MachineError('Can t trigger event cross-checking validation  if right_disp_map method equal to '
                                + self.right_disp_map)
 
-    def resize_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
+    @staticmethod
+    def resize_check_conf(cfg: Dict[str, dict], input_step: str) -> None:
         """
         Check the resize configuration
 
@@ -505,7 +505,7 @@ class PandoraMachine(Machine):
         """
 
         schema = {
-            "border_disparity": Or(int, float, lambda x: np.isnan(x)),
+            'border_disparity': Or(int, float, lambda input: np.isnan(input)),
         }
 
         checker = Checker(schema)
@@ -528,11 +528,11 @@ class PandoraMachine(Machine):
         for input_step in list(cfg)[1:]:
             try:
                 # There may be steps that are repeated several times, for example:
-                #     "filter": {
-                #       "filter_method": "median"
+                #     'filter': {
+                #       'filter_method': 'median'
                 #     },
-                #     "filter_1": {
-                #       "filter_method": "bilateral"
+                #     'filter_1': {
+                #       'filter_method': 'bilateral'
                 #     }
                 # But there's only a filter transition. Therefore, in the case of filter_1 we have to call the
                 # filter
@@ -563,8 +563,8 @@ class PandoraMachine(Machine):
         :return: None
         """
         # Transition is removed using trigger name. But one trigger name can be used by multiple transitions
-        # In this case, the "remove_transition" function removes all transitions using this trigger name
-        # deleted_triggers list is used to avoid multiple call of "remove_transition" with the same trigger name.
+        # In this case, the 'remove_transition' function removes all transitions using this trigger name
+        # deleted_triggers list is used to avoid multiple call of 'remove_transition'' with the same trigger name.
         deleted_triggers = []
         for trans in transition_list:
             if trans['trigger'] not in deleted_triggers:

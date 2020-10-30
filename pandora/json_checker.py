@@ -1,45 +1,51 @@
+# pylint: disable=missing-module-docstring
 import copy
 import json
+import logging
 import sys
 from collections.abc import Mapping
+from typing import Dict, Union
 from typing import List
 
+import numpy as np
 import rasterio
-from pandora.state_machine import *
+from json_checker import Checker, Or, And
+
+from pandora.state_machine import PandoraMachine
 
 
-def rasterio_can_open_mandatory(f: str) -> bool:
+def rasterio_can_open_mandatory(file_: str) -> bool:
     """
-    Test if file f can be open by rasterio
+    Test if file file_ can be open by rasterio
 
-    :param f: File to test
-    :type f: string
+    :param file_: File to test
+    :type file_: string
     :returns: True if rasterio can open file and False otherwise
     :rtype: bool
     """
 
     try:
-        rasterio.open(f)
+        rasterio.open(file_)
         return True
-    except Exception as e:
-        logging.warning("Impossible to read file {}: {}".format(f, e))
+    except Exception as exc:
+        logging.warning('Impossible to read file %: %', file_, exc)
         return False
 
 
-def rasterio_can_open(f: str) -> bool:
+def rasterio_can_open(file_: str) -> bool:
     """
-    Test if file f can be open by rasterio
+    Test if file file_ can be open by rasterio
 
-    :param f: File to test
-    :type f: string
+    :param file_: File to test
+    :type file_: string
     :returns: True if rasterio can open file and False otherwise
     :rtype: bool
     """
 
-    if f == 'none' or f is None:
+    if file_ == 'none' or file_ is None:
         return True
-    else:
-        return rasterio_can_open_mandatory(f)
+
+    return rasterio_can_open_mandatory(file_)
 
 
 def check_images(img_left: str, img_right: str, msk_left: str, msk_right: str) -> None:
@@ -110,13 +116,13 @@ def check_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str,
     """
     # --- Check left disparities
     # left disparity are integers
-    if type(disp_min) == int and type(disp_max) == int:
+    if isinstance(disp_min, int) and isinstance(disp_max, int):
         if disp_max < disp_min:
             logging.error('Disp_max must be bigger than Disp_min')
             sys.exit(1)
 
     # left disparity are grids
-    elif (type(disp_min) == str) and (type(disp_max) == str):
+    elif (isinstance(disp_min, str)) and (isinstance(disp_max, str)):
         # Load an image to compare the grid size
         img_left_ = rasterio.open(img_left)
 
@@ -141,7 +147,7 @@ def check_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str,
             sys.exit(1)
 
     # --- Check right disparities
-    if (type(right_disp_min) == str) and (type(right_disp_max) == str):
+    if (isinstance(right_disp_min, str)) and (isinstance(right_disp_max, str)):
         # Load an image to compare the grid size
         img_left_ = rasterio.open(img_left)
 
@@ -239,7 +245,7 @@ def check_pipeline_section(user_cfg: Dict[str, dict], pandora_machine: PandoraMa
     cfg = update_conf(cfg, pandora_machine.pipeline_cfg)
 
     configuration_schema = {
-        "pipeline": dict
+        'pipeline': dict
     }
 
     checker = Checker(configuration_schema)
@@ -262,7 +268,7 @@ def check_image_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
 
     # check schema
     configuration_schema = {
-        "image": image_configuration_schema
+        'image': image_configuration_schema
     }
 
     checker = Checker(configuration_schema)
@@ -286,17 +292,17 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     # Disparity can be integer type, or string type (path to the disparity grid)
     # If the left disparity is string type, right disparity must be string type or none
     # if the left disparity is integer type, right disparity must be none
-    if type(cfg['input']['disp_min']) == int:
+    if isinstance(cfg['input']['disp_min'], int):
         input_configuration_schema.update(input_configuration_schema_integer_disparity)
     else:
-        if type(cfg['input']['disp_min_right']) == str:
+        if isinstance(cfg['input']['disp_min_right'], str):
             input_configuration_schema.update(input_configuration_schema_left_disparity_grids_right_grids)
         else:
             input_configuration_schema.update(input_configuration_schema_left_disparity_grids_right_none)
 
     # check schema
     configuration_schema = {
-        "input": input_configuration_schema
+        'input': input_configuration_schema
     }
 
     checker = Checker(configuration_schema)
@@ -341,10 +347,10 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> Di
     # If left disparities are grids of disparity and the right disparities are none, the cross-checking
     # method cannot be used
 
-    if (type(cfg_input['input']['disp_min']) == str) and (cfg_input['input']['disp_min_right'] is None) and \
+    if (isinstance(cfg_input['input']['disp_min'], str)) and (cfg_input['input']['disp_min_right'] is None) and \
             ('validation' in cfg_pipeline['pipeline']):
-        logging.error("The cross-checking step cannot be processed if disp_min, disp_max are paths to the left "
-                      "disparity grids and disp_right_min, disp_right_max are none.")
+        logging.error('The cross-checking step cannot be processed if disp_min, disp_max are paths to the left '
+                      'disparity grids and disp_right_min, disp_right_max are none.')
         sys.exit(1)
 
     # concatenate updated config
@@ -364,73 +370,73 @@ def concat_conf(cfg_list: List[Dict[str, dict]]) -> Dict[str, dict]:
     """
     # concatenate updated config
     cfg = {}
-    for c in cfg_list:
-        cfg.update(c)
+    for conf in cfg_list:
+        cfg.update(conf)
 
     return cfg
 
 
 input_configuration_schema = {
-    "img_left": And(str, rasterio_can_open_mandatory),
-    "img_right": And(str, rasterio_can_open_mandatory),
-    "left_mask": And(Or(str, lambda x: x is None), rasterio_can_open),
-    "right_mask": And(Or(str, lambda x: x is None), rasterio_can_open)
+    'img_left': And(str, rasterio_can_open_mandatory),
+    'img_right': And(str, rasterio_can_open_mandatory),
+    'left_mask': And(Or(str, lambda input: input is None), rasterio_can_open),
+    'right_mask': And(Or(str, lambda input: input is None), rasterio_can_open)
 }
 
 # Input configuration when disparity is integer
 input_configuration_schema_integer_disparity = {
-    "disp_min": int,
-    "disp_max": int,
-    "disp_min_right": (lambda x: x is None),
-    "disp_max_right": (lambda x: x is None)
+    'disp_min': int,
+    'disp_max': int,
+    'disp_min_right': (lambda input: input is None),
+    'disp_max_right': (lambda input: input is None)
 }
 
 # Input configuration when left disparity is a grid, and right not provided
 input_configuration_schema_left_disparity_grids_right_none = {
-    "disp_min": And(str, rasterio_can_open),
-    "disp_max": And(str, rasterio_can_open),
-    "disp_min_right": (lambda x: x is None),
-    "disp_max_right": (lambda x: x is None)
+    'disp_min': And(str, rasterio_can_open),
+    'disp_max': And(str, rasterio_can_open),
+    'disp_min_right': (lambda input: input is None),
+    'disp_max_right': (lambda input: input is None)
 }
 
 # Input configuration when left and right disparity are grids
 input_configuration_schema_left_disparity_grids_right_grids = {
-    "disp_min": And(str, rasterio_can_open),
-    "disp_max": And(str, rasterio_can_open),
-    "disp_min_right": And(str, rasterio_can_open),
-    "disp_max_right": And(str, rasterio_can_open)
+    'disp_min': And(str, rasterio_can_open),
+    'disp_max': And(str, rasterio_can_open),
+    'disp_min_right': And(str, rasterio_can_open),
+    'disp_max_right': And(str, rasterio_can_open)
 }
 
 image_configuration_schema = {
-    "nodata1": Or(int, lambda x: np.isnan(x)),
-    "nodata2": Or(int, lambda x: np.isnan(x)),
-    "valid_pixels": int,
-    "no_data": int
+    'nodata1': Or(int, lambda input: np.isnan(input)),
+    'nodata2': Or(int, lambda input: np.isnan(input)),
+    'valid_pixels': int,
+    'no_data': int
 }
 
 default_short_configuration_image = {
-    "image": {
-        "nodata1": 0,
-        "nodata2": 0,
-        "valid_pixels": 0,
-        "no_data": 1
+    'image': {
+        'nodata1': 0,
+        'nodata2': 0,
+        'valid_pixels': 0,
+        'no_data': 1
     }
 }
 
 default_short_configuration_input = {
-    "input": {
-        "left_mask": None,
-        "right_mask": None,
-        "disp_min_right": None,
-        "disp_max_right": None
+    'input': {
+        'left_mask': None,
+        'right_mask': None,
+        'disp_min_right': None,
+        'disp_max_right': None
     }
 }
 
 default_short_configuration_pipeline = {
-    "pipeline":
+    'pipeline':
         {
-            "right_disp_map": {
-                "method": "none"
+            'right_disp_map': {
+                'method': 'none'
             }
         }
 }
@@ -448,8 +454,8 @@ def read_config_file(config_file: str) -> Dict[str, dict]:
     :return user_cfg: configuration dictionary
     :rtype: dict
     """
-    with open(config_file, 'r') as f:
-        user_cfg = json.load(f)
+    with open(config_file, 'r') as file_:
+        user_cfg = json.load(file_)
     return user_cfg
 
 
@@ -469,26 +475,7 @@ def update_conf(def_cfg: Dict[str, dict], user_cfg: Dict[str, dict]) -> Dict[str
         if isinstance(value, Mapping):
             config[key] = update_conf(config.get(key, {}), value)
         else:
-            if value == "np.nan":
+            if value == 'np.nan':
                 value = np.nan
             config[key] = value
     return config
-
-
-def is_method(s: str, methods: List[str]) -> bool:
-    """
-    Test if s is a method in methods
-
-    :param s: String to test
-    :type s: string
-    :param methods: list of available methods
-    :type methods: list of strings
-    :returns: True if s a method and False otherwise
-    :rtype: bool
-    """
-
-    if s in methods:
-        return True
-    else:
-        logging.error("{} is not in available methods : ".format(s) + ', '.join(methods))
-        return False
