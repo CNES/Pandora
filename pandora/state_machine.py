@@ -139,7 +139,7 @@ class PandoraMachine(Machine):
         """
 
         logging.info('Matching cost computation...')
-        stereo_ = stereo.AbstractStereo(**cfg['pipeline'][input_step])
+        stereo_ = stereo.AbstractStereo(**cfg[input_step])
         dmin_min, dmax_max = stereo_.dmin_dmax(self.disp_min, self.disp_max)
 
         if self.right_disp_map != 'accurate':
@@ -168,7 +168,7 @@ class PandoraMachine(Machine):
         :type input_step: str
         :return: None
         """
-        aggregation_ = aggregation.AbstractAggregation(**cfg['pipeline'][input_step])
+        aggregation_ = aggregation.AbstractAggregation(**cfg[input_step])
         if self.right_disp_map != 'accurate':
             aggregation_.cost_volume_aggregation(self.left_img, self.right_img, self.left_cv)
         else:
@@ -184,7 +184,7 @@ class PandoraMachine(Machine):
         :type input_step: str
         :return: None
         """
-        optimization_ = optimization.AbstractOptimization(**cfg['pipeline'][input_step])
+        optimization_ = optimization.AbstractOptimization(**cfg[input_step])
         logging.info('Cost optimization...')
         if self.right_disp_map != 'accurate':
             self.left_cv = optimization_.optimize_cv(self.left_cv, self.left_img, self.right_img)
@@ -202,7 +202,7 @@ class PandoraMachine(Machine):
         :return: None
         """
         logging.info('Disparity computation...')
-        disparity_ = disparity.AbstractDisparity(**cfg['pipeline'][input_step])
+        disparity_ = disparity.AbstractDisparity(**cfg[input_step])
         if self.right_disp_map == 'none':
             self.left_disparity = disparity_.to_disp(self.left_cv, self.left_img, self.right_img)
             disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img,
@@ -225,7 +225,7 @@ class PandoraMachine(Machine):
         :return: None
         """
         logging.info('Disparity filtering...')
-        filter_ = filter.AbstractFilter(**cfg['pipeline'][input_step])
+        filter_ = filter.AbstractFilter(**cfg[input_step])
         if self.right_disp_map == 'none':
             filter_.filter_disparity(self.left_disparity)
         else:
@@ -241,7 +241,7 @@ class PandoraMachine(Machine):
         :type input_step: str
         :return: None
         """
-        refinement_ = refinement.AbstractRefinement(**cfg['pipeline'][input_step])
+        refinement_ = refinement.AbstractRefinement(**cfg[input_step])
         logging.info('Subpixel refinement...')
         if self.right_disp_map == 'none':
             refinement_.subpixel_refinement(self.left_cv, self.left_disparity)
@@ -258,7 +258,7 @@ class PandoraMachine(Machine):
         :type input_step: str
         :return: None
         """
-        validation_ = validation.AbstractValidation(**cfg['pipeline'][input_step])
+        validation_ = validation.AbstractValidation(**cfg[input_step])
 
         logging.info('Validation...')
 
@@ -270,7 +270,7 @@ class PandoraMachine(Machine):
             self.right_disparity = validation_.disparity_checking(self.right_disparity, self.left_disparity)
             # Interpolated mismatch and occlusions
             if 'interpolated_disparity' in cfg:
-                interpolate_ = validation.AbstractInterpolation(**cfg['pipeline'][input_step])
+                interpolate_ = validation.AbstractInterpolation(**cfg[input_step])
                 interpolate_.interpolated_disparity(self.left_disparity)
                 interpolate_.interpolated_disparity(self.right_disparity)
 
@@ -285,11 +285,11 @@ class PandoraMachine(Machine):
         """
         logging.info('Resize disparity map...')
         if self.right_disp_map == 'none':
-            self.left_disparity = common.resize(self.left_disparity, cfg['pipeline'][input_step]['border_disparity'])
+            self.left_disparity = common.resize(self.left_disparity, cfg[input_step]['border_disparity'])
 
         else:
-            self.left_disparity = common.resize(self.left_disparity, cfg['pipeline'][input_step]['border_disparity'])
-            self.right_disparity = common.resize(self.right_disparity, cfg['pipeline'][input_step]['border_disparity'])
+            self.left_disparity = common.resize(self.left_disparity, cfg[input_step]['border_disparity'])
+            self.right_disparity = common.resize(self.right_disparity, cfg[input_step]['border_disparity'])
 
     def run_prepare(self, cfg: Dict[str, dict], left_img: xr.Dataset, right_img: xr.Dataset,
                     disp_min: Union[int, np.ndarray],
@@ -329,7 +329,7 @@ class PandoraMachine(Machine):
         self.left_disparity = xr.Dataset()
         self.right_disparity = xr.Dataset()
 
-        self.right_disp_map = cfg['pipeline']['right_disp_map']['method']
+        self.right_disp_map = cfg['right_disp_map']['method']
 
         self.add_transitions(self._transitions_run)
 
@@ -372,7 +372,7 @@ class PandoraMachine(Machine):
         self.remove_transitions(self._transitions_run)
         self.set_state('begin')
 
-    def right_disp_map_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None: # pylint: disable=unused-argument
+    def right_disp_map_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None: #pylint:disable=unused-argument
         """
         Check the right_disp_map configuration
 

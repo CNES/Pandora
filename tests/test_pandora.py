@@ -127,7 +127,7 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.json_checker.update_conf(pandora.json_checker.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
+        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg['pipeline'])
 
         # Check the left disparity map
         if self.error(left['disparity_map'].data, self.disp_left, 1) > 0.20:
@@ -207,7 +207,7 @@ class TestPandora(unittest.TestCase):
 
         # Run the Pandora pipeline
         left, right = pandora.run(pandora_machine, img_left, img_right, cfg['input']['disp_min'],
-                                  cfg['input']['disp_max'], cfg)
+                                  cfg['input']['disp_max'], cfg['pipeline'])
 
         # Ground truth confidence measure
         gt_left_indicator_stereo = np.array([[1.57175062, 1.46969385, 1.39484766, 1.6],
@@ -307,7 +307,7 @@ class TestPandora(unittest.TestCase):
         right_img = read_img('tests/pandora/right.png', no_data=np.nan, cfg=cfg['image'], mask=None)
 
         # Run the pandora pipeline on images without modified coordinates
-        left_origin, right_origin = pandora.run(pandora_machine, left_img, right_img, -60, 0, cfg)
+        left_origin, right_origin = pandora.run(pandora_machine, left_img, right_img, -60, 0, cfg['pipeline'])
 
         row_c = left_img.coords['row'].data
         row_c += 41
@@ -318,7 +318,7 @@ class TestPandora(unittest.TestCase):
         right_img.assign_coords(row=row_c, col=col_c)
 
         # Run the pandora pipeline on images with modified coordinates
-        left_modified, right_modified = pandora.run(pandora_machine, left_img, right_img, -60, 0, cfg)
+        left_modified, right_modified = pandora.run(pandora_machine, left_img, right_img, -60, 0, cfg['pipeline'])
 
         # check if the disparity maps are equals
         np.testing.assert_array_equal(left_origin['disparity_map'].values, left_modified['disparity_map'].values)
@@ -394,11 +394,11 @@ def setup_logging(path='logging.json', default_level=logging.WARNING, ):
     :type default_level: logging level
     """
     if os.path.exists(path):
-        with open(path, 'rt') as file_:
-            config = json.load(file_)
+        with open(path,  'rt') as file_:
+            config = json.load( file_)
         logging.config.dictConfig(config)
     else:
-        logging.basicConfig(level=default_level)
+        logging.basicConfig(level= default_level)
 
 
 if __name__ == '__main__':
