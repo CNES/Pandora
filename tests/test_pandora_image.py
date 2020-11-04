@@ -194,6 +194,66 @@ class TestImgTools(unittest.TestCase):
         np.testing.assert_array_equal(dst_left['im'].data, left_img)
 
     @staticmethod
+    def test_read_img_classif():
+        """
+        Test the method read_img for the classif
+
+        """
+        # Build the default configuration
+        default_cfg = pandora.json_checker.default_short_configuration
+
+        # Computes the dataset image
+        dst_left = img_tools.read_img(img='tests/image/left_img.tif', no_data=default_cfg['image']['nodata1'],
+                                      cfg=default_cfg['image'], classif='tests/image/mask_left.tif')
+
+        # Classif ground truth
+        classif_gt = np.array([[0, 0, 1, 2, 0],
+                               [0, 0, 0, 0, 1],
+                               [3, 5, 0, 0, 1],
+                               [0, 0, 255, 0, 0]], )
+
+        # Check if the calculated mask is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(dst_left['classif'].data, classif_gt)
+
+        left_img = np.array([[0., 1., 2., 3., 0.],
+                             [5., 6., 7., 8., 9.],
+                             [0., 0., 23., 5., 6.],
+                             [12., 5., 6., 3., 0.]], dtype=np.float32)
+
+        # Check the image
+        np.testing.assert_array_equal(dst_left['im'].data, left_img)
+
+    @staticmethod
+    def test_read_img_segm():
+        """
+        Test the method read_img for the segmentation
+
+        """
+        # Build the default configuration
+        default_cfg = pandora.json_checker.default_short_configuration
+
+        # Computes the dataset image
+        dst_left = img_tools.read_img(img='tests/image/left_img.tif', no_data=default_cfg['image']['nodata1'],
+                                      cfg=default_cfg['image'], segm='tests/image/mask_left.tif')
+
+        # Segmentation ground truth
+        segm_gt = np.array([[0, 0, 1, 2, 0],
+                            [0, 0, 0, 0, 1],
+                            [3, 5, 0, 0, 1],
+                            [0, 0, 255, 0, 0]],)
+
+        # Check if the calculated mask is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(dst_left['segm'].data, segm_gt)
+
+        left_img = np.array([[0., 1., 2., 3., 0.],
+                             [5., 6., 7., 8., 9.],
+                             [0., 0., 23., 5., 6.],
+                             [12., 5., 6., 3., 0.]], dtype=np.float32)
+
+        # Check the image
+        np.testing.assert_array_equal(dst_left['im'].data, left_img)
+
+    @staticmethod
     def test_read_disp():
         """
         Test the method read_disp
