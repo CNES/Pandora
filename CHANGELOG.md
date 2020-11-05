@@ -13,6 +13,7 @@
 - Implementation of a state machine for Pandora's sequencing management. [#107]
 - Disparity grids as input to define dmin and dmax values for each pixel. [#91]
 - A changelog file. [#115]
+- Classification and segmentation maps as input. [#126]
 
 ### Changed
 
