@@ -76,9 +76,9 @@ class TestDisparity(unittest.TestCase):
         cv = stereo_plugin.compute_cost_volume(self.left, self.right, -3, 1)
 
         # Disparity map ground truth, for the images described in the setUp method
-        gt_disp = np.array([[1, 1, 1, -3],
-                            [1, 1, 1, -3],
-                            [1, 1, 1, -3]])
+        gt_disp = np.array([[-3, -3, -3, -3],
+                            [-3, -3, -3, -3],
+                            [-3, -3, -3, -3]])
 
         # Compute the disparity
         disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
@@ -93,9 +93,9 @@ class TestDisparity(unittest.TestCase):
         cv = stereo_plugin.compute_cost_volume(self.left, self.right, -3, -1)
 
         # Disparity map ground truth
-        gt_disp = np.array([[0, -1, -2, -3],
-                            [0, -1, -1, -3],
-                            [0, -1, -2, -3]])
+        gt_disp = np.array([[-3, -3, -3, -3],
+                            [-3, -3, -3, -3],
+                            [-3, -3, -3, -3]])
 
         # Compute the disparity
         disp = disparity_.to_disp(cv)
@@ -109,9 +109,9 @@ class TestDisparity(unittest.TestCase):
         cv = stereo_plugin.compute_cost_volume(self.left, self.right, 1, 3)
 
         # Disparity map ground truth
-        gt_disp = np.array([[1, 1, 1, 0],
-                            [1, 1, 1, 0],
-                            [1, 1, 1, 0]])
+        gt_disp = np.array([[1, 1, 1, 1],
+                            [1, 1, 1, 1],
+                            [1, 1, 1, 1]])
 
         # Compute the disparity
         disp = disparity_.to_disp(cv)
@@ -137,9 +137,9 @@ class TestDisparity(unittest.TestCase):
         cv['cost_volume'].data[indices_nan] = np.inf
 
         # ground truth
-        gt_disp = np.array([[1., 1., 1., -3.],
-                            [1., -0.5, 1., -3.],
-                            [1., 1., -1.5, -3]], dtype=np.float32)
+        gt_disp = np.array([[-3., -3., -3., -3.],
+                            [-3., -3, -3., -3.],
+                            [-3., -3., -3, -3]], dtype=np.float32)
 
         # Compute the disparity
         disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
@@ -392,8 +392,7 @@ class TestDisparity(unittest.TestCase):
         disparity_.validity_mask(dataset, self.left, self.right, cv)
 
         # Validity mask ground truth
-        gt_mask = np.array([[cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+        gt_mask = np.array([[cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                              cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                              cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0],
                             [cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,

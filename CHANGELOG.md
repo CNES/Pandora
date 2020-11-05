@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Correct stereo methods in case the images have nan values. [#150]
+
 ## 0.3.0 (October 2020)
 
 ### Added
@@ -22,4 +26,3 @@
 - Creation of mask dataset in `read_img` function of the `img_tools` module. [#133]
 - Management of no data in cbca method. [#125]
 - Detection between false matches and occlusions. [#132]
-
