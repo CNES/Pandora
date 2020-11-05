@@ -383,7 +383,6 @@ class TestPandora(unittest.TestCase):
             if self.error(-1 * rasterio.open(tmp_dir + '/right_disparity.tif').read(1), self.disp_right, 1) > 0.20:
                 raise AssertionError
 
-
 def setup_logging(path='logging.json', default_level=logging.WARNING, ):
     """
     Setup the logging configuration
@@ -399,7 +398,6 @@ def setup_logging(path='logging.json', default_level=logging.WARNING, ):
         logging.config.dictConfig(config)
     else:
         logging.basicConfig(level= default_level)
-
 
 if __name__ == '__main__':
     setup_logging()

@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 #!/usr/bin/env python
 # coding: utf8
 #
@@ -95,6 +96,45 @@ class TestStereo(unittest.TestCase):
         # Check if the calculated sd cost is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(ssd['cost_volume'].sel(disp=0), ssd_ground_truth)
 
+    def test_ssd_cost_nans(self):
+        """
+        Test the sum of squared difference method when the input images have nans
+
+        """
+        # Squared difference pixel-wise ground truth for the images self.left, self.right, with window_size = 1)
+        sd_ground_truth = np.array(([0, 0, 0, 1, 1, 1],
+                                    [0, 0, 0, (1 - 4) ** 2, 0, (1 - 4) ** 2],
+                                    [0, 0, 0, 0, (3 - 4) ** 2, 0],
+                                    [0, 0, 0, 0, 0, 0],
+                                    [0, 0, 0, 0, 0, 0]))
+
+        img_left_nans = self.left.copy()
+        img_right_nans = self.right.copy()
+
+        # Add nans on images
+        img_left_nans['im'].data[2, 3] = np.nan
+        img_right_nans['im'].data[3, 2] = np.nan
+
+        # Computes the sd cost for the whole images
+        stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'ssd', 'window_size': 1, 'subpix': 1})
+        ssd = stereo_matcher.compute_cost_volume(img_left=img_left_nans, img_right=img_right_nans, disp_min=-1,
+                                                 disp_max=1)
+
+        # Check if the calculated sd cost is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(ssd['cost_volume'].sel(disp=0), sd_ground_truth)
+
+        # Sum of squared difference pixel-wise ground truth for the images self.left, self.right, with window_size = 5
+        ssd_ground_truth = np.array(([[12., 22.]]))
+
+        # Computes the sd cost for the whole images
+        stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'ssd', 'window_size': 5, 'subpix': 1})
+        ssd = stereo_matcher.compute_cost_volume(img_left=img_left_nans, img_right=img_right_nans, disp_min=-1,
+                                                 disp_max=1)
+        stereo_matcher.cv_masked(img_left_nans, img_right_nans, ssd, -1, 1)
+
+        # Check if the calculated sd cost is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(ssd['cost_volume'].sel(disp=0), ssd_ground_truth)
+
     def test_sad_cost(self):
         """
         Test the absolute difference method
@@ -121,6 +161,45 @@ class TestStereo(unittest.TestCase):
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 5, 'subpix': 1})
         sad = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1)
         stereo_matcher.cv_masked(self.left, self.right, sad, -1, 1)
+
+        # Check if the calculated ad cost is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(sad['cost_volume'].sel(disp=0), sad_ground_truth)
+
+    def test_sad_cost_nans(self):
+        """
+        Test the absolute difference method when the input images have nans
+
+        """
+        # Absolute difference pixel-wise ground truth for the images self.left, self.right
+        ad_ground_truth = np.array(([0, 0, 0, 1, 1, 1],
+                                    [0, 0, 0, abs(1 - 4), 0, abs(1 - 4)],
+                                    [0, 0, 0, 0, abs(3 - 4), 0],
+                                    [0, 0, 0, 0, 0, 0],
+                                    [0, 0, 0, 0, 0, 0]))
+
+        img_left_nans = self.left.copy()
+        img_right_nans = self.right.copy()
+
+        # Add nans on images
+        img_left_nans['im'].data[2, 3] = np.nan
+        img_right_nans['im'].data[3, 2] = np.nan
+
+        # Computes the ad cost for the whole images
+        stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
+        sad = stereo_matcher.compute_cost_volume(img_left=img_left_nans, img_right=img_right_nans, disp_min=-1,
+                                                 disp_max=1)
+
+        # Check if the calculated ad cost is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(sad['cost_volume'].sel(disp=0), ad_ground_truth)
+
+        # Sum of absolute difference pixel-wise ground truth for the images self.left, self.right with window size 5
+        sad_ground_truth = np.array(([[6., 10.]]))
+
+        # Computes the ad cost for the whole images
+        stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 5, 'subpix': 1})
+        sad = stereo_matcher.compute_cost_volume(img_left=img_left_nans, img_right=img_right_nans, disp_min=-1,
+                                                 disp_max=1)
+        stereo_matcher.cv_masked(img_left_nans, img_right_nans, sad, -1, 1)
 
         # Check if the calculated ad cost is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(sad['cost_volume'].sel(disp=0), sad_ground_truth)
@@ -156,6 +235,48 @@ class TestStereo(unittest.TestCase):
         # census ground truth for the images left, right, window size = 3 and disp = 1
         census_ground_truth_d3 = np.array(([4, np.nan],
                                            [5, np.nan]))
+
+        # Computes the census transform for the images with window size = 3
+        stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'census', 'window_size': 3, 'subpix': 1})
+        census = stereo_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
+        stereo_matcher.cv_masked(left, right, census, -1, 1)
+
+        # Check if the calculated census cost is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(census['cost_volume'].sel(disp=-1), census_ground_truth_d1)
+        np.testing.assert_array_equal(census['cost_volume'].sel(disp=0), census_ground_truth_d2)
+        np.testing.assert_array_equal(census['cost_volume'].sel(disp=1), census_ground_truth_d3)
+
+    @staticmethod
+    def test_census_cost_nans():
+        """
+        Test the census method when the input images have nans
+
+        """
+        data = np.array(([1, 1, 1, 3],
+                         [1, np.nan, 1, 0],
+                         [2, 1, 0, 1],
+                         [1, 1, 1, 1]), dtype=np.float64)
+        left = xr.Dataset({'im': (['row', 'col'], data)},
+                          coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+
+        data = np.array(([5, 1, 2, 3],
+                         [1, 2, 1, 0],
+                         [2, 2, np.nan, 1],
+                         [1, 1, 1, 1]), dtype=np.float64)
+        right = xr.Dataset({'im': (['row', 'col'], data)},
+                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
+
+        # census ground truth for the images left, right, window size = 3 and disp = -1
+        census_ground_truth_d1 = np.array(([np.nan, 2],
+                                           [np.nan, 6]))
+
+        # census ground truth for the images left, right, window size = 3 and disp = 0
+        census_ground_truth_d2 = np.array(([1, 3],
+                                           [1, 6]))
+
+        # census ground truth for the images left, right, window size = 3 and disp = 1
+        census_ground_truth_d3 = np.array(([4, np.nan],
+                                           [1, np.nan]))
 
         # Computes the census transform for the images with window size = 3
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'census', 'window_size': 3, 'subpix': 1})
@@ -219,8 +340,8 @@ class TestStereo(unittest.TestCase):
 
         # Cost Volume ground truth for the stereo image simple_stereo_imgs,
         # with disp_min = -2, disp_max = 1, sad measure and subpixel_offset = 0
-        ground_truth = np.array([[[np.nan, np.nan, 48, 35],
-                                  [np.nan, 40, 43, np.nan]]])
+        ground_truth = np.array([[[16, 28, 48, 35],
+                                  [23, 40, 43, 18]]])
 
         # Computes the Cost Volume for the stereo image simple_stereo_imgs,
         # with disp_min = -2, disp_max = 1, sad measure, window_size = 3 and subpix = 1
@@ -326,9 +447,9 @@ class TestStereo(unittest.TestCase):
         np.testing.assert_array_equal(disparity_range_compute, disparity_range_ground_truth)
 
         # Cost volume ground truth with subpixel precision 0.5
-        cost_volume_ground_truth = np.array([[[np.nan, np.nan, np.nan, np.nan, 39, 32.5, 28, 34.5, 41],
-                                              [np.nan, np.nan, 49, 41.5, 34, 35.5, 37, np.nan, np.nan],
-                                              [45, 42.5, 40, 40.5, 41, np.nan, np.nan, np.nan, np.nan]]])
+        cost_volume_ground_truth = np.array([[[10., 10., 29., 26., 39., 32.5, 28., 34.5, 41.],
+                                              [26., 28., 49., 41.5, 34., 35.5, 37., 27.5, 31.],
+                                              [45., 42.5, 40., 40.5, 41., 27.5, 26., 16., 19.]]])
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv_zncc_subpixel['cost_volume'].data, cost_volume_ground_truth)
@@ -396,13 +517,13 @@ class TestStereo(unittest.TestCase):
         # col 3     [11., 4., nan]]], dtype=float32)
 
         # Cost volume ground truth after invalidation
-        cv_ground_truth = np.array([[[np.nan, np.nan, np.nan],
-                                     [12, 2., 13.],
-                                     [np.nan, np.nan, np.nan]],
+        cv_ground_truth = np.array([[[9., np.nan, np.nan],
+                                     [12., 2., 13.],
+                                     [np.nan, np.nan, 10.]],
 
-                                    [[np.nan, np.nan, np.nan],
+                                    [[5., np.nan, np.nan],
                                      [7., 1., 10.],
-                                     [11., 4., np.nan]]], dtype=np.float32)
+                                     [11., 4., 8.]]], dtype=np.float32)
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
@@ -459,13 +580,13 @@ class TestStereo(unittest.TestCase):
         # col 3     [11., 4., nan]]], dtype=float32)
 
         # Cost volume ground truth after invalidation
-        cv_ground_truth = np.array([[[np.nan, np.nan, np.nan],
+        cv_ground_truth = np.array([[[9., np.nan, np.nan],
                                      [np.nan, np.nan, 13.],
-                                     [np.nan, 3., np.nan]],
+                                     [np.nan, 3., 10.]],
 
-                                    [[np.nan, np.nan, np.nan],
+                                    [[5., np.nan, np.nan],
                                      [np.nan, np.nan, np.nan],
-                                     [np.nan, np.nan, np.nan]]], dtype=np.float32)
+                                     [np.nan, np.nan, 8.]]], dtype=np.float32)
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
@@ -525,13 +646,13 @@ class TestStereo(unittest.TestCase):
         # col 3     [11., 4., nan]]], dtype=float32)
 
         # Cost volume ground truth after invalidation
-        cv_ground_truth = np.array([[[np.nan, np.nan, np.nan],
+        cv_ground_truth = np.array([[[9., np.nan, np.nan],
                                      [12, 2, np.nan],
-                                     [10, np.nan, np.nan]],
+                                     [10, np.nan, 10.]],
 
-                                    [[np.nan, np.nan, 5],
+                                    [[5., np.nan, 5],
                                      [np.nan, np.nan, np.nan],
-                                     [np.nan, np.nan, np.nan]]], dtype=np.float32)
+                                     [np.nan, np.nan, 8.]]], dtype=np.float32)
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
@@ -586,13 +707,13 @@ class TestStereo(unittest.TestCase):
         stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
 
         # Cost volume ground truth after invalidation
-        cv_ground_truth = np.array([[[np.nan, np.nan, 24.],
+        cv_ground_truth = np.array([[[17., np.nan, 24.],
                                      [np.nan, 10., 27.],
-                                     [np.nan, np.nan, np.nan]],
+                                     [np.nan, np.nan, 26.]],
 
-                                    [[np.nan, np.nan, np.nan],
+                                    [[17., np.nan, np.nan],
                                      [np.nan, np.nan, np.nan],
-                                     [31., np.nan, np.nan]]], dtype=np.float32)
+                                     [31., np.nan, 26]]], dtype=np.float32)
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
@@ -631,17 +752,17 @@ class TestStereo(unittest.TestCase):
         stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
 
         # Cost volume ground truth after invalidation
-        cv_ground_truth = np.array([[[np.nan, np.nan, np.nan],
+        cv_ground_truth = np.array([[[0, np.nan, np.nan],
                                      [4, np.nan, 1],
                                      [np.nan, 1, 2],
                                      [np.nan, np.nan, np.nan],
-                                     [1, np.nan, np.nan]],
+                                     [1, np.nan, 0]],
 
-                                    [[np.nan, np.nan, np.nan],
+                                    [[0, np.nan, np.nan],
                                      [np.nan, 0, np.nan],
                                      [0, np.nan, 0],
                                      [np.nan, 0, 1],
-                                     [np.nan, np.nan, np.nan]]], dtype=np.float32)
+                                     [np.nan, np.nan, 0]]], dtype=np.float32)
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
@@ -760,17 +881,17 @@ class TestStereo(unittest.TestCase):
         #   * col      (col) int64 0 1 2 3 4
         #   * disp     (disp) float64 -1.0 -0.5 0.0 0.5 1.0
 
-        cv_ground_truth = np.array([[[np.nan, np.nan, 4, 2, 0],
+        cv_ground_truth = np.array([[[0, 0, 4, 2, 0],
                                      [4, 2, 0, 0.5, 1],
                                      [0, 0.5, 1, 1.5, 2],
                                      [1, 0.5, 0, np.nan, np.nan],
-                                     [1, np.nan, np.nan, np.nan, np.nan]],
+                                     [1, np.nan, np.nan, 0, 0]],
 
-                                    [[np.nan, np.nan, np.nan, np.nan, 0],
+                                    [[0, 0, np.nan, np.nan, 0],
                                      [np.nan, np.nan, 0, np.nan, np.nan],
                                      [0, np.nan, np.nan, np.nan, 0],
                                      [np.nan, np.nan, 0, 0.5, 1],
-                                     [3, 2.5, 2, np.nan, np.nan]]], dtype=np.float32)
+                                     [3, 2.5, 2, 0, 0]]], dtype=np.float32)
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
@@ -826,12 +947,13 @@ class TestStereo(unittest.TestCase):
         #   * disp     (disp) float64 -1.0 -0.75 -0.5 -0.25 0.0 0.25 0.5 0.75 1.0
 
         cv_ground_truth = np.array([[
-            [np.nan, np.nan, np.nan, np.nan, 4., np.nan, np.nan, np.nan, np.nan],
+            [0, 0, 0, 0, 4., np.nan, np.nan, np.nan, np.nan],
             [4., np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-            [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]],
-             [[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+            [np.nan, np.nan, np.nan, np.nan, np.nan, 0, 0, 0, 0]],
+
+            [[0, 0, 0, 0, np.nan, np.nan, np.nan, np.nan, np.nan],
              [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 0.],
-             [np.nan, np.nan, np.nan, np.nan, 0., np.nan, np.nan, np.nan, np.nan]]], dtype=np.float32)
+             [np.nan, np.nan, np.nan, np.nan, 0, 0, 0, 0, 0]]], dtype=np.float32)
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
@@ -892,13 +1014,13 @@ class TestStereo(unittest.TestCase):
         #   * disp     (disp) float64 -1.0 -0.5 0.0 0.5 1.0
 
         # Cost volume ground truth after invalidation
-        cv_ground_truth = np.array([[[np.nan, np.nan, np.nan, np.nan, 8.],
+        cv_ground_truth = np.array([[[9., 5.5, np.nan, np.nan, 8.],
                                      [np.nan, np.nan, 2., np.nan, np.nan],
-                                     [10., np.nan, np.nan, np.nan, np.nan]],
+                                     [10., np.nan, np.nan, 5.5, 10.]],
 
-                                    [[np.nan, np.nan, 1., 2., 5.],
+                                    [[5., 3., 1., 2., 5.],
                                      [7., 4., 1., 4.5, 10.],
-                                     [np.nan, np.nan, np.nan, np.nan, np.nan]]], dtype=np.float32)
+                                     [np.nan, np.nan, np.nan, 4., 8.]]], dtype=np.float32)
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
@@ -1307,7 +1429,7 @@ def setup_logging(path='logging.json', default_level=logging.WARNING, ):
     """
     Setup the logging configuration
 
-    :param path: path to the configuration file
+    :param path: path to the config file
     :type path: string
     :param default_level: default level
     :type default_level: logging level
@@ -1317,7 +1439,7 @@ def setup_logging(path='logging.json', default_level=logging.WARNING, ):
             config = json.load(file_)
         logging.config.dictConfig(config)
     else:
-        logging.basicConfig(level=default_level)
+        logging.basicConfig(level = default_level)
 
 
 if __name__ == '__main__':

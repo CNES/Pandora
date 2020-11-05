@@ -87,7 +87,7 @@ class TestAggregation(unittest.TestCase):
         cbca_obj.cost_volume_aggregation(self.left, self.right, sad)
 
         # Aggregate cost volume ground truth with the cross-based cost aggregation method for the stereo image
-        aggregated_ground_truth = np.array([[[np.nan, np.nan, (4 + 4 + 8 + 1) / 4, (2 + 2 + 4 + 0.5 + 1) / 5, 0.],
+        aggregated_ground_truth = np.array([[[0, 0, (4 + 4 + 8 + 1) / 4, (2 + 2 + 4 + 0.5 + 1) / 5, 0.],
                                              [(0 + 7 + 10 + 1) / 4, (2 + 12 + 3 + 1.5 + 1) / 5,
                                               (4 + 4 + 14 + 8 + 1 + 2) / 6, (2 + 2 + 7 + 4 + 0.5 + 1 + 1) / 7, 0.],
                                              [(0 + 10 + 6 + 7 + 1 + 0) / 6, (2 + 12 + 1 + 3 + 1.5 + 1 + 4) / 7,
@@ -96,9 +96,9 @@ class TestAggregation(unittest.TestCase):
                                               (12 + 1 + 8 + 3 + 1.5 + 1 + 4 + 6 + 5.5 + 4.5) / 10,
                                               (14 + 8 + 4 + 2 + 2 + 3) / 6, (7 + 4 + 0.5 + 1 + 1) / 5, 0.],
                                              [(6 + 12 + 0 + 5) / 4, (1 + 8 + 1.5 + 1 + 4) / 5, (8 + 4 + 2 + 3 + 2) / 5,
-                                              np.nan, np.nan]],
+                                              0, 0]],
 
-                                            [[np.nan, np.nan, (4 + 4 + 8 + 1 + 2 + 17) / 6,
+                                            [[0, 0, (4 + 4 + 8 + 1 + 2 + 17) / 6,
                                               (2 + 2 + 4 + 0.5 + 1 + 1 + 8.5) / 7, 0.],
                                              [(0 + 10 + 7 + 1 + 15 + 3) / 6, (2 + 12 + 3 + 1.5 + 1 + 16 + 5.5) / 7,
                                               (4 + 4 + 14 + 8 + 1 + 2 + 2 + 17 + 14) / 9,
@@ -112,9 +112,9 @@ class TestAggregation(unittest.TestCase):
                                               (14 + 8 + 4 + 2 + 2 + 3 + 14 + 1 + 4) / 9,
                                               (7 + 4 + 0.5 + 1 + 1 + 7 + 0.5) / 7, 0.],
                                              [(6 + 12 + 0 + 5 + 13 + 5) / 6, (1 + 8 + 1.5 + 1 + 4 + 6 + 4.5) / 7,
-                                              (2 + 8 + 4 + 2 + 3 + 1 + 4) / 7, np.nan, np.nan]],
+                                              (2 + 8 + 4 + 2 + 3 + 1 + 4) / 7, 0, 0]],
 
-                                            [[np.nan, np.nan, (2 + 8 + 1 + 17) / 4, (4 + 0.5 + 1 + 1 + 8.5) / 5, 0.],
+                                            [[0, 0, (2 + 8 + 1 + 17) / 4, (4 + 0.5 + 1 + 1 + 8.5) / 5, 0.],
                                              [(7 + 1 + 15 + 3) / 4, (3 + 1.5 + 1 + 16 + 5.5) / 5,
                                               (8 + 1 + 2 + 2 + 17 + 14) / 6, (4 + 0.5 + 1 + 1 + 1 + 8.5 + 7) / 7, 0.],
                                              [(7 + 1 + 0 + 15 + 3 + 13) / 6, (3 + 1.5 + 1 + 4 + 16 + 5.5 + 6) / 7,
@@ -124,7 +124,7 @@ class TestAggregation(unittest.TestCase):
                                               (1 + 8 + 3 + 1.5 + 1 + 4 + 5.5 + 6 + 4.5 + 12) / 10,
                                               (2 + 2 + 3 + 14 + 1 + 4) / 6, (0.5 + 1 + 1 + 7 + 0.5) / 5, 0.],
                                              [(0 + 5 + 13 + 5) / 4, (1.5 + 1 + 4 + 6 + 4.5) / 5,
-                                              (2 + 2 + 3 + 1 + 4) / 5, np.nan, np.nan]]])
+                                              (2 + 2 + 3 + 1 + 4) / 5, 0, 0]]])
 
         # Check if the calculated standard deviation is equal (upto the desired tolerance of 1e-07) to the ground truth
         np.testing.assert_allclose(sad['cost_volume'].data, aggregated_ground_truth, rtol=1e-07)
@@ -309,12 +309,12 @@ class TestAggregation(unittest.TestCase):
         cbca_obj.cost_volume_aggregation(left, right, sad, **{'valid_pixels': 5, 'no_data': 7})
 
         # Aggregate cost volume ground truth with the cross-based cost aggregation method for the stereo image
-        aggregated_ground_truth = np.array([[[np.nan, (66. + 63 + 66 + 63) / 4, 0.],
+        aggregated_ground_truth = np.array([[[0, (66. + 63 + 66 + 63) / 4, 0.],
                                              [55., (66 + 63 + 52 + 66 + 63 + 52) / 6, 0.],
-                                             [55., (63 + 63 + 52 + 52) / 4, np.nan]],
-                                            [[np.nan, (66. + 63 + 66 + 63) / 4, 0.],
+                                             [55., (63 + 63 + 52 + 52) / 4, 0]],
+                                            [[0, (66. + 63 + 66 + 63) / 4, 0.],
                                              [55., (66 + 63 + 52 + 66 + 63 + 52) / 6, 0.],
-                                             [55., (63 + 63 + 52 + 52) / 4, np.nan]]])
+                                             [55., (63 + 63 + 52 + 52) / 4, 0]]])
 
         # Check if the calculated aggregated cost volume is equal (upto the desired tolerance of 1e-07)
         # to the ground truth
