@@ -269,7 +269,7 @@ class TestDisparity(unittest.TestCase):
         pandora_machine_fast = PandoraMachine()
         cfg = pandora.json_checker.update_conf(default_cfg, fast_cfg)
         left, right_fast = \
-            pandora.run(pandora_machine_fast, pandora_left, pandora_right, -60, 0, cfg) # pylint: disable=unused-variable
+            pandora.run(pandora_machine_fast, pandora_left, pandora_right, -60, 0, cfg['pipeline']) # pylint: disable=unused-variable
 
 
         acc_cfg = {
@@ -296,7 +296,7 @@ class TestDisparity(unittest.TestCase):
 
         pandora_machine_acc = PandoraMachine()
         cfg = pandora.json_checker.update_conf(default_cfg, acc_cfg)
-        left, right_acc = pandora.run(pandora_machine_acc, pandora_left, pandora_right, -60, 0, cfg)
+        left, right_acc = pandora.run(pandora_machine_acc, pandora_left, pandora_right, -60, 0, cfg['pipeline'])
         # Check if the calculated disparity map in fast mode is equal to the disparity map in accurate mode
         np.testing.assert_array_equal(right_fast['disparity_map'].data, right_acc['disparity_map'].data)
 

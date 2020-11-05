@@ -225,12 +225,12 @@ def setup_logging(path='logging.json', default_level=logging.WARNING, ):
     :param default_level: default level
     :type default_level: logging level
     """
-    if os.path.exists(path):
+    if os.path.exists( path):
         with open(path, 'rt') as file_:
-            config = json.load(file_)
+            config = json.load( file_)
         logging.config.dictConfig(config)
     else:
-        logging.basicConfig(level=default_level)
+        logging.basicConfig(level = default_level)
 
 
 if __name__ == '__main__':

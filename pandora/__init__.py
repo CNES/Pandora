@@ -34,7 +34,7 @@ from pkg_resources import iter_entry_points
 from . import aggregation
 from . import common
 from . import disparity
-from . import filter as filtering
+from . import filter #pylint:disable=redefined-builtin
 from . import optimization
 from . import refinement
 from . import stereo
@@ -96,7 +96,7 @@ def run(pandora_machine: PandoraMachine, img_left: xr.Dataset, img_right: xr.Dat
     # Trigger the machine step by step
     # Warning: first element of cfg dictionary is not a transition. It contains information about the way to
     # compute right disparity map.
-    for elem in list(cfg['pipeline'])[1:]:
+    for elem in list(cfg)[1:]:
         pandora_machine.run(elem, cfg)
 
     # Stop the machine which returns to its initial state
@@ -169,7 +169,8 @@ def main(cfg_path: str, output: str, verbose: bool) -> None:
     disp_max_right = read_disp(cfg['input']['disp_max_right'])
 
     # Run the Pandora pipeline
-    left, right = run(pandora_machine, img_left, img_right, disp_min, disp_max, cfg, disp_min_right, disp_max_right)
+    left, right = run(pandora_machine, img_left, img_right, disp_min, disp_max, cfg['pipeline'], disp_min_right,
+                      disp_max_right)
 
     # Save the left and right DataArray in tiff files
     common.save_results(left, right, output)
