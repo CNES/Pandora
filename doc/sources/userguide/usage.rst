@@ -110,6 +110,14 @@ Input parameters
 +------------------+-----------------------------------------------------------+---------------+---------------+----------+
 | *disp_max_right* | Path to the maximal disparity grid of the right image     | string        | "none"        | No       |
 +------------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *left_classif*   | path to the left classification map                       | string        | "none"        | No       |
++------------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *right_classif*  | path to the right classification map                      | string        | "none"        | No       |
++------------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *left_segm*      | path to the left segmentation map                         | string        | "none"        | No       |
++------------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *right_segm*     | path to the right segmentation map                        | string        | "none"        | No       |
++------------------+-----------------------------------------------------------+---------------+---------------+----------+
 
 .. note::
     - Parameters *disp_min* and *disp_max* can be the disparity range (type int) or the path to the grids
