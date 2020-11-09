@@ -1,3 +1,4 @@
+#pylint:disable=too-many-arguments
 #!/usr/bin/env python
 # coding: utf8
 #
@@ -28,12 +29,11 @@ from typing import Dict, Union
 
 import numpy as np
 import xarray as xr
-from json_checker import Checker, Or, And
+from json_checker import Checker, And
 from transitions import Machine
 from transitions import MachineError
 
 from pandora import aggregation
-from pandora import common
 from pandora import disparity
 from pandora import filter # pylint: disable=redefined-builtin
 from pandora import optimization
@@ -57,7 +57,7 @@ class PandoraMachine(Machine):
         {'trigger': 'filter', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'filter_run'},
         {'trigger': 'refinement', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'refinement_run'},
         {'trigger': 'validation', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'validation_run'},
-        {'trigger': 'resize', 'source': 'disp_map', 'dest': 'resized_disparity', 'after': 'resize_run'}
+        {'trigger': 'resize', 'source': 'disp_map', 'dest': 'resized_disparity', 'after': 'resize_run'},
     ]
 
     _transitions_check = [
@@ -69,7 +69,6 @@ class PandoraMachine(Machine):
         {'trigger': 'filter', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'filter_check_conf'},
         {'trigger': 'refinement', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'refinement_check_conf'},
         {'trigger': 'validation', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'validation_check_conf'},
-        {'trigger': 'resize', 'source': 'disp_map', 'dest': 'resized_disparity', 'after': 'resize_check_conf'}
     ]
 
     def __init__(self, left_img: xr.Dataset = None, right_img: xr.Dataset = None,
@@ -121,7 +120,7 @@ class PandoraMachine(Machine):
         # Usefull during the running steps to choose if we must compute left and right objects.
         self.right_disp_map = 'none'
         # Define avalaible states
-        states_ = ['begin', 'cost_volume', 'disp_map', 'resized_disparity']
+        states_ = ['begin', 'cost_volume', 'disp_map']
 
         # Initiliaze a machine without any transition
         Machine.__init__(self, states=states_, initial='begin', transitions=None, auto_transitions=False)
@@ -274,23 +273,6 @@ class PandoraMachine(Machine):
                 interpolate_.interpolated_disparity(self.left_disparity)
                 interpolate_.interpolated_disparity(self.right_disparity)
 
-    def resize_run(self, cfg: Dict[str, dict], input_step: str) -> None:
-        """
-         Resize left disparity map
-        :param cfg: pipeline configuration
-        :type  cfg: dict
-        :param input_step: step to trigger
-        :type input_step: str
-        :return: None
-        """
-        logging.info('Resize disparity map...')
-        if self.right_disp_map == 'none':
-            self.left_disparity = common.resize(self.left_disparity, cfg[input_step]['border_disparity'])
-
-        else:
-            self.left_disparity = common.resize(self.left_disparity, cfg[input_step]['border_disparity'])
-            self.right_disparity = common.resize(self.right_disparity, cfg[input_step]['border_disparity'])
-
     def run_prepare(self, cfg: Dict[str, dict], left_img: xr.Dataset, right_img: xr.Dataset,
                     disp_min: Union[int, np.ndarray],
                     disp_max: Union[int, np.ndarray], right_disp_min: Union[None, int, np.ndarray] = None,
@@ -314,9 +296,9 @@ class PandoraMachine(Machine):
         :param disp_max: maximal disparity
         :type disp_max: int or np.ndarray
         :param right_disp_min: minimal disparity of the right image
-        :type right_disp_min: None, int or np.ndarray
+        :type right_disp_min: None or int
         :param right_disp_max: maximal disparity of the right image
-        :type right_disp_max: None, int or np.ndarray
+        :type right_disp_max: None or int
         :return: None
         """
 
@@ -492,32 +474,13 @@ class PandoraMachine(Machine):
             raise MachineError('Can t trigger event cross-checking validation  if right_disp_map method equal to '
                                + self.right_disp_map)
 
-    @staticmethod
-    def resize_check_conf(cfg: Dict[str, dict], input_step: str) -> None:
-        """
-        Check the resize configuration
-
-        :param cfg: configuration
-        :type cfg: dict
-        :param input_step: current step
-        :type input_step: string
-        :return: None
-        """
-
-        schema = {
-            'border_disparity': Or(int, float, lambda input: np.isnan(input)),
-        }
-
-        checker = Checker(schema)
-        checker.validate(cfg[input_step])
-
     def check_conf(self, cfg: Dict[str, dict]) -> None:
         """
         Check configuration and transitions
 
         :param cfg: pipeline configuration
         :type  cfg: dict
-        :return: None
+        :return:
         """
 
         # Add transitions to the empty machine.
@@ -570,3 +533,17 @@ class PandoraMachine(Machine):
             if trans['trigger'] not in deleted_triggers:
                 self.remove_transition(trans['trigger'])
                 deleted_triggers.append(trans['trigger'])
+
+    def is_not_last_scale(self, input_step: str, cfg: Dict[str, dict]): #pylint:disable=unused-argument
+        """
+        Check if the current scale is the last scale
+        :param cfg: configuration
+        :type cfg: dict
+        :param input_step: current step
+        :type input_step: string
+        :return: boolean
+        """
+
+        if self.current_scale == 0:
+            return False
+        return True

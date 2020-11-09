@@ -30,9 +30,6 @@
     "validation": {
       "validation_method": "cross_checking",
       "right_left_mode": "accurate"
-    },
-    "resize": {
-      "border_disparity": -9999
     }
   }
 }

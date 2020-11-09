@@ -302,7 +302,8 @@ class TestAggregation(unittest.TestCase):
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
         sad = stereo_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
         stereo_matcher.cv_masked(left, right, sad, -1, 1)
-
+        # The cost volume has the original image size and the window is >1, we compare without the marge
+        offset = sad.attrs['offset_row_col']
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                       'cbca_intensity': 5., 'cbca_distance': 3})
 
@@ -318,7 +319,8 @@ class TestAggregation(unittest.TestCase):
 
         # Check if the calculated aggregated cost volume is equal (upto the desired tolerance of 1e-07)
         # to the ground truth
-        np.testing.assert_allclose(sad['cost_volume'].data, aggregated_ground_truth, rtol=1e-07)
+        np.testing.assert_allclose(sad['cost_volume'].data[offset: -offset, offset: -offset],
+                                   aggregated_ground_truth, rtol=1e-07)
 
     @staticmethod
     def test_computes_cross_support():
@@ -515,7 +517,7 @@ class TestAggregation(unittest.TestCase):
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                       'cbca_intensity': 5., 'cbca_distance': 3})
-        cross_left, cross_right = cbca_obj.computes_cross_supports(left, right, sad) # pylint: disable=unused-variable
+        cross_left, cross_right = cbca_obj.computes_cross_supports(left, right, sad)  # pylint: disable=unused-variable
 
         # Cross support region top arm ground truth for the right shifted image
         top_arm = np.array([[0, 0, 0, 0],

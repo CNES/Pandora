@@ -209,9 +209,10 @@ class TestDisparity(unittest.TestCase):
         # Compute the right disparity map
         disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
         disp_r = disparity_.approximate_right_disparity(cv, self.right)
-
+        # The disparity map has the original image size and the window is >1, we compare without the marge
+        offset = cv.attrs['offset_row_col']
         # Check if the calculated right disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(disp_r['disparity_map'].data, gt_disp)
+        np.testing.assert_array_equal(disp_r['disparity_map'].data[offset: -offset, offset: -offset], gt_disp)
 
     def test_right_disparity_subpixel(self):
         """
@@ -228,9 +229,10 @@ class TestDisparity(unittest.TestCase):
         # Compute the right disparity map
         disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
         disp_r = disparity_.approximate_right_disparity(cv, self.right)
-
+        # The disparity map has the original image size and the window is >1, we compare without the marge
+        offset = cv.attrs['offset_row_col']
         # Check if the calculated right disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(disp_r['disparity_map'].data, gt_disp)
+        np.testing.assert_array_equal(disp_r['disparity_map'].data[offset: -offset, offset: -offset], gt_disp)
 
     @staticmethod
     def test_right_disparity_comparaison():
@@ -763,6 +765,8 @@ class TestDisparity(unittest.TestCase):
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
         disparity_.validity_mask(dataset, left, right, cv)
+        # The disparity the original image size and the window is >1, we compare without the marge
+        offset = cv.attrs['offset_row_col']
 
         # Validity mask ground truth
         gt_mask = np.array(
@@ -778,7 +782,7 @@ class TestDisparity(unittest.TestCase):
             dtype=np.uint16)
 
         # Check if the calculated validity mask is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
+        np.testing.assert_array_equal(dataset['validity_mask'].data[offset: -offset, offset: -offset], gt_mask)
 
         # ---------------------- Test with positive and negative disparity range on flag 1 ----------------------
         # Masks convention
@@ -808,6 +812,8 @@ class TestDisparity(unittest.TestCase):
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
         disparity_.validity_mask(dataset, left, right, cv)
+        # The disparity the original image size and the window is >1, we compare without the marge
+        offset = cv.attrs['offset_row_col']
 
         # Validity mask ground truth
         gt_mask = np.array([[cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
@@ -836,12 +842,9 @@ class TestDisparity(unittest.TestCase):
                              cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                              cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
                              cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
-                            [cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE +
-                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                            [cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                              cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                              cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                              cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
@@ -887,7 +890,7 @@ class TestDisparity(unittest.TestCase):
                            dtype=np.uint8)
 
         # Check if the calculated validity mask is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
+        np.testing.assert_array_equal(dataset['validity_mask'].data[offset: -offset, offset: -offset], gt_mask)
 
 
 def setup_logging(path='logging.json', default_level=logging.WARNING, ):

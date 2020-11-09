@@ -113,9 +113,6 @@ class TestPandora(unittest.TestCase):
                     'validation': {
                         'validation_method': 'cross_checking',
                         'right_left_mode': 'accurate'
-                    },
-                    'resize': {
-                        'border_disparity': -9999
                     }
                 }
         }
@@ -191,9 +188,6 @@ class TestPandora(unittest.TestCase):
                 'validation': {
                     'validation_method': 'cross_checking',
                     'right_left_mode': 'accurate'
-                },
-                'resize': {
-                    'border_disparity': -9999
                 }
             }
         }
@@ -289,9 +283,6 @@ class TestPandora(unittest.TestCase):
                 'validation': {
                     'validation_method': 'cross_checking',
                     'right_left_mode': 'accurate'
-                },
-                'resize': {
-                    'border_disparity': -9999
                 }
             }
         }
@@ -357,9 +348,6 @@ class TestPandora(unittest.TestCase):
                     },
                     'validation': {
                         'validation_method': 'cross_checking'
-                    },
-                    'resize': {
-                        'border_disparity': -9999
                     }
                 }
         }

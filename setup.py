@@ -58,7 +58,7 @@ def readme():
 
 
 setup(name='pandora',
-      version='row.col.z',
+      version='x.y.z',
       description='Pandora is a stereo matching framework that helps emulate state of the art algorithms',
       long_description=readme(),
       long_description_content_type='text/markdown',
