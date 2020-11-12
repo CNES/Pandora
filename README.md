@@ -88,6 +88,10 @@ Mandatory fields are :
 Optional fields are :
    - `left_mask` : Path to the left mask
    - `right_mask` : Path to the right mask
+   - `left_classif` : Path to the left classification map
+   - `right_classif` : Path to the right classification map
+   - `left_segm` : Path to the left segmentation map
+   - `right_segm` : Path to the right segmentation map
 
 
 

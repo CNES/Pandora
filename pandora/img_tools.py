@@ -33,7 +33,8 @@ import xarray as xr
 from scipy.ndimage.interpolation import zoom
 
 
-def read_img(img: str, no_data: float, cfg: Dict, mask: xr.Dataset = None) -> xr.Dataset:
+def read_img(img: str, no_data: float, cfg: Dict, mask: str = None, classif: str = None, segm: str = None) ->\
+        xr.Dataset:
     """
     Read image and mask, and return the corresponding xarray.DataSet
 
@@ -45,6 +46,11 @@ def read_img(img: str, no_data: float, cfg: Dict, mask: xr.Dataset = None) -> xr
     :param cfg: dict
     :param mask: Path to the mask (optional)
     :type mask: string
+    :param classif: Path to the classif (optional)
+    :type classif: string
+    :param segm: Path to the mask (optional)
+    :type segm: string
+    :return: xarray.DataSet
     :return: xarray.DataSet
     :rtype:
         xarray.DataSet containing the variables :
@@ -60,6 +66,19 @@ def read_img(img: str, no_data: float, cfg: Dict, mask: xr.Dataset = None) -> xr
     dataset.attrs = {'no_data_img': no_data,
                      'valid_pixels': cfg['valid_pixels'],
                      'no_data_mask': cfg['no_data']}
+
+    if classif is not None:
+        input_classif = rasterio.open(classif).read(1)
+        dataset['classif'] = xr.DataArray(np.full((data.shape[0], data.shape[1]), 0).astype(np.int16),
+                                          dims=['row', 'col'])
+        dataset['classif'].data = input_classif
+
+    if segm is not None:
+        input_segm = rasterio.open(segm).read(1)
+        dataset['segm'] = xr.DataArray(np.full((data.shape[0], data.shape[1]), 0).astype(np.int16),
+                                       dims=['row', 'col'])
+        dataset['segm'].data = input_segm
+
     # If there is no mask, and no data in the images, do not create the mask to minimize calculation time
     no_data_pixels = np.where(data == no_data)
     if mask is None and no_data_pixels[0].size == 0:

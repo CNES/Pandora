@@ -158,9 +158,11 @@ def main(cfg_path: str, output: str, verbose: bool) -> None:
 
     # Read images and masks
     img_left = read_img(cfg['input']['img_left'], no_data=cfg['image']['nodata1'], cfg=cfg['image'],
-                        mask=cfg['input']['left_mask'])
+                        mask=cfg['input']['left_mask'], classif=cfg['input']['left_classif'],
+                       segm=cfg['input']['left_segm'])
     img_right = read_img(cfg['input']['img_right'], no_data=cfg['image']['nodata2'], cfg=cfg['image'],
-                         mask=cfg['input']['right_mask'])
+                         mask=cfg['input']['right_mask'], classif=cfg['input']['right_classif'],
+                       segm=cfg['input']['right_segm'])
 
     # Read range of disparities
     disp_min = read_disp(cfg['input']['disp_min'])

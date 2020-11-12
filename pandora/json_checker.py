@@ -380,7 +380,12 @@ input_configuration_schema = {
     'img_left': And(str, rasterio_can_open_mandatory),
     'img_right': And(str, rasterio_can_open_mandatory),
     'left_mask': And(Or(str, lambda input: input is None), rasterio_can_open),
-    'right_mask': And(Or(str, lambda input: input is None), rasterio_can_open)
+    'right_mask': And(Or(str, lambda input: input is None), rasterio_can_open),
+    "left_classif": And(Or(str, lambda x: x is None), rasterio_can_open),
+    "right_classif": And(Or(str, lambda x: x is None), rasterio_can_open),
+    "left_segm": And(Or(str, lambda x: x is None), rasterio_can_open),
+    "right_segm": And(Or(str, lambda x: x is None), rasterio_can_open)
+
 }
 
 # Input configuration when disparity is integer
@@ -427,6 +432,10 @@ default_short_configuration_input = {
     'input': {
         'left_mask': None,
         'right_mask': None,
+        "left_classif": None,
+        "right_classif": None,
+        "left_segm": None,
+        "right_segm": None,
         'disp_min_right': None,
         'disp_max_right': None
     }

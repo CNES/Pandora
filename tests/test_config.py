@@ -89,6 +89,60 @@ class TestConfig(unittest.TestCase):
                 (cfg_return['input']['disp_max_right'] != 'tests/pandora/disp_max_grid.tif'):
             raise AssertionError
 
+        # Test configuration with left disparity grids and right disparity = none and classif and segm = none
+        cfg = {
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif'
+            }
+        }
+        cfg_return = JSON_checker.check_input_section(cfg)
+        if (cfg_return['input']['left_classif'] is not None) and (
+                cfg_return['input']['left_segm'] is not None) and (
+                cfg_return['input']['right_classif'] is not None) and (
+                cfg_return['input']['right_segm'] is not None):
+            raise AssertionError
+
+        # Test configuration with left disparity grids and right disparity = none and classif_left filled
+        #           and segm filled with artificial data from left and right images
+        cfg = {
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif',
+                'left_classif': 'tests/pandora/right.png',
+                'left_segm': 'tests/pandora/left.png'
+            }
+        }
+        cfg_return = JSON_checker.check_input_section(cfg)
+        if (cfg_return['input']['left_classif'] != 'tests/pandora/right.png') and (
+                cfg_return['input']['left_segm'] != 'tests/pandora/left.png') and (
+                cfg_return['input']['right_classif'] is not None) and (
+                cfg_return['input']['right_segm'] is not None):
+            raise AssertionError
+
+        # Test configuration with left disparity grids and right disparity = none and right filled
+        #           and segm filled with artificial data from left and right images
+        cfg = {
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif',
+                'right_classif': 'tests/pandora/right.png',
+                'right_segm': 'tests/pandora/left.png'
+            }
+        }
+        cfg_return = JSON_checker.check_input_section(cfg)
+        if (cfg_return['input']['right_classif'] != 'tests/pandora/right.png') and (
+                cfg_return['input']['right_segm'] != 'tests/pandora/left.png') and (
+                cfg_return['input']['left_classif'] is not None) and (
+                cfg_return['input']['left_segm'] is not None):
+            raise AssertionError
+
     def test_check_input_section_with_error(self):
         """
         Test the method check_input_section that must raise an error
@@ -197,6 +251,10 @@ class TestConfig(unittest.TestCase):
             'input': {
                 'left_mask': None,
                 'right_mask': None,
+                'left_classif': None,
+                'left_segm': None,
+                'right_classif': None,
+                'right_segm': None,
                 'disp_min_right': None,
                 'disp_max_right': None,
                 'img_left': 'tests/pandora/left.png',
@@ -256,6 +314,10 @@ class TestConfig(unittest.TestCase):
             'input': {
                 'left_mask': None,
                 'right_mask': None,
+                'left_classif': None,
+                'left_segm': None,
+                'right_classif': None,
+                'right_segm': None,
                 'disp_min_right': 'tests/pandora/disp_min_grid.tif',
                 'disp_max_right': 'tests/pandora/disp_max_grid.tif',
                 'img_left': 'tests/pandora/left.png',
@@ -355,6 +417,10 @@ class TestConfig(unittest.TestCase):
             'input': {
                 'left_mask': None,
                 'right_mask': None,
+                'left_classif': None,
+                'left_segm': None,
+                'right_classif': None,
+                'right_segm': None,
                 'disp_min_right': 'tests/pandora/disp_min_grid.tif',
                 'disp_max_right': 'tests/pandora/disp_max_grid.tif',
                 'img_left': 'tests/pandora/left.png',

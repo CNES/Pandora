@@ -2,9 +2,14 @@
 
 ## Unreleased
 
+### Added
+
+- Classification and segmentation maps as input. [#126]
+
 ### Fixed
 
 - Correct stereo methods in case the images have nan values. [#150]
+
 
 ## 0.3.0 (October 2020)
 
