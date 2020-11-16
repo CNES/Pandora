@@ -321,7 +321,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
     #           10 | 5  | 3
     #            2 | 10 | 5
     #            5 | 3  | 1
-    r_mean = np.nancumsum(r_mean, axis=0)
+    r_mean = np.cumsum(r_mean, axis=0)
     # r_mean :   0 | 0  | 0
     #           10 | 5  | 3
     #           12 | 15 | 8
@@ -332,7 +332,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
     # Compute the cumulative sum of the elements along the row axis
     r_mean = np.c_[np.zeros(ny_ - (win_size - 1)), r_mean]
     # r_mean :   0 | 17 | 18 | 9
-    r_mean = np.nancumsum(r_mean, axis=1)
+    r_mean = np.cumsum(r_mean, axis=1)
     # r_mean :   0 | 17 | 35 | 44
     r_mean = r_mean[:, win_size:] - r_mean[:, :-win_size]
     # r_mean : 44
@@ -362,7 +362,7 @@ def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np
     # Check if the window is inside the image, and compute the mean
     if check_inside_image(img, begin_window[0], begin_window[1]) and \
             check_inside_image(img, end_window[0], end_window[1]):
-        return np.nanmean(img['im'][begin_window[1]:end_window[1] + 1, begin_window[0]:end_window[0] + 1],
+        return np.mean(img['im'][begin_window[1]:end_window[1] + 1, begin_window[0]:end_window[0] + 1],
                        dtype=np.float32)
 
     logging.error('The window is outside the image')

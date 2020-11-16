@@ -116,11 +116,11 @@ class SadSsd(stereo.AbstractStereo):
         img_right_shift = shift_right_img(img_right, self._subpix)
 
         # Computes the maximal cost of the cost volume
-        min_left = np.nanmin(img_left['im'].data)
-        max_left = np.nanmax(img_left['im'].data)
+        min_left = np.amin(img_left['im'].data)
+        max_left = np.amax(img_left['im'].data)
 
-        min_right = np.nanmin(img_right['im'].data)
-        max_right = np.nanmax(img_right['im'].data)
+        min_right = np.amin(img_right['im'].data)
+        max_right = np.amax(img_right['im'].data)
         cmax = None
 
         if self._method == 'sad':
@@ -263,5 +263,5 @@ class SadSsd(stereo.AbstractStereo):
         strides_windows = (str_row, str_col, str_disp, str_col, str_row)
         aggregation_window = np.lib.stride_tricks.as_strided(cost_volume, shape_windows, strides_windows,
                                                              writeable=False)
-        cost_volume = np.nansum(aggregation_window, (0, 1))
+        cost_volume = np.sum(aggregation_window, (0, 1))
         return cost_volume
