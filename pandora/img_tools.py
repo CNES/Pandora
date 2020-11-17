@@ -104,12 +104,13 @@ def read_img(img: str, no_data: float, cfg: Dict, mask: str = None, classif: str
     if mask is not None:
         input_mask = rasterio.open(mask).read(1)
         # Masks invalid pixels
-        # All pixels that are not no_data and valid_pixels are considered as invalid pixels
-        dataset['msk'].data[np.where(input_mask > 0)] = int(cfg['valid_pixels']) + int(cfg['no_data']) + 1
+        # All pixels that are not valid_pixels, on the input mask, are considered as invalid pixels
+        dataset['msk'].data[np.where(input_mask != int(cfg['valid_pixels']))] = \
+            int(cfg['valid_pixels']) + int(cfg['no_data']) + 1
 
     # Masks no_data pixels
     # If a pixel is invalid due to the input mask, and it is also no_data, then the value of this pixel in the
-    # generaceted mask will be = no_data
+    # generated mask will be = no_data
     dataset['msk'].data[no_data_pixels] = int(cfg['no_data'])
 
     return dataset
