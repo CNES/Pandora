@@ -59,6 +59,19 @@ def read_img(img: str, no_data: float, cfg: Dict, mask: str = None, classif: str
     """
     img_ds = rasterio.open(img)
     data = img_ds.read(1)
+
+    if np.isnan(no_data):
+        no_data_pixels = np.where(np.isnan(data))
+    else:
+        no_data_pixels = np.where(data == no_data)
+
+    # We accept nan values as no data on input image but to not disturb cost volume processing as stereo computation
+    # step,nan as no_data must be converted. We choose -9999 (can be another value). No_data position aren't erased
+    # because stored in 'msk'
+    if no_data_pixels[0].size != 0 and np.isnan(no_data):
+        data[no_data_pixels] = -9999
+        no_data = -9999
+
     dataset = xr.Dataset({'im': (['row', 'col'], data.astype(np.float32))},
                          coords={'row': np.arange(data.shape[0]),
                                  'col': np.arange(data.shape[1])})
@@ -80,7 +93,6 @@ def read_img(img: str, no_data: float, cfg: Dict, mask: str = None, classif: str
         dataset['segm'].data = input_segm
 
     # If there is no mask, and no data in the images, do not create the mask to minimize calculation time
-    no_data_pixels = np.where(data == no_data)
     if mask is None and no_data_pixels[0].size == 0:
         return dataset
 

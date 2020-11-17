@@ -194,6 +194,52 @@ class TestImgTools(unittest.TestCase):
         np.testing.assert_array_equal(dst_left['im'].data, left_img)
 
     @staticmethod
+    def test_read_img_with_nan():
+        """
+        Test the method read_img
+
+        """
+        # Build the default configuration
+        default_cfg = pandora.json_checker.default_short_configuration
+        # left_img = array([[ 0.,  1.,  2.,  3.,  0.],
+        #                  [ 5.,  6.,  7.,  8.,  9.],
+        #                  [ 0.,  0., 23.,  5.,  6.],
+        #                  [12.,  5.,  6.,  3.,  0.]], dtype=float32)
+
+        # Convention 0 is a valid pixel, everything else is considered invalid
+        # mask_left = array([[  0,   0,   1,   2,   0],
+        #                   [  0,   0,   0,   0,   1],
+        #                   [  3,   5,   0,   0,   1],
+        #                   [  0,   0, 565,   0,   0]])
+
+        # Default configuration :
+        # cfg['image']['nodata1'] = 0
+        # cfg['image']['valid_pixels'] = 0
+        # cfg['image']['no_data'] = 1
+        # cfg['image']['invalid_pixels'] = 2
+
+        # Computes the dataset image and use nan as no data,not cfg value
+        dst_left = img_tools.read_img(img='tests/image/left_img_nan.tif', no_data=np.nan,
+                                      cfg=default_cfg['image'], mask='tests/image/mask_left.tif')
+
+        # Mask ground truth
+        mask_gt = np.array([[1, 0, 2, 2, 1],
+                            [0, 0, 0, 0, 2],
+                            [1, 1, 0, 0, 2],
+                            [0, 0, 2, 0, 1]])
+
+        # Check if the calculated mask is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(dst_left['msk'].data, mask_gt)
+
+        left_img = np.array([[-9999.0, 1., 2., 3., -9999.0],
+                             [5., 6., 7., 8., 9.],
+                             [-9999.0, -9999.0, 23., 5., 6.],
+                             [12., 5., 6., 3., -9999.0]], dtype=np.float32)
+
+        # Check the image
+        np.testing.assert_array_equal(dst_left['im'].data, left_img)
+
+    @staticmethod
     def test_read_img_classif():
         """
         Test the method read_img for the classif
