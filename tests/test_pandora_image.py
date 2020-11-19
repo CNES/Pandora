@@ -23,9 +23,9 @@
 This module contains functions to test all the methods in img_tools module.
 """
 
-import json
 import logging
 import logging.config
+import json
 import os
 import unittest
 
@@ -166,15 +166,9 @@ class TestImgTools(unittest.TestCase):
         #                   [  3,   5,   0,   0,   1],
         #                   [  0,   0, 565,   0,   0]])
 
-        # Default configuration :
-        # cfg['image']['nodata1'] = 0
-        # cfg['image']['valid_pixels'] = 0
-        # cfg['image']['no_data'] = 1
-        # cfg['image']['invalid_pixels'] = 2
-
         # Computes the dataset image
-        dst_left = img_tools.read_img(img='tests/image/left_img.tif', no_data=default_cfg['image']['nodata1'],
-                                      cfg=default_cfg['image'], mask='tests/image/mask_left.tif')
+        dst_left = img_tools.read_img(img='tests/image/left_img.tif', no_data=default_cfg['image']['nodata1']
+                                      , mask='tests/image/mask_left.tif')
 
         # Mask ground truth
         mask_gt = np.array([[1, 0, 2, 2, 1],
@@ -199,8 +193,6 @@ class TestImgTools(unittest.TestCase):
         Test the method read_img
 
         """
-        # Build the default configuration
-        default_cfg = pandora.json_checker.default_short_configuration
         # left_img = array([[ 0.,  1.,  2.,  3.,  0.],
         #                  [ 5.,  6.,  7.,  8.,  9.],
         #                  [ 0.,  0., 23.,  5.,  6.],
@@ -212,15 +204,9 @@ class TestImgTools(unittest.TestCase):
         #                   [  3,   5,   0,   0,   1],
         #                   [  0,   0, 565,   0,   0]])
 
-        # Default configuration :
-        # cfg['image']['nodata1'] = 0
-        # cfg['image']['valid_pixels'] = 0
-        # cfg['image']['no_data'] = 1
-        # cfg['image']['invalid_pixels'] = 2
-
         # Computes the dataset image and use nan as no data,not cfg value
         dst_left = img_tools.read_img(img='tests/image/left_img_nan.tif', no_data=np.nan,
-                                      cfg=default_cfg['image'], mask='tests/image/mask_left.tif')
+                                      mask='tests/image/mask_left.tif')
 
         # Mask ground truth
         mask_gt = np.array([[1, 0, 2, 2, 1],
@@ -250,7 +236,7 @@ class TestImgTools(unittest.TestCase):
 
         # Computes the dataset image
         dst_left = img_tools.read_img(img='tests/image/left_img.tif', no_data=default_cfg['image']['nodata1'],
-                                      cfg=default_cfg['image'], classif='tests/image/mask_left.tif')
+                                      classif='tests/image/mask_left.tif')
 
         # Classif ground truth
         classif_gt = np.array([[0, 0, 1, 2, 0],
@@ -280,7 +266,7 @@ class TestImgTools(unittest.TestCase):
 
         # Computes the dataset image
         dst_left = img_tools.read_img(img='tests/image/left_img.tif', no_data=default_cfg['image']['nodata1'],
-                                      cfg=default_cfg['image'], segm='tests/image/mask_left.tif')
+                                      segm='tests/image/mask_left.tif')
 
         # Segmentation ground truth
         segm_gt = np.array([[0, 0, 1, 2, 0],

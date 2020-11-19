@@ -1,6 +1,36 @@
 Pandora's data
 ==============
 
+Images
+-----------
+
+Pandora reads input images before stereo computation and creates two dataset for left and right
+images containing data's image, data's mask and additionnal information.
+
+Example of an image dataset
+
+::
+
+    Dimensions:  (col: 450, row: 375)
+    Coordinates:
+      * col      (col) int64 0 1 2 3 4 5 6 7 8 ... 442 443 444 445 446 447 448 449
+      * row      (row) int64 0 1 2 3 4 5 6 7 8 ... 367 368 369 370 371 372 373 374
+    Data variables:
+        im       (row, col) float32 88.0 85.0 84.0 83.0 ... 176.0 180.0 165.0 172.0
+        msk      (row, col) int16 0 0 0 0 0 0 0 0 0 0 0 0 ... 0 0 0 0 0 0 0 0 0 0 0
+    Attributes:
+        no_data_img:   0
+        valid_pixels:  0
+        no_data_mask:  1
+
+.. note::
+    This example comes from a dataset created by Pandora's reading function. Dataset attributes
+    'valid_pixels' and 'no_data_mask' cannot be modified with this function. Its indicate the msk
+    data convention.
+    For API user who wants to create own dataset, without using Pandora's reading function, it is
+    possible to declare its own mask convention with these attributes.
+
+
 Cost volume
 -----------
 

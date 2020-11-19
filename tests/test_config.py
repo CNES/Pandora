@@ -244,9 +244,7 @@ class TestConfig(unittest.TestCase):
         cfg_gt = {
             'image': {
                 'nodata1': 0,
-                'nodata2': 0,
-                'valid_pixels': 0,
-                'no_data': 1
+                'nodata2': 0
             },
             'input': {
                 'left_mask': None,
@@ -307,9 +305,7 @@ class TestConfig(unittest.TestCase):
         cfg_gt = {
             'image': {
                 'nodata1': 0,
-                'nodata2': 0,
-                'valid_pixels': 0,
-                'no_data': 1
+                'nodata2': 0
             },
             'input': {
                 'left_mask': None,
@@ -410,9 +406,7 @@ class TestConfig(unittest.TestCase):
         cfg_gt = {
             'image': {
                 'nodata1': 0,
-                'nodata2': 0,
-                'valid_pixels': 0,
-                'no_data': 1
+                'nodata2': 0
             },
             'input': {
                 'left_mask': None,

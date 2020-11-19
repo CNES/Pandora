@@ -242,8 +242,8 @@ class TestDisparity(unittest.TestCase):
         # Build the default configuration
         default_cfg = pandora.json_checker.default_short_configuration
 
-        pandora_left = read_img('tests/pandora/left.png', no_data=np.nan, cfg=default_cfg['image'], mask=None)
-        pandora_right = read_img('tests/pandora/right.png', no_data=np.nan, cfg=default_cfg['image'], mask=None)
+        pandora_left = read_img('tests/pandora/left.png', no_data=np.nan, mask=None)
+        pandora_right = read_img('tests/pandora/right.png', no_data=np.nan, mask=None)
 
         fast_cfg = {
             'pipeline': {

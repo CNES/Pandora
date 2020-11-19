@@ -414,17 +414,13 @@ input_configuration_schema_left_disparity_grids_right_grids = {
 
 image_configuration_schema = {
     'nodata1': Or(int, lambda input: np.isnan(input)),
-    'nodata2': Or(int, lambda input: np.isnan(input)),
-    'valid_pixels': And(int, lambda x: x >= 0),
-    'no_data': And(int,lambda x: x >= 0)
+    'nodata2': Or(int, lambda input: np.isnan(input))
 }
 
 default_short_configuration_image = {
     'image': {
         'nodata1': 0,
-        'nodata2': 0,
-        'valid_pixels': 0,
-        'no_data': 1
+        'nodata2': 0
     }
 }
 

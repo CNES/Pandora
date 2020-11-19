@@ -50,11 +50,9 @@ class TestPandora(unittest.TestCase):
         Method called to prepare the test fixture
 
         """
-        # Build the default configuration
-        default_cfg = pandora.json_checker.default_short_configuration
 
-        self.left = read_img('tests/pandora/left.png', no_data=np.nan, cfg=default_cfg['image'], mask=None)
-        self.right = read_img('tests/pandora/right.png', no_data=np.nan, cfg=default_cfg['image'], mask=None)
+        self.left = read_img('tests/pandora/left.png', no_data=np.nan, mask=None)
+        self.right = read_img('tests/pandora/right.png', no_data=np.nan, mask=None)
         self.disp_left = rasterio.open('tests/pandora/disp_left.tif').read(1)
         self.disp_right = rasterio.open('tests/pandora/disp_right.tif').read(1)
         self.occlusion = rasterio.open('tests/pandora/occlusion.png').read(1)
@@ -303,8 +301,8 @@ class TestPandora(unittest.TestCase):
         # Update the user configuration with default values
         cfg = pandora.json_checker.update_conf(pandora.json_checker.default_short_configuration, user_cfg)
 
-        left_img = read_img('tests/pandora/left.png', no_data=np.nan, cfg=cfg['image'], mask=None)
-        right_img = read_img('tests/pandora/right.png', no_data=np.nan, cfg=cfg['image'], mask=None)
+        left_img = read_img('tests/pandora/left.png', no_data=np.nan, mask=None)
+        right_img = read_img('tests/pandora/right.png', no_data=np.nan, mask=None)
 
         # Run the pandora pipeline on images without modified coordinates
         left_origin, right_origin = pandora.run(pandora_machine, left_img, right_img, -60, 0, cfg['pipeline'])

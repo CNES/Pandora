@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Input masks convention and creation of masks dataset.
+
 ### Added
 
 - Classification and segmentation maps as input. [#126]
