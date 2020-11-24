@@ -4,7 +4,7 @@ Pandora's data
 Images
 -----------
 
-Pandora reads input images before stereo computation and creates two dataset for left and right
+Pandora reads input images before stereo computation and creates two datasets for left and right
 images containing data's image, data's mask and additionnal information.
 
 Example of an image dataset
@@ -23,12 +23,21 @@ Example of an image dataset
         valid_pixels:  0
         no_data_mask:  1
 
+Two data variables are created in this dataset:
+
+ * *im*: contains input image data
+ * *msk*: contains input mask data + no_data of input image
+
 .. note::
     This example comes from a dataset created by Pandora's reading function. Dataset attributes
-    'valid_pixels' and 'no_data_mask' cannot be modified with this function. Its indicate the msk
+    *valid_pixels* and *no_data_mask* cannot be modified with this function. Its indicate the *msk*
     data convention.
     For API user who wants to create own dataset, without using Pandora's reading function, it is
-    possible to declare its own mask convention with these attributes.
+    possible to declare its own mask convention with these attributes:
+     * *no_data_img* : value of no_data in input image
+     * *valid_pixels*: value of valid pixels in input mask
+     * *no_data_mask*: value of no_data pixel in input mask
+
 
 
 Cost volume
