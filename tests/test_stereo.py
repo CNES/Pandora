@@ -1,9 +1,4 @@
-<<<<<<< HEAD
 #!/usr/bin/env python
-=======
-# pylint: disable=too-many-lines
-# !/usr/bin/env python
->>>>>>> refactor: non truncated cost volume
 # coding: utf8
 #
 # Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
@@ -27,7 +22,7 @@
 """
 This module contains functions to test the cost volume measure step.
 """
-
+# pylint: disable=too-many-lines
 import json
 import logging
 import logging.config
@@ -90,18 +85,19 @@ class TestStereo(unittest.TestCase):
         np.testing.assert_array_equal(ssd['cost_volume'].sel(disp=0), sd_ground_truth)
 
         # Sum of squared difference pixel-wise ground truth for the images self.left, self.right, with window_size = 5
-        ssd_ground_truth = np.array(([[12., 22.]]))
+        ssd_ground_truth = np.array(([[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                      [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                      [np.nan, np.nan, 12., 22., np.nan, np.nan],
+                                      [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                      [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]]))
 
         # Computes the sd cost for the whole images
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'ssd', 'window_size': 5, 'subpix': 1})
         ssd = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1)
         stereo_matcher.cv_masked(self.left, self.right, ssd, -1, 1)
 
-        # The cost volume has the original image size and the window is >1, we compare without the marge
-        offset = ssd.attrs['offset_row_col']
         # Check if the calculated sd cost is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(ssd['cost_volume'].sel(disp=0)[offset:-offset, offset:-offset], ssd_ground_truth)
-
+        np.testing.assert_array_equal(ssd['cost_volume'].sel(disp=0), ssd_ground_truth)
 
     def test_sad_cost(self):
         """
@@ -123,18 +119,19 @@ class TestStereo(unittest.TestCase):
         np.testing.assert_array_equal(sad['cost_volume'].sel(disp=0), ad_ground_truth)
 
         # Sum of absolute difference pixel-wise ground truth for the images self.left, self.right with window size 5
-        sad_ground_truth = np.array(([[6., 10.]]))
+        sad_ground_truth = np.array(([[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                      [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                      [np.nan, np.nan, 6., 10., np.nan, np.nan],
+                                      [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                      [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]]))
 
         # Computes the ad cost for the whole images
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 5, 'subpix': 1})
         sad = stereo_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1)
         stereo_matcher.cv_masked(self.left, self.right, sad, -1, 1)
-        # The cost volume has the original image size and the window is >1, we compare without the marge
-        offset = sad.attrs['offset_row_col']
 
         # Check if the calculated ad cost is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(sad['cost_volume'].sel(disp=0)[offset: -offset, offset: -offset],
-                                      sad_ground_truth)
+        np.testing.assert_array_equal(sad['cost_volume'].sel(disp=0), sad_ground_truth)
 
     @staticmethod
     def test_census_cost():
@@ -157,30 +154,32 @@ class TestStereo(unittest.TestCase):
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
         # census ground truth for the images left, right, window size = 3 and disp = -1
-        census_ground_truth_d1 = np.array(([np.nan, 3],
-                                           [np.nan, 7]))
+        census_ground_truth_d1 = np.array(([np.nan, np.nan, np.nan, np.nan],
+                                           [np.nan, np.nan, 3, np.nan],
+                                           [np.nan, np.nan, 7, np.nan],
+                                           [np.nan, np.nan, np.nan, np.nan]))
 
         # census ground truth for the images left, right, window size = 3 and disp = 0
-        census_ground_truth_d2 = np.array(([1, 2],
-                                           [2, 0]))
+        census_ground_truth_d2 = np.array(([np.nan, np.nan, np.nan, np.nan],
+                                           [np.nan, 1, 2, np.nan],
+                                           [np.nan, 2, 0, np.nan],
+                                           [np.nan, np.nan, np.nan, np.nan]))
 
         # census ground truth for the images left, right, window size = 3 and disp = 1
-        census_ground_truth_d3 = np.array(([4, np.nan],
-                                           [5, np.nan]))
+        census_ground_truth_d3 = np.array(([np.nan, np.nan, np.nan, np.nan],
+                                           [np.nan, 4, np.nan, np.nan],
+                                           [np.nan, 5, np.nan, np.nan],
+                                           [np.nan, np.nan, np.nan, np.nan]))
 
         # Computes the census transform for the images with window size = 3
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'census', 'window_size': 3, 'subpix': 1})
         census = stereo_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
         stereo_matcher.cv_masked(left, right, census, -1, 1)
-        # The cost volume has the original image size and the window is >1, we compare without the marge
-        offset = census.attrs['offset_row_col']
+
         # Check if the calculated census cost is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(census['cost_volume'].sel(disp=-1)[offset: -offset, offset: -offset],
-                                      census_ground_truth_d1)
-        np.testing.assert_array_equal(census['cost_volume'].sel(disp=0)[offset: -offset, offset: -offset],
-                                      census_ground_truth_d2)
-        np.testing.assert_array_equal(census['cost_volume'].sel(disp=1)[offset: -offset, offset: -offset],
-                                      census_ground_truth_d3)
+        np.testing.assert_array_equal(census['cost_volume'].sel(disp=-1), census_ground_truth_d1)
+        np.testing.assert_array_equal(census['cost_volume'].sel(disp=0), census_ground_truth_d2)
+        np.testing.assert_array_equal(census['cost_volume'].sel(disp=1), census_ground_truth_d3)
 
     def test_point_interval(self):
         """
@@ -234,18 +233,28 @@ class TestStereo(unittest.TestCase):
 
         # Cost Volume ground truth for the stereo image simple_stereo_imgs,
         # with disp_min = -2, disp_max = 1, sad measure and subpixel_offset = 0
-        ground_truth = np.array([[[np.nan, np.nan, 48, 35],
-                                  [np.nan, 40, 43, np.nan]]])
+        ground_truth = np.array([[[np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan]],
+                                 [[np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, 48, 35],
+                                  [np.nan, 40, 43, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan]],
+                                 [[np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan]]
+                                 ])
 
         # Computes the Cost Volume for the stereo image simple_stereo_imgs,
         # with disp_min = -2, disp_max = 1, sad measure, window_size = 3 and subpix = 1
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
         cv = stereo_matcher.compute_cost_volume(left, right, disp_min=-2, disp_max=1)
         stereo_matcher.cv_masked(left, right, cv, -2, 1)
-        # The cost volume has the original image size and the window is >1, we compare without the marge
-        offset = cv.attrs['offset_row_col']
+
         # Check if the calculated mean is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(cv['cost_volume'].data[offset: -offset, offset: -offset], ground_truth)
+        np.testing.assert_array_equal(cv['cost_volume'].data, ground_truth)
 
     def test_confidence_measure(self):
         """
@@ -255,19 +264,21 @@ class TestStereo(unittest.TestCase):
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
 
         # Compute bright standard deviation inside a window of size 3 and create the confidence measure
-        std_bright_ground_truth = np.array([[0., np.sqrt(8 / 9), np.sqrt(10 / 9), np.sqrt(10 / 9)],
-                                            [0., np.sqrt(8 / 9), np.sqrt(10 / 9), np.sqrt(10 / 9)],
-                                            [0., np.sqrt(8 / 9), np.sqrt(92 / 81), np.sqrt(92 / 81)]], dtype=np.float32)
-        std_bright_ground_truth = std_bright_ground_truth.reshape((3, 4, 1))
+        std_bright_ground_truth = np.array([[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                            [np.nan, 0., np.sqrt(8 / 9), np.sqrt(10 / 9), np.sqrt(10 / 9), np.nan],
+                                            [np.nan, 0., np.sqrt(8 / 9), np.sqrt(10 / 9), np.sqrt(10 / 9), np.nan],
+                                            [np.nan, 0., np.sqrt(8 / 9), np.sqrt(92 / 81), np.sqrt(92 / 81), np.nan],
+                                            [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]],
+                                           dtype=np.float32)
+
+        std_bright_ground_truth = std_bright_ground_truth.reshape((5, 6, 1))
 
         # compute with compute_cost_volume
         cv = stereo_matcher.compute_cost_volume(self.left, self.right, disp_min=-2, disp_max=1)
         stereo_matcher.cv_masked(self.left, self.right, cv, -2, 1)
-        # The cost volume has the original image size and the window is >1, we compare without the marge
-        offset = cv.attrs['offset_row_col']
+
         # Check if the calculated confidence_measure is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(cv['confidence_measure'].data[offset: -offset, offset: -offset],
-                                      std_bright_ground_truth)
+        np.testing.assert_array_equal(cv['confidence_measure'].data, std_bright_ground_truth)
 
     def test_popcount32b(self):
         """
@@ -296,26 +307,26 @@ class TestStereo(unittest.TestCase):
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'zncc', 'window_size': 5, 'subpix': 1})
         cost_volume_zncc = stereo_matcher.compute_cost_volume(self.left, self.right, disp_min=-1, disp_max=1)
         stereo_matcher.cv_masked(self.left, self.right, cost_volume_zncc, -1, 1)
-        # The cost volume has the original image size and the window is >1, we compare without the marge
-        offset = cost_volume_zncc.attrs['offset_row_col']
+
         # Ground truth zncc cost for the disparity -1
         row = self.left['im'].data[:, 1:]
         col = self.right['im'].data[:, :5]
         ground_truth = np.array(
-            ([[np.nan, (np.mean(row * col) - (np.mean(row) * np.mean(col))) / (np.std(row) * np.std(col))]]))
+            ([np.nan, np.nan, np.nan,
+               (np.mean(row * col) - (np.mean(row) * np.mean(col))) / (np.std(row) * np.std(col)), np.nan, np.nan]))
 
         # Check if the calculated cost volume for the disparity -1 is equal to the ground truth
-        np.testing.assert_allclose(cost_volume_zncc['cost_volume'][:, :, 0][offset: -offset, offset: -offset],
-                                   ground_truth, rtol=1e-05)
+        np.testing.assert_allclose(cost_volume_zncc['cost_volume'].data[2, :, 0], ground_truth, rtol=1e-05)
 
         # Ground truth zncc cost for the disparity 1
         row = self.left['im'].data[:, :5]
         col = self.right['im'].data[:, 1:]
         ground_truth = np.array(
-            ([[(np.mean(row * col) - (np.mean(row) * np.mean(col))) / (np.std(row) * np.std(col)), np.nan]]))
+            ([np.nan, np.nan, (np.mean(row * col) - (np.mean(row) * np.mean(col))) / (np.std(row) * np.std(col)),
+               np.nan, np.nan, np.nan]))
+        # Check if the calculated cost volume
         # Check if the calculated cost volume for the disparity 1 is equal to the ground truth
-        np.testing.assert_allclose(cost_volume_zncc['cost_volume'][:, :, 2][offset: -offset, offset: -offset],
-                                   ground_truth, rtol=1e-05)
+        np.testing.assert_allclose(cost_volume_zncc['cost_volume'].data[2, :, 2], ground_truth, rtol=1e-05)
 
     @staticmethod
     def test_subpixel_offset():
@@ -340,22 +351,32 @@ class TestStereo(unittest.TestCase):
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 2})
         cv_zncc_subpixel = stereo_matcher.compute_cost_volume(left, right, disp_min=-2, disp_max=2)
         stereo_matcher.cv_masked(left, right, cv_zncc_subpixel, -2, 1)
-        # The cost volume has the original image size and the window is >1, we compare without the marge
-        offset = cv_zncc_subpixel.attrs['offset_row_col']
         # Test the disparity range
         disparity_range_compute = cv_zncc_subpixel.coords['disp'].data
         disparity_range_ground_truth = [-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]
         # Check if the calculated disparity range is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(disparity_range_compute, disparity_range_ground_truth)
-
         # Cost volume ground truth with subpixel precision 0.5
-        cost_volume_ground_truth = np.array([[[np.nan, np.nan, np.nan, np.nan, 39, 32.5, 28, 34.5, 41],
+
+        cost_volume_ground_truth = np.array([[[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                              [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                              [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                              [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                              [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]],
+                                             [[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                              [np.nan, np.nan, np.nan, np.nan, 39, 32.5, 28, 34.5, 41],
                                               [np.nan, np.nan, 49, 41.5, 34, 35.5, 37, np.nan, np.nan],
-                                              [45, 42.5, 40, 40.5, 41, np.nan, np.nan, np.nan, np.nan]]])
+                                              [45, 42.5, 40, 40.5, 41, np.nan, np.nan, np.nan, np.nan],
+                                              [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]],
+                                             [[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                              [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                              [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                              [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                              [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]]]
+                                            )
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(cv_zncc_subpixel['cost_volume'].data[offset: -offset, offset: -offset],
-                                      cost_volume_ground_truth)
+        np.testing.assert_array_equal(cv_zncc_subpixel['cost_volume'].data, cost_volume_ground_truth)
 
     @staticmethod
     def test_masks_invalid_pixels():
@@ -404,11 +425,9 @@ class TestStereo(unittest.TestCase):
         # print ('left_dil ', left_dil)
         # exit()
         # Compute the cost volume and invalidate pixels if need
+
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
         stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
-        # The cost volume has the original image size and the window is >1, we compare without the marge
-        offset = cv.attrs['offset_row_col']
-
         # Cost volume before invalidation
         #  disp       -1    0   1
         # Row 1
@@ -423,14 +442,29 @@ class TestStereo(unittest.TestCase):
 
         # Cost volume ground truth after invalidation
         cv_ground_truth = np.array([[[np.nan, np.nan, np.nan],
-                                     [12, 2., 13.],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
                                      [np.nan, np.nan, np.nan]],
                                     [[np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [12., 2., 13.],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
                                      [7., 1., 10.],
-                                     [11., 4., np.nan]]], dtype=np.float32)
+                                     [11., 4., np.nan],
+                                     [np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan]]
+                                    ], dtype=np.float32)
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(cv['cost_volume'][offset: -offset, offset: -offset], cv_ground_truth)
+        np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
 
         # ------------ Test the method with a right mask ( left mask contains valid pixels ) ------------
         # Mask convention
@@ -471,8 +505,6 @@ class TestStereo(unittest.TestCase):
         # Compute the cost volume and invalidate pixels if need
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
         stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
-        # The cost volume has the original image size and the window is >1, we compare without the marge
-        offset = cv.attrs['offset_row_col']
         # Cost volume before invalidation
         #  disp       -1    0   1
         # Row 1
@@ -487,15 +519,29 @@ class TestStereo(unittest.TestCase):
 
         # Cost volume ground truth after invalidation
         cv_ground_truth = np.array([[[np.nan, np.nan, np.nan],
-                                     [np.nan, np.nan, 13.],
-                                     [np.nan, 3., np.nan]],
-
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan]],
                                     [[np.nan, np.nan, np.nan],
                                      [np.nan, np.nan, np.nan],
-                                     [np.nan, np.nan, np.nan]]], dtype=np.float32)
+                                     [np.nan, np.nan, 13.],
+                                     [np.nan, 3., np.nan],
+                                     [np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan]]
+                                    ], dtype=np.float32)
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(cv['cost_volume'][offset: -offset, offset: -offset], cv_ground_truth)
+        np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
 
         # ------------ Test the method with a left and right mask ------------
         # Mask convention
@@ -539,8 +585,6 @@ class TestStereo(unittest.TestCase):
         # Compute the cost volume and invalidate pixels if need
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
         stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
-        # The cost volume has the original image size and the window is >1, we compare without the marge
-        offset = cv.attrs['offset_row_col']
         # Cost volume before invalidation
         #  disp       -1    0   1
         # Row 1
@@ -555,15 +599,29 @@ class TestStereo(unittest.TestCase):
 
         # Cost volume ground truth after invalidation
         cv_ground_truth = np.array([[[np.nan, np.nan, np.nan],
-                                     [12, 2, np.nan],
-                                     [10, np.nan, np.nan]],
-
-                                    [[np.nan, np.nan, 5],
                                      [np.nan, np.nan, np.nan],
-                                     [np.nan, np.nan, np.nan]]], dtype=np.float32)
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [12, 2, np.nan],
+                                     [10, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, 5],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan]]
+                                    ], dtype=np.float32)
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(cv['cost_volume'][offset: -offset, offset: -offset], cv_ground_truth)
+        np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
 
         # ------------ Test the method with a left and right mask and window size 5 ------------
         # Mask convention
@@ -613,19 +671,56 @@ class TestStereo(unittest.TestCase):
         # Compute the cost volume and invalidate pixels if need
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
         stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
-        # The cost volume has the original image size and the window is >1, we compare without the marge
-        offset = cv.attrs['offset_row_col']
-        # Cost volume ground truth after invalidation
-        cv_ground_truth = np.array([[[np.nan, np.nan, 24.],
-                                     [np.nan, 10., 27.],
-                                     [np.nan, np.nan, np.nan]],
 
+        # Cost volume ground truth after invalidation
+
+        cv_ground_truth = np.array([[[np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan]],
                                     [[np.nan, np.nan, np.nan],
                                      [np.nan, np.nan, np.nan],
-                                     [31., np.nan, np.nan]]], dtype=np.float32)
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, 24.],
+                                     [np.nan, 10., 27.],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [31., np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan]]
+                                    ], dtype=np.float32)
+
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(cv['cost_volume'][offset: -offset, offset: -offset], cv_ground_truth)
+        np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
 
         # ------------ Test the method with a left and right mask with window size 1------------
         # Mask convention
@@ -659,6 +754,7 @@ class TestStereo(unittest.TestCase):
         # Compute the cost volume and invalidate pixels if need
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
         stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
+
         # Cost volume ground truth after invalidation
         cv_ground_truth = np.array([[[np.nan, np.nan, np.nan],
                                      [4, np.nan, 1],
@@ -671,6 +767,7 @@ class TestStereo(unittest.TestCase):
                                      [0, np.nan, 0],
                                      [np.nan, 0, 1],
                                      [np.nan, np.nan, np.nan]]], dtype=np.float32)
+
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
@@ -717,19 +814,32 @@ class TestStereo(unittest.TestCase):
         # Compute the cost volume and invalidate pixels if need
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
         stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
-        # The cost volume has the original image size and the window is >1, we compare without the marge
-        offset = cv.attrs['offset_row_col']
+
         # Cost volume ground truth after invalidation
         cv_ground_truth = np.array([[[np.nan, np.nan, np.nan],
-                                     [0.02146693953705469, 0.8980265101338747, np.nan],
-                                     [0.40624999999999994, np.nan, np.nan]],
-
-                                    [[np.nan, np.nan, 0.2941742027072762],
                                      [np.nan, np.nan, np.nan],
-                                     [np.nan, np.nan, np.nan]]], dtype=np.float32)
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [0.02146693953705469, 0.8980265101338747, np.nan],
+                                     [0.40624999999999994, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, 0.2941742027072762],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan]]
+                                    ], dtype=np.float32)
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(cv['cost_volume'][offset: -offset, offset: -offset], cv_ground_truth)
+        np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
 
     @staticmethod
     def test_masks_invalid_pixels_subpixel():
@@ -907,8 +1017,7 @@ class TestStereo(unittest.TestCase):
         # Compute the cost volume and invalidate pixels if need
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
         stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
-        # The cost volume has the original image size and the window is >1, we compare without the marge
-        offset = cv.attrs['offset_row_col']
+
         # Cost volume before invalidation
         # array([[[ nan,  nan,  6. ,  6. ,  8. ],
         #         [12. ,  7. ,  2. ,  6.5, 13. ],
@@ -923,15 +1032,30 @@ class TestStereo(unittest.TestCase):
         #   * disp     (disp) float64 -1.0 -0.5 0.0 0.5 1.0
 
         # Cost volume ground truth after invalidation
-        cv_ground_truth = np.array([[[np.nan, np.nan, np.nan, np.nan, 8.],
+        cv_ground_truth = np.array([[[np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, 8.],
                                      [np.nan, np.nan, 2., np.nan, np.nan],
-                                     [10., np.nan, np.nan, np.nan, np.nan]],
-                                    [[np.nan, np.nan, 1., 2., 5.],
+                                     [10., np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, 1., 2., 5.],
                                      [7., 4., 1., 4.5, 10.],
-                                     [np.nan, np.nan, np.nan, np.nan, np.nan]]], dtype=np.float32)
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan]]
+                                    ], dtype=np.float32)
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(cv['cost_volume'][offset: -offset, offset: -offset], cv_ground_truth)
+        np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
 
         # ------------ Test the method with a left and right mask with window size 3 and census ------------
         # Mask convention
@@ -971,19 +1095,30 @@ class TestStereo(unittest.TestCase):
 
         # Cost volume ground truth after invalidation
         census_ground_truth = np.array([[[np.nan, np.nan, np.nan, np.nan, np.nan],
-                                         [3., np.nan, np.nan, np.nan, np.nan]],
-
-                                        [[np.nan, np.nan, np.nan, np.nan, 5.],
-                                         [np.nan, np.nan, np.nan, np.nan, np.nan]]], dtype=np.float32)
+                                         [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                         [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                         [np.nan, np.nan, np.nan, np.nan, np.nan]],
+                                        [[np.nan, np.nan, np.nan, np.nan, np.nan],
+                                         [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                         [3., np.nan, np.nan, np.nan, np.nan],
+                                         [np.nan, np.nan, np.nan, np.nan, np.nan]],
+                                        [[np.nan, np.nan, np.nan, np.nan, np.nan],
+                                         [np.nan, np.nan, np.nan, np.nan, 5.],
+                                         [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                         [np.nan, np.nan, np.nan, np.nan, np.nan]],
+                                        [[np.nan, np.nan, np.nan, np.nan, np.nan],
+                                         [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                         [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                         [np.nan, np.nan, np.nan, np.nan, np.nan]]
+                                        ], dtype=np.float32)
 
         # Computes the census transform for the images with window size = 3
         stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'census', 'window_size': 3, 'subpix': 2})
         census = stereo_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
         stereo_matcher.cv_masked(img_left=left, img_right=right, cost_volume=census, disp_min=dmin, disp_max=dmax)
-        # The cost volume has the original image size and the window is >1, we compare without the marge
-        offset = cv.attrs['offset_row_col']
+
         # Check if the calculated census cost is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(census['cost_volume'][offset: -offset, offset: -offset], census_ground_truth)
+        np.testing.assert_array_equal(census['cost_volume'], census_ground_truth)
 
         # ------------ Test the method with a left and right mask with window size 3 and ZNCC ------------
         data = np.array(([1, 1, 1, 3, 4],
@@ -1023,19 +1158,32 @@ class TestStereo(unittest.TestCase):
         # Compute the cost volume and invalidate pixels if need
         cv = stereo_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
         stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
-        # The cost volume has the original image size and the window is >1, we compare without the marge
-        offset = cv.attrs['offset_row_col']
+
         # Cost volume ground truth after invalidation
         cv_ground_truth = np.array([[[np.nan, np.nan, np.nan, np.nan, np.nan],
-                                     [0.02146693953705469, 0.5486081, 0.8980265101338747, np.nan, np.nan],
-                                     [0.40624999999999994, np.nan, np.nan, np.nan, np.nan]],
-
-                                    [[np.nan, np.nan, np.nan, np.nan, 0.2941742027072762],
                                      [np.nan, np.nan, np.nan, np.nan, np.nan],
-                                     [np.nan, np.nan, np.nan, np.nan, np.nan]]], dtype=np.float32)
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [0.02146693953705469, 0.5486081, 0.8980265101338747, np.nan, np.nan],
+                                     [0.40624999999999994, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, 0.2941742027072762],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan]],
+                                    [[np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan],
+                                     [np.nan, np.nan, np.nan, np.nan, np.nan]],
+                                    ], dtype=np.float32)
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(cv['cost_volume'][offset: -offset, offset: -offset], cv_ground_truth)
+        np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
 
     @staticmethod
     def test_masks_dilatation():
@@ -1081,32 +1229,37 @@ class TestStereo(unittest.TestCase):
         # Compute the dilated / shifted masks
         mask_left, masks_right = stereo_.masks_dilatation(img_left=left, img_right=right,
                                                           window_size=3, subp=4)
-        # The mask has the original image size and the window is >1, we compare without the marge
-        offset = int((stereo_._window_size - 1) / 2)  # pylint:disable=protected-access
 
         # left mask ground truth
-        gt_left = np.array([[0, 0, 0],
-                            [0, 0, np.nan]], dtype=np.float32)
-        gt_left = xr.DataArray(gt_left, coords=[[1, 2], [1, 2, 3]], dims=['row', 'col'])
+        gt_left = np.array([[0, np.nan, 0, np.nan, 0],
+                            [0, 0, 0, 0, 0],
+                            [0, 0, 0, np.nan, np.nan],
+                            [np.nan, 0, np.nan, np.nan, np.nan]], dtype=np.float32)
+        gt_left = xr.DataArray(gt_left, coords=[[0, 1, 2, 3], [0, 1, 2, 3, 4]], dims=['row', 'col'])
 
         # Check if the calculated left masks is equal to the ground truth (same dimensions, coordinates and values)
-        if not mask_left[offset: -offset, offset: -offset].equals(gt_left):
+        if not mask_left.equals(gt_left):
             raise ValueError('test_masks_dilatation error : left mask ')
 
         # right mask ground truth with pixel precision
-        gt_right_pixel = np.array([[np.nan, 0, np.nan],
-                                   [0, 0, 0]], dtype=np.float32)
-        gt_right_pixel = xr.DataArray(gt_right_pixel, coords=[[1, 2], [1, 2, 3]], dims=['row', 'col'])
+        gt_right_pixel = np.array([[np.nan, np.nan, 0, 0, 0],
+                                   [np.nan, np.nan, 0, np.nan, 0],
+                                   [0, 0, 0, 0, 0],
+                                   [0, np.nan, 0, 0, np.nan]], dtype=np.float32)
+        gt_right_pixel = xr.DataArray(gt_right_pixel, coords=[[0, 1, 2, 3], [0, 1, 2, 3, 4]], dims=['row', 'col'])
 
-        if not masks_right[0][offset: -offset, offset: -offset].equals(gt_right_pixel):
+        if not masks_right[0].equals(gt_right_pixel):
             raise ValueError('test_masks_dilatation error : right mask ')
 
         # right mask ground truth with sub-pixel precision
-        gt_right_subpixel = np.array([[np.nan, np.nan],
-                                      [0, 0]], dtype=np.float32)
-        gt_right_subpixel = xr.DataArray(gt_right_subpixel, coords=[[1, 2], [1.5, 2.5]], dims=['row', 'col'])
+        gt_right_subpixel = np.array([[np.nan, np.nan, 0, 0],
+                                      [np.nan, np.nan, np.nan, np.nan],
+                                      [0, 0, 0, 0],
+                                      [np.nan, np.nan, 0, np.nan]], dtype=np.float32)
+        gt_right_subpixel = xr.DataArray(gt_right_subpixel, coords=[[0, 1, 2, 3], [0.5, 1.5, 2.5, 3.5]], dims=['row',
+                                                                                                               'col'])
 
-        if not masks_right[1][offset: -offset, offset: -offset].equals(gt_right_subpixel):
+        if not masks_right[1].equals(gt_right_subpixel):
             raise ValueError('test_masks_dilatation error : right shifted mask ')
 
     def test_cmax(self):
@@ -1258,10 +1411,21 @@ class TestStereo(unittest.TestCase):
 
         # Compute the masked cost volume
         stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin_grid, disp_max=dmax_grid)
-        # The cost volume has the original image size and the window is >1, we compare without the marge
-        offset = cv.attrs['offset_row_col']
+
         # Cost volume ground truth
         gt_cv_masked = np.array([[[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]],
+                                 [[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
                                   [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 5., np.nan],
                                   [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 1., 8., np.nan],
                                   [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
@@ -1269,8 +1433,10 @@ class TestStereo(unittest.TestCase):
                                   [np.nan, np.nan, np.nan, np.nan, 7., 2., 3., 6., np.nan, np.nan],
                                   [np.nan, np.nan, np.nan, 1., np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
                                   [np.nan, np.nan, 4., 5., 6., 3., np.nan, np.nan, np.nan, np.nan],
-                                  [np.nan, 6., 1., 4., 7., 1., 6., np.nan, np.nan, np.nan]],
+                                  [np.nan, 6., 1., 4., 7., 1., 6., np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]],
                                  [[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
                                   [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 5., 6.],
                                   [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 4., np.nan, np.nan],
                                   [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 2., 3., np.nan, np.nan],
@@ -1278,10 +1444,23 @@ class TestStereo(unittest.TestCase):
                                   [np.nan, np.nan, np.nan, np.nan, 5., 4., 3., np.nan, np.nan, np.nan],
                                   [np.nan, np.nan, np.nan, 4., 5., np.nan, np.nan, np.nan, np.nan, np.nan],
                                   [np.nan, np.nan, 3., 2., 7., np.nan, np.nan, np.nan, np.nan, np.nan],
-                                  [np.nan, np.nan, 4., 3., 3., 4., np.nan, np.nan, np.nan, np.nan]]], dtype=np.float32)
+                                  [np.nan, np.nan, 4., 3., 3., 4., np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]],
+                                 [[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]]
+                                 ], dtype=np.float32)
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(gt_cv_masked, cv['cost_volume'].data[offset: -offset, offset: -offset])
+        np.testing.assert_array_equal(gt_cv_masked, cv['cost_volume'].data)
 
         # ------------ Test the method with disp_min as a grid and disp_max as a grid, subpixel = 2 ------------
         # Initialization of stereo plugin
@@ -1295,10 +1474,33 @@ class TestStereo(unittest.TestCase):
 
         # Compute the masked cost volume
         stereo_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin_grid, disp_max=dmax_grid)
-        # The cost volume has the original image size and the window is >1, we compare without the marge
-        offset = cv.attrs['offset_row_col']
+
         # Cost volume ground truth
         gt_cv_masked = np.array([[[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]],
+                                 [[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
                                    np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
                                   [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
                                    np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 5., np.nan, np.nan],
@@ -1315,8 +1517,12 @@ class TestStereo(unittest.TestCase):
                                   [np.nan, np.nan, np.nan, np.nan, 4., 4., 5., 5., 6., 4., 3., np.nan, np.nan, np.nan,
                                    np.nan, np.nan, np.nan, np.nan, np.nan],
                                   [np.nan, np.nan, 6., 2., 1., 1., 4., 6., 7., 4., 1., 2., 6., np.nan, np.nan, np.nan,
-                                   np.nan, np.nan, np.nan]],
+                                   np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]],
                                  [[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
                                    np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
                                   [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
                                    np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 5., 6., 6.],
@@ -1333,10 +1539,35 @@ class TestStereo(unittest.TestCase):
                                   [np.nan, np.nan, np.nan, np.nan, 3., 2., 2., 5., 7., np.nan, np.nan, np.nan, np.nan,
                                    np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
                                   [np.nan, np.nan, np.nan, np.nan, 4., 3., 3., 2., 3., 3., 4., np.nan, np.nan, np.nan,
-                                   np.nan, np.nan, np.nan, np.nan, np.nan]]], dtype=np.float32)
+                                   np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]],
+                                 [[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                  [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                                   np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]]],
+                                dtype=np.float32)
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(gt_cv_masked, cv['cost_volume'].data[offset: -offset, offset: -offset])
+        np.testing.assert_array_equal(gt_cv_masked, cv['cost_volume'].data)
 
 
 def setup_logging(path='logging.json', default_level=logging.WARNING, ):

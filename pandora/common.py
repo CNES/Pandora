@@ -26,14 +26,13 @@ This module contains functions allowing to save the results and the configuratio
 import errno
 import json
 import os
-from typing import Dict, Union, Tuple, List
+from typing import Dict, Tuple, List
 import logging
 
 import numpy as np
 import rasterio
 import xarray as xr
 
-import pandora.constants as cst
 from .output_tree_design import get_out_dir, get_out_file_path
 
 
@@ -151,73 +150,6 @@ def save_config(output: str, user_cfg: Dict) -> None:
     # Save user configuration in json file
     with open(os.path.join(output, get_out_file_path('config.json')), 'w') as file_:
         json.dump(user_cfg, file_, indent=2)
-
-
-def resize(dataset: xr.Dataset, border_disparity: Union[int, float]) -> xr.Dataset:
-    """
-    Pixels whose aggregation window exceeds the left image are truncated in the output products.
-    This function returns the output products with the size of the input images : add rows and columns that
-    have been
-    truncated. These added pixels will have bit 0 = 1 ( Invalid pixel : border of the left image )
-    in the validity_mask  and will have the disparity = invalid_value in the disparity map.
-
-    :param dataset: Dataset which contains the output products
-    :type dataset: xarray.Dataset with the variables :
-        - disparity_map 2D xarray.DataArray (row, col)
-        - confidence_measure 3D xarray.DataArray(row, col, indicator)
-        - validity_mask 2D xarray.DataArray (row, col)
-    :param border_disparity: disparity to assign to border pixels
-    :type border_disparity: float or int
-    :return: the dataset with the size of the input images
-    :rtype : xarray.Dataset with the variables :
-        - disparity_map 2D xarray.DataArray (row, col)
-        - confidence_measure 3D xarray.DataArray(row, col, indicator)
-        - validity_mask 2D xarray.DataArray (row, col)
-    """
-    offset = dataset.attrs['offset_row_col']
-
-    if offset == 0:
-        return dataset
-
-    c_row = dataset.coords['row']
-    c_col = dataset.coords['col']
-
-    row = np.arange(c_row[0] - offset, c_row[-1] + 1 + offset)
-    col = np.arange(c_col[0] - offset, c_col[-1] + 1 + offset)
-
-    resize_disparity = xr.Dataset()
-
-    for array in dataset:
-        if array == 'disparity_map':
-            data = xr.DataArray(np.full((len(row), len(col)), border_disparity, dtype=np.float32),
-                                coords=[row, col],
-                                dims=['row', 'col'])
-            resize_disparity[array] = dataset[array].combine_first(data)
-
-        if array == 'confidence_measure':
-            depth = len(dataset.coords['indicator'])
-            data = xr.DataArray(data=np.full((len(row), len(col), depth), np.nan, dtype=np.float32),
-                                coords={'row': row, 'col': col}, dims=['row', 'col', 'indicator'])
-            resize_disparity[array] = dataset[array].combine_first(data)
-
-        if array == 'validity_mask':
-            data = xr.DataArray(np.zeros((len(row), len(col)), dtype=np.uint16), coords=[row, col],
-                                dims=['row', 'col'])
-
-            # Invalid pixel : border of the left image
-            data += cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
-
-            resize_disparity[array] = dataset[array].combine_first(data).astype(np.uint16)
-
-        if array == 'interpolated_coeff':
-            data = xr.DataArray(np.full((len(row), len(col)), np.nan, dtype=np.float32), coords=[row, col],
-                                dims=['row', 'col'])
-            resize_disparity[array] = dataset[array].combine_first(data)
-
-    resize_disparity.attrs = dataset.attrs
-    resize_disparity.attrs['offset_row_col'] = 0
-
-    return resize_disparity
 
 
 def is_method(string_method: str, methods: List[str]) -> bool:

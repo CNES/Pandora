@@ -59,7 +59,7 @@ class AbstractValidation():
                     logging.error('No validation method named % supported', cfg['validation_method'])
                     raise KeyError
             else:
-                if isinstance(cfg['validation_method'], unicode):  # pylint: disable=undefined-variable
+                if isinstance(cfg['validation_method'], unicode): # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractValidation, cls).__new__(
@@ -237,7 +237,6 @@ class CrossChecking(AbstractValidation):
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
         """
-        offset = dataset_left.attrs['offset_row_col']
         nb_row, nb_col, nb_indicator = dataset_left['confidence_measure'].shape
         disparity_range = np.arange(dataset_left.attrs['disp_min'], dataset_left.attrs['disp_max'] + 1)
 
@@ -252,6 +251,8 @@ class CrossChecking(AbstractValidation):
         dataset_left = dataset_left.drop_dims('indicator')
         dataset_left = dataset_left.assign_coords(indicator=indicator)
         dataset_left['confidence_measure'] = xr.DataArray(data=conf_measure, dims=['row', 'col', 'indicator'])
+
+        offset = dataset_left.attrs['offset_row_col']
 
         for row in range(0, nb_row):
             # Exclude invalid pixel :
@@ -272,9 +273,6 @@ class CrossChecking(AbstractValidation):
             # Apply cross checking on pixels i + round(Disp_left(i) inside the right image
             inside_right = np.where((col_right >= 0) & (col_right < nb_col))
 
-            # Adapt indexes to the confidence map offset
-            inside_right_offset = tuple([val + offset for val in inside_right[0]])
-
             # Conversion from nan to inf
             right_disp = dataset_right['disparity_map'].data[row, col_right[inside_right]]
             right_disp[np.isnan(right_disp)] = np.inf
@@ -282,7 +280,7 @@ class CrossChecking(AbstractValidation):
             left_disp[np.isnan(left_disp)] = np.inf
 
             # Allocate to the measure map, the distance disp LR / disp RL indicator
-            dataset_left['confidence_measure'].data[row, inside_right_offset, -1] = np.abs(right_disp + left_disp)
+            dataset_left['confidence_measure'].data[row, inside_right[0] + offset, -1] = np.abs(right_disp + left_disp)
 
             # left image pixels invalidated by the cross checking
             invalid = np.abs(right_disp + left_disp) > self._threshold

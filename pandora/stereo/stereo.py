@@ -176,15 +176,11 @@ class AbstractStereo():
             disparity_range = np.arange(disp_min, disp_max, step=1 / float(subpix))
             disparity_range = np.append(disparity_range, [disp_max])
 
-        # Create the cost volume with the original image size and fill it
-        np_data_full = np.full((len(row), len(col), len(disparity_range)), np.nan, dtype=np.float32)
-        if np_data is not None:
-            if offset_row_col != 0:
-                np_data_full[offset_row_col: - offset_row_col, offset_row_col: - offset_row_col, :] = np_data
-            else:
-                np_data_full = np_data
+        # Create the cost volume
+        if np_data is None:
+            np_data = np.zeros((len(row), len(col), len(disparity_range)), dtype=np.float32)
 
-        cost_volume = xr.Dataset({'cost_volume': (['row', 'col', 'disp'], np_data_full)},
+        cost_volume = xr.Dataset({'cost_volume': (['row', 'col', 'disp'], np_data)},
                                  coords={'row': row, 'col': col, 'disp': disparity_range})
         cost_volume.attrs = metadata
 
@@ -291,7 +287,7 @@ class AbstractStereo():
             # All pixels are valid
             dilatate_left_mask = np.zeros(img_left['im'].shape)
 
-        # Create the right mask with the convention : 0 = valid, nan = invalid and no_datassssss
+        # Create the right mask with the convention : 0 = valid, nan = invalid and no_data
         if 'msk' in img_right.data_vars:
             dilatate_right_mask = np.zeros(img_right['msk'].shape)
             # Invalid pixels are nan

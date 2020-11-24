@@ -1,4 +1,3 @@
-#pylint:disable=too-many-arguments
 #!/usr/bin/env python
 # coding: utf8
 #
@@ -56,8 +55,7 @@ class PandoraMachine(Machine):
         {'trigger': 'disparity', 'source': 'cost_volume', 'dest': 'disp_map', 'after': 'disparity_run'},
         {'trigger': 'filter', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'filter_run'},
         {'trigger': 'refinement', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'refinement_run'},
-        {'trigger': 'validation', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'validation_run'},
-        {'trigger': 'resize', 'source': 'disp_map', 'dest': 'resized_disparity', 'after': 'resize_run'},
+        {'trigger': 'validation', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'validation_run'}
     ]
 
     _transitions_check = [
@@ -68,7 +66,7 @@ class PandoraMachine(Machine):
         {'trigger': 'disparity', 'source': 'cost_volume', 'dest': 'disp_map', 'after': 'disparity_check_conf'},
         {'trigger': 'filter', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'filter_check_conf'},
         {'trigger': 'refinement', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'refinement_check_conf'},
-        {'trigger': 'validation', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'validation_check_conf'},
+        {'trigger': 'validation', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'validation_check_conf'}
     ]
 
     def __init__(self, left_img: xr.Dataset = None, right_img: xr.Dataset = None,
@@ -273,6 +271,7 @@ class PandoraMachine(Machine):
                 interpolate_.interpolated_disparity(self.left_disparity)
                 interpolate_.interpolated_disparity(self.right_disparity)
 
+
     def run_prepare(self, cfg: Dict[str, dict], left_img: xr.Dataset, right_img: xr.Dataset,
                     disp_min: Union[int, np.ndarray],
                     disp_max: Union[int, np.ndarray], right_disp_min: Union[None, int, np.ndarray] = None,
@@ -296,9 +295,9 @@ class PandoraMachine(Machine):
         :param disp_max: maximal disparity
         :type disp_max: int or np.ndarray
         :param right_disp_min: minimal disparity of the right image
-        :type right_disp_min: None or int
+        :type right_disp_min: None, int or np.ndarray
         :param right_disp_max: maximal disparity of the right image
-        :type right_disp_max: None or int
+        :type right_disp_max: None, int or np.ndarray
         :return: None
         """
 
@@ -480,7 +479,7 @@ class PandoraMachine(Machine):
 
         :param cfg: pipeline configuration
         :type  cfg: dict
-        :return:
+        :return: None
         """
 
         # Add transitions to the empty machine.
@@ -533,17 +532,3 @@ class PandoraMachine(Machine):
             if trans['trigger'] not in deleted_triggers:
                 self.remove_transition(trans['trigger'])
                 deleted_triggers.append(trans['trigger'])
-
-    def is_not_last_scale(self, input_step: str, cfg: Dict[str, dict]): #pylint:disable=unused-argument
-        """
-        Check if the current scale is the last scale
-        :param cfg: configuration
-        :type cfg: dict
-        :param input_step: current step
-        :type input_step: string
-        :return: boolean
-        """
-
-        if self.current_scale == 0:
-            return False
-        return True

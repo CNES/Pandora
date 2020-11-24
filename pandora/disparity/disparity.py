@@ -59,7 +59,7 @@ class AbstractDisparity():
                     logging.error('No disparity method named % supported', cfg['disparity_method'])
                     raise KeyError
             else:
-                if isinstance(cfg['disparity_method'], unicode):  # pylint: disable=undefined-variable
+                if isinstance(cfg['disparity_method'], unicode): # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractDisparity, cls).__new__(
@@ -187,7 +187,6 @@ class AbstractDisparity():
         disp_map = xr.Dataset({'disparity_map': (['row', 'col'], data)},
                               coords={'row': cv.coords['row'], 'col': cv.coords['col']})
 
-        # Allocate the confidence measure
         confidence_measure = compute_std_raster(img_right, cv.attrs['window_size'])
 
         # Create the confidence measure with the original image size and fill it
@@ -201,7 +200,6 @@ class AbstractDisparity():
         else:
             confidence_measure_full = confidence_measure.reshape((len(row_range), len(col_range), 1))
 
-        disp_map = disp_map.assign_coords(indicator=['disparity_pandora_intensityStd'])
         disp_map['confidence_measure'] = xr.DataArray(data=confidence_measure_full.astype(np.float32),
                                                       dims=['row', 'col', 'indicator'])
 
@@ -214,10 +212,17 @@ class AbstractDisparity():
         disp_map.attrs['disp_min'] = d_range[0]
         disp_map.attrs['disp_max'] = d_range[-1]
         disp_map.attrs['right_left_mode'] = 'approximate'
+        offset = disp_map.attrs['offset_row_col']
 
-        for col in col_off:
+        indices_nan = np.isnan(cv['cost_volume'].data)
+        if cv.attrs['type_measure'] == 'max':
+            cv['cost_volume'].data[indices_nan] = -np.inf
+        else:
+            cv['cost_volume'].data[indices_nan] = np.inf
+
+        for col in col_range:
             x_d = col - disp_range
-            valid = np.where((x_d >= col_off[0]) & (x_d <= col_off[-1]))
+            valid = np.where((x_d >= col_range[0]) & (x_d <= col_range[-1]))
 
             # The disparity interval is missing in the left image
             if x_d[valid].size == 0:
@@ -228,23 +233,15 @@ class AbstractDisparity():
                     dict(col=col)] += cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
             else:
                 # Diagonal search for the minimum or maximum
-                if cv.attrs['measure'] == 'zncc':
-                    cv_ = cv['cost_volume'].sel(col=xr.DataArray(np.flip(x_d[valid]), dims='disp_'),
-                                                disp=xr.DataArray(np.flip(disp_range[valid]),
-                                                                  dims='disp_'))
-                    # Mask nans
-                    invalid_idx = np.where(np.isnan(cv_.data))
-                    cv_[invalid_idx] = -999
-                    min_ = cv_.argmax(dim='disp_')
-                else:
-                    cv_ = cv['cost_volume'].sel(col=xr.DataArray(np.flip(x_d[valid]), dims='disp_'),
-                                                disp=xr.DataArray(np.flip(disp_range[valid]),
-                                                                  dims='disp_'))
-                    # Mask nans
-                    invalid_idx = np.where(np.isnan(cv_.data))
-                    cv_[invalid_idx] = 999
-                    min_ = cv_.argmin(dim='disp_')
 
+                if cv.attrs['type_measure'] == 'max':
+                    min_ = cv['cost_volume'].sel(col=xr.DataArray(np.flip(x_d[valid]), dims='disp_'),
+                                                 disp=xr.DataArray(np.flip(disp_range[valid]),
+                                                                   dims='disp_')).argmax(dim='disp_')
+                else:
+                    min_ = cv['cost_volume'].sel(col=xr.DataArray(np.flip(x_d[valid]), dims='disp_'),
+                                                 disp=xr.DataArray(np.flip(disp_range[valid]),
+                                                                   dims='disp_')).argmin(dim='disp_')
                 # Disparity interval is incomplete
                 if x_d[valid].size != disp_range.size:
                     #  Information: the disparity interval is incomplete (border reached in the right image)
@@ -252,6 +249,15 @@ class AbstractDisparity():
                         cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
 
                 disp_map['disparity_map'].loc[dict(col=col)] = -1 * np.flip(disp_range[valid])[min_.data]
+
+        cv['cost_volume'].data[indices_nan] = np.nan
+        invalid_mc = np.min(indices_nan, axis=2)
+        # Pixels where the disparity interval is missing in the right image, have a disparity value invalid_value
+        invalid_pixel = np.where(invalid_mc)
+        disp_map['disparity_map'].data[invalid_pixel] = invalid_value
+
+        if offset > 0:
+            AbstractDisparity.mask_border(disp_map)
 
         return disp_map
 
@@ -285,66 +291,77 @@ class AbstractDisparity():
         # Allocate the validity mask
         disp['validity_mask'] = xr.DataArray(np.zeros(disp['disparity_map'].shape, dtype=np.uint16),
                                              dims=['row', 'col'])
+
         d_min = int(disp.attrs['disp_min'])
         d_max = int(disp.attrs['disp_max'])
-        c_col = disp.coords['col'].data
-        offset = disp.attrs['offset_row_col']
-        col = np.arange(c_col[0] + offset, c_col[-1] - offset + 1)
+        col = disp.coords['col'].data
 
-        # If there is an offset, do not consider the margins
-        if offset > 0:
-            tmp_msk = np.zeros(disp['disparity_map'][offset: - offset, offset: - offset].shape, dtype=np.uint16)
-        else:
-            tmp_msk = np.zeros(disp['disparity_map'].shape, dtype=np.uint16)
+        # Since disparity map is full size (input images size)
+        offset = disp.attrs['offset_row_col']
 
         # Negative disparity range
         if d_max < 0:
-            bit_1 = np.where((col + d_max) < col[0])
+            bit_1 = np.where((col + d_max) < (col[0]+offset))
             # Information: the disparity interval is incomplete (border reached in the right image)
-            tmp_msk[:, np.where(((col + d_max) >= col[0]) & ((col + d_min) < col[0]))] += \
-                cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
+            disp['validity_mask'].data[:, np.where(((col + d_max) >= (col[0]+offset)) &
+                                                   ((col + d_min) < (col[0]+offset)))] \
+                +=cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
         else:
             # Positive disparity range
             if d_min > 0:
-                bit_1 = np.where((col + d_min) > col[-1])
+                bit_1 = np.where((col + d_min) > (col[-1]-offset))
                 # Information: the disparity interval is incomplete (border reached in the right image)
-                tmp_msk[:, np.where(((col + d_min) <= col[-1]) & ((col + d_max) > col[-1]))] += \
+                disp['validity_mask'].data[:, np.where(((col + d_min) <= (col[-1]-offset)) &
+                                                       ((col + d_max) > (col[-1]-offset)))] += \
                     cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
 
             # Disparity range contains 0
             else:
                 bit_1 = ([],)
                 # Information: the disparity interval is incomplete (border reached in the right image)
-                tmp_msk[:, np.where(((col + d_min) < col[0]) | (col + d_max > col[-1]))] += \
+                disp['validity_mask'].data[:, np.where(((col + d_min) < (col[0]+offset)) |
+                                                       (col + d_max > (col[-1])-offset))] += \
                     cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
 
         # Invalid pixel : the disparity interval is missing in the right image ( disparity range
         # outside the image )
-        tmp_msk[:, bit_1] += cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
-
-        offset = cv.attrs['offset_row_col']
-        if offset > 0:
-            # Add tmp_msk
-            disp['validity_mask'].data[offset: - offset, offset: - offset] = tmp_msk
-            # Border pixels have invalid disparity
-            disp['validity_mask'].data[:offset, :] += cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
-            disp['validity_mask'].data[-offset:, :] += cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
-            disp['validity_mask'].data[offset:-offset, :offset] += cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
-            disp['validity_mask'].data[offset:-offset, -offset:] += cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
-        else:
-            # Add tmp_msk
-            disp['validity_mask'].data = tmp_msk
+        disp['validity_mask'].data[:, bit_1] += cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
 
         # The disp_min and disp_max used to search missing disparity interval are not the local disp_min and disp_max
         # in case of a variable range of disparities. So there may be pixels that have missing disparity range (all
         # cost are np.nan), but are not detected in the code block above. To find the pixels that have a missing
         # disparity range, we search in the cost volume pixels where cost_volume(row,col, for all d) = np.nan
+
         self.mask_invalid_variable_disparity_range(disp, cv)
+
         if 'msk' in img_left.data_vars:
             self.allocate_left_mask(disp, img_left)
 
         if 'msk' in img_right.data_vars:
             self.allocate_right_mask(disp, img_right, bit_1)
+        if offset > 0:
+            self.mask_border(disp)
+
+    @staticmethod
+    def mask_border(disp: xr.Dataset):
+        """
+       Mask border pixel  which haven't been calculated because of the window's size
+       :param disp: dataset with the disparity map and the confidence measure
+       :type disp:
+             xarray.Dataset with the data variables :
+                - disparity_map 2D xarray.DataArray (row, col)
+                - confidence_measure 3D xarray.DataArray(row, col, indicator):
+        :return:
+        """
+        offset = disp.attrs['offset_row_col']
+
+        if offset > 0:
+            # Border pixels have invalid disparity, erase the potential previous values
+            disp['validity_mask'].data[:offset, :] = cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
+            disp['validity_mask'].data[-offset:, :] = cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
+            disp['validity_mask'].data[offset:-offset, :offset] = cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
+            disp['validity_mask'].data[offset:-offset, -offset:] = cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
+
 
     @staticmethod
     def mask_invalid_variable_disparity_range(disp, cv) -> None:
@@ -430,6 +447,9 @@ class AbstractDisparity():
         :type: ndarray or Tuple
         :return: None
         """
+
+        offset = disp.attrs['offset_row_col']
+
         _, r_mask = xr.align(disp['validity_mask'], img_right['msk'])
         d_min = int(disp.attrs['disp_min'])
         d_max = int(disp.attrs['disp_max'])
@@ -454,7 +474,7 @@ class AbstractDisparity():
         for dsp in range(d_min, d_max + 1):
             # Diagonal in the cost volume
             col_d = col_range + dsp
-            valid_index = np.where((col_d >= col_range[0]) & (col_d <= col_range[-1]))
+            valid_index = np.where((col_d >= col_range[0]+offset) & (col_d <= col_range[-1]-offset))
 
             # No_data and masked pixels do not raise the same flag, we need to treat them differently
             b_2_7[:, col_range[valid_index]] += r_mask[:, col_d[valid_index]].astype(np.uint16)
@@ -562,21 +582,13 @@ class WinnerTakesAll(AbstractDisparity):
         cv['cost_volume'].data[indices_nan] = np.nan
         row = cv.coords['row']
         col = cv.coords['col']
-        offset = cv.attrs['offset_row_col']
+
         # ----- Disparity map -----
         disp_map = xr.Dataset({'disparity_map': (['row', 'col'], disp)}, coords={'row': row, 'col': col})
-
         invalid_mc = np.min(indices_nan, axis=2)
         # Pixels where the disparity interval is missing in the right image, have a disparity value invalid_value
         invalid_pixel = np.where(invalid_mc)
         disp_map['disparity_map'].data[invalid_pixel] = self._invalid_disparity
-
-        if offset > 0:
-            # Border pixels have invalid disparity
-            disp_map['disparity_map'].data[0:offset, :] = self._invalid_disparity
-            disp_map['disparity_map'].data[-offset:, :] = self._invalid_disparity
-            disp_map['disparity_map'].data[:, 0:offset] = self._invalid_disparity
-            disp_map['disparity_map'].data[:, -offset:] = self._invalid_disparity
 
         # Save the disparity map in the cost volume
         cv['disp_indices'] = disp_map['disparity_map'].copy(deep=True)
@@ -607,7 +619,7 @@ class WinnerTakesAll(AbstractDisparity):
         :return: the disparities for which the cost volume values are the smallest
         :rtype: np.ndarray
         """
-        ncol, nrow, ndsp = cost_volume['cost_volume'].shape  # pylint: disable=unused-variable
+        ncol, nrow, ndsp = cost_volume['cost_volume'].shape # pylint: disable=unused-variable
         disp = np.zeros((ncol, nrow), dtype=np.float32)
 
         # Numpy argmin is making a copy of the cost volume.
@@ -617,12 +629,12 @@ class WinnerTakesAll(AbstractDisparity):
 
         y_begin = 0
 
-        for col, cv_y in enumerate(cv_chunked_y):  # pylint: disable=unused-variable
+        for col, cv_y in enumerate(cv_chunked_y): # pylint: disable=unused-variable
             # To reduce memory, the cost volume is split (along the col axis) into
             # multiple sub-arrays with a step of 100
             cv_chunked_x = np.array_split(cv_y, np.arange(100, nrow, 100), axis=1)
             x_begin = 0
-            for row, cv_x in enumerate(cv_chunked_x):  # pylint: disable=unused-variable
+            for row, cv_x in enumerate(cv_chunked_x): # pylint: disable=unused-variable
                 disp[y_begin:y_begin + cv_y.shape[0], x_begin: x_begin + cv_x.shape[1]] = \
                     cost_volume.coords['disp'].data[np.argmin(cv_x, axis=2)]
                 x_begin += cv_x.shape[1]
@@ -642,7 +654,7 @@ class WinnerTakesAll(AbstractDisparity):
         :return: the disparities for which the cost volume values are the highest
         :rtype: np.ndarray
         """
-        ncol, nrow, ndisp = cost_volume['cost_volume'].shape  # pylint: disable=unused-variable
+        ncol, nrow, ndisp = cost_volume['cost_volume'].shape # pylint: disable=unused-variable
         disp = np.zeros((ncol, nrow), dtype=np.float32)
 
         # Numpy argmax is making a copy of the cost volume.
@@ -652,12 +664,12 @@ class WinnerTakesAll(AbstractDisparity):
 
         col_begin = 0
 
-        for col, cv_y in enumerate(cv_chunked_col):  # pylint: disable=unused-variable
+        for col, cv_y in enumerate(cv_chunked_col): # pylint: disable=unused-variable
             # To reduce memory, the cost volume is split (along the col axis)
             # into multiple sub-arrays with a step of 100
             cv_chunked_row = np.array_split(cv_y, np.arange(100, nrow, 100), axis=1)
             row_begin = 0
-            for row, cv_x in enumerate(cv_chunked_row):  # pylint: disable=unused-variable
+            for row, cv_x in enumerate(cv_chunked_row): # pylint: disable=unused-variable
                 disp[col_begin:col_begin + cv_y.shape[0],
                 row_begin: row_begin + cv_x.shape[1]] = \
                     cost_volume.coords['disp'].data[np.argmax(cv_x, axis=2)]

@@ -121,6 +121,7 @@ class TestValidation(unittest.TestCase):
         left.attrs['disp_min'] = -2
         left.attrs['disp_max'] = 2
         left.attrs['offset_row_col'] = 0
+
         right = xr.Dataset({'disparity_map': (['row', 'col'], np.array([[0, 2, -1.2, -1],
                                                                         [0.8, 1, -2, -1]], dtype=np.float32)),
                             'confidence_measure': (['row', 'col', 'indicator'], np.full((2, 4, 1), np.nan)),
@@ -130,6 +131,7 @@ class TestValidation(unittest.TestCase):
         right.attrs['disp_min'] = -2
         right.attrs['disp_max'] = 2
         right.attrs['offset_row_col'] = 0
+
         # Compute the cross checking confidence measure and validity mask
         validation_matcher = validation.AbstractValidation(**{'validation_method': 'cross_checking',
                                                               'cross_checking_threshold': 0.})

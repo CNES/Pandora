@@ -114,9 +114,9 @@ class Census(stereo.AbstractStereo):
 
         # Maximal cost of the cost volume with census measure
         cmax = int(self._window_size ** 2)
-
+        offset_row_col = int((self._window_size - 1) / 2)
         metadata = {'measure': 'census', 'subpixel': self._subpix,
-                    'offset_row_col': int((self._window_size - 1) / 2), 'window_size': self._window_size,
+                    'offset_row_col': offset_row_col, 'window_size': self._window_size,
                     'type_measure': 'min', 'cmax': cmax}
 
         # Apply census transformation
@@ -132,8 +132,14 @@ class Census(stereo.AbstractStereo):
             disparity_range = np.append(disparity_range, [disp_max])
 
         # Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
-        cv = np.zeros((len(disparity_range), left['im'].shape[1], left['im'].shape[0]), dtype=np.float32)
+        cv = np.zeros((len(disparity_range), img_left['im'].shape[1], img_left['im'].shape[0]), dtype=np.float32)
         cv += np.nan
+
+        # If offset, do not consider border position for cost computation
+        if offset_row_col != 0:
+            cv_crop= cv[:, offset_row_col:-offset_row_col, offset_row_col: -offset_row_col]
+        else:
+            cv_crop = cv
 
         # Giving the 2 images, the matching cost will be calculated as :
         #                 1, 1, 1                2, 5, 6
@@ -170,7 +176,7 @@ class Census(stereo.AbstractStereo):
             point_p, point_q = self.point_interval(left, img_right_shift[i_right], disp)
             dsp = int((disp - disp_min) * self._subpix)
 
-            cv[dsp, point_p[0]:point_p[1], :] = np.swapaxes(
+            cv_crop[dsp, point_p[0]:point_p[1], :] = np.swapaxes(
                 self.census_cost(point_p, point_q, left, img_right_shift[i_right]), 0, 1)
 
         # Create the xarray.DataSet that will contain the cv of dimensions (row, col, disp)
