@@ -102,6 +102,75 @@ class TestValidation(unittest.TestCase):
         np.testing.assert_array_equal(left['validity_mask'].data, gt_mask)
 
     @staticmethod
+    def test_distance_lr_rl():
+        """
+        Test the confidence measure that computes the distance disp LR / disp RL with nodata pixel in images
+        """
+        # Create left and right disparity map
+        left = xr.Dataset({'disparity_map': (['row', 'col'], np.array([[np.nan, np.nan, np.nan, np.nan],
+                                                                       [np.nan, 1, -1, np.nan],
+                                                                       [np.nan, np.nan, np.nan, np.nan]],
+                                                                      dtype=np.float32)),
+                           'confidence_measure': (['row', 'col', 'indicator'], np.full((3, 4, 1), np.nan)),
+                           'validity_mask': (['row', 'col'], np.array([[cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                                                        cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                                                        cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                                                        cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
+                                                                       [cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, 0,
+                                                                        0, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
+                                                                       [cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                                                        cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                                                        cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                                                        cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER]],
+                                                                      dtype=np.uint16))},
+                          coords={'row': [0, 1, 2], 'col': [0, 1, 2, 3]})
+        left.attrs['disp_min'] = -1
+        left.attrs['disp_max'] = 1
+
+        right = xr.Dataset({'disparity_map': (['row', 'col'], np.array([[np.nan, np.nan, np.nan, np.nan],
+                                                                       [np.nan, 0, -1, np.nan],
+                                                                       [np.nan, np.nan, np.nan, np.nan]],
+                                                                       dtype=np.float32)),
+                            'confidence_measure': (['row', 'col', 'indicator'], np.full((3, 4, 1), np.nan)),
+                            'validity_mask': (['row', 'col'], np.array([[cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                                                        cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                                                        cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                                                         cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
+                                                                       [cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, 0,
+                                                                        0, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
+                                                                       [cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                                                        cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                                                        cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                                                        cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER]],
+                                                                       dtype=np.uint16))},
+                           coords={'row': [0, 1, 2], 'col': [0, 1, 2, 3]})
+        right.attrs['disp_min'] = -1
+        right.attrs['disp_max'] = 1
+
+        # Compute the confidence measure
+        validation_matcher = validation.AbstractValidation(**{'validation_method': 'cross_checking',
+                                                              'cross_checking_threshold': 0.})
+        left = validation_matcher.disparity_checking(left, right)
+
+        # Confidence measure ground truth
+        gt_dist = np.array([[[np.nan, np.nan],
+                             [np.nan, np.nan],
+                             [np.nan, np.nan],
+                             [np.nan, np.nan]],
+                            [[np.nan, np.nan],
+                             [np.nan, 0.],
+                             [np.nan, 1],
+                             [np.nan, np.nan]],
+                            [[np.nan, np.nan],
+                             [np.nan, np.nan],
+                             [np.nan, np.nan],
+                             [np.nan, np.nan]]
+                            ], dtype=np.float32)
+
+        # Check if the calculated confidence measure is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(left['confidence_measure'].data, gt_dist)
+
+    @staticmethod
     def test_cross_checking_float_disparity():
         """
         Test the validity_mask for the cross checking method with floating disparity,
@@ -395,6 +464,7 @@ class TestValidation(unittest.TestCase):
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(left['disparity_map'].data, gt_disp_after_int)
 
+
 def setup_logging(path='logging.json', default_level=logging.WARNING, ):
     """
     Setup the logging configuration
@@ -410,6 +480,7 @@ def setup_logging(path='logging.json', default_level=logging.WARNING, ):
         logging.config.dictConfig(config)
     else:
         logging.basicConfig(level=default_level)
+
 
 if __name__ == '__main__':
     setup_logging()
