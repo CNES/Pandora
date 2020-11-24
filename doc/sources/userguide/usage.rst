@@ -128,23 +128,24 @@ Input parameters
       Each pixel (x,y) of the grid corresponds to a local disparity (min for disp_min and max for disp_max) related to the same pixel (x, y) of the image.
     - Cross-checking step is not applicable if *disp_min*, *disp_max* are path to the left grids and *disp_min_right*, *disp_max_right* are none.
 
+.. note::
+    Mask must comply with the following convention
+     - Value equal to 0 for valid pixel
+     - Value not equal to 0 for invalid pixel
+
 
 .. _image_parameters:
 
 Image parameters
 ----------------
 
-+--------------+----------------------------------+------+---------------+----------+
-| Name         | Description                      | Type | Default value | Required |
-+==============+==================================+======+===============+==========+
-| nodata1      | Nodata value for left image      | int  | 0             | No       |
-+--------------+----------------------------------+------+---------------+----------+
-| nodata2      | Nodata value for right image     | int  | 0             | No       |
-+--------------+----------------------------------+------+---------------+----------+
-| valid_pixels | Valid pixel value in the mask    | int  | 0             | No       |
-+--------------+----------------------------------+------+---------------+----------+
-| no_data      | Nodata pixel value in the mask   | int  | 1             | No       |
-+--------------+----------------------------------+------+---------------+----------+
++--------------+----------------------------------+------+---------------+----------------+----------+
+| Name         | Description                      | Type | Default value |Available value | Required |
++==============+==================================+======+===============+================+==========+
+| nodata1      | Nodata value for left image      | int  | 0             | int or nan     | No       |
++--------------+----------------------------------+------+---------------+----------------+----------+
+| nodata2      | Nodata value for right image     | int  | 0             | int or nan     | No       |
++--------------+----------------------------------+------+---------------+----------------+----------+
 
 
 .. _pipeline_parameters:

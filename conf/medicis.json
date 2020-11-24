@@ -17,13 +17,7 @@
     "disparity": {
       "disparity_method": "wta",
       "invalid_disparity": "np.nan"
-    },"filter": {
-      "filter_method": "median"
     },
-    "refinement": {
-      "refinement_method": "vfit"
-    },
-
     "resize": {
       "border_disparity": "np.nan"
     }

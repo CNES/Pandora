@@ -381,10 +381,10 @@ input_configuration_schema = {
     'img_right': And(str, rasterio_can_open_mandatory),
     'left_mask': And(Or(str, lambda input: input is None), rasterio_can_open),
     'right_mask': And(Or(str, lambda input: input is None), rasterio_can_open),
-    "left_classif": And(Or(str, lambda x: x is None), rasterio_can_open),
-    "right_classif": And(Or(str, lambda x: x is None), rasterio_can_open),
-    "left_segm": And(Or(str, lambda x: x is None), rasterio_can_open),
-    "right_segm": And(Or(str, lambda x: x is None), rasterio_can_open)
+    'left_classif': And(Or(str, lambda x: x is None), rasterio_can_open),
+    'right_classif': And(Or(str, lambda x: x is None), rasterio_can_open),
+    'left_segm': And(Or(str, lambda x: x is None), rasterio_can_open),
+    'right_segm': And(Or(str, lambda x: x is None), rasterio_can_open)
 
 }
 
@@ -414,17 +414,13 @@ input_configuration_schema_left_disparity_grids_right_grids = {
 
 image_configuration_schema = {
     'nodata1': Or(int, lambda input: np.isnan(input)),
-    'nodata2': Or(int, lambda input: np.isnan(input)),
-    'valid_pixels': int,
-    'no_data': int
+    'nodata2': Or(int, lambda input: np.isnan(input))
 }
 
 default_short_configuration_image = {
     'image': {
         'nodata1': 0,
-        'nodata2': 0,
-        'valid_pixels': 0,
-        'no_data': 1
+        'nodata2': 0
     }
 }
 
@@ -432,10 +428,10 @@ default_short_configuration_input = {
     'input': {
         'left_mask': None,
         'right_mask': None,
-        "left_classif": None,
-        "right_classif": None,
-        "left_segm": None,
-        "right_segm": None,
+        'left_classif': None,
+        'right_classif': None,
+        'left_segm': None,
+        'right_segm': None,
         'disp_min_right': None,
         'disp_max_right': None
     }
