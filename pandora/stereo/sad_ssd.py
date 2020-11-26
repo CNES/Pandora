@@ -129,9 +129,9 @@ class SadSsd(stereo.AbstractStereo):
         if self._method == 'ssd':
             # Maximal cost of the cost volume with ssd measure
             cmax = int(max(abs(max_left - min_right) ** 2, abs(max_right - min_left) ** 2) * (self._window_size ** 2))
-
+        offset_row_col = int((self._window_size - 1) / 2)
         metadata = {'measure': self._method, 'subpixel': self._subpix,
-                    'offset_row_col': int((self._window_size - 1) / 2), 'window_size': self._window_size,
+                    'offset_row_col': offset_row_col, 'window_size': self._window_size,
                     'type_measure': 'min', 'cmax': cmax}
 
         # Disparity range # pylint: disable=undefined-variable
@@ -142,8 +142,17 @@ class SadSsd(stereo.AbstractStereo):
             disparity_range = np.append(disparity_range, [disp_max])
 
         # Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
-        cv = np.zeros((len(disparity_range), img_left['im'].shape[1], img_left['im'].shape[0]), dtype=np.float32)
-        cv += np.nan
+        # If offset , over allocate the cost volume by adding 2 * offset on row and col dimension
+        # The following computation will reduce the dimension during the pixel wise aggregation so the final
+        # cv dimension will be equal to the correct one.
+        if offset_row_col != 0:
+            cv_enlarge = np.zeros((len(disparity_range), img_left['im'].shape[1] + 2 * offset_row_col,
+                                   img_left['im'].shape[0] + 2 * offset_row_col), dtype=np.float32)
+            cv_enlarge += np.nan
+            cv = cv_enlarge[:, offset_row_col:-offset_row_col, offset_row_col: -offset_row_col]
+        else:
+            cv = np.zeros((len(disparity_range), img_left['im'].shape[1], img_left['im'].shape[0] ), dtype=np.float32)
+            cv += np.nan
 
         # Giving the 2 images, the matching cost will be calculated as :
         #                 1, 1, 1                2, 5, 6
@@ -184,12 +193,21 @@ class SadSsd(stereo.AbstractStereo):
                 np.swapaxes(
                     self._pixel_wise_methods[self._method](point_p, point_q, img_left, img_right_shift[i_right]), 0, 1)
 
-        # Apply aggregation
-        cv = self.pixel_wise_aggregation(cv.data)
+        # Pixel wise aggregation modifies border values so it is important to reconvert to nan values
+        if offset_row_col != 0:
+            cv = self.pixel_wise_aggregation(cv_enlarge.data)
+            cv = np.swapaxes(cv, 0, 2)
+            cv[:offset_row_col, :, :] = np.nan
+            cv[-offset_row_col:, :, ] = np.nan
+            cv[:, :offset_row_col, :] = np.nan
+            cv[:, -offset_row_col:,:] = np.nan
+        else:
+            cv = self.pixel_wise_aggregation(cv.data)
+            cv = np.swapaxes(cv, 0, 2)
 
-        # Reallocates the cost because its size has decreased due to the aggregation step
+        # Create the xarray.DataSet that will contain the cv of dimensions (row, col, disp)
         cv = self.allocate_costvolume(img_left, self._subpix, disp_min, disp_max, self._window_size, metadata,
-                                      np.swapaxes(cv, 0, 2))
+                                      cv)
 
         return cv
 

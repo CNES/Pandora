@@ -28,12 +28,11 @@ from typing import Dict, Union
 
 import numpy as np
 import xarray as xr
-from json_checker import Checker, Or, And
+from json_checker import Checker, And
 from transitions import Machine
 from transitions import MachineError
 
 from pandora import aggregation
-from pandora import common
 from pandora import disparity
 from pandora import filter # pylint: disable=redefined-builtin
 from pandora import optimization
@@ -56,8 +55,7 @@ class PandoraMachine(Machine):
         {'trigger': 'disparity', 'source': 'cost_volume', 'dest': 'disp_map', 'after': 'disparity_run'},
         {'trigger': 'filter', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'filter_run'},
         {'trigger': 'refinement', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'refinement_run'},
-        {'trigger': 'validation', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'validation_run'},
-        {'trigger': 'resize', 'source': 'disp_map', 'dest': 'resized_disparity', 'after': 'resize_run'}
+        {'trigger': 'validation', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'validation_run'}
     ]
 
     _transitions_check = [
@@ -68,8 +66,7 @@ class PandoraMachine(Machine):
         {'trigger': 'disparity', 'source': 'cost_volume', 'dest': 'disp_map', 'after': 'disparity_check_conf'},
         {'trigger': 'filter', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'filter_check_conf'},
         {'trigger': 'refinement', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'refinement_check_conf'},
-        {'trigger': 'validation', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'validation_check_conf'},
-        {'trigger': 'resize', 'source': 'disp_map', 'dest': 'resized_disparity', 'after': 'resize_check_conf'}
+        {'trigger': 'validation', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'validation_check_conf'}
     ]
 
     def __init__(self, left_img: xr.Dataset = None, right_img: xr.Dataset = None,
@@ -121,7 +118,7 @@ class PandoraMachine(Machine):
         # Usefull during the running steps to choose if we must compute left and right objects.
         self.right_disp_map = 'none'
         # Define avalaible states
-        states_ = ['begin', 'cost_volume', 'disp_map', 'resized_disparity']
+        states_ = ['begin', 'cost_volume', 'disp_map']
 
         # Initiliaze a machine without any transition
         Machine.__init__(self, states=states_, initial='begin', transitions=None, auto_transitions=False)
@@ -274,22 +271,6 @@ class PandoraMachine(Machine):
                 interpolate_.interpolated_disparity(self.left_disparity)
                 interpolate_.interpolated_disparity(self.right_disparity)
 
-    def resize_run(self, cfg: Dict[str, dict], input_step: str) -> None:
-        """
-         Resize left disparity map
-        :param cfg: pipeline configuration
-        :type  cfg: dict
-        :param input_step: step to trigger
-        :type input_step: str
-        :return: None
-        """
-        logging.info('Resize disparity map...')
-        if self.right_disp_map == 'none':
-            self.left_disparity = common.resize(self.left_disparity, cfg[input_step]['border_disparity'])
-
-        else:
-            self.left_disparity = common.resize(self.left_disparity, cfg[input_step]['border_disparity'])
-            self.right_disparity = common.resize(self.right_disparity, cfg[input_step]['border_disparity'])
 
     def run_prepare(self, cfg: Dict[str, dict], left_img: xr.Dataset, right_img: xr.Dataset,
                     disp_min: Union[int, np.ndarray],
@@ -491,25 +472,6 @@ class PandoraMachine(Machine):
         if validation_.cfg['validation_method'] == 'cross_checking' and self.right_disp_map == 'none':
             raise MachineError('Can t trigger event cross-checking validation  if right_disp_map method equal to '
                                + self.right_disp_map)
-
-    @staticmethod
-    def resize_check_conf(cfg: Dict[str, dict], input_step: str) -> None:
-        """
-        Check the resize configuration
-
-        :param cfg: configuration
-        :type cfg: dict
-        :param input_step: current step
-        :type input_step: string
-        :return: None
-        """
-
-        schema = {
-            'border_disparity': Or(int, float, lambda input: np.isnan(input)),
-        }
-
-        checker = Checker(schema)
-        checker.validate(cfg[input_step])
 
     def check_conf(self, cfg: Dict[str, dict]) -> None:
         """

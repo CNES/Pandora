@@ -131,8 +131,9 @@ class Zncc(stereo.AbstractStereo):
         cmax = 1
 
         # Cost volume metadata
+        offset_row_col = int((self._window_size - 1) / 2)
         metadata = {'measure': 'zncc', 'subpixel': self._subpix,
-                    'offset_row_col': int((self._window_size - 1) / 2), 'window_size': self._window_size,
+                    'offset_row_col': offset_row_col, 'window_size': self._window_size,
                     'type_measure': 'max', 'cmax': cmax}
 
         # Disparity range
@@ -143,9 +144,15 @@ class Zncc(stereo.AbstractStereo):
             disparity_range = np.append(disparity_range, [disp_max])
 
         # Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
-        cv = np.zeros((len(disparity_range), img_left['im'].shape[1] - (self._window_size - 1),
-                       img_right['im'].shape[0] - (self._window_size - 1)), dtype=np.float32)
+        cv = np.zeros((len(disparity_range), img_left['im'].shape[1],
+                       img_right['im'].shape[0] ), dtype=np.float32)
         cv += np.nan
+
+        # If offset, do not consider border position for cost computation
+        if offset_row_col != 0:
+            cv_crop= cv[:, offset_row_col:-offset_row_col, offset_row_col: -offset_row_col]
+        else:
+            cv_crop = cv
 
         # Computes the matching cost
         for disp in disparity_range:
@@ -178,7 +185,7 @@ class Zncc(stereo.AbstractStereo):
             zncc_[np.where(divide_standard <= 0)] = 0
 
             # Places the result in the cost_volume
-            cv[dsp, point_p[0]:p_std[1], :] = np.swapaxes(zncc_, 0, 1)
+            cv_crop[dsp, point_p[0]:p_std[1], :] = np.swapaxes(zncc_, 0, 1)
 
         # Create the xarray.DataSet that will contain the cost_volume of dimensions (row, col, disp)
         cv = self.allocate_costvolume(img_left, self._subpix, disp_min, disp_max, self._window_size, metadata,

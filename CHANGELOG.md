@@ -2,13 +2,16 @@
 
 ## Unreleased
 
-### Changed
-
-- Input masks convention and creation of masks dataset.
+## 0.4.0 (November 2020)
 
 ### Added
 
 - Classification and segmentation maps as input. [#126]
+
+### Changed
+
+- Non truncation of the cost volume and the disparity map, which have the input image's size. [#152]
+- Input masks convention and creation of masks dataset.
 
 ## 0.3.0 (October 2020)
 

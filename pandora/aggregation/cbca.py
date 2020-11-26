@@ -113,7 +113,13 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         """
         cross_left, cross_right = self.computes_cross_supports(img_left, img_right, cv)
 
-        n_col_, n_row_, nb_disp = cv['cost_volume'].shape
+        offset = int(cv.attrs['offset_row_col'])
+        # Cost volume has input image size, if offset > 0 do not consider the marge
+        if offset > 0:
+            cv_data = cv['cost_volume'].data[offset: -offset, offset: -offset]
+        else:
+            cv_data = cv['cost_volume'].data
+        n_col_, n_row_, nb_disp = cv_data.shape
 
         # Allocate the numpy aggregated cost volume cv = (disp, col, row), for efficient memory management
         agg = np.zeros((nb_disp, n_row_, n_col_), dtype=np.float32)
@@ -124,7 +130,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         # id_nan = np.isnan(cv['cost_volume'].data)
         # compute the aggregation ..
         # cv['cost_volume'].data[id_nan] = np.nan
-        agg += np.swapaxes(cv['cost_volume'].data, 0, 2)
+        agg += np.swapaxes(cv_data, 0, 2)
         agg *= 0
 
         disparity_range = cv.coords['disp'].data
@@ -134,7 +140,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
             i_right = int((disparity_range[dsp] % 1) * cv.attrs['subpixel'])
 
             # Step 1 : horizontal integral image
-            step1 = cbca_step_1(cv['cost_volume'].data[:, :, dsp])
+            step1 = cbca_step_1(cv_data[:, :, dsp])
 
             range_col_right = range_col + disparity_range[dsp]
             valid_index = np.where((range_col_right >= 0) & (range_col_right < cross_right[i_right].shape[1]))
@@ -157,7 +163,11 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
             # Normalize the aggregated cost
             agg[dsp, :, :] /= np.swapaxes(sum4, 0, 1)
 
-        cv['cost_volume'].data = np.swapaxes(agg, 0, 2)
+        cv_data = np.swapaxes(agg, 0, 2)
+        if offset > 0:
+            cv['cost_volume'].data[offset: -offset, offset: -offset] = cv_data
+        else:
+            cv['cost_volume'].data = cv_data
         cv.attrs['aggregation'] = 'cbca'
 
         # Maximal cost of the cost volume after agregation
@@ -234,8 +244,8 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
                 # Create a sliding window of shape 2 using as_strided function : this function create a new a view (by
                 # manipulating data pointer)of the shift_mask array with a different shape. The new view pointing to the
                 # same memory block as shift_mask so it does not consume any additional memory.
-                str_row, str_col = shift_mask.strides # pylint: disable=unpacking-non-sequence
-                shape_windows = (shift_mask.shape[0], shift_mask.shape[1] -  1, 2)
+                str_row, str_col = shift_mask.strides  # pylint: disable=unpacking-non-sequence
+                shape_windows = (shift_mask.shape[0], shift_mask.shape[1] - 1, 2)
                 strides_windows = (str_row, str_col, str_col)
                 aggregation_window = np.lib.stride_tricks.as_strided(shift_mask, shape_windows, strides_windows,
                                                                      writeable=False)

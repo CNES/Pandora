@@ -17,9 +17,6 @@
     "disparity": {
       "disparity_method": "wta",
       "invalid_disparity": "np.nan"
-    },
-    "resize": {
-      "border_disparity": "np.nan"
     }
   }
 }

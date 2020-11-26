@@ -60,7 +60,7 @@ class AbstractStereo():
                     logging.error('No stereo matching method named % supported', cfg['stereo_method'])
                     raise KeyError
             else:
-                if isinstance(cfg['stereo_method'], unicode): # pylint: disable=undefined-variable
+                if isinstance(cfg['stereo_method'], unicode):  # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractStereo, cls).__new__(
@@ -164,8 +164,10 @@ class AbstractStereo():
 
         # First pixel in the image that is fully computable (aggregation windows are complete)
         offset_row_col = int((window_size - 1) / 2)
-        row = np.arange(c_row[0] + offset_row_col, c_row[-1] - offset_row_col + 1)
-        col = np.arange(c_col[0] + offset_row_col, c_col[-1] - offset_row_col + 1)
+        row = np.arange(c_row[0], c_row[-1] + 1)
+        col = np.arange(c_col[0], c_col[-1] + 1)
+        row_off = np.arange(c_row[0] + offset_row_col, c_row[-1] - offset_row_col + 1)
+        col_off = np.arange(c_col[0] + offset_row_col, c_col[-1] - offset_row_col + 1)
 
         # Compute the disparity range
         if subpix == 1:
@@ -183,9 +185,17 @@ class AbstractStereo():
         cost_volume.attrs = metadata
 
         # Allocate the confidence measure in the cost volume Dataset
-        confidence_measure = compute_std_raster(img_left, window_size).reshape((len(row), len(col), 1))
+        confidence_measure = compute_std_raster(img_left, window_size).reshape((len(row_off), len(col_off), 1))
+        # Create the confidence measure with the original image size and fill it
+        confidence_measure_full = np.full((len(row), len(col), 1), np.nan, dtype=np.float32)
+        if offset_row_col != 0:
+            confidence_measure_full[offset_row_col: - offset_row_col, offset_row_col: - offset_row_col, :] = \
+                confidence_measure
+        else:
+            confidence_measure_full = confidence_measure
+
         cost_volume = cost_volume.assign_coords(indicator=['stereo_pandora_intensityStd'])
-        cost_volume['confidence_measure'] = xr.DataArray(data=confidence_measure.astype(np.float32),
+        cost_volume['confidence_measure'] = xr.DataArray(data=confidence_measure_full.astype(np.float32),
                                                          dims=['row', 'col', 'indicator'])
 
         return cost_volume
@@ -230,7 +240,7 @@ class AbstractStereo():
         return point_p, point_q
 
     @staticmethod
-    def masks_dilatation(img_left: xr.Dataset, img_right: xr.Dataset, offset_row_col: int, window_size: int,
+    def masks_dilatation(img_left: xr.Dataset, img_right: xr.Dataset, window_size: int,
                          subp: int) -> Tuple[xr.DataArray, List[xr.DataArray]]:
         """
         Return the left and right mask with the convention :
@@ -251,8 +261,6 @@ class AbstractStereo():
             xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param offset_row_col: offset
-        :type offset_row_col: int
         :param window_size: window size of the measure
         :type window_size: int
         :param subp: subpixel precision = (1 or 2 or 4)
@@ -279,7 +287,7 @@ class AbstractStereo():
             # All pixels are valid
             dilatate_left_mask = np.zeros(img_left['im'].shape)
 
-        # Create the right mask with the convention : 0 = valid, nan = invalid and no_datassssss
+        # Create the right mask with the convention : 0 = valid, nan = invalid and no_data
         if 'msk' in img_right.data_vars:
             dilatate_right_mask = np.zeros(img_right['msk'].shape)
             # Invalid pixels are nan
@@ -295,14 +303,9 @@ class AbstractStereo():
             # All pixels are valid
             dilatate_right_mask = np.zeros(img_left['im'].shape)
 
-        if offset_row_col != 0:
-            # Truncate the masks to the size of the cost volume
-            dilatate_left_mask = dilatate_left_mask[offset_row_col:-offset_row_col, offset_row_col:-offset_row_col]
-            dilatate_right_mask = dilatate_right_mask[offset_row_col:-offset_row_col, offset_row_col:-offset_row_col]
-
         ny_, nx_ = img_left['im'].shape
-        row = np.arange(0 + offset_row_col, ny_ - offset_row_col)
-        col = np.arange(0 + offset_row_col, nx_ - offset_row_col)
+        row = np.arange(0, ny_)
+        col = np.arange(0, nx_)
 
         # Shift the right mask, for sub-pixel precision. If an no_data or invalid pixel was used to create the
         # sub-pixel point, then the sub-pixel point is invalidated / no_data.
@@ -318,7 +321,7 @@ class AbstractStereo():
 
             # Whatever the sub-pixel precision, only one sub-pixel mask is created,
             # since 0.5 shifted mask == 0.25 shifted mask
-            col_shift = np.arange(0 + offset_row_col + 0.5, nx_ - 1 - offset_row_col, step=1)
+            col_shift = np.arange(0 + 0.5, nx_ - 1, step=1)
             dilatate_right_mask_shift = xr.DataArray(dilatate_right_mask_shift,
                                                      coords=[row, col_shift], dims=['row', 'col'])
 
@@ -404,18 +407,16 @@ class AbstractStereo():
 
         # Computes the validity mask of the cost volume : invalid pixels or no_data are masked with the value nan.
         # Valid pixels are = 0
-        offset = int((self._window_size - 1) / 2)
-        mask_left, mask_right = self.masks_dilatation(img_left, img_right, offset, self._window_size, self._subpix)
-        offset_mask = (int(self._window_size / 2) * 2)
+        mask_left, mask_right = self.masks_dilatation(img_left, img_right, self._window_size, self._subpix)
 
         for disp in cost_volume.coords['disp'].data:
             i_right = int((disp % 1) * self._subpix)
             point_p, point_q = self.point_interval(img_left, img_right_shift[i_right], disp)
 
             # Point interval in the left image
-            p_mask = (point_p[0], point_p[1] - offset_mask)
+            p_mask = (point_p[0], point_p[1])
             # Point interval in the right image
-            q_mask = (point_q[0], point_q[1] - offset_mask)
+            q_mask = (point_q[0], point_q[1])
 
             i_mask_right = min(1, i_right)
             dsp = int((disp - dmin) * self._subpix)
@@ -430,18 +431,16 @@ class AbstractStereo():
         if isinstance(disp_min, int) and isinstance(disp_max, int):
             return
 
-        # Variable range of disparities
-        # Resize disparity grids : disparity grids size and cost volume size must be equal
-        offset = int(cost_volume.attrs['offset_row_col'])
-        if offset == 0:
-            disp_min_crop = disp_min
-            disp_max_crop = disp_max
-        else:
-            disp_min_crop = disp_min[offset: -offset, offset: -offset]
-            disp_max_crop = disp_max[offset: -offset, offset: -offset]
+        # Disparity range may be one size bigger in y axis
+        if disp_min.shape[0] > ny_:
+            disp_min = disp_min[0: ny_, :]
+            disp_max = disp_max[0: ny_, :]
+        if disp_min.shape[1] > nx_:
+            disp_min = disp_min[:, 0: nx_]
+            disp_max = disp_max[:, 0: nx_]
 
         # Mask the costs computed with a disparity lower than disp_min and higher than disp_max
         for dsp in range(nd_):
-            masking = np.where(np.logical_or(cost_volume.coords['disp'].data[dsp] < disp_min_crop,
-                                             cost_volume.coords['disp'].data[dsp] > disp_max_crop))
+            masking = np.where(np.logical_or(cost_volume.coords['disp'].data[dsp] < disp_min,
+                                             cost_volume.coords['disp'].data[dsp] > disp_max))
             cost_volume['cost_volume'].data[masking[0], masking[1], dsp] = np.nan

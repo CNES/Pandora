@@ -56,6 +56,7 @@ class TestValidation(unittest.TestCase):
                                coords={'row': [0, 1], 'col': np.arange(4)})
         self.left.attrs['disp_min'] = -2
         self.left.attrs['disp_max'] = 2
+        self.left.attrs['offset_row_col'] = 0
 
         self.right = xr.Dataset({'disparity_map': (['row', 'col'], np.array([[0, 2, -1, -1],
                                                                              [1, 1, -2, -1]], dtype=np.float32)),
@@ -65,6 +66,7 @@ class TestValidation(unittest.TestCase):
                                 coords={'row': [0, 1], 'col': np.arange(4)})
         self.right.attrs['disp_min'] = -2
         self.right.attrs['disp_max'] = 2
+        self.right.attrs['offset_row_col'] = 0
 
     def test_cross_checking(self):
         """
@@ -82,7 +84,7 @@ class TestValidation(unittest.TestCase):
         gt_dist = np.array([[[np.nan, 0.],
                              [np.nan, 1.],
                              [np.nan, 0.],
-                             [np.nan, 0.]],
+                             [np.nan, np.nan]],
                             [[np.nan, 0.],
                              [np.nan, 1.],
                              [np.nan, 0.],
@@ -118,6 +120,7 @@ class TestValidation(unittest.TestCase):
                           coords={'row': [0, 1], 'col': np.arange(4)})
         left.attrs['disp_min'] = -2
         left.attrs['disp_max'] = 2
+        left.attrs['offset_row_col'] = 0
 
         right = xr.Dataset({'disparity_map': (['row', 'col'], np.array([[0, 2, -1.2, -1],
                                                                         [0.8, 1, -2, -1]], dtype=np.float32)),
@@ -127,6 +130,7 @@ class TestValidation(unittest.TestCase):
                            coords={'row': [0, 1], 'col': np.arange(4)})
         right.attrs['disp_min'] = -2
         right.attrs['disp_max'] = 2
+        right.attrs['offset_row_col'] = 0
 
         # Compute the cross checking confidence measure and validity mask
         validation_matcher = validation.AbstractValidation(**{'validation_method': 'cross_checking',

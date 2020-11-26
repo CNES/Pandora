@@ -241,7 +241,7 @@ class CrossChecking(AbstractValidation):
         disparity_range = np.arange(dataset_left.attrs['disp_min'], dataset_left.attrs['disp_max'] + 1)
 
         # Add a new indicator to the confidence measure DataArray
-        conf_measure = np.zeros((nb_row, nb_col, nb_indicator + 1), dtype=np.float32)
+        conf_measure = np.full((nb_row, nb_col, nb_indicator + 1), np.nan, dtype=np.float32)
         conf_measure[:, :, :-1] = dataset_left['confidence_measure'].data
 
         indicator = np.copy(dataset_left.coords['indicator'])
@@ -251,6 +251,8 @@ class CrossChecking(AbstractValidation):
         dataset_left = dataset_left.drop_dims('indicator')
         dataset_left = dataset_left.assign_coords(indicator=indicator)
         dataset_left['confidence_measure'] = xr.DataArray(data=conf_measure, dims=['row', 'col', 'indicator'])
+
+        offset = dataset_left.attrs['offset_row_col']
 
         for row in range(0, nb_row):
             # Exclude invalid pixel :
@@ -278,7 +280,7 @@ class CrossChecking(AbstractValidation):
             left_disp[np.isnan(left_disp)] = np.inf
 
             # Allocate to the measure map, the distance disp LR / disp RL indicator
-            dataset_left['confidence_measure'].data[row, inside_right[0], -1] = np.abs(right_disp + left_disp)
+            dataset_left['confidence_measure'].data[row, inside_right[0] + offset, -1] = np.abs(right_disp + left_disp)
 
             # left image pixels invalidated by the cross checking
             invalid = np.abs(right_disp + left_disp) > self._threshold

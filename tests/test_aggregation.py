@@ -309,12 +309,27 @@ class TestAggregation(unittest.TestCase):
         cbca_obj.cost_volume_aggregation(left, right, sad, **{'valid_pixels': 5, 'no_data': 7})
 
         # Aggregate cost volume ground truth with the cross-based cost aggregation method for the stereo image
-        aggregated_ground_truth = np.array([[[np.nan, (66. + 63 + 66 + 63) / 4, 0.],
+        aggregated_ground_truth = np.array([[[np.nan, np.nan, np.nan],
+                                             [np.nan, np.nan, np.nan],
+                                             [np.nan, np.nan, np.nan],
+                                             [np.nan, np.nan, np.nan],
+                                             [np.nan, np.nan, np.nan]],
+                                            [[np.nan, np.nan, np.nan],
+                                             [np.nan, (66. + 63 + 66 + 63) / 4, 0.],
                                              [55., (66 + 63 + 52 + 66 + 63 + 52) / 6, 0.],
-                                             [55., (63 + 63 + 52 + 52) / 4, np.nan]],
-                                            [[np.nan, (66. + 63 + 66 + 63) / 4, 0.],
+                                             [55., (63 + 63 + 52 + 52) / 4, np.nan],
+                                             [np.nan, np.nan, np.nan]],
+                                            [[np.nan, np.nan, np.nan],
+                                             [np.nan, (66. + 63 + 66 + 63) / 4, 0.],
                                              [55., (66 + 63 + 52 + 66 + 63 + 52) / 6, 0.],
-                                             [55., (63 + 63 + 52 + 52) / 4, np.nan]]])
+                                             [55., (63 + 63 + 52 + 52) / 4, np.nan],
+                                             [np.nan, np.nan, np.nan]],
+                                            [[np.nan, np.nan, np.nan],
+                                             [np.nan, np.nan, np.nan],
+                                             [np.nan, np.nan, np.nan],
+                                             [np.nan, np.nan, np.nan],
+                                             [np.nan, np.nan, np.nan]]
+                                            ])
 
         # Check if the calculated aggregated cost volume is equal (upto the desired tolerance of 1e-07)
         # to the ground truth
