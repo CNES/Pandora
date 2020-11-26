@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.4.0 (November 2020)
+
 ### Added
 
 - Classification and segmentation maps as input. [#126]
