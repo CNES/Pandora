@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Confidence measure that computes the distance LR / RL in cross checking method. [#155]
+
 ## 0.4.0 (November 2020)
 
 ### Added
@@ -30,7 +34,6 @@
 
 ### Fixed
 
-- Confidence measure that computes the distance LR / RL in cross checking method. [#155]
 - Creation of mask dataset in `read_img` function of the `img_tools` module. [#133]
 - Management of no data in cbca method. [#125]
 - Detection between false matches and occlusions. [#132]
