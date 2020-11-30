@@ -252,8 +252,6 @@ class CrossChecking(AbstractValidation):
         dataset_left = dataset_left.assign_coords(indicator=indicator)
         dataset_left['confidence_measure'] = xr.DataArray(data=conf_measure, dims=['row', 'col', 'indicator'])
 
-        offset = dataset_left.attrs['offset_row_col']
-
         for row in range(0, nb_row):
             # Exclude invalid pixel :
             valid_pixel = np.where((dataset_left['validity_mask'].data[row, :] & cst.PANDORA_MSK_PIXEL_INVALID) == 0)
@@ -280,7 +278,7 @@ class CrossChecking(AbstractValidation):
             left_disp[np.isnan(left_disp)] = np.inf
 
             # Allocate to the measure map, the distance disp LR / disp RL indicator
-            dataset_left['confidence_measure'].data[row, inside_right[0] + offset, -1] = np.abs(right_disp + left_disp)
+            dataset_left['confidence_measure'].data[row, col_left[inside_right], -1] = np.abs(right_disp + left_disp)
 
             # left image pixels invalidated by the cross checking
             invalid = np.abs(right_disp + left_disp) > self._threshold
