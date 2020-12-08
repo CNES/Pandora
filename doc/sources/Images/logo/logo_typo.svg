@@ -186,9 +186,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.70710678"
-     inkscape:cx="300.51583"
-     inkscape:cy="473.56963"
+     inkscape:zoom="1"
+     inkscape:cx="263.67814"
+     inkscape:cy="185.40599"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      inkscape:document-rotation="0"
@@ -217,6 +217,20 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1">
+    <g
+       aria-label="d"
+       transform="matrix(1.0015172,0,0,1.0646231,49.110443,-201.7607)"
+       id="g1439"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:56.4444px;line-height:1.25;font-family:'Louis George Café';-inkscape-font-specification:'Louis George Café, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;white-space:pre;shape-inside:url(#rect1220-6);fill:#39a350;fill-opacity:1;stroke:none"
+       inkscape:export-filename="/home/quentin/Bureau/logo_typo_grand.png"
+       inkscape:export-xdpi="75"
+       inkscape:export-ydpi="75">
+      <path
+         id="path1437"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:56.4444px;font-family:'Louis George Café';-inkscape-font-specification:'Louis George Café, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;shape-inside:url(#rect1220-6);fill:#39a350;fill-opacity:1;stroke-width:3.9027"
+         d="m 436.55664,134.15039 -0.20898,0.33203 v 51.43164 h 14.60546 v -51.43164 l -0.3125,-0.33203 z"
+         transform="matrix(0.26418252,0,0,0.24852301,-49.036046,189.51373)" />
+    </g>
     <g
        aria-label="d"
        transform="matrix(1.0015172,0,0,1.0646231,49.110443,-198.58568)"
@@ -268,13 +282,6 @@
          x="41.792969"
          y="263.20192"><tspan
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:56.4444px;font-family:'Louis George Café';-inkscape-font-specification:'Louis George Café, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal">p</tspan></tspan></text>
-    <path
-       id="rect1276"
-       style="fill:#39a350;fill-opacity:1;stroke-width:2.46635"
-       d="m 115.45166,35.382499 h 3.863 v 15.45477 h -3.863 z"
-       inkscape:export-filename="/home/quentin/Bureau/logo_typo_grand.png"
-       inkscape:export-xdpi="75"
-       inkscape:export-ydpi="75" />
     <text
        xml:space="preserve"
        id="text1218-8"
