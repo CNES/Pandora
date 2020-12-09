@@ -96,8 +96,8 @@ class TestPandora(unittest.TestCase):
                     'right_disp_map': {
                         'method': 'accurate'
                     },
-                    'stereo': {
-                        'stereo_method': 'zncc',
+                    'matching_cost': {
+                        'matching_cost_method': 'zncc',
                         'window_size': 5,
                         'subpix': 2
                     },
@@ -177,8 +177,8 @@ class TestPandora(unittest.TestCase):
                 'right_disp_map': {
                     'method': 'accurate'
                 },
-                'stereo': {
-                    'stereo_method': 'census',
+                'matching_cost': {
+                    'matching_cost_method': 'census',
                     'window_size': 5,
                     'subpix': 1
                 },
@@ -267,8 +267,8 @@ class TestPandora(unittest.TestCase):
                 'right_disp_map': {
                     'method': 'accurate'
                 },
-                'stereo': {
-                    'stereo_method': 'census',
+                'matching_cost': {
+                    'matching_cost_method': 'census',
                     'window_size': 5,
                     'subpix': 2
                 },
@@ -333,8 +333,8 @@ class TestPandora(unittest.TestCase):
                     'right_disp_map': {
                         'method': 'accurate'
                     },
-                    'stereo': {
-                        'stereo_method': 'zncc',
+                    'matching_cost': {
+                        'matching_cost_method': 'zncc',
                         'window_size': 5,
                         'subpix': 2
                     },

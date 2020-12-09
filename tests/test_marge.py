@@ -47,9 +47,10 @@ class TestMargins(unittest.TestCase):
         Test get_margins function
         """
         # Test with SGM configuration
-        cfg_sgm = {'stereo': {'stereo_method': 'census', 'window_size': 5},
+        cfg_sgm = {'matching_cost': {'matching_cost_method': 'census', 'window_size': 5},
                    'optimization': {'optimization_method': 'sgm'},
-                   'refinement': {'refinement_method': 'vfit'}, 'filter': {'filter_method': 'median', 'filter_size': 3},
+                   'refinement': {'refinement_method': 'vfit'},
+                   'filter': {'filter_method': 'median', 'filter_size': 3},
                    'validation': {'validation_method': 'cross_checking', 'cross_checking_threshold': 1,
                                   'right_left_mode': 'accurate'}}
 
@@ -74,7 +75,8 @@ class TestMargins(unittest.TestCase):
         assert res.attrs['disp_max'] == -2
 
         # Test without SGM configuration
-        cfg = {'stereo': {'stereo_method': 'census', 'window_size': 3}, 'optimization': {'optimization_method': 'none'},
+        cfg = {'matching_cost': {'matching_cost_method': 'census', 'window_size': 3},
+               'optimization': {'optimization_method': 'none'},
                'refinement': {'refinement_method': 'vfit'}, 'filter': {'filter_method': 'median', 'filter_size': 3},
                'validation': {'validation_method': 'cross_checking', 'cross_checking_threshold': 1,
                               'right_left_mode': 'accurate'}}
@@ -85,7 +87,8 @@ class TestMargins(unittest.TestCase):
         assert res.attrs['disp_min'] == -13
         assert res.attrs['disp_max'] == 14
 
-        cfg = {'stereo': {'stereo_method': 'sad', 'window_size': 9}, 'optimization': {'optimization_method': 'none'},
+        cfg = {'matching_cost': {'matching_cost_method': 'sad', 'window_size': 9},
+               'optimization': {'optimization_method': 'none'},
                'refinement': {'refinement_method': 'vfit'}, 'filter': {'filter_method': 'median', 'filter_size': 3},
                'validation': {'validation_method': 'cross_checking', 'cross_checking_threshold': 1,
                               'right_left_mode': 'accurate'}}
@@ -96,7 +99,8 @@ class TestMargins(unittest.TestCase):
         assert res.attrs['disp_min'] == 3
         assert res.attrs['disp_max'] == 14
 
-        cfg = {'stereo': {'stereo_method': 'sad', 'window_size': 1}, 'optimization': {'optimization_method': 'none'},
+        cfg = {'matching_cost': {'matching_cost_method': 'sad', 'window_size': 1},
+               'optimization': {'optimization_method': 'none'},
                'refinement': {'refinement_method': 'vfit'}, 'filter': {'filter_method': 'median', 'filter_size': 5},
                'validation': {'validation_method': 'cross_checking', 'cross_checking_threshold': 1,
                               'right_left_mode': 'accurate'}}

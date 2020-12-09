@@ -229,8 +229,8 @@ class TestConfig(unittest.TestCase):
                 'disp_max': 'tests/pandora/disp_max_grid.tif'
             },
             'pipeline': {
-                'stereo': {
-                    'stereo_method': 'zncc',
+                'matching_cost': {
+                    'matching_cost_method': 'zncc',
                     'window_size': 5,
                     'subpix': 2
                 },
@@ -265,8 +265,8 @@ class TestConfig(unittest.TestCase):
                 'right_disp_map': {
                     'method': 'none'
                 },
-                'stereo': {
-                    'stereo_method': 'zncc',
+                'matching_cost': {
+                    'matching_cost_method': 'zncc',
                     'window_size': 5,
                     'subpix': 2
                 },
@@ -290,8 +290,8 @@ class TestConfig(unittest.TestCase):
                 'disp_max_right': 'tests/pandora/disp_max_grid.tif'
             },
             'pipeline': {
-                'stereo': {
-                    'stereo_method': 'zncc',
+                'matching_cost': {
+                    'matching_cost_method': 'zncc',
                     'window_size': 5,
                     'subpix': 2
                 },
@@ -327,8 +327,8 @@ class TestConfig(unittest.TestCase):
                     'right_disp_map': {
                         'method': 'none'
                     },
-                    'stereo': {
-                        'stereo_method': 'zncc',
+                    'matching_cost': {
+                        'matching_cost_method': 'zncc',
                         'window_size': 5,
                         'subpix': 2
                     },
@@ -355,8 +355,8 @@ class TestConfig(unittest.TestCase):
                     'right_disp_map': {
                         'method': 'accurate'
                     },
-                    'stereo': {
-                        'stereo_method': 'zncc',
+                    'matching_cost': {
+                        'matching_cost_method': 'zncc',
                         'window_size': 5,
                         'subpix': 2
                     },
@@ -386,8 +386,8 @@ class TestConfig(unittest.TestCase):
                 'right_disp_map': {
                     'method': 'accurate'
                 },
-                'stereo': {
-                    'stereo_method': 'zncc',
+                'matching_cost': {
+                    'matching_cost_method': 'zncc',
                     'window_size': 5,
                     'subpix': 2
                 },
@@ -426,8 +426,8 @@ class TestConfig(unittest.TestCase):
                 'right_disp_map': {
                     'method': 'accurate'
                 },
-                'stereo': {
-                    'stereo_method': 'zncc',
+                'matching_cost': {
+                    'matching_cost_method': 'zncc',
                     'window_size': 5,
                     'subpix': 2
                 },
@@ -456,8 +456,8 @@ class TestConfig(unittest.TestCase):
                 'right_disp_map': {
                     'method': 'accurate'
                 },
-                'stereo': {
-                    'stereo_method': 'zncc',
+                'matching_cost': {
+                    'matching_cost_method': 'zncc',
                     'window_size': 5,
                     'subpix': 2
                 },
