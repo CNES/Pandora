@@ -30,11 +30,11 @@ import xarray as xr
 from json_checker import Checker, And
 
 from pandora.img_tools import shift_right_img, census_transform
-from pandora.stereo import stereo
+from pandora.matching_cost import matching_cost
 
 
-@stereo.AbstractStereo.register_subclass('census')
-class Census(stereo.AbstractStereo):
+@matching_cost.AbstractMatchingCost.register_subclass('census')
+class Census(matching_cost.AbstractMatchingCost):
     """
     Census class allows to compute the cost volume
     """
@@ -56,9 +56,9 @@ class Census(stereo.AbstractStereo):
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
-        :param cfg: stereo configuration
+        :param cfg: matching cost configuration
         :type cfg: dict
-        :return cfg: stereo configuration updated
+        :return cfg: matching cost configuration updated
         :rtype: dict
         """
         # Give the default value if the required element is not in the conf
@@ -68,7 +68,7 @@ class Census(stereo.AbstractStereo):
             cfg['subpix'] = self._SUBPIX
 
         schema = {
-            'stereo_method': And(str, lambda input: 'census'),
+            'matching_cost_method': And(str, lambda input: 'census'),
             'window_size': And(int, lambda input: input in (3, 5)),
             'subpix': And(int, lambda input: input in (1, 2, 4))
         }
@@ -79,7 +79,7 @@ class Census(stereo.AbstractStereo):
 
     def desc(self) -> None:
         """
-        Describes the stereo method
+        Describes the matching cost method
         :return: None
         """
         print('census similarity measure')

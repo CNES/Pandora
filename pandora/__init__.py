@@ -31,14 +31,7 @@ import numpy as np
 import xarray as xr
 from pkg_resources import iter_entry_points
 
-from . import aggregation
 from . import common
-from . import disparity
-from . import filter #pylint:disable=redefined-builtin
-from . import optimization
-from . import refinement
-from . import stereo
-from . import validation
 from .img_tools import read_img, read_disp
 from .json_checker import check_conf, read_config_file
 from .state_machine import PandoraMachine
@@ -149,7 +142,6 @@ def main(cfg_path: str, output: str, verbose: bool) -> None:
 
     # Instantiate pandora state machine
     pandora_machine = PandoraMachine()
-
     # check the configuration
     cfg = check_conf(user_cfg, pandora_machine)
 
