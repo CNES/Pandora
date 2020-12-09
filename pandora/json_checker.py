@@ -207,24 +207,6 @@ def get_config_input(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     return cfg
 
 
-def get_config_image(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
-    """
-    Get the image configuration
-
-    :param user_cfg: user configuration
-    :type user_cfg: dict
-    :return cfg: partial configuration
-    :rtype cfg: dict
-    """
-
-    cfg = {}
-
-    if 'image' in user_cfg:
-        cfg['image'] = user_cfg['image']
-
-    return cfg
-
-
 def check_pipeline_section(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> Dict[str, dict]:
     """
     Check if the pipeline is correct by
@@ -246,29 +228,6 @@ def check_pipeline_section(user_cfg: Dict[str, dict], pandora_machine: PandoraMa
 
     configuration_schema = {
         'pipeline': dict
-    }
-
-    checker = Checker(configuration_schema)
-    checker.validate(cfg)
-
-    return cfg
-
-
-def check_image_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
-    """
-    Complete and check if the dictionary is correct
-
-    :param user_cfg: user configuration
-    :type user_cfg: dict
-    :return cfg: global configuration
-    :rtype cfg: dict
-    """
-    # Add missing steps and inputs defaults values in user_cfg
-    cfg = update_conf(default_short_configuration_image, user_cfg)
-
-    # check schema
-    configuration_schema = {
-        'image': image_configuration_schema
     }
 
     checker = Checker(configuration_schema)
@@ -332,10 +291,6 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> Di
     :rtype cfg: dict
     """
 
-    # check image
-    user_cfg_image = get_config_image(user_cfg)
-    cfg_image = check_image_section(user_cfg_image)
-
     # check input
     user_cfg_input = get_config_input(user_cfg)
     cfg_input = check_input_section(user_cfg_input)
@@ -354,7 +309,7 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> Di
         sys.exit(1)
 
     # concatenate updated config
-    cfg = concat_conf([cfg_image, cfg_input, cfg_pipeline])
+    cfg = concat_conf([cfg_input, cfg_pipeline])
 
     return cfg
 
@@ -379,6 +334,8 @@ def concat_conf(cfg_list: List[Dict[str, dict]]) -> Dict[str, dict]:
 input_configuration_schema = {
     'img_left': And(str, rasterio_can_open_mandatory),
     'img_right': And(str, rasterio_can_open_mandatory),
+    'nodata_left': Or(int, lambda input: np.isnan(input)),
+    'nodata_right': Or(int, lambda input: np.isnan(input)),
     'left_mask': And(Or(str, lambda input: input is None), rasterio_can_open),
     'right_mask': And(Or(str, lambda input: input is None), rasterio_can_open),
     'left_classif': And(Or(str, lambda x: x is None), rasterio_can_open),
@@ -412,20 +369,11 @@ input_configuration_schema_left_disparity_grids_right_grids = {
     'disp_max_right': And(str, rasterio_can_open)
 }
 
-image_configuration_schema = {
-    'nodata1': Or(int, lambda input: np.isnan(input)),
-    'nodata2': Or(int, lambda input: np.isnan(input))
-}
-
-default_short_configuration_image = {
-    'image': {
-        'nodata1': 0,
-        'nodata2': 0
-    }
-}
 
 default_short_configuration_input = {
     'input': {
+        'nodata_left': -9999,
+        'nodata_right': -9999,
         'left_mask': None,
         'right_mask': None,
         'left_classif': None,
@@ -446,7 +394,7 @@ default_short_configuration_pipeline = {
         }
 }
 
-default_short_configuration = concat_conf([default_short_configuration_image, default_short_configuration_input,
+default_short_configuration = concat_conf([default_short_configuration_input,
                                            default_short_configuration_pipeline])
 
 
