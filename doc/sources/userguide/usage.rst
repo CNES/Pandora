@@ -41,11 +41,6 @@ Pandora works with JSON formatted data with the following nested structures.
       "input" : {
         ...
       },
-
-      "image" : {
-        ...
-      },
-
       "pipeline" :
        {
           "matching_cost" : {
@@ -80,8 +75,6 @@ Pandora works with JSON formatted data with the following nested structures.
 +=====================+===================================+======+===============+=============================+==========+
 | *input*             | Input data to process             | dict |               | :ref:`input_parameters`     | Yes      |
 +---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *image*             | Images and masks parameters       | dict |               | :ref:`image_parameters`     | No       |
-+---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
 | *pipeline*          | Pipeline steps parameters         | dict |               | :ref:`pipeline_parameters`  | Yes      |
 +---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
 
@@ -97,6 +90,10 @@ Input parameters
 | *img_left*       | Path to the left image                                    | string        |               | Yes      |
 +------------------+-----------------------------------------------------------+---------------+---------------+----------+
 | *img_right*      | Path to the right image                                   | string        |               | Yes      |
++------------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *nodata_left*    | Nodata value for left image                               | int or nan    | -9999         | No       |
++------------------+-----------------------------------------------------------+---------------+---------------+----------+
+| *nodata_left*    | Nodata value for right image                              | int or nan    | -9999         | No       |
 +------------------+-----------------------------------------------------------+---------------+---------------+----------+
 | *disp_min*       | minimal disparity                                         | int or string |               | Yes      |
 +------------------+-----------------------------------------------------------+---------------+---------------+----------+
@@ -132,21 +129,6 @@ Input parameters
     Mask must comply with the following convention
      - Value equal to 0 for valid pixel
      - Value not equal to 0 for invalid pixel
-
-
-.. _image_parameters:
-
-Image parameters
-----------------
-
-+--------------+----------------------------------+------+---------------+----------------+----------+
-| Name         | Description                      | Type | Default value |Available value | Required |
-+==============+==================================+======+===============+================+==========+
-| nodata1      | Nodata value for left image      | int  | 0             | int or nan     | No       |
-+--------------+----------------------------------+------+---------------+----------------+----------+
-| nodata2      | Nodata value for right image     | int  | 0             | int or nan     | No       |
-+--------------+----------------------------------+------+---------------+----------------+----------+
-
 
 .. _pipeline_parameters:
 
