@@ -5,6 +5,7 @@
 ### Changed
 
 - semantic change: stereo becomes matching_cost (transition name, module, files and class name). [#170]
+- Merge image on input configuration section. [#169]
 
 ### Fixed
 
