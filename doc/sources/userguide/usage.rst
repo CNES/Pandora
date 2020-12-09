@@ -48,7 +48,7 @@ Pandora works with JSON formatted data with the following nested structures.
 
       "pipeline" :
        {
-          "stereo" : {
+          "matching_cost" : {
             ...
           },
           "aggregation" : {
@@ -155,27 +155,27 @@ Pipeline parameters
 
 "Pipeline" parameters define steps sequencing to be run. Pandora will check if sub-parameters of each mentioned step are correct.
 
-+---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| Name                | Description                       | Type | Default value | Sub structures              | Required |
-+=====================+===================================+======+===============+=============================+==========+
-| *right_disp_map*    | Input data to process             | dict |               | :ref:`rdm_parameters`       | No       |
-+---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *stereo*            | Pixel and mask parameters         | dict |               | :ref:`stereo_parameters`    | Yes      |
-+---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *aggregation*       | Aggregation step parameters       | dict |               | :ref:`aggreg_parameters`    | No       |
-+---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *optimization*      | Optimization step parameters      | dict |               | :ref:`optim_parameters`     | No       |
-+---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *disparity*         | Disparity  step parameters        | dict |               | :ref:`disparity_parameters` | Yes      |
-+---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *refinement*        | Refinement step parameters        | dict |               | :ref:`refine_parameters`    | No       |
-+---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *filter*            | Filtering step parameters         | dict |               | :ref:`filter_parameters`    | No       |
-+---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *validation*        | Validation step parameters        | dict |               | :ref:`valid_parameters`     | No       |
-+---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
-| *resize*            | Resize step parameters            | dict |               | :ref:`resize_parameters`    | No       |
-+---------------------+-----------------------------------+------+---------------+-----------------------------+----------+
++---------------------+-----------------------------------+------+---------------+---------------------------------+----------+
+| Name                | Description                       | Type | Default value | Sub structures                  | Required |
++=====================+===================================+======+===============+=================================+==========+
+| *right_disp_map*    | Input data to process             | dict |               | :ref:`rdm_parameters`           | No       |
++---------------------+-----------------------------------+------+---------------+---------------------------------+----------+
+| *stereo*            | Pixel and mask parameters         | dict |               | :ref:`matching_cost_parameters` | Yes      |
++---------------------+-----------------------------------+------+---------------+---------------------------------+----------+
+| *aggregation*       | Aggregation step parameters       | dict |               | :ref:`aggreg_parameters`        | No       |
++---------------------+-----------------------------------+------+---------------+---------------------------------+----------+
+| *optimization*      | Optimization step parameters      | dict |               | :ref:`optim_parameters`         | No       |
++---------------------+-----------------------------------+------+---------------+---------------------------------+----------+
+| *disparity*         | Disparity  step parameters        | dict |               | :ref:`disparity_parameters`     | Yes      |
++---------------------+-----------------------------------+------+---------------+---------------------------------+----------+
+| *refinement*        | Refinement step parameters        | dict |               | :ref:`refine_parameters`        | No       |
++---------------------+-----------------------------------+------+---------------+---------------------------------+----------+
+| *filter*            | Filtering step parameters         | dict |               | :ref:`filter_parameters`        | No       |
++---------------------+-----------------------------------+------+---------------+---------------------------------+----------+
+| *validation*        | Validation step parameters        | dict |               | :ref:`valid_parameters`         | No       |
++---------------------+-----------------------------------+------+---------------+---------------------------------+----------+
+| *resize*            | Resize step parameters            | dict |               | :ref:`resize_parameters`        | No       |
++---------------------+-----------------------------------+------+---------------+---------------------------------+----------+
 
 .. _rdm_parameters:
 
@@ -184,7 +184,7 @@ Right disparity map parameters
 +-----------------+---------------------------------------------+--------+---------------+--------------------------------+----------+
 | Name            | Description                                 | Type   | Default value | Available value                | Required |
 +=================+=============================================+========+===============+================================+==========+
-| *stereo_method* | Method to compute the right disparity map   | string |   none        | "none", "accurate"             | Yes      |
+| *method*        | Method to compute the right disparity map   | string |   none        | "none", "accurate"             | Yes      |
 +-----------------+---------------------------------------------+--------+---------------+--------------------------------+----------+
 
 .. note::
@@ -193,21 +193,21 @@ Right disparity map parameters
                            the left one becomes the right one, the right one becomes the left one.
 
 
-.. _stereo_parameters:
+.. _matching_cost_parameters:
 
-Stereo parameters
+Matching_cost parameters
 ^^^^^^^^^^^^^^^^^
-+-----------------+------------------------------------+--------+---------------+--------------------------------+----------+
-| Name            | Description                        | Type   | Default value | Available value                | Required |
-+=================+====================================+========+===============+================================+==========+
-| *stereo_method* | Similarity measure                 | string |               | "ssd" , "sad", "census, "zncc" | Yes      |
-+-----------------+------------------------------------+--------+---------------+--------------------------------+----------+
-| *window_size*   | Window size for similarity measure | int    | 5             | Must be >0                     | No       |
-|                 |                                    |        |               |                                |          |
-|                 |                                    |        |               | For "census" : {3,5}           |          |
-+-----------------+------------------------------------+--------+---------------+--------------------------------+----------+
-| *subpix*        | Cost volume upsampling factor      | int    | 1             | {1,2,4}                        | No       |
-+-----------------+------------------------------------+--------+---------------+--------------------------------+----------+
++------------------------+------------------------------------+--------+---------------+--------------------------------+----------+
+| Name                   | Description                        | Type   | Default value | Available value                | Required |
++========================+====================================+========+===============+================================+==========+
+| *matching_cost_method* | Similarity measure                 | string |               | "ssd" , "sad", "census, "zncc" | Yes      |
++------------------------+------------------------------------+--------+---------------+--------------------------------+----------+
+| *window_size*          | Window size for similarity measure | int    | 5             | Must be >0                     | No       |
+|                        |                                    |        |               |                                |          |
+|                        |                                    |        |               | For "census" : {3,5}           |          |
++------------------------+------------------------------------+--------+---------------+--------------------------------+----------+
+| *subpix*               | Cost volume upsampling factor      | int    | 1             | {1,2,4}                        | No       |
++------------------------+------------------------------------+--------+---------------+--------------------------------+----------+
 
 .. note::
     Example for *subpix* parameter with disp_min = 0 and disp_max = 2
@@ -341,7 +341,7 @@ The following diagram highligts all states and possible transitions.
     .. figure:: ../Images/Machine_state_diagram.png
 
 A transition (i.e a pandora's step) can be triggered several times. You must respect the following
-naming convention: *stepname_xxx* . xxx can be the string you want.
+naming convention: *stepname.xxx* . xxx can be the string you want.
 See :ref:`multiple_filters_example`
 
 Examples
@@ -461,10 +461,10 @@ Same step, multiple times
             "disparity_method": "wta",
             "invalid_disparity": "np.nan"
           },
-          "filter_1": {
+          "filter.1": {
             "filter_method": "median"
           }
-          "filter_2": {
+          "filter.2": {
             "filter_method": "bilateral"
           }
      }

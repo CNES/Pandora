@@ -9,8 +9,8 @@
     "right_disp_map": {
       "method": "accurate"
     },
-    "stereo": {
-      "stereo_method": "zncc",
+    "matching_cost": {
+      "matching_cost_method": "zncc",
       "window_size": 5,
       "subpix": 4
     },
