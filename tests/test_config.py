@@ -242,11 +242,9 @@ class TestConfig(unittest.TestCase):
 
         cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
         cfg_gt = {
-            'image': {
-                'nodata1': 0,
-                'nodata2': 0
-            },
             'input': {
+                'nodata_left': -9999,
+                'nodata_right': -9999,
                 'left_mask': None,
                 'right_mask': None,
                 'left_classif': None,
@@ -303,11 +301,9 @@ class TestConfig(unittest.TestCase):
         }
         cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
         cfg_gt = {
-            'image': {
-                'nodata1': 0,
-                'nodata2': 0
-            },
             'input': {
+                'nodata_left': -9999,
+                'nodata_right': -9999,
                 'left_mask': None,
                 'right_mask': None,
                 'left_classif': None,
@@ -404,11 +400,9 @@ class TestConfig(unittest.TestCase):
         # When left and right disparities are grids, cross checking method can be used
         cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
         cfg_gt = {
-            'image': {
-                'nodata1': 0,
-                'nodata2': 0
-            },
             'input': {
+                'nodata_left': -9999,
+                'nodata_right': -9999,
                 'left_mask': None,
                 'right_mask': None,
                 'left_classif': None,
