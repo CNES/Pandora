@@ -21,5 +21,6 @@
 #
 from . import ambiguity
 from .confidence import AbstractConfidence
+from . import std_intensity
 
 # pylint: disable=missing-module-docstring

@@ -23,7 +23,6 @@
 This module contains functions to test the confidence module.
 """
 
-
 import unittest
 
 import numpy as np
@@ -32,6 +31,7 @@ import xarray as xr
 import pandora
 import pandora.confidence as confidence
 from pandora.state_machine import PandoraMachine
+import pandora.stereo as stereo
 
 
 class TestConfidence(unittest.TestCase):
@@ -66,7 +66,7 @@ class TestConfidence(unittest.TestCase):
                                                       'eta_step': 0.1})
 
         # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
-        _, cv_with_ambiguity = ambiguity_.confidence_prediction(None, None, None, cv_)
+        ambiguity_.confidence_prediction(None, None, None, cv_)
 
         # Ambiguity integral not normalized
         amb_int = np.array([[2., 4., 3.],
@@ -78,12 +78,12 @@ class TestConfidence(unittest.TestCase):
         ambiguity_ground_truth = (1 - amb_int)
 
         # Check if the calculated ambiguity is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(cv_with_ambiguity['confidence_measure'].data[:, :, 0], ambiguity_ground_truth)
+        np.testing.assert_array_equal(cv_['confidence_measure'].data[:, :, 0], ambiguity_ground_truth)
 
     @staticmethod
-    def test_ambiguity_full_pipeline():
+    def test_ambiguity_std_full_pipeline():
         """
-        Test the ambiguity method using the pandora run method
+        Test the ambiguity and std_intensity methods using the pandora run method
 
         """
         # Create left and right images
@@ -122,24 +122,21 @@ class TestConfidence(unittest.TestCase):
         user_cfg = {
             'pipeline':
                 {
-                    'right_disp_map': {
-                        'method': 'accurate'
-                    },
                     'stereo': {
                         'stereo_method': 'sad',
                         'window_size': 1,
                         'subpix': 1
                     },
+                    'confidence': {
+                        'confidence_method': 'std_intensity'
+                    },
                     'disparity': {
                         'disparity_method': 'wta'
-                    },
-                    'refinement': {
-                        'refinement_method': 'vfit'
                     },
                     'filter': {
                         'filter_method': 'median'
                     },
-                    'confidence': {
+                    'confidence_2': {
                         'confidence_method': 'ambiguity',
                         'eta_max': 0.3,
                         'eta_step': 0.25
@@ -153,6 +150,10 @@ class TestConfidence(unittest.TestCase):
 
         # Run the pandora pipeline
         left, _ = pandora.run(pandora_machine, left_im, right_im, -1, 1, cfg['pipeline'])
+
+        assert np.sum(left.coords['indicator'].data != ['stereo_pandora_intensityStd', 'ambiguity_confidence']) == 0
+
+        # ----- Check ambiguity results ------
 
         # Cost volume               Normalized cost volume
         # [[[nan  1.  0.]           [[[ nan 0.25 0.  ]
@@ -186,8 +187,65 @@ class TestConfidence(unittest.TestCase):
         ambiguity_ground_truth = (1 - amb_int)
 
         # Check if the calculated ambiguity is equal to the ground truth (same shape and all elements equals)
-        assert np.sum(left.coords['indicator'].data != ['stereo_pandora_intensityStd', 'ambiguity_confidence']) == 0
         np.testing.assert_allclose(left['confidence_measure'].data[:, :, 1], ambiguity_ground_truth, rtol=1e-06)
+
+        # ----- Check std_intensity results ------
+        std_intensity_gt = np.array([[0., 0., 0., 0.],
+                                     [0., 0., 0., 0.],
+                                     [0., 0., 0., 0.],
+                                     [0., 0., 0., 0.]])
+        # Check if the calculated std_intensity is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(left['confidence_measure'].data[:, :, 0], std_intensity_gt)
+
+    @staticmethod
+    def test_std_intensity():
+        """
+        Test the confidence measure std_intensity
+        """
+        # Create a stereo object
+        left_data = np.array(([1, 1, 1, 1, 1, 1],
+                              [1, 1, 1, 1, 2, 1],
+                              [1, 1, 1, 4, 3, 1],
+                              [1, 1, 1, 1, 1, 1],
+                              [1, 1, 1, 1, 1, 1]), dtype=np.float64)
+        left = xr.Dataset({'im': (['row', 'col'], left_data)},
+                          coords={'row': np.arange(left_data.shape[0]), 'col': np.arange(left_data.shape[1])})
+        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+
+        right_data = np.array(([1, 1, 1, 2, 2, 2],
+                               [1, 1, 1, 4, 2, 4],
+                               [1, 1, 1, 4, 4, 1],
+                               [1, 1, 1, 1, 1, 1],
+                               [1, 1, 1, 1, 1, 1]), dtype=np.float64)
+        right = xr.Dataset({'im': (['row', 'col'], right_data)},
+                           coords={'row': np.arange(right_data.shape[0]), 'col': np.arange(right_data.shape[1])})
+        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+
+        # load plugins
+        stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
+
+        # Compute bright standard deviation inside a window of size 3 and create the confidence measure
+        std_bright_ground_truth = np.array([[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                                            [np.nan, 0., np.sqrt(8 / 9), np.sqrt(10 / 9), np.sqrt(10 / 9), np.nan],
+                                            [np.nan, 0., np.sqrt(8 / 9), np.sqrt(10 / 9), np.sqrt(10 / 9), np.nan],
+                                            [np.nan, 0., np.sqrt(8 / 9), np.sqrt(92 / 81), np.sqrt(92 / 81), np.nan],
+                                            [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]],
+                                           dtype=np.float32)
+
+        std_bright_ground_truth = std_bright_ground_truth.reshape((5, 6, 1))
+
+        # compute with compute_cost_volume
+        cv = stereo_matcher.compute_cost_volume(left, right, disp_min=-2, disp_max=1)
+        stereo_matcher.cv_masked(left, right, cv, -2, 1)
+
+        std_intensity = confidence.AbstractConfidence(**{'confidence_method': 'std_intensity'})
+
+        # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
+        _, cv_with_intensity = std_intensity.confidence_prediction(None, left, right, cv)
+
+        # Check if the calculated confidence_measure is equal to the ground truth (same shape and all elements equals)
+        assert np.sum(cv_with_intensity.coords['indicator'].data != ['stereo_pandora_intensityStd']) == 0
+        np.testing.assert_array_equal(cv_with_intensity['confidence_measure'].data, std_bright_ground_truth)
 
 
 if __name__ == '__main__':
