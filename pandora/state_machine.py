@@ -37,7 +37,7 @@ from pandora import disparity
 from pandora import filter # pylint: disable=redefined-builtin
 from pandora import optimization
 from pandora import refinement
-from pandora import stereo
+from pandora import matching_cost
 from pandora import validation
 
 
@@ -49,7 +49,7 @@ class PandoraMachine(Machine):
     """
 
     _transitions_run = [
-        {'trigger': 'stereo', 'source': 'begin', 'dest': 'cost_volume', 'after': 'stereo_run'},
+        {'trigger': 'matching_cost', 'source': 'begin', 'dest': 'cost_volume', 'after': 'matching_cost_run'},
         {'trigger': 'aggregation', 'source': 'cost_volume', 'dest': 'cost_volume', 'after': 'aggregation_run'},
         {'trigger': 'optimization', 'source': 'cost_volume', 'dest': 'cost_volume', 'after': 'optimization_run'},
         {'trigger': 'disparity', 'source': 'cost_volume', 'dest': 'disp_map', 'after': 'disparity_run'},
@@ -59,8 +59,8 @@ class PandoraMachine(Machine):
     ]
 
     _transitions_check = [
-        {'trigger': 'stereo', 'source': 'begin', 'dest': 'cost_volume', 'before': 'right_disp_map_check_conf',
-         'after': 'stereo_check_conf'},
+        {'trigger': 'matching_cost', 'source': 'begin', 'dest': 'cost_volume', 'before': 'right_disp_map_check_conf',
+         'after': 'matching_cost_check_conf'},
         {'trigger': 'aggregation', 'source': 'cost_volume', 'dest': 'cost_volume', 'after': 'aggregation_check_conf'},
         {'trigger': 'optimization', 'source': 'cost_volume', 'dest': 'cost_volume', 'after': 'optimization_check_conf'},
         {'trigger': 'disparity', 'source': 'cost_volume', 'dest': 'disp_map', 'after': 'disparity_check_conf'},
@@ -125,7 +125,7 @@ class PandoraMachine(Machine):
 
         logging.getLogger('transitions').setLevel(logging.WARNING)
 
-    def stereo_run(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def matching_cost_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Matching cost computation
         :param cfg: pipeline configuration
@@ -136,24 +136,25 @@ class PandoraMachine(Machine):
         """
 
         logging.info('Matching cost computation...')
-        stereo_ = stereo.AbstractStereo(**cfg[input_step])
-        dmin_min, dmax_max = stereo_.dmin_dmax(self.disp_min, self.disp_max)
+        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg[input_step])
+        dmin_min, dmax_max = matching_cost_.dmin_dmax(self.disp_min, self.disp_max)
 
         if self.right_disp_map != 'accurate':
-            self.left_cv = stereo_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max)
-            stereo_.cv_masked(self.left_img, self.right_img, self.left_cv, self.disp_min, self.disp_max)
+            self.left_cv = matching_cost_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max)
+            matching_cost_.cv_masked(self.left_img, self.right_img, self.left_cv, self.disp_min, self.disp_max)
 
         else:
-            self.left_cv = stereo_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max)
-            stereo_.cv_masked(self.left_img, self.right_img, self.left_cv, self.disp_min, self.disp_max)
+            self.left_cv = matching_cost_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max)
+            matching_cost_.cv_masked(self.left_img, self.right_img, self.left_cv, self.disp_min, self.disp_max)
 
             if self.right_disp_min is None:
                 self.right_disp_min = -self.disp_max
                 self.right_disp_max = -self.disp_min
 
-            dmin_min_right, dmax_max_right = stereo_.dmin_dmax(self.right_disp_min, self.right_disp_max)
-            self.right_cv = stereo_.compute_cost_volume(self.right_img, self.left_img, dmin_min_right, dmax_max_right)
-            stereo_.cv_masked(self.right_img, self.left_img, self.right_cv, self.right_disp_min,
+            dmin_min_right, dmax_max_right = matching_cost_.dmin_dmax(self.right_disp_min, self.right_disp_max)
+            self.right_cv = matching_cost_.compute_cost_volume(self.right_img, self.left_img, dmin_min_right,
+                                                               dmax_max_right)
+            matching_cost_.cv_masked(self.right_img, self.left_img, self.right_cv, self.right_disp_min,
                               self.right_disp_max)
 
     def aggregation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -324,19 +325,20 @@ class PandoraMachine(Machine):
         :type  cfg: dict
         :return: None
         """
+
         try:
             # There may be steps that are repeated several times, for example:
             #     'filter': {
             #       'filter_method': 'median'
             #     },
-            #     'filter_1': {
+            #     'filter.1': {
             #       'filter_method': 'bilateral'
             #     }
-            # But there's only a filter transition. Therefore, in the case of filter_1 we have to call the
+            # But there's only a filter transition. Therefore, in the case of filter.1 we have to call the
             # filter
-            # trigger and give the configuration of filter_1
-            if len(input_step.split('_')) != 1:
-                self.trigger(input_step.split('_')[0], cfg, input_step)
+            # trigger and give the configuration of filter.1
+            if len(input_step.split('.')) != 1:
+                self.trigger(input_step.split('.')[0], cfg, input_step)
             else:
                 self.trigger(input_step, cfg, input_step)
         except (MachineError, KeyError):
@@ -374,9 +376,9 @@ class PandoraMachine(Machine):
         # Store the righ disparity map configuration
         self.right_disp_map = cfg['right_disp_map']['method']
 
-    def stereo_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def matching_cost_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
-        Check the stereo configuration
+        Check the matching cost configuration
 
         :param cfg: configuration
         :type cfg: dict
@@ -385,8 +387,8 @@ class PandoraMachine(Machine):
         :return: None
         """
 
-        stereo_ = stereo.AbstractStereo(**cfg[input_step])
-        self.pipeline_cfg['pipeline'][input_step] = stereo_.cfg
+        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg[input_step])
+        self.pipeline_cfg['pipeline'][input_step] = matching_cost_.cfg
 
     def disparity_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -493,15 +495,15 @@ class PandoraMachine(Machine):
                 #     'filter': {
                 #       'filter_method': 'median'
                 #     },
-                #     'filter_1': {
+                #     'filter.1': {
                 #       'filter_method': 'bilateral'
                 #     }
-                # But there's only a filter transition. Therefore, in the case of filter_1 we have to call the
+                # But there's only a filter transition. Therefore, in the case of filter.1 we have to call the
                 # filter
-                # trigger and give the configuration of filter_1
+                # trigger and give the configuration of filter.1
 
-                if len(input_step.split('_')) != 1:
-                    self.trigger(input_step.split('_')[0], cfg, input_step)
+                if len(input_step.split('.')) != 1:
+                    self.trigger(input_step.split('.')[0], cfg, input_step)
                 else:
                     self.trigger(input_step, cfg, input_step)
 

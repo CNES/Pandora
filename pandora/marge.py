@@ -75,9 +75,9 @@ def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.DataAr
         r_marg = np.array([disp_max, 0, -disp_min, 0])
         s_marg = np.array([-disp_min, 0, + disp_max, 0])
 
-        if cfg['stereo']['window_size'] != 1:
-            r_marg += int(cfg['stereo']['window_size'] / 2)
-            s_marg += int(cfg['stereo']['window_size'] / 2)
+        if cfg['matching_cost']['window_size'] != 1:
+            r_marg += int(cfg['matching_cost']['window_size'] / 2)
+            s_marg += int(cfg['matching_cost']['window_size'] / 2)
 
         if cfg['refinement']['refinement_method'] == 'vfit':
             r_marg[0] += 1

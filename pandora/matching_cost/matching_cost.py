@@ -36,40 +36,41 @@ from pandora.img_tools import compute_std_raster
 from pandora.img_tools import shift_right_img
 
 
-class AbstractStereo():
+class AbstractMatchingCost():
     """
-    Abstract Stereo class
+    Abstract Matching Cost class
     """
     __metaclass__ = ABCMeta
 
-    stereo_methods_avail = {}
+    matching_cost_methods_avail = {}
 
     def __new__(cls, **cfg: Union[str, int]) -> object:
         """
-        Return the plugin associated with the stereo_method given in the configuration
+        Return the plugin associated with the matching_cost_method given in the configuration
 
-        :param cfg: configuration {'stereo_method': value}
+        :param cfg: configuration {'matching_cost_method': value}
         :type cfg: dictionary
         """
 
-        if cls is AbstractStereo:
-            if isinstance(cfg['stereo_method'], str):
+        if cls is AbstractMatchingCost:
+            if isinstance(cfg['matching_cost_method'], str):
                 try:
-                    return super(AbstractStereo, cls).__new__(cls.stereo_methods_avail[cfg['stereo_method']])
+                    return super(AbstractMatchingCost, cls).__new__(cls.matching_cost_methods_avail
+                                                                    [cfg['matching_cost_method']])
                 except KeyError:
-                    logging.error('No stereo matching method named % supported', cfg['stereo_method'])
+                    logging.error('No matching_cost method named % supported', cfg['matching_cost_method'])
                     raise KeyError
             else:
-                if isinstance(cfg['stereo_method'], unicode):  # pylint: disable=undefined-variable
+                if isinstance(cfg['matching_cost_method'], unicode):  # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
-                        return super(AbstractStereo, cls).__new__(
-                            cls.stereo_methods_avail[cfg['stereo_method'].encode('utf-8')])
+                        return super(AbstractMatchingCost, cls).__new__(
+                            cls.matching_cost_methods_avail[cfg['matching_cost_method'].encode('utf-8')])
                     except KeyError:
-                        logging.error('No stereo matching method named % supported', cfg['stereo_method'])
+                        logging.error('No matching_cost method named % supported', cfg['matching_cost_method'])
                         raise KeyError
         else:
-            return super(AbstractStereo, cls).__new__(cls)
+            return super(AbstractMatchingCost, cls).__new__(cls)
 
     @classmethod
     def register_subclass(cls, short_name: str, *args):
@@ -88,9 +89,9 @@ class AbstractStereo():
             :param subclass: the subclass to be registered
             :type subclass: object
             """
-            cls.stereo_methods_avail[short_name] = subclass
+            cls.matching_cost_methods_avail[short_name] = subclass
             for arg in args:
-                cls.stereo_methods_avail[arg] = subclass
+                cls.matching_cost_methods_avail[arg] = subclass
             return subclass
 
         return decorator
@@ -98,10 +99,10 @@ class AbstractStereo():
     @abstractmethod
     def desc(self) -> None:
         """
-        Describes the stereo method
+        Describes the matching cost method
         :return: None
         """
-        print('Stereo matching description')
+        print('Matching cost description')
 
     @abstractmethod
     def compute_cost_volume(self, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: int, disp_max: int

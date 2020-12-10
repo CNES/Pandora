@@ -22,4 +22,4 @@
 from . import census
 from . import sad_ssd
 from . import zncc
-from .stereo import AbstractStereo
+from .matching_cost import AbstractMatchingCost

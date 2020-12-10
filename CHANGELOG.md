@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- semantic change: stereo becomes matching_cost (transition name, module, files and class name). [#170]
+
 ### Fixed
 
 - Confidence measure that computes the distance LR / RL in cross checking method. [#155]

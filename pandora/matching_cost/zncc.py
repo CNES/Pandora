@@ -30,11 +30,11 @@ import xarray as xr
 from json_checker import Checker, And
 
 from pandora.img_tools import shift_right_img, compute_mean_raster, compute_std_raster
-from . import stereo
+from pandora.matching_cost import matching_cost
 
 
-@stereo.AbstractStereo.register_subclass('zncc')
-class Zncc(stereo.AbstractStereo):
+@matching_cost.AbstractMatchingCost.register_subclass('zncc')
+class Zncc(matching_cost.AbstractMatchingCost):
     """
     Zero mean normalized cross correlation
     Zncc class allows to compute the cost volume
@@ -57,9 +57,9 @@ class Zncc(stereo.AbstractStereo):
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
-        :param cfg: stereo configuration
+        :param cfg: matching cost configuration
         :type cfg: dict
-        :return cfg: stereo configuration updated
+        :return cfg: matching cost configuration updated
         :rtype: dict
         """
         # Give the default value if the required element is not in the configuration
@@ -69,7 +69,7 @@ class Zncc(stereo.AbstractStereo):
             cfg['subpix'] = self._SUBPIX
 
         schema = {
-            'stereo_method': And(str, lambda input: 'zncc'),
+            'matching_cost_method': And(str, lambda input: 'zncc'),
             'window_size': And(int, lambda input: input > 0 and (input % 2) != 0),
             'subpix': And(int, lambda input: input in (1, 2, 4))
         }
@@ -80,7 +80,7 @@ class Zncc(stereo.AbstractStereo):
 
     def desc(self) -> None:
         """
-        Describes the stereo method
+        Describes the matching cost method
         :return: None
         """
         print('zncc similarity measure')

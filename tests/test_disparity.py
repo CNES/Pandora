@@ -35,7 +35,7 @@ import xarray as xr
 import pandora
 import pandora.constants as cst
 import pandora.disparity as disparity
-import pandora.stereo as stereo
+import pandora.matching_cost as matching_cost
 from pandora.img_tools import read_img
 from pandora.state_machine import PandoraMachine
 
@@ -72,8 +72,9 @@ class TestDisparity(unittest.TestCase):
         """
 
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min -3 disp_max 1
-        stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, -3, 1)
+        matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
+                                                               'subpix': 1})
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -3, 1)
 
         # Disparity map ground truth, for the images described in the setUp method
         gt_disp = np.array([[1, 1, 1, -3],
@@ -90,7 +91,7 @@ class TestDisparity(unittest.TestCase):
         #
         # Test the to_disp method with negative disparity range
         #
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, -3, -1)
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -3, -1)
 
         # Disparity map ground truth
         gt_disp = np.array([[0, -1, -2, -3],
@@ -106,7 +107,7 @@ class TestDisparity(unittest.TestCase):
         #
         # Test the to_disp method with positive disparity range
         #
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, 1, 3)
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, 1, 3)
 
         # Disparity map ground truth
         gt_disp = np.array([[1, 1, 1, 0],
@@ -132,8 +133,9 @@ class TestDisparity(unittest.TestCase):
         """
 
         # Create the left cost volume, with SAD measure window size 3, subpixel 1, disp_min -3 disp_max 1
-        stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, -3, 1)
+        matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
+                                                               'subpix': 1})
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -3, 1)
 
         # Disparity map ground truth, for the images described in the setUp method
         # Check if gt is full size and border (i.e [offset:-offset] equal to invalid_disparity
@@ -151,7 +153,7 @@ class TestDisparity(unittest.TestCase):
         #
         # Test the to_disp method with negative disparity range
         #
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, -3, -1)
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -3, -1)
 
         # Disparity map ground truth
         gt_disp = np.array([[-99, -99, -99, -99],
@@ -167,7 +169,7 @@ class TestDisparity(unittest.TestCase):
         #
         # Test the to_disp method with positive disparity range
         #
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, 1, 3)
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, 1, 3)
 
         # Disparity map ground truth
         gt_disp = np.array([[-99, -99, -99, -99],
@@ -192,8 +194,9 @@ class TestDisparity(unittest.TestCase):
 
         """
         # Create the left cost volume, with SAD measure, window size 1, subpixel 2, disp_min -3 disp_max 1
-        stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 2})
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, -3, 1)
+        matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
+                                                               'subpix': 2})
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -3, 1)
         indices_nan = np.isnan(cv['cost_volume'].data)
         cv['cost_volume'].data[indices_nan] = np.inf
 
@@ -215,8 +218,9 @@ class TestDisparity(unittest.TestCase):
 
         """
         # Create the left cost volume, with ZNCC measure, window size 1, subpixel 2, disp_min -3 disp_max 1
-        stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'zncc', 'window_size': 1, 'subpix': 2})
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, -3, 1)
+        matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'zncc', 'window_size': 1,
+                                                               'subpix': 2})
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -3, 1)
         indices_nan = np.isnan(cv['cost_volume'].data)
         cv['cost_volume'].data[indices_nan] = -np.inf
 
@@ -238,8 +242,9 @@ class TestDisparity(unittest.TestCase):
 
         """
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min -3 disp_max 1
-        stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, -3, 1)
+        matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
+                                                                     'subpix': 1})
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -3, 1)
 
         # Compute the disparity
         disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
@@ -261,8 +266,9 @@ class TestDisparity(unittest.TestCase):
 
         """
         # Create the left cost volume, with SAD measure window size 3 and subpixel 1
-        stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, -2, 1)
+        matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
+                                                               'subpix': 1})
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -2, 1)
 
         # Right disparity map ground truth, for the images described in the setUp method
         gt_disp = np.array([[0, 0, 0, 0],
@@ -282,8 +288,9 @@ class TestDisparity(unittest.TestCase):
 
         """
         # Create the left cost volume, with SAD measure window size 3 and subpixel 4
-        stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 4})
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, -2, 1)
+        matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
+                                                               'subpix': 4})
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -2, 1)
 
         # Right disparity map ground truth
         gt_disp = np.array([[0, 0, 0, 0],
@@ -315,8 +322,8 @@ class TestDisparity(unittest.TestCase):
                 'right_disp_map': {
                     'method': 'accurate'
                 },
-                'stereo': {
-                    'stereo_method': 'census'
+                'matching_cost': {
+                    'matching_cost_method': 'census'
                 },
                 'disparity': {
                     'disparity_method': 'wta'
@@ -336,15 +343,14 @@ class TestDisparity(unittest.TestCase):
         left, right_fast = \
             pandora.run(pandora_machine_fast, pandora_left, pandora_right, -60, 0, cfg['pipeline']) # pylint: disable=unused-variable
 
-
         acc_cfg = {
             'pipeline':
                 {
                     'right_disp_map': {
                         'method': 'accurate'
                     },
-                    'stereo': {
-                        'stereo_method': 'census'
+                    'matching_cost': {
+                        'matching_cost_method': 'census'
                     },
                     'disparity': {
                         'disparity_method': 'wta'
@@ -377,8 +383,9 @@ class TestDisparity(unittest.TestCase):
         """
         # ------ Negative disparities ------
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min -3 disp_max -1
-        stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, -3, -1)
+        matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
+                                                               'subpix': 1})
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -3, -1)
 
         # Compute the disparity map and validity mask
         disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
@@ -401,7 +408,7 @@ class TestDisparity(unittest.TestCase):
 
         # ------ Positive disparities ------
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min 1 disp_max 2
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, 1, 2)
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, 1, 2)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
@@ -418,7 +425,7 @@ class TestDisparity(unittest.TestCase):
 
         # ------ Negative and positive disparities ------
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min -1 disp_max 1
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, -1, 1)
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -1, 1)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
@@ -447,10 +454,11 @@ class TestDisparity(unittest.TestCase):
                                   [0, 0, -1, -1]])
 
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min -3 disp_max -1
-        stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
-        dmin, dmax = stereo_plugin.dmin_dmax(disp_min_grid, disp_max_grid)
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, dmin, dmax)
-        stereo_plugin.cv_masked(self.left, self.right, cv, disp_min_grid, disp_max_grid)
+        matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
+                                                                     'subpix': 1})
+        dmin, dmax = matching_cost_plugin.dmin_dmax(disp_min_grid, disp_max_grid)
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, dmin, dmax)
+        matching_cost_plugin.cv_masked(self.left, self.right, cv, disp_min_grid, disp_max_grid)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
@@ -480,8 +488,9 @@ class TestDisparity(unittest.TestCase):
         """
         # ------ Negative disparities ------
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min -3 disp_max -1
-        stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, -3, -1)
+        matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
+                                                               'subpix': 1})
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -3, -1)
 
         # Compute the disparity map and validity mask
         disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
@@ -507,7 +516,7 @@ class TestDisparity(unittest.TestCase):
 
         # ------ Positive disparities ------
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min 1 disp_max 2
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, 1, 2)
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, 1, 2)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
@@ -533,7 +542,7 @@ class TestDisparity(unittest.TestCase):
 
         # ------ Negative and positive disparities ------
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min -1 disp_max 1
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, -1, 1)
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -1, 1)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
@@ -567,10 +576,11 @@ class TestDisparity(unittest.TestCase):
                                   [0, 0, -1, -1]])
 
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min -3 disp_max -1
-        stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
-        dmin, dmax = stereo_plugin.dmin_dmax(disp_min_grid, disp_max_grid)
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, dmin, dmax)
-        stereo_plugin.cv_masked(self.left, self.right, cv, disp_min_grid, disp_max_grid)
+        matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
+                                                               'subpix': 1})
+        dmin, dmax = matching_cost_plugin.dmin_dmax(disp_min_grid, disp_max_grid)
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, dmin, dmax)
+        matching_cost_plugin.cv_masked(self.left, self.right, cv, disp_min_grid, disp_max_grid)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
@@ -602,10 +612,11 @@ class TestDisparity(unittest.TestCase):
         # If bit 2 == 1 : Information: the disparity interval is incomplete (edge reached in the right image)
         """
         # Create the left cost volume, with SAD measure window size 1 and subpixel 1
-        stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
+        matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
+                                                               'subpix': 1})
 
         # ------ Negative and positive disparities ------
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, -2, 1)
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -2, 1)
 
         # Validity mask ground truth ( for disparities -1 0 1 2 )
         gt_mask = np.array([[cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0,
@@ -626,7 +637,7 @@ class TestDisparity(unittest.TestCase):
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
 
         # ------ Negative disparities ------
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, 1, 2)
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, 1, 2)
 
         # Validity mask ground truth ( for disparities -2 -1 )
         gt_mask = np.array([[cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
@@ -646,7 +657,7 @@ class TestDisparity(unittest.TestCase):
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
 
         # ------ Positive disparities ------
-        cv = stereo_plugin.compute_cost_volume(self.left, self.right, -2, -1)
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -2, -1)
 
         # Validity mask ground truth ( for disparities 1 2 )
         gt_mask = np.array([[0, 0, cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
@@ -700,8 +711,9 @@ class TestDisparity(unittest.TestCase):
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         right.attrs = {'valid_pixels': 1, 'no_data_mask': 2}
 
-        stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 1, 'subpix': 1})
-        cv = stereo_plugin.compute_cost_volume(left, right, -1, 1)
+        matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
+                                                               'subpix': 1})
+        cv = matching_cost_plugin.compute_cost_volume(left, right, -1, 1)
 
         # Compute the disparity map and validity mask
         disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
@@ -724,7 +736,7 @@ class TestDisparity(unittest.TestCase):
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
 
         # ---------------------- Test with negative disparity range ----------------------
-        cv = stereo_plugin.compute_cost_volume(left, right, -2, -1)
+        cv = matching_cost_plugin.compute_cost_volume(left, right, -2, -1)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
@@ -751,7 +763,7 @@ class TestDisparity(unittest.TestCase):
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
 
         # ---------------------- Test with positive disparity range ----------------------
-        cv = stereo_plugin.compute_cost_volume(left, right, 1, 2)
+        cv = matching_cost_plugin.compute_cost_volume(left, right, 1, 2)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
@@ -804,8 +816,9 @@ class TestDisparity(unittest.TestCase):
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
         right.attrs = {'valid_pixels': 1, 'no_data_mask': 2}
 
-        stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
-        cv = stereo_plugin.compute_cost_volume(left, right, -1, 1)
+        matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
+                                                               'subpix': 1})
+        cv = matching_cost_plugin.compute_cost_volume(left, right, -1, 1)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
@@ -864,8 +877,9 @@ class TestDisparity(unittest.TestCase):
                            coords={'row': np.arange(5, data.shape[0] + 5), 'col': np.arange(4, data.shape[1] + 4)})
         right.attrs = {'valid_pixels': 1, 'no_data_mask': 0}
 
-        stereo_plugin = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
-        cv = stereo_plugin.compute_cost_volume(left, right, -3, 2)
+        matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
+                                                                     'subpix': 1})
+        cv = matching_cost_plugin.compute_cost_volume(left, right, -3, 2)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)

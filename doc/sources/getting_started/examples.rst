@@ -16,8 +16,8 @@ Define your inputs and configure your pipeline by writting a json configuration 
         "disp_max" : 0
       },
       "pipeline": {
-          "stereo": {
-            "stereo_method": "ssd",
+          "matching_cost": {
+            "matching_cost_method": "ssd",
             "window_size": 5,
             "subpix": 1
           },

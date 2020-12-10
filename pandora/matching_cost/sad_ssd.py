@@ -31,11 +31,11 @@ from json_checker import Checker, And
 
 from pandora.img_tools import shift_right_img
 from pandora import common
-from pandora.stereo import stereo
+from pandora.matching_cost import matching_cost
 
 
-@stereo.AbstractStereo.register_subclass('sad', 'ssd')
-class SadSsd(stereo.AbstractStereo):
+@matching_cost.AbstractMatchingCost.register_subclass('sad', 'ssd')
+class SadSsd(matching_cost.AbstractMatchingCost):
     """
     SadSsd class allows to compute the cost volume
     """
@@ -45,12 +45,12 @@ class SadSsd(stereo.AbstractStereo):
 
     def __init__(self, **cfg: Union[str, int]) -> None:
         """
-        :param cfg: optional configuration,  {'stereo_method': value, 'window_size': value, 'subpix': value}
+        :param cfg: optional configuration,  {'matching_cost_method': value, 'window_size': value, 'subpix': value}
         :type cfg: dict
         :return: None
         """
         self.cfg = self.check_conf(**cfg)
-        self._method = str(self.cfg['stereo_method'])
+        self._method = str(self.cfg['matching_cost_method'])
         self._window_size = self.cfg['window_size']
         self._subpix = self.cfg['subpix']
         self._pixel_wise_methods = {'sad': self.ad_cost, 'ssd': self.sd_cost}
@@ -59,9 +59,9 @@ class SadSsd(stereo.AbstractStereo):
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
-        :param cfg: stereo configuration
+        :param cfg: matching cost configuration
         :type cfg: dict
-        :return cfg: stereo configuration updated
+        :return cfg: matching cost configuration updated
         :rtype: dict
         """
         # Give the default value if the required element is not in the conf
@@ -71,7 +71,7 @@ class SadSsd(stereo.AbstractStereo):
             cfg['subpix'] = self._SUBPIX
 
         schema = {
-            'stereo_method': And(str, lambda input: common.is_method(input, ['ssd', 'sad'])),
+            'matching_cost_method': And(str, lambda input: common.is_method(input, ['ssd', 'sad'])),
             'window_size': And(int, lambda input: input > 0 and (input % 2) != 0),
             'subpix': And(int, lambda input: input in (1, 2, 4))
         }
@@ -82,7 +82,7 @@ class SadSsd(stereo.AbstractStereo):
 
     def desc(self) -> None:
         """
-        Describes the stereo method
+        Describes the matching cost method
         :return: None
         """
         print(str(self._method) + ' similarity measure')
