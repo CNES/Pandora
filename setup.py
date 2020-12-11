@@ -55,6 +55,11 @@ REQUIREMENTS_EXTRA = {'dev': ['sphinx',
                       'sgm': ['pandora_plugin_libsgm==0.6.*']
                       }
 
+REQUIREMENTS_DEV = {'docs': ['sphinx',
+                             'sphinx_rtd_theme',
+                             'sphinx_autoapi'
+                            ]}
+
 
 def readme():
     with copen('README.md', 'r', 'utf-8') as fstream:
