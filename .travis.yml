@@ -12,3 +12,4 @@ script:
   - export NUMBA_DISABLE_JIT="1" && nose2 --plugin nose2.plugins.junitxml --with-coverage --coverage pandora --coverage-report xml -X
 after_success:
   - codecov #coverage
+  - bash <(curl -s https://codecov.io/bash)
