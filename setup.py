@@ -44,6 +44,11 @@ requirements = ['numpy',
                 'numba>=0.47.*',
                 'opencv-python']
 
+REQUIREMENTS_DEV = {'docs': ['sphinx',
+                             'sphinx_rtd_theme',
+                             'sphinx_autoapi'
+                            ]}
+
 
 def readme():
     with open('README.md', "r", "utf-8") as f:
@@ -63,6 +68,7 @@ setup(name='pandora',
       },
       python_requires='>=3.6',
       install_requires=requirements,
+      extras_require=REQUIREMENTS_DEV,
       packages=find_packages(),
       cmdclass=cmdclass,
       command_options={
