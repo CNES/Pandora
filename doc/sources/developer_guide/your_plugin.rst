@@ -3,9 +3,6 @@
 How to develop a plugin
 =======================
 
-One of the strengths of Pandora framework is the ability to develop an algorithm and use it as an external plugin.
-This mechanism makes it possible to enrich methods avalaible for each step of Pandora.
-
 The following sections describe the 4 major rules to respect in order to create your python package you want to use as
 a Pandora plugin.
 
@@ -15,8 +12,8 @@ Each subpackage of Pandora, representing one particular step, defines an `abstra
 
 .. sourcecode:: python
 
-    @stereo.AbstractStereo.register_subclass('my_stereo_method')
-    class MYSTEREO(stereo.AbstractStereo):
+    @matching_cost.AbstractMatchingCost.register_subclass('my_matching_cost_method')
+    class MYMATCHINGCOST(matching_cost.AbstractMatchingCost):
 
 2. Provide definitions of abstract methods
 
@@ -24,7 +21,7 @@ Each subpackage of Pandora, representing one particular step, defines an `abstra
 
     def desc(self):
         """
-        Describes the stereo method
+        Describes the matching cost method
         """
         print('My similarity measure')
 
@@ -40,7 +37,7 @@ Each subpackage of Pandora, representing one particular step, defines an `abstra
     def __init__(self, **cfg):
 
         self.cfg = self.check_config(**cfg)
-        self._my_stereo_param = str(self.cfg['my_stereo_param'])
+        self._my_matching_cost_param = str(self.cfg['my_matching_cost_param'])
         self._window_size = self.cfg['window_size']
         self._subpix = self.cfg['subpix']
 
@@ -48,9 +45,9 @@ Each subpackage of Pandora, representing one particular step, defines an `abstra
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
-        :param cfg: stereo configuration
+        :param cfg: matching_cost configuration
         :type cfg: dict
-        :return cfg: stereo configuration updated
+        :return cfg: matching_cost configuration updated
         :rtype: dict
         """
         # Give the default value if the required element is not in the configuration
@@ -60,10 +57,10 @@ Each subpackage of Pandora, representing one particular step, defines an `abstra
             cfg['subpix'] = self._SUBPIX
 
         schema = {
-            "stereo_method": And(str, lambda x: x == 'my_stereo_method'),
+            "matching_cost_method": And(str, lambda x: x == 'my_matching_cost_method'),
             "window_size": And(int, lambda x: x == 11),
             "subpix": And(int, lambda x: x == 1),
-            "my_stereo_param": int,
+            "my_matching_cost_param": int,
         }
 
         checker = Checker(schema)
@@ -79,7 +76,7 @@ So, you must declare, on your setup.py file, an entry point:
 
 .. sourcecode:: python
 
-    setup(name='plugin_my_stereo_method',
+    setup(name='plugin_my_matching_cost_method',
           setup_requires=['very-good-setuptools-git-version'],
           description='Pandora plugin to compute cost volume with my new matching cost algorithm',
           long_description=readme(),
@@ -87,7 +84,7 @@ So, you must declare, on your setup.py file, an entry point:
           install_requires=requirements,
           entry_points="""
               [pandora.plugin]
-              plugin_my_stereo_method = plugin_my_stereo_method.my_stereo_method:MYSTEREO
+              plugin_my_matching_cost_method = plugin_my_matching_cost_method.my_matching_cost_method:MYMATCHINGCOST
           """,
           cmdclass=cmdclass,
           )

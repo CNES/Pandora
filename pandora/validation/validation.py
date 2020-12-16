@@ -103,44 +103,49 @@ class AbstractValidation():
     def disparity_checking(self, dataset_left: xr.Dataset, dataset_right: xr.Dataset, img_left: xr.Dataset = None,
                            img_right: xr.Dataset = None, cv: xr.Dataset = None) -> xr.Dataset:
         """
-        Determination of occlusions and false matches by performing a consistency check on valid pixels. \
+        Determination of occlusions and false matches by performing a consistency check on valid pixels.
         Update the validity_mask :
+
             - If out & MSK_PIXEL_OCCLUSION != 0 : Invalid pixel : occluded pixel
             - If out & MSK_PIXEL_MISMATCH  != 0  : Invalid pixel : mismatched pixel
-        Update the measure map: add the disp RL / disp LR distances
 
-        :param dataset_left: left Dataset
-        :type dataset_left: xarray.Dataset with the variables :
+        | Update the measure map: add the disp RL / disp LR distances
+
+        :param dataset_left: left Dataset with the variables :
+
             - disparity_map 2D xarray.DataArray (row, col)
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
-        :param dataset_right: right Dataset
-        :type dataset_right: xarray.Dataset with the variables :
+        :type dataset_left: xarray.Dataset
+        :param dataset_right: right Dataset with the variables :
+
             - disparity_map 2D xarray.DataArray (row, col)
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
-        :param img_left: left Datset image
-        :type img_left:
-            xarray.Dataset containing :
+        :type dataset_right: xarray.Dataset
+        :param img_left: left Datset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_right: right Dataset image
-        :type img_right:
-            xarray.Dataset containing :
+        :type img_left: xarray.Dataset
+        :param img_right: right Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param cv: cost_volume Dataset
-        :type cv:
-            xarray.Dataset with the variables:
+        :type img_right: xarray.Dataset
+        :param cv: cost_volume Dataset with the variables:
+
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :return: the left dataset, with the bit 8 and 9 of the validity_mask :
-            - If out & MSK_PIXEL_OCCLUSION != 0 : Invalid pixel : occluded pixel
-            - If out & MSK_PIXEL_MISMATCH  != 0  : Invalid pixel : mismatched pixel
-        :rtype : xarray.Dataset with the variables :
+        :type cv: xarray.Dataset
+        :return: the left dataset with the variables :
+
             - disparity_map 2D xarray.DataArray (row, col)
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
-            - validity_mask 2D xarray.DataArray (row, col)
+            - validity_mask 2D xarray.DataArray (row, col) with the bit 8 and 9 of the validity_mask :
+                - If out & MSK_PIXEL_OCCLUSION != 0 : Invalid pixel : occluded pixel
+                - If out & MSK_PIXEL_MISMATCH  != 0  : Invalid pixel : mismatched pixel
+        :rtype: xarray.Dataset
         """
 
 
@@ -168,7 +173,7 @@ class CrossChecking(AbstractValidation):
 
         :param cfg: optimization configuration
         :type cfg: dict
-        :return cfg: optimization configuration updated
+        :return: optimization configuration updated
         :rtype: dict
         """
         # Give the default value if the required element is not in the configuration
@@ -198,44 +203,51 @@ class CrossChecking(AbstractValidation):
     def disparity_checking(self, dataset_left: xr.Dataset, dataset_right: xr.Dataset, img_left: xr.Dataset = None,
                            img_right: xr.Dataset = None, cv: xr.Dataset = None) -> xr.Dataset:
         """
-        Determination of occlusions and false matches by performing a consistency check on valid pixels. \
-        Update the validity_mask :
-            - If out & MSK_PIXEL_OCCLUSION != 0 : Invalid pixel : occluded pixel
-            - If out & MSK_PIXEL_MISMATCH  != 0  : Invalid pixel : mismatched pixel
-        Update the measure map: add the disp RL / disp LR distances
+        Determination of occlusions and false matches by performing a consistency check on valid pixels.
 
-        :param dataset_left: left Dataset
-        :type dataset_left: xarray.Dataset with the variables :
-            - disparity_map 2D xarray.DataArray (row, col)
-            - confidence_measure 3D xarray.DataArray (row, col, indicator)
-            - validity_mask 2D xarray.DataArray (row, col)
-        :param dataset_right: right Dataset
-        :type dataset_right: xarray.Dataset with the variables :
-            - disparity_map 2D xarray.DataArray (row, col)
-            - confidence_measure 3D xarray.DataArray (row, col, indicator)
-            - validity_mask 2D xarray.DataArray (row, col)
-        :param img_left: left Datset image
-        :type img_left:
-            xarray.Dataset containing :
-                - im : 2D (row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
-        :param img_right: right Dataset image
-        :type img_right:
-            xarray.Dataset containing :
-                - im : 2D (row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
-        :param cv: cv Dataset
-        :type cv:
-            xarray.Dataset with the variables:
-                - cv 3D xarray.DataArray (row, col, disp)
-                - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :return: the left dataset, with the bit 8 and 9 of the validity_mask :
+        Update the validity_mask :
+
             - If out & MSK_PIXEL_OCCLUSION != 0 : Invalid pixel : occluded pixel
             - If out & MSK_PIXEL_MISMATCH  != 0  : Invalid pixel : mismatched pixel
-        :rtype : xarray.Dataset with the variables :
+
+        | Update the measure map: add the disp RL / disp LR distances
+
+        :param dataset_left: left Dataset with the variables :
+
             - disparity_map 2D xarray.DataArray (row, col)
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
+        :type dataset_left: xarray.Dataset
+        :param dataset_right: right Dataset with the variables :
+
+            - disparity_map 2D xarray.DataArray (row, col)
+            - confidence_measure 3D xarray.DataArray (row, col, indicator)
+            - validity_mask 2D xarray.DataArray (row, col)
+        :type dataset_right: xarray.Dataset
+        :param img_left: left Datset image containing :
+
+                - im : 2D (row, col) xarray.DataArray
+                - msk : 2D (row, col) xarray.DataArray
+        :type img_left: xarray.Dataset
+        :param img_right: right Dataset image containing :
+
+                - im : 2D (row, col) xarray.DataArray
+                - msk : 2D (row, col) xarray.DataArray
+        :type img_right: xarray.Dataset
+        :param cv: cost_volume Dataset with the variables:
+
+                - cost_volume 3D xarray.DataArray (row, col, disp)
+                - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :type cv: xarray.Dataset
+        :return: the left dataset with the variables :
+
+            - disparity_map 2D xarray.DataArray (row, col)
+            - confidence_measure 3D xarray.DataArray (row, col, indicator)
+            - validity_mask 2D xarray.DataArray (row, col) with the bit 8 and 9 of the validity_mask :
+
+                - If out & MSK_PIXEL_OCCLUSION != 0 : Invalid pixel : occluded pixel
+                - If out & MSK_PIXEL_MISMATCH  != 0  : Invalid pixel : mismatched pixel
+        :rtype: xarray.Dataset
         """
         nb_row, nb_col, nb_indicator = dataset_left['confidence_measure'].shape
         disparity_range = np.arange(dataset_left.attrs['disp_min'], dataset_left.attrs['disp_max'] + 1)

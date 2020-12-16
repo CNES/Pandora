@@ -110,25 +110,25 @@ class AbstractMatchingCost():
         """
         Computes the cost volume for a pair of images
 
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing :
+        :param img_left: left Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_right: right Dataset image
-        :type img_right:
-            xarray.Dataset containing :
+        :type img_left: xarray.Dataset
+        :param img_right: right Dataset  containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
+        :type img_right: xarray.Dataset
         :param disp_min: minimum disparity
         :type disp_min: int
         :param disp_max: maximum disparity
         :type disp_max: int
-        :return: the cost volume dataset
-        :rtype:
-            xarray.Dataset, with the data variables:
+        :return: the cost volume dataset with the data variables:
+
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :rtype: xarray.Dataset
         """
 
     @staticmethod
@@ -137,11 +137,11 @@ class AbstractMatchingCost():
         """
         Allocate the cost volume
 
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing :
+        :param img_left: left Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
+        :type img_left: xarray.Dataset
         :param subpix: subpixel precision = (1 or 2 or 4)
         :type subpix: int
         :param disp_min: minimum disparity
@@ -154,11 +154,11 @@ class AbstractMatchingCost():
         :type metadata: dictionary
         :param np_data: the array’s data
         :type np_data: 3D numpy array, dtype=np.float32
-        :return: the dataset cost volume with the cost_volume and the confidence measure
-        :rtype:
-            xarray.Dataset, with the data variables:
+        :return: the dataset cost volume with the cost_volume and the confidence measure with the data variables:
+
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :rtype: xarray.Dataset
         """
         c_row = img_left['im'].coords['row']
         c_col = img_left['im'].coords['col']
@@ -207,16 +207,16 @@ class AbstractMatchingCost():
         """
         Computes the range of points over which the similarity measure will be applied
 
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing :
+        :param img_left: left Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_right: right Dataset image
-        :type img_right:
-             xarray.Dataset containing :
+        :type img_left: xarray.Dataset
+        :param img_right: right Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
+        :type img_right: xarray.Dataset
         :param disp: current disparity
         :type disp: float
         :return: the range of the left and right image over which the similarity measure will be applied
@@ -252,26 +252,26 @@ class AbstractMatchingCost():
         Apply dilation on no_data : if a pixel contains a no_data in its aggregation window, then the central pixel
         becomes no_data
 
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing :
+        :param img_left: left Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_right: right Dataset image
-        :type img_right:
-            xarray.Dataset containing :
+        :type img_left: xarray.Dataset
+        :param img_right: right Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
+        :type img_right: xarray.Dataset
         :param window_size: window size of the measure
         :type window_size: int
         :param subp: subpixel precision = (1 or 2 or 4)
         :type subp: int
-        :return: the left mask and the right masks
-        :rtype:
-            tuple (left mask, list[right mask, right mask shifted by 0.5])
+        :return: the left mask and the right masks:
+
                 - left mask :  xarray.DataArray msk 2D(row, col)
                 - right mask :  xarray.DataArray msk 2D(row, col)
                 - right mask shifted :  xarray.DataArray msk 2D(row, shifted col by 0.5)
+        :rtype: tuple (left mask, list[right mask, right mask shifted by 0.5])
         """
         # Create the left mask with the convention : 0 = valid, nan = invalid and no_data
         if 'msk' in img_left.data_vars:
@@ -342,9 +342,7 @@ class AbstractMatchingCost():
         :type disp_min: int or np.ndarray
         :param disp_max: maximum disparity
         :type disp_max: int or np.ndarray
-        :return:
-            dmin_min: the smallest disparity in disp_min
-            dmax_max: the highest disparity in disp_max
+        :return: dmin_min: the smallest disparity in disp_min, dmax_max: the highest disparity in disp_max
         :rtype: Tuple(int, int)
         """
         # Disp_min is a fixed disparity
@@ -374,21 +372,21 @@ class AbstractMatchingCost():
             - costs of no_data pixels, are masked with a nan value. If a valid pixel contains a no_data in its
                 aggregation window, then the cost of the central pixel is masked with a nan value
 
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing :
+        :param img_left: left Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_right: right Dataset image
-        :type img_right:
-            xarray.Dataset containing :
+        :type img_left: xarray.Dataset
+        :param img_right: right Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param cost_volume: the cost_volume DataSet
-        :type cost_volume:
-            xarray.Dataset, with the data variables:
+        :type img_right: xarray.Dataset
+        :param cost_volume: the cost_volume DataSet with the data variables:
+
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :type cost_volume: xarray.Dataset
         :param disp_min: minimum disparity
         :type disp_min: int or np.ndarray
         :param disp_max: maximum disparity

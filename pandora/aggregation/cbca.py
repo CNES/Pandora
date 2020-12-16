@@ -92,21 +92,21 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         Cross-based local stereo matching using orthogonal integral images.
         IEEE transactions on circuits and systems for video technology, 19(7), 1073-1079.
 
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing :
+        :param img_left: left Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
-        :param img_right: right Dataset image
-        :type img_right:
-            xarray.Dataset containing :
+        :type img_left: xarray.Dataset
+        :param img_right: right Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
-        :param cv: cost volume dataset
-        :type cv:
-            xarray.Dataset, with the data variables:
+        :type img_right: xarray.Dataset
+        :param cv: cost volume dataset with the data variables:
+
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :type cv: xarray.Dataset
         :param cfg: images configuration containing the mask convention : valid_pixels, no_data
         :type cfg: dict
         :return: None
@@ -180,21 +180,21 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         Prepare images and compute the cross support region of the left and right images.
         A 3x3 median filter is applied to the images before calculating the cross support region.
 
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing :
+        :param img_left: left Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
-        :param img_right: right Dataset image
-        :type img_right:
-            xarray.Dataset containing :
+        :type img_left: xarray.Dataset
+        :param img_right: right Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
-        :param cv: cost volume dataset
-        :type cv:
-            xarray.Dataset, with the data variables:
+        :type img_right: xarray.Dataset
+        :param cv: cost volume dataset with the data variables:
+
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :type cv: xarray.Dataset
         :return: the left and right cross support region
         :rtype: Tuples(left cross support region, List(right cross support region))
         """
@@ -307,14 +307,14 @@ def cbca_step_2(step1: np.ndarray, cross_left: np.ndarray, cross_right: np.ndarr
     :type cross_left: 3D np.array (row, col, [left, right, top, bot]) dtype=np.int16
     :param cross_right: cross support of the right image
     :type cross_right: 3D np.array (row, col, [left, right, tpo, bot]) dtype=np.int16
-    :param range_col: left column for the current disparity (i.e : np.arrange(nb columns), where the correspondent
-        in the right image is reachable)
+    :param range_col: left column for the current disparity (i.e : np.arrange(nb columns), where the correspondent \
+    in the right image is reachable)
     :type range_col: 1D np.array
-    :param range_col_right: right column for the current disparity (i.e : np.arrange(nb columns) - disparity, where
-        column - disparity >= 0 and <= nb columns)
+    :param range_col_right: right column for the current disparity (i.e : np.arrange(nb columns) - disparity, where \
+    column - disparity >= 0 and <= nb columns)
     :type range_col_right: 1D np.array
-    :return: the horizontal matching cost for the current disparity, and the number of support pixels used for the
-        step 2
+    :return: the horizontal matching cost for the current disparity, and the number of support pixels used for the \
+    step 2
     :rtype: tuple (2D np.array (row, col) dtype = np.float32, 2D np.array (row, col) dtype = np.float32)
     """
     n_col_, n_row_ = step1.shape
@@ -372,11 +372,11 @@ def cbca_step_4(step3: np.ndarray, sum2: np.ndarray, cross_left: np.ndarray, cro
     :type cross_left: 3D np.array (row, col, [left, right, top, bot]) dtype=np.int16
     :param cross_right: cross support of the right image
     :type cross_right: 3D np.array (row, col, [left, right, tpo, bot]) dtype=np.int16
-    :param range_col: left column for the current disparity (i.e : np.arrange(nb columns), where the correspondent
-        in the right image is reachable)
+    :param range_col: left column for the current disparity (i.e : np.arrange(nb columns), where the correspondent \
+    in the right image is reachable)
     :type range_col: 1D np.array
-    :param range_col_right: right column for the current disparity (i.e : np.arrange(nb columns) - disparity, where
-        column - disparity >= 0 and <= nb columns)
+    :param range_col_right: right column for the current disparity (i.e : np.arrange(nb columns) - disparity, where \
+    column - disparity >= 0 and <= nb columns)
     :type range_col_right: 1D np.array
     :return: the fully aggregated matching cost, and the total number of support pixels used for the aggregation
     :rtype: tuple(2D np.array (row , col) dtype = np.float32, 2D np.array (row , col) dtype = np.float32)
@@ -415,8 +415,7 @@ def cross_support(image: np.ndarray, len_arms: int, intensity: float) -> np.ndar
     :param len_arms: int16
     :param intensity: maximal intensity
     :param intensity: float 32
-    :return: a 3D np.array ( row, col, [left, right, top, bot] ),
-         with the four arms lengths computes for each pixel
+    :return: a 3D np.array ( row, col, [left, right, top, bot] ), with the four arms lengths computes for each pixel
     :rtype:  3D np.array ( row, col, [left, right, top, bot] ), dtype=np.int16
     """
     n_col_, n_row_ = image.shape

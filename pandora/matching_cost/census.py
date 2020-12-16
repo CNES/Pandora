@@ -89,25 +89,25 @@ class Census(matching_cost.AbstractMatchingCost):
         """
         Computes the cost volume for a pair of images
 
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing :
+        :param img_left: left Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_right: right Dataset image
-        :type img_right:
-            xarray.Dataset containing :
+        :type img_left: xarray.Dataset
+        :param img_right: right Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
+        :type img_right: xarray.Dataset
         :param disp_min: minimum disparity
         :type disp_min: int
         :param disp_max: maximum disparity
         :type disp_max: int
-        :return: the cost volume dataset
-        :rtype:
-            xarray.Dataset, with the data variables:
+        :return: the cost volume dataset , with the data variables:
+
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :rtype: xarray.Dataset
         """
         # Contains the shifted right images
         img_right_shift = shift_right_img(img_right, self._subpix)
@@ -198,16 +198,16 @@ class Census(matching_cost.AbstractMatchingCost):
         :type point_p: tuple
         :param point_q: Point interval, in the right image, over which the squared difference will be applied
         :type point_q: tuple
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing :
+        :param img_left: left Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
-        :param img_right: right Dataset image
-        :type img_right:
-            xarray.Dataset containing :
+        :type img_left: xarray.Dataset
+        :param img_right: right Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
+        :type img_right: xarray.Dataset
         :return: the xor pixel-wise between elements in the interval
         :rtype: numpy array
         """

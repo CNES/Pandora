@@ -100,18 +100,18 @@ class AbstractOptimization():
         """
         Optimizes the cost volume
 
-        :param cv: the cost volume dataset
-        :type cv:
-            xarray.Dataset, with the data variables:
+        :param cv: the cost volume dataset with the data variables:
+
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :type cv: xarray.Dataset
         :param img_left: left Dataset image
         :type img_left: xarray.DataArray
         :param img_right: right Dataset image
         :type img_right: xarray.DataArray
-        :return: the cost volume dataset
-        :rtype:
-            xarray.Dataset, with the data variables:
+        :return: the cost volume dataset with the data variables:
+
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :rtype: xarray.Dataset
         """

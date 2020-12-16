@@ -53,9 +53,9 @@ def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.DataAr
     :type disp_max: int
     :param cfg: user configuration
     :type cfg: dict of dict
-    :return: margin for the images
-    :rtype: 2D (image, corner) DataArray, with the dimensions image = ['left_margin', 'right_margin'],
-        corner = ['left', 'up', 'right', 'down']
+    :return: margin for the images, 2D (image, corner) DataArray, with the dimensions image = \
+     ['left_margin', 'right_margin'], corner = ['left', 'up', 'right', 'down']
+    :rtype: DataArray
     """
     margin = xr.DataArray(np.zeros((2, 4), dtype=int),
                           coords=[['left_margin', 'right_margin'], ['left', 'up', 'right', 'down']],

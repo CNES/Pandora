@@ -46,16 +46,16 @@ def run(pandora_machine: PandoraMachine, img_left: xr.Dataset, img_right: xr.Dat
 
     :param pandora_machine: instance of PandoraMachine
     :type pandora_machine: PandoraMachine
-    :param img_left: left Dataset image
-    :type img_left:
-        xarray.Dataset containing :
+    :param img_left: left Dataset image containing :
+
             - im : 2D (row, col) xarray.DataArray
             - msk (optional): 2D (row, col) xarray.DataArray
-    :param img_right: right Dataset image
-    :type img_right:
-        xarray.Dataset containing :
+    :type img_left: xarray.Dataset
+    :param img_right: right Dataset image containing :
+
             - im : 2D (row, col) xarray.DataArray
             - msk (optional): 2D (row, col) xarray.DataArray
+    :type img_right: xarray.Dataset
     :param disp_min: minimal disparity
     :type disp_min: int or np.array
     :param disp_max: maximal disparity
@@ -66,18 +66,19 @@ def run(pandora_machine: PandoraMachine, img_left: xr.Dataset, img_right: xr.Dat
     :type disp_min_right: np.array or None
     :param disp_max_right: maximal disparity of the right image
     :type disp_max_right: np.array or None
-    :return:
-        Two xarray.Dataset :
+    :return: Two xarray.Dataset :
+
+
             - left : the left dataset, which contains the variables :
                 - disparity_map : the disparity map in the geometry of the left image 2D DataArray (row, col)
-                - confidence_measure : the confidence measure in the geometry of the left image 3D DataArray
+                - confidence_measure : the confidence measure in the geometry of the left image 3D DataArray \
                     (row, col, indicator)
                 - validity_mask : the validity mask in the geometry of the left image 2D DataArray (row, col)
 
-            - right : the right dataset. If there is no validation step, the right Dataset will be empty.
-                If a validation step is configured, the dataset will contain the variables :
+            - right : the right dataset. If there is no validation step, the right Dataset will be empty.If a \
+            validation step is configured, the dataset will contain the variables :
                 - disparity_map : the disparity map in the geometry of the right image 2D DataArray (row, col)
-                - confidence_measure : the confidence measure in the geometry of the left image 3D DataArray
+                - confidence_measure : the confidence measure in the geometry of the left image 3D DataArray \
                     (row, col, indicator)
                 - validity_mask : the validity mask in the geometry of the left image 2D DataArray (row, col)
 

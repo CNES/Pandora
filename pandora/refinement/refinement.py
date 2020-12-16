@@ -72,16 +72,17 @@ class AbstractRefinement():
         """
         Subpixel refinement of disparities and costs.
 
-        :param cv: the cost volume dataset
-        :type cv:
-            xarray.Dataset, with the data variables:
+        :param cv: the cost volume dataset with the data variables:
+
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :param disp: Dataset
-        :type disp: xarray.Dataset with the variables :
+        :type cv: xarray.Dataset
+        :param disp: Dataset with the variables :
+
             - disparity_map 2D xarray.DataArray (row, col)
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
+        :type disp: xarray.Dataset
         :return: None
         """
         d_min = cv.coords['disp'].data[0]
@@ -104,24 +105,25 @@ class AbstractRefinement():
         Subpixel refinement of the right disparities map, which was created with the approximate method : a diagonal
         search for the minimum on the left cost volume
 
-        :param cv_left: the left cost volume dataset
-        :type cv_left:
-            xarray.Dataset, with the data variables:
+        :param cv_left: the left cost volume dataset with the data variables:
+
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :param disp_right: right disparity map
-        :type disp_right: xarray.Dataset with the variables :
+        :type cv_left: xarray.Dataset
+        :param disp_right: right disparity map with the variables :
+
             - disparity_map 2D xarray.DataArray (row, col)
             - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
-        :return:
-            disp_right Dataset with the variables :
+        :type disp_right: xarray.Dataset
+        :return: disp_right Dataset with the variables :
+
                 - disparity_map 2D xarray.DataArray (row, col) that contains the refined disparities
                 - confidence_measure 3D xarray.DataArray (row, col, indicator) (unchanged)
-                - validity_mask 2D xarray.DataArray (row, col) with the value of bit 3 ( Information:
-                    calculations stopped at the pixel step, sub-pixel interpolation did not succeed )
+                - validity_mask 2D xarray.DataArray (row, col) with the value of bit 3 ( Information: \
+                calculations stopped at the pixel step, sub-pixel interpolation did not succeed )
                 - interpolated_coeff 2D xarray.DataArray (row, col) that contains the refined cost
-        :rtype: Dataset
+        :rtype: xarray.Dataset
         """
         d_min = cv_left.coords['disp'].data[0]
         d_max = cv_left.coords['disp'].data[-1]
@@ -239,8 +241,8 @@ class AbstractRefinement():
         :param disp: the disparity
         :type disp: float
         :param measure: the type of measure used to create the cost volume
-        :param measure: string = min | max
-        :return: the refined disparity (disp + sub_disp), the refined cost and the state of the pixel( Information:
+        :type measure: string = min | max
+        :return: the refined disparity (disp + sub_disp), the refined cost and the state of the pixel( Information: \
         calculations stopped at the pixel step, sub-pixel interpolation did not succeed )
         :rtype: float, float, int
         """
@@ -269,9 +271,9 @@ class AbstractRefinement():
         :param subpixel: subpixel precision used to create the cost volume
         :type subpixel: int ( 1 | 2 | 4 )
         :param measure: the type of measure used to create the cost volume
-        :param measure: string = min | max
+        :type measure: string = min | max
         :param method: the refinement method
-        :param method: function
+        :type method: function
         :return: the refine coefficient, the refine disparity map, and the validity mask
         :rtype: tuple(2D numpy array (row, col), 2D numpy array (row, col), 2D numpy array (row, col))
          """
