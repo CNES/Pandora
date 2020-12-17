@@ -31,7 +31,7 @@ import xarray as xr
 import pandora
 import pandora.confidence as confidence
 from pandora.state_machine import PandoraMachine
-import pandora.stereo as stereo
+import pandora.matching_cost as matching_cost
 
 
 class TestConfidence(unittest.TestCase):
@@ -122,8 +122,8 @@ class TestConfidence(unittest.TestCase):
         user_cfg = {
             'pipeline':
                 {
-                    'stereo': {
-                        'stereo_method': 'sad',
+                    'matching_cost': {
+                        'matching_cost_method': 'sad',
                         'window_size': 1,
                         'subpix': 1
                     },
@@ -136,7 +136,7 @@ class TestConfidence(unittest.TestCase):
                     'filter': {
                         'filter_method': 'median'
                     },
-                    'confidence_2': {
+                    'confidence.2': {
                         'confidence_method': 'ambiguity',
                         'eta_max': 0.3,
                         'eta_step': 0.25
@@ -222,7 +222,8 @@ class TestConfidence(unittest.TestCase):
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         # load plugins
-        stereo_matcher = stereo.AbstractStereo(**{'stereo_method': 'sad', 'window_size': 3, 'subpix': 1})
+        stereo_matcher = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
+                                                               'subpix': 1})
 
         # Compute bright standard deviation inside a window of size 3 and create the confidence measure
         std_bright_ground_truth = np.array([[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
