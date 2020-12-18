@@ -30,11 +30,11 @@ from json_checker import Checker, And
 from numba import njit, prange, float32
 import xarray as xr
 
-from . import confidence
+from . import cost_volume_confidence
 
 
-@confidence.AbstractConfidence.register_subclass('ambiguity')
-class Ambiguity(confidence.AbstractConfidence):
+@cost_volume_confidence.AbstractCostVolumeConfidence.register_subclass('ambiguity')
+class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
     """
     Ambiguity class allows to estimate a confidence from the cost volume
     """

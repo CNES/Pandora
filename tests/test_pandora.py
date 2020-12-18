@@ -269,8 +269,8 @@ class TestPandora(unittest.TestCase):
                                                  [0, 0, 0, 1]], dtype=np.float32)
 
         gt_left_confidence_measure = np.full((7, 8, 2), np.nan, dtype=np.float32)
-        gt_left_confidence_measure[2:-2, 2:-2, 1] = gt_left_indicator_stereo
-        gt_left_confidence_measure[2:-2, 2:-2, 0] = gt_left_indicator_validation
+        gt_left_confidence_measure[2:-2, 2:-2, 0] = gt_left_indicator_stereo
+        gt_left_confidence_measure[2:-2, 2:-2, 1] = gt_left_indicator_validation
 
         gt_right_indicator_stereo = np.array([[1.4164745, 1.33026313, 1.36, 1.47295621],
                                               [1.5147277, 1.49986666, 1.44222051, 1.24835892],
@@ -281,8 +281,8 @@ class TestPandora(unittest.TestCase):
                                                   [0, 1, 0, 0]], dtype=np.float32)
 
         gt_right_confidence_measure = np.full((7, 8, 2), np.nan, dtype=np.float32)
-        gt_right_confidence_measure[2:-2, 2:-2, 1] = gt_right_indicator_stereo
-        gt_right_confidence_measure[2:-2, 2:-2, 0] = gt_right_indicator_validation
+        gt_right_confidence_measure[2:-2, 2:-2, 0] = gt_right_indicator_stereo
+        gt_right_confidence_measure[2:-2, 2:-2, 1] = gt_right_indicator_validation
 
         # assert equal on left confidence_measure
         np.testing.assert_array_equal(gt_left_confidence_measure, left['confidence_measure'].data)

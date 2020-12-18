@@ -46,7 +46,7 @@ from pandora import refinement
 from pandora import matching_cost
 from pandora import validation
 from .img_tools import prepare_pyramid
-from pandora import confidence
+from pandora import cost_volume_confidence
 
 
 # This module contains class associated to the pandora state machine
@@ -68,8 +68,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # This way, after the last scale we can still apply a filter state
         {'trigger': 'multiscale', 'source': 'disp_map', 'conditions': 'is_not_last_scale',
          'dest': 'begin', 'after': 'run_multiscale'},
-        {'trigger': 'confidence', 'source': 'cost_volume', 'dest': 'cost_volume', 'after': 'confidence_run'},
-        {'trigger': 'confidence', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'confidence_run'},
+        {'trigger': 'cost_volume_confidence', 'source': 'cost_volume', 'dest': 'cost_volume', 'after':
+            'cost_volume_confidence_confidence_run'}
     ]
 
     _transitions_check = [
@@ -83,9 +83,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         {'trigger': 'validation', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'validation_check_conf'},
         # For the check conf we define the destination of multiscale state as disp_map instead of begin
         # given the conditional change of state
-        {'trigger': 'multiscale', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'multiscale_check_conf'}
-        {'trigger': 'confidence', 'source': 'cost_volume', 'dest': 'cost_volume', 'after': 'confidence_check_conf'},
-        {'trigger': 'confidence', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'confidence_check_conf'},
+        {'trigger': 'multiscale', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'multiscale_check_conf'},
+        {'trigger': 'cost_volume_confidence', 'source': 'cost_volume', 'dest': 'cost_volume', 'after':
+            'cost_volume_confidence_check_conf'}
     ]
 
     def __init__(self, img_left_pyramid: List[xr.Dataset] = None, img_right_pyramid: List[xr.Dataset] = None,
@@ -363,7 +363,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # Update the current scale for the next state
         self.current_scale = self.current_scale - 1
 
-    def confidence_run(self, cfg: Dict[str, dict], input_step: str) -> None:
+
+    def cost_volume_confidence_confidence_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Confidence prediction
         :param cfg: pipeline configuration
@@ -372,7 +373,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
-        confidence_ = confidence.AbstractConfidence(**cfg[input_step])
+        confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg[input_step])
 
         logging.info('Confidence prediction...')
 
@@ -651,7 +652,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         multiscale_ = multiscale.AbstractMultiscale(**cfg[input_step])
         self.pipeline_cfg['pipeline'][input_step] = multiscale_.cfg
 
-    def confidence_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def cost_volume_confidence_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Check the confidence configuration
 
@@ -661,7 +662,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        confidence_ = confidence.AbstractConfidence(**cfg[input_step])
+        confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg[input_step])
         self.pipeline_cfg['pipeline'][input_step] = confidence_.cfg
 
     def check_conf(self, cfg: Dict[str, dict]):

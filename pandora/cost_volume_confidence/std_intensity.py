@@ -30,11 +30,11 @@ from json_checker import Checker, And
 import xarray as xr
 
 from pandora.img_tools import compute_std_raster
-from . import confidence
+from . import cost_volume_confidence
 
 
-@confidence.AbstractConfidence.register_subclass('std_intensity')
-class StdIntensity(confidence.AbstractConfidence):
+@cost_volume_confidence.AbstractCostVolumeConfidence.register_subclass('std_intensity')
+class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
     """
     StdIntensity class allows to estimate a confidence measure from the left image by calculating the standard
      deviation of the intensity

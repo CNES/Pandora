@@ -32,9 +32,9 @@ import xarray as xr
 import numpy as np
 
 
-class AbstractConfidence():
+class AbstractCostVolumeConfidence():
     """
-    Abstract Confidence class
+    Abstract Cost Volume Confidence class
     """
     __metaclass__ = ABCMeta
 
@@ -47,16 +47,16 @@ class AbstractConfidence():
         :param cfg: the configuration {'confidence_method': value}
         :type cfg: dictionary
         """
-        if cls is AbstractConfidence:
+        if cls is AbstractCostVolumeConfidence:
             if isinstance(cfg['confidence_method'], str):
                 try:
-                    return super(AbstractConfidence, cls).__new__(cls.confidence_methods_avail[
+                    return super(AbstractCostVolumeConfidence, cls).__new__(cls.confidence_methods_avail[
                                                                       cfg['confidence_method']])
                 except KeyError:
                     logging.error('No confidence method named % supported', cfg['confidence_method'])
                     sys.exit(1)
         else:
-            return super(AbstractConfidence, cls).__new__(cls)
+            return super(AbstractCostVolumeConfidence, cls).__new__(cls)
 
     @classmethod
     def register_subclass(cls, short_name: str):

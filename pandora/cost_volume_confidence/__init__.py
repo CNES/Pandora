@@ -20,7 +20,8 @@
 # limitations under the License.
 #
 from . import ambiguity
-from .confidence import AbstractConfidence
+from .cost_volume_confidence import AbstractCostVolumeConfidence
 from . import std_intensity
+
 
 # pylint: disable=missing-module-docstring

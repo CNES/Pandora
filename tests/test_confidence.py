@@ -29,7 +29,7 @@ import numpy as np
 import xarray as xr
 
 import pandora
-import pandora.confidence as confidence
+import pandora.cost_volume_confidence as confidence
 from pandora.state_machine import PandoraMachine
 import pandora.matching_cost as matching_cost
 
@@ -62,7 +62,7 @@ class TestConfidence(unittest.TestCase):
         cv_ = xr.Dataset({'cost_volume': (['row', 'col', 'disp'], cv_)},
                          coords={'row': [0, 1], 'col': [0, 1, 2], 'disp': [-1, 0, 1]})
 
-        ambiguity_ = confidence.AbstractConfidence(**{'confidence_method': 'ambiguity', 'eta_max': 0.2,
+        ambiguity_ = confidence.AbstractCostVolumeConfidence(**{'confidence_method': 'ambiguity', 'eta_max': 0.2,
                                                       'eta_step': 0.1})
 
         # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
@@ -127,19 +127,19 @@ class TestConfidence(unittest.TestCase):
                         'window_size': 1,
                         'subpix': 1
                     },
-                    'confidence': {
+                    'cost_volume_confidence': {
                         'confidence_method': 'std_intensity'
+                    },
+                    'cost_volume_confidence.2': {
+                        'confidence_method': 'ambiguity',
+                        'eta_max': 0.3,
+                        'eta_step': 0.25
                     },
                     'disparity': {
                         'disparity_method': 'wta'
                     },
                     'filter': {
                         'filter_method': 'median'
-                    },
-                    'confidence.2': {
-                        'confidence_method': 'ambiguity',
-                        'eta_max': 0.3,
-                        'eta_step': 0.25
                     }
                 }
         }
@@ -239,7 +239,7 @@ class TestConfidence(unittest.TestCase):
         cv = stereo_matcher.compute_cost_volume(left, right, disp_min=-2, disp_max=1)
         stereo_matcher.cv_masked(left, right, cv, -2, 1)
 
-        std_intensity = confidence.AbstractConfidence(**{'confidence_method': 'std_intensity'})
+        std_intensity = confidence.AbstractCostVolumeConfidence(**{'confidence_method': 'std_intensity'})
 
         # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
         _, cv_with_intensity = std_intensity.confidence_prediction(None, left, right, cv)

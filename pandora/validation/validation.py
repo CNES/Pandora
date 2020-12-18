@@ -33,7 +33,7 @@ from json_checker import Checker, And, Or, OptionalKey
 
 import pandora.constants as cst
 from pandora import common
-from pandora.confidence.confidence import AbstractConfidence
+from pandora.cost_volume_confidence.cost_volume_confidence import AbstractCostVolumeConfidence
 
 
 class AbstractValidation():
@@ -316,7 +316,7 @@ class CrossChecking(AbstractValidation):
 
         dataset_left.attrs['validation'] = 'cross_checking'
 
-        dataset_left, _ = AbstractConfidence.allocate_confidence_map('validation_pandora_distanceOfDisp', conf_measure,
-                                                                     dataset_left, cv)
+        dataset_left, _ = AbstractCostVolumeConfidence.allocate_confidence_map('validation_pandora_distanceOfDisp',
+                                                                               conf_measure, dataset_left, cv)
 
         return dataset_left
