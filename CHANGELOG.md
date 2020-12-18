@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Implementation of the ambiguity confidence measure. [#162] 
+
 ### BREAKING CHANGE
 
 - GeoRef is now supported and both `crs` & `transform` ought to be set as attributes of images dataset provided to Pandora [#158
