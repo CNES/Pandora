@@ -1,7 +1,7 @@
 {
   "input": {
-    "img_left": "tests/pandora/left.png",
-    "img_right": "tests/pandora/right.png",
+    "img_left": "./left.png",
+    "img_right": "./right.png",
     "disp_min": -60,
     "disp_max": 0
   },
@@ -16,7 +16,10 @@
     },
     "disparity": {
       "disparity_method": "wta",
-      "invalid_disparity": "np.nan"
+      "invalid_disparity": "NaN"
+    },
+    "refinement": {
+      "refinement_method": "quadratic"
     }
   }
 }
