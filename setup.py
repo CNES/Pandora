@@ -5,7 +5,7 @@
 #
 # This file is part of PANDORA
 #
-#     https://github.com/CNES/Pandora_pandora
+#     https://github.com/CNES/Pandora
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ setup(name='pandora',
       description='Pandora is a stereo matching framework that helps emulate state of the art algorithms',
       long_description=readme(),
       long_description_content_type='text/markdown',
-      url='https://github.com/CNES/Pandora_pandora',
+      url='https://github.com/CNES/Pandora',
       author='CNES',
       author_email='myriam.cournet@cnes.fr',
       license='Apache License 2.0',
