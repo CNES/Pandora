@@ -6,6 +6,7 @@
 
 - semantic change: stereo becomes matching_cost (transition name, module, files and class name). [#170]
 - Merge image on input configuration section. [#169]
+- Enable the use of GraphMachine if graphviz avalaible to generate machine states diagram. [#149]
 
 ### Fixed
 
