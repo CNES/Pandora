@@ -30,8 +30,8 @@ Dependencies are :
 **From sources**
 
 ```bash
-    git clone https://github.com/CNES/Pandora_pandora.git
-    cd Pandora_pandora
+    git clone https://github.com/CNES/Pandora.git
+    cd Pandora
     pip install .
 ```
 
