@@ -24,6 +24,7 @@ This module contains functions associated to raster images.
 """
 
 import logging
+import warnings
 from typing import List, Union, Tuple
 
 import cv2
@@ -31,6 +32,25 @@ import numpy as np
 import rasterio
 import xarray as xr
 from scipy.ndimage.interpolation import zoom
+
+
+def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.DatasetReader:
+    """
+    rasterio.open wrapper to silence UserWarning like NotGeoreferencedWarning.
+
+    (see https://rasterio.readthedocs.io/en/latest/api/rasterio.errors.html)
+
+    :param args: args to be given to rasterio.open method
+    :type args: str
+    :param kwargs: kwargs to be given to rasterio.open method
+    :type kwargs: Union[int, str, None]
+    :return: rasterio DatasetReader
+    :rtype: rasterio.io.DatasetReader
+    """
+    # this silence chosen category of warnings only for the following instructions
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=UserWarning)
+        return rasterio.open(*args, **kwargs)
 
 
 def read_img(img: str, no_data: float, mask: str = None, classif: str = None, segm: str = None) ->\
@@ -49,13 +69,12 @@ def read_img(img: str, no_data: float, mask: str = None, classif: str = None, se
     :param segm: Path to the mask (optional)
     :type segm: string
     :return: xarray.DataSet
-    :return: xarray.DataSet
     :rtype:
         xarray.DataSet containing the variables :
             - im : 2D (row, col) xarray.DataArray float32
             - msk : 2D (row, col) xarray.DataArray int16, with the convention defined in the configuration file
     """
-    img_ds = rasterio.open(img)
+    img_ds = rasterio_open(img)
     data = img_ds.read(1)
 
     if np.isnan(no_data):
@@ -79,13 +98,13 @@ def read_img(img: str, no_data: float, mask: str = None, classif: str = None, se
                      'no_data_mask': 1} # arbitrary default value
 
     if classif is not None:
-        input_classif = rasterio.open(classif).read(1)
+        input_classif = rasterio_open(classif).read(1)
         dataset['classif'] = xr.DataArray(np.full((data.shape[0], data.shape[1]), 0).astype(np.int16),
                                           dims=['row', 'col'])
         dataset['classif'].data = input_classif
 
     if segm is not None:
-        input_segm = rasterio.open(segm).read(1)
+        input_segm = rasterio_open(segm).read(1)
         dataset['segm'] = xr.DataArray(np.full((data.shape[0], data.shape[1]), 0).astype(np.int16),
                                        dims=['row', 'col'])
         dataset['segm'].data = input_segm
@@ -108,7 +127,7 @@ def read_img(img: str, no_data: float, mask: str = None, classif: str = None, se
     # Value == 0 on input_mask represents a valid pixel
     # Value != 0 on input_mask represents an invalid pixel
     if mask is not None:
-        input_mask = rasterio.open(mask).read(1)
+        input_mask = rasterio_open(mask).read(1)
         # Masks invalid pixels
         # All pixels that are not valid_pixels, on the input mask, are considered as invalid pixels
         dataset['msk'].data[np.where(input_mask > 0)] = dataset.attrs['valid_pixels'] + \
@@ -429,7 +448,7 @@ def read_disp(disparity: Union[None, int, str]) -> Union[None, int, np.ndarray]:
     :rtype: int or np.ndarray
     """
     if isinstance(disparity, str):
-        disp_ = rasterio.open(disparity)
+        disp_ = rasterio_open(disparity)
         data_disp = disp_.read(1)
     else:
         data_disp = disparity
