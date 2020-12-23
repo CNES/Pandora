@@ -96,6 +96,7 @@ def read_img(img: str, no_data: float, mask: str = None, classif: str = None, se
                                  'col': np.arange(data.shape[1])})
     # Add image conf to the image dataset
     dataset.attrs = {'no_data_img': no_data,
+                     'img_path': img,
                      'valid_pixels': 0, # arbitrary default value
                      'no_data_mask': 1} # arbitrary default value
 
