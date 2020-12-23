@@ -206,7 +206,13 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             cv = np.swapaxes(cv, 0, 2)
 
         # Create the xarray.DataSet that will contain the cv of dimensions (row, col, disp)
-        cv = self.allocate_costvolume(img_left, self._subpix, disp_min, disp_max, self._window_size, metadata,
+        cv = self.allocate_costvolume(img_left,
+                                      img_right,
+                                      self._subpix,
+                                      disp_min,
+                                      disp_max,
+                                      self._window_size,
+                                      metadata,
                                       cv)
 
         return cv

@@ -188,7 +188,13 @@ class Zncc(matching_cost.AbstractMatchingCost):
             cv_crop[dsp, point_p[0]:p_std[1], :] = np.swapaxes(zncc_, 0, 1)
 
         # Create the xarray.DataSet that will contain the cost_volume of dimensions (row, col, disp)
-        cv = self.allocate_costvolume(img_left, self._subpix, disp_min, disp_max, self._window_size, metadata,
+        cv = self.allocate_costvolume(img_left,
+                                      img_right,
+                                      self._subpix,
+                                      disp_min,
+                                      disp_max,
+                                      self._window_size,
+                                      metadata,
                                       np.swapaxes(cv, 0, 2))
 
         return cv

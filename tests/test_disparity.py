@@ -53,14 +53,14 @@ class TestDisparity(unittest.TestCase):
                           [6, 7, 8, 10]]), dtype=np.float64)
         self.left = xr.Dataset({'im': (['row', 'col'], data)},
                                coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        self.left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        self.left.attrs = {'valid_pixels': 0, 'no_data_mask': 1, 'img_path': '.a/fake/image/lpath'}
 
         data = np.array(([[6, 1, 2, 4],
                           [6, 2, 4, 1],
                           [10, 6, 7, 8]]), dtype=np.float64)
         self.right = xr.Dataset({'im': (['row', 'col'], data)},
                                 coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        self.right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        self.right.attrs = {'valid_pixels': 0, 'no_data_mask': 1, 'img_path': '.a/fake/image/rpath'}
 
     def test_to_disp(self):
         """
@@ -690,7 +690,7 @@ class TestDisparity(unittest.TestCase):
         left = xr.Dataset({'im': (['row', 'col'], data),
                            'msk': (['row', 'col'], left_mask)},
                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        left.attrs = {'valid_pixels': 1, 'no_data_mask': 2}
+        left.attrs = {'valid_pixels': 1, 'no_data_mask': 2, 'img_path': '.a/fake/image/lpath'}
 
         data = np.array(([[6, 1, 2, 4],
                           [6, 2, 4, 1],
@@ -702,7 +702,7 @@ class TestDisparity(unittest.TestCase):
         right = xr.Dataset({'im': (['row', 'col'], data),
                             'msk': (['row', 'col'], right_mask)},
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        right.attrs = {'valid_pixels': 1, 'no_data_mask': 2}
+        right.attrs = {'valid_pixels': 1, 'no_data_mask': 2, 'img_path': '.a/fake/image/rpath'}
 
         matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
                                                                      'subpix': 1})
@@ -793,7 +793,7 @@ class TestDisparity(unittest.TestCase):
         left = xr.Dataset({'im': (['row', 'col'], data),
                            'msk': (['row', 'col'], left_mask)},
                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        left.attrs = {'valid_pixels': 1, 'no_data_mask': 2}
+        left.attrs = {'valid_pixels': 1, 'no_data_mask': 2, 'img_path': '.a/fake/image/lpath'}
 
         data = np.array(([[6, 1, 2, 4, 1],
                           [6, 2, 4, 1, 6],
@@ -807,7 +807,7 @@ class TestDisparity(unittest.TestCase):
         right = xr.Dataset({'im': (['row', 'col'], data),
                             'msk': (['row', 'col'], right_mask)},
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        right.attrs = {'valid_pixels': 1, 'no_data_mask': 2}
+        right.attrs = {'valid_pixels': 1, 'no_data_mask': 2, 'img_path': '.a/fake/image/rpath'}
 
         matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
                                                                      'subpix': 1})
@@ -859,7 +859,7 @@ class TestDisparity(unittest.TestCase):
         left = xr.Dataset({'im': (['row', 'col'], data),
                            'msk': (['row', 'col'], left_mask)},
                           coords={'row': np.arange(5, data.shape[0] + 5), 'col': np.arange(4, data.shape[1] + 4)})
-        left.attrs = {'valid_pixels': 1, 'no_data_mask': 0}
+        left.attrs = {'valid_pixels': 1, 'no_data_mask': 0, 'img_path': '.a/fake/image/lpath'}
 
         data = np.ones((10, 10), dtype=np.float64)
         right_mask = np.ones((10, 10), dtype=np.uint8)
@@ -868,7 +868,7 @@ class TestDisparity(unittest.TestCase):
         right = xr.Dataset({'im': (['row', 'col'], data),
                             'msk': (['row', 'col'], right_mask)},
                            coords={'row': np.arange(5, data.shape[0] + 5), 'col': np.arange(4, data.shape[1] + 4)})
-        right.attrs = {'valid_pixels': 1, 'no_data_mask': 0}
+        right.attrs = {'valid_pixels': 1, 'no_data_mask': 0, 'img_path': '.a/fake/image/rpath'}
 
         matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
                                                                      'subpix': 1})
