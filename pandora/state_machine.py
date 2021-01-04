@@ -68,8 +68,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # This way, after the last scale we can still apply a filter state
         {'trigger': 'multiscale', 'source': 'disp_map', 'conditions': 'is_not_last_scale',
          'dest': 'begin', 'after': 'run_multiscale'},
-        {'trigger': 'cost_volume_confidence', 'source': 'cost_volume', 'dest': 'cost_volume', 'after':
-            'cost_volume_confidence_confidence_run'}
+        {'trigger': 'cost_volume_confidence', 'source': 'cost_volume', 'dest': 'cost_volume',
+         'after': 'cost_volume_confidence_run'}
     ]
 
     _transitions_check = [
@@ -84,8 +84,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # For the check conf we define the destination of multiscale state as disp_map instead of begin
         # given the conditional change of state
         {'trigger': 'multiscale', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'multiscale_check_conf'},
-        {'trigger': 'cost_volume_confidence', 'source': 'cost_volume', 'dest': 'cost_volume', 'after':
-            'cost_volume_confidence_check_conf'}
+        {'trigger': 'cost_volume_confidence', 'source': 'cost_volume', 'dest': 'cost_volume',
+         'after': 'cost_volume_confidence_check_conf'}
     ]
 
     def __init__(self, img_left_pyramid: List[xr.Dataset] = None, img_right_pyramid: List[xr.Dataset] = None,
@@ -207,7 +207,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             self.right_cv = matching_cost_.compute_cost_volume(self.right_img, self.left_img, dmin_min_right,
                                                                dmax_max_right)
             matching_cost_.cv_masked(self.right_img, self.left_img, self.right_cv, self.right_disp_min,
-                              self.right_disp_max)
+                                     self.right_disp_max)
 
     def aggregation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -363,8 +363,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # Update the current scale for the next state
         self.current_scale = self.current_scale - 1
 
-
-    def cost_volume_confidence_confidence_run(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def cost_volume_confidence_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Confidence prediction
         :param cfg: pipeline configuration
