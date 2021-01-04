@@ -31,12 +31,11 @@ import unittest
 from tempfile import TemporaryDirectory
 
 import numpy as np
-import rasterio
 import xarray as xr
 
 import pandora
 from pandora import import_plugin
-from pandora.img_tools import read_img
+from pandora.img_tools import read_img, rasterio_open
 from pandora.state_machine import PandoraMachine
 
 
@@ -53,9 +52,9 @@ class TestPandora(unittest.TestCase):
 
         self.left = read_img('tests/pandora/left.png', no_data=np.nan, mask=None)
         self.right = read_img('tests/pandora/right.png', no_data=np.nan, mask=None)
-        self.disp_left = rasterio.open('tests/pandora/disp_left.tif').read(1)
-        self.disp_right = rasterio.open('tests/pandora/disp_right.tif').read(1)
-        self.occlusion = rasterio.open('tests/pandora/occlusion.png').read(1)
+        self.disp_left = rasterio_open('tests/pandora/disp_left.tif').read(1)
+        self.disp_right = rasterio_open('tests/pandora/disp_right.tif').read(1)
+        self.occlusion = rasterio_open('tests/pandora/occlusion.png').read(1)
 
     def error(self, data, gt, threshold, unknown_disparity=0):
         """
@@ -243,15 +242,15 @@ class TestPandora(unittest.TestCase):
             pandora.main('tests/pandora/cfg.json', tmp_dir, verbose=False)
 
             # Check the left disparity map
-            if self.error(rasterio.open(tmp_dir + '/left_disparity.tif').read(1), self.disp_left, 1) > 0.20:
+            if self.error(rasterio_open(tmp_dir + '/left_disparity.tif').read(1), self.disp_left, 1) > 0.20:
                 raise AssertionError
 
             # Check the right disparity map
-            if self.error(-1 * rasterio.open(tmp_dir + '/right_disparity.tif').read(1), self.disp_right, 1) > 0.20:
+            if self.error(-1 * rasterio_open(tmp_dir + '/right_disparity.tif').read(1), self.disp_right, 1) > 0.20:
                 raise AssertionError
 
             # Check the left validity mask cross checking ( bit 8 and 9 )
-            out_occlusion = rasterio.open(tmp_dir + '/left_validity_mask.tif').read(1)
+            out_occlusion = rasterio_open(tmp_dir + '/left_validity_mask.tif').read(1)
             occlusion = np.ones((out_occlusion.shape[0], out_occlusion.shape[1]))
             occlusion[out_occlusion >= 512] = 0
 
@@ -363,11 +362,11 @@ class TestPandora(unittest.TestCase):
             pandora.main(tmp_dir + '/config.json', tmp_dir, verbose=False)
 
             # Check the left disparity map
-            if self.error(rasterio.open(tmp_dir + '/left_disparity.tif').read(1), self.disp_left, 1) > 0.20:
+            if self.error(rasterio_open(tmp_dir + '/left_disparity.tif').read(1), self.disp_left, 1) > 0.20:
                 raise AssertionError
 
             # Check the right disparity map
-            if self.error(-1 * rasterio.open(tmp_dir + '/right_disparity.tif').read(1), self.disp_right, 1) > 0.20:
+            if self.error(-1 * rasterio_open(tmp_dir + '/right_disparity.tif').read(1), self.disp_right, 1) > 0.20:
                 raise AssertionError
 
 def setup_logging(path='logging.json', default_level=logging.WARNING, ):

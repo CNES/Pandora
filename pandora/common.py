@@ -30,11 +30,11 @@ from typing import Dict, Tuple, List
 import logging
 
 import numpy as np
-import rasterio
+import rasterio.dtypes
 import xarray as xr
 
-from .output_tree_design import get_out_dir, get_out_file_path
-
+from pandora.output_tree_design import get_out_dir, get_out_file_path
+from pandora.img_tools import rasterio_open
 
 def write_data_array(data_array: xr.DataArray, filename: str,
                      dtype: rasterio.dtypes = rasterio.dtypes.float32) -> None:
@@ -51,13 +51,13 @@ def write_data_array(data_array: xr.DataArray, filename: str,
     """
     if len(data_array.shape) == 2:
         row, col = data_array.shape
-        with rasterio.open(filename, mode='w+', driver='GTiff', width=col, height=row, count=1,
+        with rasterio_open(filename, mode='w+', driver='GTiff', width=col, height=row, count=1,
                            dtype=dtype) as source_ds:
             source_ds.write(data_array.data, 1)
 
     else:
         row, col, depth = data_array.shape
-        with rasterio.open(filename, mode='w+', driver='GTiff', width=col, height=row, count=depth,
+        with rasterio_open(filename, mode='w+', driver='GTiff', width=col, height=row, count=depth,
                            dtype=dtype) as source_ds:
             for dsp in range(1, depth + 1):
                 source_ds.write(data_array.data[:, :, dsp - 1], dsp)

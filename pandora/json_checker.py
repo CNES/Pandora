@@ -8,10 +8,10 @@ from typing import Dict, Union
 from typing import List
 
 import numpy as np
-import rasterio
 from json_checker import Checker, Or, And
 
 from pandora.state_machine import PandoraMachine
+from pandora.img_tools import rasterio_open
 
 
 def rasterio_can_open_mandatory(file_: str) -> bool:
@@ -25,7 +25,7 @@ def rasterio_can_open_mandatory(file_: str) -> bool:
     """
 
     try:
-        rasterio.open(file_)
+        rasterio_open(file_)
         return True
     except Exception as exc:
         logging.warning('Impossible to read file %: %', file_, exc)
@@ -63,11 +63,11 @@ def check_images(img_left: str, img_right: str, msk_left: str, msk_right: str) -
     :return: None
     """
     # verify that the images have 1 channel
-    left_ = rasterio.open(img_left)
+    left_ = rasterio_open(img_left)
     if left_.count != 1:
         logging.error('The input images must be 1-channel grayscale images')
         sys.exit(1)
-    right_ = rasterio.open(img_right)
+    right_ = rasterio_open(img_right)
     if right_.count != 1:
         logging.error('The input images must be 1-channel grayscale images')
         sys.exit(1)
@@ -80,7 +80,7 @@ def check_images(img_left: str, img_right: str, msk_left: str, msk_right: str) -
 
     # verify that image and mask have the same size
     if msk_left is not None:
-        msk_ = rasterio.open(msk_left)
+        msk_ = rasterio_open(msk_left)
         if (left_.width != msk_.width) or \
                 (left_.height != msk_.height):
             logging.error('Image and masks must have the same size')
@@ -88,7 +88,7 @@ def check_images(img_left: str, img_right: str, msk_left: str, msk_right: str) -
 
     # verify that image and mask have the same size
     if msk_right is not None:
-        msk_ = rasterio.open(msk_right)
+        msk_ = rasterio_open(msk_right)
         # verify that the image and mask have the same size
         if (right_.width != msk_.width) or \
                 (right_.height != msk_.height):
@@ -124,11 +124,11 @@ def check_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str,
     # left disparity are grids
     elif (isinstance(disp_min, str)) and (isinstance(disp_max, str)):
         # Load an image to compare the grid size
-        img_left_ = rasterio.open(img_left)
+        img_left_ = rasterio_open(img_left)
 
-        disp_min_ = rasterio.open(disp_min)
+        disp_min_ = rasterio_open(disp_min)
         dmin = disp_min_.read(1)
-        disp_max_ = rasterio.open(disp_max)
+        disp_max_ = rasterio_open(disp_max)
         dmax = disp_max_.read(1)
 
         # check that disparity grids is a 1-channel grid
@@ -149,11 +149,11 @@ def check_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str,
     # --- Check right disparities
     if (isinstance(right_disp_min, str)) and (isinstance(right_disp_max, str)):
         # Load an image to compare the grid size
-        img_left_ = rasterio.open(img_left)
+        img_left_ = rasterio_open(img_left)
 
-        disp_min_ = rasterio.open(disp_min)
+        disp_min_ = rasterio_open(disp_min)
         dmin = disp_min_.read(1)
-        disp_max_ = rasterio.open(disp_max)
+        disp_max_ = rasterio_open(disp_max)
         dmax = disp_max_.read(1)
 
         # check that disparity grids is a 1-channel grid
