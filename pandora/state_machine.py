@@ -25,11 +25,15 @@ This module contains class associated to the pandora state machine
 
 import logging
 from typing import Dict, Union
-
 import numpy as np
 import xarray as xr
 from json_checker import Checker, And
-from transitions import Machine
+
+try:
+    import graphviz # pylint: disable=unused-import
+    from transitions.extensions import GraphMachine as Machine
+except ImportError:
+    from transitions import Machine
 from transitions import MachineError
 
 from pandora import aggregation
