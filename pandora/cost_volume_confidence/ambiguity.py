@@ -150,13 +150,20 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
             for col in prange(n_col):  # pylint: disable=not-an-iterable
                 # Normalized minimum cost for one point
                 normalized_min_cost = ((np.nanmin(cv[row, col, :]) - min_cost) / (max_cost - min_cost))
-                normalized_min_cost = np.repeat(normalized_min_cost, nb_disps * etas.shape[0])
 
-                # Normalized cost volume for one point
-                normalized_cv = ((cv[row, col, :] - min_cost) / (max_cost - min_cost))
-                normalized_cv = np.repeat(normalized_cv, etas.shape[0])
+                # If all costs are at nan, set the maximum value of the ambiguity for this point
+                if np.isnan(normalized_min_cost):
+                    ambiguity[row, col] = (etas.shape[0] * nb_disps)
+                else:
+                    normalized_min_cost = np.repeat(normalized_min_cost, nb_disps * etas.shape[0])
 
-                ambiguity[row, col] += np.sum(normalized_cv <= (normalized_min_cost + two_dim_etas))
+                    # Normalized cost volume for one point
+                    normalized_cv = ((cv[row, col, :] - min_cost) / (max_cost - min_cost))
+                    # Mask nan to -inf to increase the value of the ambiguity if a point contains nan costs
+                    normalized_cv[np.isnan(normalized_cv)] = -np.inf
+                    normalized_cv = np.repeat(normalized_cv, etas.shape[0])
+
+                    ambiguity[row, col] += np.sum(normalized_cv <= (normalized_min_cost + two_dim_etas))
 
         # Ambiguity normalization
         ambiguity = (ambiguity - np.min(ambiguity)) / (np.max(ambiguity) - np.min(ambiguity))

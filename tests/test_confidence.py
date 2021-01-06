@@ -56,29 +56,29 @@ class TestConfidence(unittest.TestCase):
                          [1.2, 1, 2]],
 
                         [[5, np.nan, np.nan],
-                        [6.2, np.nan, np.nan],
-                        [0, np.nan, 0]]], dtype=np.float32)
+                         [6.2, np.nan, np.nan],
+                         [0, np.nan, 0]]], dtype=np.float32)
 
         cv_ = xr.Dataset({'cost_volume': (['row', 'col', 'disp'], cv_)},
                          coords={'row': [0, 1], 'col': [0, 1, 2], 'disp': [-1, 0, 1]})
 
         ambiguity_ = confidence.AbstractCostVolumeConfidence(**{'confidence_method': 'ambiguity', 'eta_max': 0.2,
-                                                      'eta_step': 0.1})
+                                                                'eta_step': 0.1})
 
         # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
         ambiguity_.confidence_prediction(None, None, None, cv_)
 
         # Ambiguity integral not normalized
-        amb_int = np.array([[2., 4., 3.],
-                           [2., 2., 4.]])
+        amb_int = np.array([[4., 4., 3.],
+                            [6., 6., 6.]])
         # Normalized ambiguity
-        amb_int = np.array([[0., 1., 0.5],
-                            [0., 0., 1.]])
+        amb_int = np.array([[(4. - 3.) / (6. - 3.), (4. - 3.) / (6. - 3.), 0],
+                            [1., 1., 1.]])
         # Ambiguity to confidence measure
         ambiguity_ground_truth = (1 - amb_int)
 
         # Check if the calculated ambiguity is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(cv_['confidence_measure'].data[:, :, 0], ambiguity_ground_truth)
+        np.testing.assert_allclose(cv_['confidence_measure'].data[:, :, 0], ambiguity_ground_truth, rtol=1e-06)
 
     @staticmethod
     def test_ambiguity_std_full_pipeline():
@@ -117,8 +117,8 @@ class TestConfidence(unittest.TestCase):
                               coords={'row': np.arange(right_im.shape[0]), 'col': np.arange(right_im.shape[1])})
         # Add image conf to the image dataset
         right_im.attrs = {'no_data_img': 0,
-                         'valid_pixels': 0,  # arbitrary default value
-                         'no_data_mask': 1}  # arbitrary default value
+                          'valid_pixels': 0,  # arbitrary default value
+                          'no_data_mask': 1}  # arbitrary default value
         user_cfg = {
             'pipeline':
                 {
@@ -174,15 +174,15 @@ class TestConfidence(unittest.TestCase):
         #   [nan nan nan]]]          [ nan  nan  nan]]]
         #
         # Ambiguity integral not normalized
-        amb_int = np.array([[3., 4., 5., 3.],
-                            [3., 0., 4., 2.],
-                            [2., 2., 6., 2.],
-                            [4., 2., 3., 0.]])
+        amb_int = np.array([[5., 4., 5., 5.],
+                            [5., 6., 4., 4.],
+                            [4., 2., 6., 4.],
+                            [6., 2., 3., 6.]])
         # Normalized ambiguity
-        amb_int = np.array([[3./6., 4./6., 5./6., 3./6.],
-                            [3./6., 0./6., 4./6., 2./6.],
-                            [2./6., 2./6., 6./6., 2./6.],
-                            [4./6., 2./6., 3./6., 0./6.]])
+        amb_int = np.array([[(5. - 2)/4., (4. - 2)/4., (5. - 2)/4., (5. - 2)/4.],
+                            [(5. - 2)/4., (6. - 2)/4., (4. - 2)/4., (4. - 2)/4.],
+                            [(4. - 2)/4., (2. - 2)/4., (6. - 2)/4., (4. - 2)/4.],
+                            [(6. - 2)/4., (2. - 2)/4., (3. - 2)/4., (6. - 2)/4.]])
         # Ambiguity to confidence measure
         ambiguity_ground_truth = (1 - amb_int)
 
