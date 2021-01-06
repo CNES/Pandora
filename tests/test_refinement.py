@@ -23,15 +23,12 @@
 This module contains functions to test the subpixel refinement step.
 """
 
-import json
-import logging
-import logging.config
-import os
 import unittest
 
 import numpy as np
 import xarray as xr
 
+import common
 import pandora.constants as cst
 import pandora.refinement as refinement
 
@@ -229,23 +226,6 @@ class TestRefinement(unittest.TestCase):
         np.testing.assert_array_equal(cv['cost_volume'].data, orig_cv['cost_volume'].data)
 
 
-def setup_logging(path='logging.json', default_level=logging.WARNING, ):
-    """
-    Setup the logging configuration
-
-    :param path: path to the configuration file
-    :type path: string
-    :param default_level: default level
-    :type default_level: logging level
-    """
-    if os.path.exists(path):
-        with open(path, 'rt') as file_:
-            config = json.load(file_)
-        logging.config.dictConfig(config)
-    else:
-        logging.basicConfig(level=default_level)
-
-
 if __name__ == '__main__':
-    setup_logging()
+    common.setup_logging()
     unittest.main()

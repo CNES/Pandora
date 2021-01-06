@@ -23,15 +23,13 @@
 This module contains functions to test the cost volume measure step.
 """
 # pylint: disable=too-many-lines
-import json
-import logging
-import logging.config
-import os
+
 import unittest
 
 import numpy as np
 import xarray as xr
 
+import common
 import pandora.matching_cost as matching_cost
 
 
@@ -327,7 +325,7 @@ class TestMatchingCost(unittest.TestCase):
         col = self.right['im'].data[:, :5]
         ground_truth = np.array(
             ([np.nan, np.nan, np.nan,
-               (np.mean(row * col) - (np.mean(row) * np.mean(col))) / (np.std(row) * np.std(col)), np.nan, np.nan]))
+              (np.mean(row * col) - (np.mean(row) * np.mean(col))) / (np.std(row) * np.std(col)), np.nan, np.nan]))
 
         # Check if the calculated cost volume for the disparity -1 is equal to the ground truth
         np.testing.assert_allclose(cost_volume_zncc['cost_volume'].data[2, :, 0], ground_truth, rtol=1e-05)
@@ -337,7 +335,7 @@ class TestMatchingCost(unittest.TestCase):
         col = self.right['im'].data[:, 1:]
         ground_truth = np.array(
             ([np.nan, np.nan, (np.mean(row * col) - (np.mean(row) * np.mean(col))) / (np.std(row) * np.std(col)),
-               np.nan, np.nan, np.nan]))
+              np.nan, np.nan, np.nan]))
         # Check if the calculated cost volume
         # Check if the calculated cost volume for the disparity 1 is equal to the ground truth
         np.testing.assert_allclose(cost_volume_zncc['cost_volume'].data[2, :, 2], ground_truth, rtol=1e-05)
@@ -737,7 +735,6 @@ class TestMatchingCost(unittest.TestCase):
                                      [np.nan, np.nan, np.nan]]
                                     ], dtype=np.float32)
 
-
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
 
@@ -787,7 +784,6 @@ class TestMatchingCost(unittest.TestCase):
                                      [0, np.nan, 0],
                                      [np.nan, 0, 1],
                                      [np.nan, np.nan, np.nan]]], dtype=np.float32)
-
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv['cost_volume'], cv_ground_truth)
@@ -992,7 +988,7 @@ class TestMatchingCost(unittest.TestCase):
             [np.nan, np.nan, np.nan, np.nan, 4., np.nan, np.nan, np.nan, np.nan],
             [4., np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
             [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]],
-             [[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+            [[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
              [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 0.],
              [np.nan, np.nan, np.nan, np.nan, 0., np.nan, np.nan, np.nan, np.nan]]], dtype=np.float32)
 
@@ -1256,7 +1252,7 @@ class TestMatchingCost(unittest.TestCase):
                                                                'subpix': 4})
         # Compute the dilated / shifted masks
         mask_left, masks_right = matching_cost_.masks_dilatation(img_left=left, img_right=right,
-                                                          window_size=3, subp=4)
+                                                                 window_size=3, subp=4)
 
         # left mask ground truth
         gt_left = np.array([[0, np.nan, 0, np.nan, 0],
@@ -1608,23 +1604,6 @@ class TestMatchingCost(unittest.TestCase):
         np.testing.assert_array_equal(gt_cv_masked, cv['cost_volume'].data)
 
 
-def setup_logging(path='logging.json', default_level=logging.WARNING, ):
-    """
-    Setup the logging configuration
-
-    :param path: path to the configuration file
-    :type path: string
-    :param default_level: default level
-    :type default_level: logging level
-    """
-    if os.path.exists(path):
-        with open(path, 'rt') as file_:
-            config = json.load(file_)
-        logging.config.dictConfig(config)
-    else:
-        logging.basicConfig(level=default_level)
-
-
 if __name__ == '__main__':
-    setup_logging()
+    common.setup_logging()
     unittest.main()

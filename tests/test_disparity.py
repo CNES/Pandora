@@ -23,15 +23,12 @@
 This module contains functions to test the disparity module.
 """
 
-import json
-import logging
-import logging.config
-import os
 import unittest
 
 import numpy as np
 import xarray as xr
 
+import common
 import pandora
 import pandora.constants as cst
 import pandora.disparity as disparity
@@ -73,7 +70,7 @@ class TestDisparity(unittest.TestCase):
 
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min -3 disp_max 1
         matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
-                                                               'subpix': 1})
+                                                                     'subpix': 1})
         cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -3, 1)
 
         # Disparity map ground truth, for the images described in the setUp method
@@ -134,7 +131,7 @@ class TestDisparity(unittest.TestCase):
 
         # Create the left cost volume, with SAD measure window size 3, subpixel 1, disp_min -3 disp_max 1
         matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
-                                                               'subpix': 1})
+                                                                     'subpix': 1})
         cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -3, 1)
 
         # Disparity map ground truth, for the images described in the setUp method
@@ -187,7 +184,6 @@ class TestDisparity(unittest.TestCase):
         # Check if the xarray disp_indices is equal to the ground truth disparity map
         np.testing.assert_array_equal(cv['disp_indices'].data, gt_disp)
 
-
     def test_argmin_split(self):
         """
         Test the argmin_split method
@@ -195,7 +191,7 @@ class TestDisparity(unittest.TestCase):
         """
         # Create the left cost volume, with SAD measure, window size 1, subpixel 2, disp_min -3 disp_max 1
         matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
-                                                               'subpix': 2})
+                                                                     'subpix': 2})
         cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -3, 1)
         indices_nan = np.isnan(cv['cost_volume'].data)
         cv['cost_volume'].data[indices_nan] = np.inf
@@ -219,7 +215,7 @@ class TestDisparity(unittest.TestCase):
         """
         # Create the left cost volume, with ZNCC measure, window size 1, subpixel 2, disp_min -3 disp_max 1
         matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'zncc', 'window_size': 1,
-                                                               'subpix': 2})
+                                                                     'subpix': 2})
         cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -3, 1)
         indices_nan = np.isnan(cv['cost_volume'].data)
         cv['cost_volume'].data[indices_nan] = -np.inf
@@ -267,7 +263,7 @@ class TestDisparity(unittest.TestCase):
         """
         # Create the left cost volume, with SAD measure window size 3 and subpixel 1
         matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
-                                                               'subpix': 1})
+                                                                     'subpix': 1})
         cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -2, 1)
 
         # Right disparity map ground truth, for the images described in the setUp method
@@ -289,7 +285,7 @@ class TestDisparity(unittest.TestCase):
         """
         # Create the left cost volume, with SAD measure window size 3 and subpixel 4
         matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
-                                                               'subpix': 4})
+                                                                     'subpix': 4})
         cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -2, 1)
 
         # Right disparity map ground truth
@@ -341,7 +337,7 @@ class TestDisparity(unittest.TestCase):
         pandora_machine_fast = PandoraMachine()
         cfg = pandora.json_checker.update_conf(default_cfg, fast_cfg)
         left, right_fast = \
-            pandora.run(pandora_machine_fast, pandora_left, pandora_right, -60, 0, cfg['pipeline']) # pylint: disable=unused-variable
+            pandora.run(pandora_machine_fast, pandora_left, pandora_right, -60, 0, cfg['pipeline'])  # pylint: disable=unused-variable
 
         acc_cfg = {
             'pipeline':
@@ -384,7 +380,7 @@ class TestDisparity(unittest.TestCase):
         # ------ Negative disparities ------
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min -3 disp_max -1
         matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
-                                                               'subpix': 1})
+                                                                     'subpix': 1})
         cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -3, -1)
 
         # Compute the disparity map and validity mask
@@ -489,7 +485,7 @@ class TestDisparity(unittest.TestCase):
         # ------ Negative disparities ------
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min -3 disp_max -1
         matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
-                                                               'subpix': 1})
+                                                                     'subpix': 1})
         cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -3, -1)
 
         # Compute the disparity map and validity mask
@@ -536,7 +532,6 @@ class TestDisparity(unittest.TestCase):
                              cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                              cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER]], dtype=np.uint16)
 
-
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
 
@@ -577,7 +572,7 @@ class TestDisparity(unittest.TestCase):
 
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min -3 disp_max -1
         matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
-                                                               'subpix': 1})
+                                                                     'subpix': 1})
         dmin, dmax = matching_cost_plugin.dmin_dmax(disp_min_grid, disp_max_grid)
         cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, dmin, dmax)
         matching_cost_plugin.cv_masked(self.left, self.right, cv, disp_min_grid, disp_max_grid)
@@ -613,7 +608,7 @@ class TestDisparity(unittest.TestCase):
         """
         # Create the left cost volume, with SAD measure window size 1 and subpixel 1
         matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
-                                                               'subpix': 1})
+                                                                     'subpix': 1})
 
         # ------ Negative and positive disparities ------
         cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -2, 1)
@@ -712,7 +707,7 @@ class TestDisparity(unittest.TestCase):
         right.attrs = {'valid_pixels': 1, 'no_data_mask': 2}
 
         matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
-                                                               'subpix': 1})
+                                                                     'subpix': 1})
         cv = matching_cost_plugin.compute_cost_volume(left, right, -1, 1)
 
         # Compute the disparity map and validity mask
@@ -817,7 +812,7 @@ class TestDisparity(unittest.TestCase):
         right.attrs = {'valid_pixels': 1, 'no_data_mask': 2}
 
         matching_cost_plugin = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
-                                                               'subpix': 1})
+                                                                     'subpix': 1})
         cv = matching_cost_plugin.compute_cost_volume(left, right, -1, 1)
 
         # Compute the disparity map and validity mask
@@ -1003,23 +998,6 @@ class TestDisparity(unittest.TestCase):
         np.testing.assert_array_equal(dataset['validity_mask'].data, gt_mask)
 
 
-def setup_logging(path='logging.json', default_level=logging.WARNING, ):
-    """
-    Setup the logging configuration
-
-    :param path: path to the configuration file
-    :type path: string
-    :param default_level: default level
-    :type default_level: logging level
-    """
-    if os.path.exists(path):
-        with open(path, 'rt') as file_:
-            config = json.load(file_)
-        logging.config.dictConfig(config)
-    else:
-        logging.basicConfig(level=default_level)
-
-
 if __name__ == '__main__':
-    setup_logging()
+    common.setup_logging()
     unittest.main()

@@ -22,15 +22,13 @@
 """
 This module contains functions to test the disparity map validation step.
 """
-import json
-import logging
-import logging.config
-import os
+
 import unittest
 
 import numpy as np
 import xarray as xr
 
+import common
 import pandora.constants as cst
 import pandora.validation as validation
 
@@ -51,7 +49,7 @@ class TestValidation(unittest.TestCase):
                                 'confidence_measure': (['row', 'col', 'indicator'], np.full((2, 4, 1), np.nan)),
                                 'validity_mask': (['row', 'col'],
                                                   np.array([[0, 0, 0,
-                                                         cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
+                                                        cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
                                                             [0, 0, 0, 0]], dtype=np.uint16))},
                                coords={'row': [0, 1], 'col': np.arange(4)})
         self.left.attrs['disp_min'] = -2
@@ -128,20 +126,21 @@ class TestValidation(unittest.TestCase):
         left.attrs['disp_max'] = 1
 
         right = xr.Dataset({'disparity_map': (['row', 'col'], np.array([[np.nan, np.nan, np.nan, np.nan],
-                                                                       [np.nan, 0, -1, np.nan],
-                                                                       [np.nan, np.nan, np.nan, np.nan]],
+                                                                        [np.nan, 0, -1, np.nan],
+                                                                        [np.nan, np.nan, np.nan, np.nan]],
                                                                        dtype=np.float32)),
                             'confidence_measure': (['row', 'col', 'indicator'], np.full((3, 4, 1), np.nan)),
                             'validity_mask': (['row', 'col'], np.array([[cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                                                                        cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                                                                        cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                                                         cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                                                         cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                                                                          cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
-                                                                       [cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, 0,
-                                                                        0, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
-                                                                       [cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                                                                        cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                                                                        cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                                                                        cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER]],
+                                                                        [cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, 0,
+                                                                         0,
+                                                                         cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
+                                                                        [cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                                                         cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                                                         cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                                                         cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER]],
                                                                        dtype=np.uint16))},
                            coords={'row': [0, 1, 2], 'col': [0, 1, 2, 3]})
         right.attrs['disp_min'] = -1
@@ -465,23 +464,6 @@ class TestValidation(unittest.TestCase):
         np.testing.assert_array_equal(left['disparity_map'].data, gt_disp_after_int)
 
 
-def setup_logging(path='logging.json', default_level=logging.WARNING, ):
-    """
-    Setup the logging configuration
-
-    :param path: path to the configuration file
-    :type path: string
-    :param default_level: default level
-    :type default_level: logging level
-    """
-    if os.path.exists(path):
-        with open(path, 'rt') as file_:
-            config = json.load(file_)
-        logging.config.dictConfig(config)
-    else:
-        logging.basicConfig(level=default_level)
-
-
 if __name__ == '__main__':
-    setup_logging()
+    common.setup_logging()
     unittest.main()

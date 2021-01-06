@@ -23,15 +23,12 @@
 This module contains functions to test the disparity map filtering.
 """
 
-import json
-import logging
-import logging.config
-import os
 import unittest
 
 import numpy as np
 import xarray as xr
 
+import common
 import pandora
 import pandora.constants as cst
 import pandora.filter as flt
@@ -231,23 +228,6 @@ class TestFilter(unittest.TestCase):
         filter_bilateral.filter_disparity(disp_dataset)
 
 
-def setup_logging(path='logging.json', default_level=logging.WARNING, ):
-    """
-    Setup the logging configuration
-
-    :param path: path to the configuration file
-    :type path: string
-    :param default_level: default level
-    :type default_level: logging level
-    """
-    if os.path.exists(path):
-        with open(path, 'rt') as file_:
-            config = json.load(file_)
-        logging.config.dictConfig(config)
-    else:
-        logging.basicConfig(level=default_level)
-
-
 if __name__ == '__main__':
-    setup_logging()
+    common.setup_logging()
     unittest.main()

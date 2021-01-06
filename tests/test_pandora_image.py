@@ -23,15 +23,12 @@
 This module contains functions to test all the methods in img_tools module.
 """
 
-import logging
-import logging.config
-import json
-import os
 import unittest
 
 import numpy as np
 import xarray as xr
 
+import common
 import pandora
 import pandora.img_tools as img_tools
 
@@ -264,7 +261,7 @@ class TestImgTools(unittest.TestCase):
         segm_gt = np.array([[0, 0, 1, 2, 0],
                             [0, 0, 0, 0, 1],
                             [3, 5, 0, 0, 1],
-                            [0, 0, 255, 0, 0]],)
+                            [0, 0, 255, 0, 0]], )
 
         # Check if the calculated mask is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(dst_left['segm'].data, segm_gt)
@@ -293,22 +290,6 @@ class TestImgTools(unittest.TestCase):
         np.testing.assert_array_equal(disp_, gt)
 
 
-def setup_logging(path='logging.json', default_level=logging.WARNING, ):
-    """
-    Setup the logging configuration
-    :param path: path to the configuration file
-    :type path: string
-    :param default_level: default level
-    :type default_level: logging level
-    """
-    if os.path.exists( path):
-        with open(path, 'rt') as file_:
-            config = json.load( file_)
-        logging.config.dictConfig(config)
-    else:
-        logging.basicConfig(level = default_level)
-
-
 if __name__ == '__main__':
-    setup_logging()
+    common.setup_logging()
     unittest.main()
