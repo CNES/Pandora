@@ -28,6 +28,7 @@ import unittest
 import numpy as np
 import xarray as xr
 
+import common
 import pandora.aggregation as aggregation
 import pandora.aggregation.cbca as cbca
 import pandora.matching_cost as matching_cost
@@ -76,9 +77,9 @@ class TestAggregation(unittest.TestCase):
 
         """
         matching_cost_matcher = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
-                                                                  'subpix': 2})
+                                                                      'subpix': 2})
         sad = matching_cost_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, disp_min=-1,
-                                                         disp_max=1)
+                                                        disp_max=1)
         matching_cost_matcher.cv_masked(self.left, self.right, sad, -1, 1)
 
         # Computes the cost aggregation with the cross-based cost aggregation method,
@@ -258,7 +259,7 @@ class TestAggregation(unittest.TestCase):
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         matching_cost_matcher = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
-                                                                'subpix': 1})
+                                                                      'subpix': 1})
         sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
         matching_cost_matcher.cv_masked(left, right, sad, -1, 1)
 
@@ -303,7 +304,7 @@ class TestAggregation(unittest.TestCase):
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         matching_cost_matcher = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
-                                                                'subpix': 1})
+                                                                      'subpix': 1})
         sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
         matching_cost_matcher.cv_masked(left, right, sad, -1, 1)
 
@@ -362,7 +363,7 @@ class TestAggregation(unittest.TestCase):
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         matching_cost_matcher = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
-                                                                        'subpix': 1})
+                                                                      'subpix': 1})
         sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
         matching_cost_matcher.cv_masked(left, right, sad, -1, 1)
 
@@ -445,7 +446,7 @@ class TestAggregation(unittest.TestCase):
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         matching_cost_matcher = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
-                                                                'subpix': 1})
+                                                                      'subpix': 1})
         sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
         matching_cost_matcher.cv_masked(left, right, sad, -1, 1)
 
@@ -531,13 +532,13 @@ class TestAggregation(unittest.TestCase):
         right.attrs['no_data'] = 1
 
         matching_cost_matcher = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
-                                                                'subpix': 2})
+                                                                      'subpix': 2})
         sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
         matching_cost_matcher.cv_masked(left, right, sad, -1, 1)
 
         cbca_obj = aggregation.AbstractAggregation(**{'aggregation_method': 'cbca',
                                                       'cbca_intensity': 5., 'cbca_distance': 3})
-        cross_left, cross_right = cbca_obj.computes_cross_supports(left, right, sad) # pylint: disable=unused-variable
+        cross_left, cross_right = cbca_obj.computes_cross_supports(left, right, sad)  # pylint: disable=unused-variable
 
         # Cross support region top arm ground truth for the right shifted image
         top_arm = np.array([[0, 0, 0, 0],
@@ -588,7 +589,7 @@ class TestAggregation(unittest.TestCase):
         right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
 
         matching_cost_matcher = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
-                                                                'subpix': 2})
+                                                                      'subpix': 2})
         sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
         matching_cost_matcher.cv_masked(left, right, sad, -1, 1)
 
@@ -648,7 +649,7 @@ class TestAggregation(unittest.TestCase):
         right.attrs['no_data'] = 1
 
         matching_cost_matcher = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
-                                                                'subpix': 1})
+                                                                      'subpix': 1})
         sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
         matching_cost_matcher.cv_masked(left, right, sad, -1, 1)
 
@@ -703,4 +704,5 @@ class TestAggregation(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    common.setup_logging()
     unittest.main()

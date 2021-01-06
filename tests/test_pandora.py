@@ -24,8 +24,6 @@ This module contains functions to test the Pandora pipeline.
 """
 
 import json
-import logging
-import logging.config
 import os
 import unittest
 from tempfile import TemporaryDirectory
@@ -33,6 +31,7 @@ from tempfile import TemporaryDirectory
 import numpy as np
 import xarray as xr
 
+import common
 import pandora
 from pandora import import_plugin
 from pandora.img_tools import read_img, rasterio_open
@@ -97,8 +96,8 @@ class TestPandora(unittest.TestCase):
                     },
                     'matching_cost': {
                         'matching_cost_method': 'zncc',
-                        'window_size': 5,
-                        'subpix': 2
+                        'window_size':  5,
+                        'subpix':  2
                     },
                     'disparity': {
                         'disparity_method': 'wta'
@@ -329,12 +328,12 @@ class TestPandora(unittest.TestCase):
             },
             'pipeline':
                 {
-                    'right_disp_map': {
+                    'right_disp_map':  {
                         'method': 'accurate'
                     },
                     'matching_cost': {
                         'matching_cost_method': 'zncc',
-                        'window_size': 5,
+                        'window_size':  5,
                         'subpix': 2
                     },
                     'disparity': {
@@ -369,22 +368,7 @@ class TestPandora(unittest.TestCase):
             if self.error(-1 * rasterio_open(tmp_dir + '/right_disparity.tif').read(1), self.disp_right, 1) > 0.20:
                 raise AssertionError
 
-def setup_logging(path='logging.json', default_level=logging.WARNING, ):
-    """
-    Setup the logging configuration
-
-    :param path: path to the configuration file
-    :type path: string
-    :param default_level: default level
-    :type default_level: logging level
-    """
-    if os.path.exists(path):
-        with open(path,  'rt') as file_:
-            config = json.load( file_)
-        logging.config.dictConfig(config)
-    else:
-        logging.basicConfig(level= default_level)
 
 if __name__ == '__main__':
-    setup_logging()
+    common.setup_logging()
     unittest.main()

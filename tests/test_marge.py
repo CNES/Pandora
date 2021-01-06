@@ -27,6 +27,7 @@ import unittest
 
 import numpy as np
 
+import common
 import pandora.marge
 
 
@@ -113,4 +114,5 @@ class TestMargins(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    common.setup_logging()
     unittest.main()
