@@ -67,7 +67,7 @@ setup(name='pandora',
       author_email='myriam.cournet@cnes.fr',
       license='Apache License 2.0',
       entry_points={
-          'console_scripts': ['pandora = bin.Pandora:main']
+          'console_scripts': ['pandora = pandora.Pandora:main']
       },
       python_requires='>=3.6',
       install_requires=REQUIREMENTS,
