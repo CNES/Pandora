@@ -216,6 +216,110 @@ class TestConfig(unittest.TestCase):
         # Json checker must raise an error
         self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
 
+        # Test configuration with left disparity as int and right disparites as str
+        cfg = {
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': -4,
+                'disp_max': 0,
+                'disp_min_right': 'tests/pandora/disp_min_grid.tif',
+                'disp_max_right': 'tests/pandora/disp_max_grid.tif'
+            }
+        }
+        # Json checker must raise an error
+        self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
+
+        # Test configuration with left disparity grids inverted
+        cfg = {
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_max_grid.tif',
+                'disp_max': 'tests/pandora/disp_min_grid.tif'
+            }
+        }
+        # Json checker must raise an error
+        self.assertRaises(SystemExit, JSON_checker.check_input_section, cfg)
+
+        # Test configuration with left disparity inverted
+        cfg = {
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 0,
+                'disp_max': -4
+            }
+        }
+        # Json checker must raise an error
+        self.assertRaises(SystemExit, JSON_checker.check_input_section, cfg)
+
+        # Test configuration with left disparity grids and right disparity grids inverted
+        cfg = {
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif',
+                'disp_min_right': 'tests/pandora/disp_max_grid.tif',
+                'disp_max_right': 'tests/pandora/disp_min_grid.tif'
+            }
+        }
+        # Json checker must raise an error
+        self.assertRaises(SystemExit, JSON_checker.check_input_section, cfg)
+
+        # Test configuration with left disparity grids and right disparity max as str
+        cfg = {
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif',
+                'disp_max_right': 'tests/pandora/disp_max_grid.tif'
+            }
+        }
+        # Json checker must raise an error
+        self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
+
+        # Test configuration with left disparity grids and right disparity min as str
+        cfg = {
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif',
+                'disp_min_right': 'tests/pandora/disp_min_grid.tif'
+            }
+        }
+        # Json checker must raise an error
+        self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
+
+        # Test configuration with left disparity as int and right disparity min as str
+        cfg = {
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': -4,
+                'disp_max': 0,
+                'disp_min_right': 'tests/pandora/disp_min_grid.tif'
+            }
+        }
+        # Json checker must raise an error
+        self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
+
+        # Test configuration with left disparity as int and right disparity max as str
+        cfg = {
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': -4,
+                'disp_max': 0,
+                'disp_max_right': 'tests/pandora/disp_max_grid.tif'
+            }
+        }
+        # Json checker must raise an error
+        self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
+
     def test_check_conf(self):
         """
         Test the method check_conf

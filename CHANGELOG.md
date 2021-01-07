@@ -7,6 +7,7 @@
 ### Fixed
 
 - Call to interpolation functions. [#175]
+- Check right disparities. [#177]
 
 ## 0.5.0 (January 2021)
 
