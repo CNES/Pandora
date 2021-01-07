@@ -76,7 +76,6 @@ def mkdir_p(path: str) -> None:
         else:
             raise
 
-
 def save_results(left: xr.Dataset, right: xr.Dataset, output: str) -> None:
     """
     Save results in the output directory

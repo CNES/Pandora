@@ -25,7 +25,7 @@ This module contains all the parameters related to the validity mask, defining e
 
 # INVALID POINTS CONSTANTS
 # INVALID
-PANDORA_MSK_PIXEL_INVALID = 0b1111000011
+PANDORA_MSK_PIXEL_INVALID = 0b01111000011
 # if bit 0 activated : The pixel is invalid : border of left image, OR nodata in left image
 PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER = (1 << 0)
 # if bit 1 activated : The pixel is invalid : disparity range to explore is missing in right image, OR
@@ -47,3 +47,5 @@ PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT = (1 << 7)
 PANDORA_MSK_PIXEL_OCCLUSION = (1 << 8)
 # if bit 9 activate : The pixel is invalid : mismatch
 PANDORA_MSK_PIXEL_MISMATCH = (1 << 9)
+# if bit 10 activate : Information : Nodata was filled
+PANDORA_MSK_PIXEL_FILLED_NODATA = (1 << 10)

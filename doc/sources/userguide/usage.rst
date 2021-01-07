@@ -156,6 +156,8 @@ Pipeline parameters
 +---------------------+-----------------------------------+------+---------------+---------------------------------+----------+
 | *validation*        | Validation step parameters        | dict |               | :ref:`valid_parameters`         | No       |
 +---------------------+-----------------------------------+------+---------------+---------------------------------+----------+
+| *multiscale*        | Multiscale step parameters        | dict |               | :ref:`multiscale_parameters`    | No       |
++---------------------+-----------------------------------+------+---------------+---------------------------------+----------+
 | *resize*            | Resize step parameters            | dict |               | :ref:`resize_parameters`        | No       |
 +---------------------+-----------------------------------+------+---------------+---------------------------------+----------+
 
@@ -178,7 +180,8 @@ Right disparity map parameters
 .. _matching_cost_parameters:
 
 Matching_cost parameters
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
+
 +------------------------+------------------------------------+--------+---------------+--------------------------------+----------+
 | Name                   | Description                        | Type   | Default value | Available value                | Required |
 +========================+====================================+========+===============+================================+==========+
@@ -287,7 +290,31 @@ Validation parameters
 +-----------------------------------+---------------------------------------------------------------------------------------------------------+--------+---------------+---------------------------+----------+
 
 .. note::
-  Cross-checking method cannot be choosen if right disparity map is not calculated. See  :ref:`rdm_parameters` to activate it.
+  Cross-checking method cannot be chosen if right disparity map is not calculated. See  :ref:`rdm_parameters` to activate it.
+
+.. _multiscale_parameters:
+
+Multiscale  parameters
+^^^^^^^^^^^^^^^^^^^^^^
+
++---------------------+-------------------------------------------------------+------------+---------------+------------------------+----------+
+| Name                | Description                                           | Type       | Default value | Available value        | Required |
++=====================+=======================================================+============+===============+========================+==========+
+| *multiscale_method* | multiscale method name                                | string     |               | "fixed_zoom_disparity" | Yes      |
++---------------------+-------------------------------------------------------+------------+---------------+------------------------+----------+
+| *num_scales*        | number of scales to process                           | int        |  2            | >= 2                   | No       |
++---------------------+-------------------------------------------------------+------------+---------------+------------------------+----------+
+| *scale_factor*      | scale factor by which reduce the image between scales | int        |  2            | >= 2                   | No       |
++---------------------+-------------------------------------------------------+------------+---------------+------------------------+----------+
+| *marge*             | marge to avoid zero disparity range                   | int        |  1            | >= 0                   | No       |
++---------------------+-------------------------------------------------------+------------+---------------+------------------------+----------+
+
+.. note::
+  Multiscale with a num_scales = 1 cannot be chosen. For implementation without multiscale processing, do not add this entry in the pipeline configuration.
+  See :ref:`multiscale_processing` to understand the goal of this step.
+
+.. note::
+  Multiscale method cannot be chosen if disparity maps are grids.
 
 .. _resize_parameters:
 

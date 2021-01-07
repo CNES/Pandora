@@ -7,14 +7,14 @@
 #
 #     https://github.com/CNES/Pandora
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the 'License'');
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an 'AS IS' BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
@@ -22,7 +22,6 @@
 """
 This module contains functions to test the configuration
 """
-
 import unittest
 
 import json_checker
@@ -73,6 +72,8 @@ class TestConfig(unittest.TestCase):
             }
         }
         cfg_return = JSON_checker.check_input_section(cfg)
+        if (cfg_return['input']['disp_min_right'] is not None) and (cfg_return['input']['disp_max_right'] is not None):
+            raise AssertionError
 
         # Test configuration with left and right disparity grids
         cfg = {
@@ -86,6 +87,7 @@ class TestConfig(unittest.TestCase):
             }
         }
         cfg_return = JSON_checker.check_input_section(cfg)
+
         if (cfg_return['input']['disp_min_right'] != 'tests/pandora/disp_min_grid.tif') and \
                 (cfg_return['input']['disp_max_right'] != 'tests/pandora/disp_max_grid.tif'):
             raise AssertionError
@@ -440,6 +442,39 @@ class TestConfig(unittest.TestCase):
         }
 
         assert cfg_return == cfg_gt
+
+        # Check the configuration returned with left disparity grids and multiscale processing
+        cfg = {
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': 'tests/pandora/disp_min_grid.tif',
+                'disp_max': 'tests/pandora/disp_max_grid.tif'
+            },
+            'pipeline':
+                {
+                    'right_disp_map': {
+                        'method': 'accurate'
+                    },
+                    'matching_cost': {
+                        'matching_cost_method': 'zncc',
+                        'window_size': 5,
+                        'subpix': 2
+                    },
+                    'disparity': {
+                        'disparity_method': 'wta'
+                    },
+                    'multiscale': {
+                        'multiscale_method': 'fixed_zoom_pyramid',
+                        'num_scales': 2,
+                        'scale_factor': 2,
+                        'marge': 3
+                    }
+                }
+        }
+
+        # When left disparities are grids and multiscale processing cannot be used : the program exits
+        self.assertRaises(SystemExit, JSON_checker.check_conf, cfg, pandora_machine)
 
     def test_check_pipeline_section_with_error(self):
         """

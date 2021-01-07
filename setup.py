@@ -43,7 +43,8 @@ REQUIREMENTS = ['numpy',
                 'json-checker',
                 'numba>=0.47.*',
                 'opencv-python-headless',
-                'transitions']
+                'transitions',
+                'scikit-image']
 
 REQUIREMENTS_DEV = {'dev': ['sphinx',
                             'sphinx_rtd_theme',
