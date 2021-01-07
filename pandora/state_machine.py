@@ -315,7 +315,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             self.left_disparity = validation_.disparity_checking(self.left_disparity, self.right_disparity)
             self.right_disparity = validation_.disparity_checking(self.right_disparity, self.left_disparity)
             # Interpolated mismatch and occlusions
-            if 'interpolated_disparity' in cfg:
+            if 'interpolated_disparity' in cfg[input_step]:
                 interpolate_ = validation.AbstractInterpolation(**cfg[input_step])
                 interpolate_.interpolated_disparity(self.left_disparity)
                 interpolate_.interpolated_disparity(self.right_disparity)
