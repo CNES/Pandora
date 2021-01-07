@@ -20,6 +20,7 @@
 ### Fixed
 
 - Confidence measure that computes the distance LR / RL in cross checking method. [#155]
+- Call to interpolation functions. [#175]
 
 ## 0.4.0 (November 2020)
 
