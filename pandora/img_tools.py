@@ -310,9 +310,8 @@ def convert_pyramid_to_dataset(img_orig: xr.Dataset, images: List[np.ndarray], m
                                       dims=['row', 'col'])
 
         # Add image conf to the image dataset
-        dataset.attrs = {'no_data_img': img_orig.attrs['no_data_img'],
-                         'valid_pixels': img_orig.attrs['valid_pixels'],
-                         'no_data_mask': img_orig.attrs['no_data_mask']}
+        # - attributes are linked to each others
+        dataset.attrs = img_orig.attrs
         pyramid.append(dataset)
 
     return pyramid
