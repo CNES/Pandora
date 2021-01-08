@@ -7,14 +7,14 @@
 #
 #     https://github.com/CNES/Pandora
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an 'AS IS' BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
@@ -83,7 +83,7 @@ class TestPandora(unittest.TestCase):
 
         return nb_error / float(n_row * n_col)
 
-    def test_run(self):
+    def test_run_with_validation(self):
         """
         Test the run method
 
@@ -96,8 +96,8 @@ class TestPandora(unittest.TestCase):
                     },
                     'matching_cost': {
                         'matching_cost_method': 'zncc',
-                        'window_size':  5,
-                        'subpix':  2
+                        'window_size': 5,
+                        'subpix': 2
                     },
                     'disparity': {
                         'disparity_method': 'wta'
@@ -122,6 +122,172 @@ class TestPandora(unittest.TestCase):
         # Run the pandora pipeline
         left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg['pipeline'])
 
+        # Check the left disparity map
+        if self.error(left['disparity_map'].data, self.disp_left, 1) > 0.20:
+            raise AssertionError
+
+        # Check the left validity mask cross checking ( bit 8 and 9 )
+        occlusion = np.ones((left['validity_mask'].shape[0], left['validity_mask'].shape[1]))
+        occlusion[left['validity_mask'].data >= 512] = 0
+
+        if self.error_mask(occlusion, self.occlusion) > 0.16:
+            raise AssertionError
+
+        # Check the right disparity map
+        if self.error(-1 * right['disparity_map'].data, self.disp_right, 1) > 0.20:
+            raise AssertionError
+
+    def test_run_without_validation(self):
+        """
+        Test the run method
+
+        """
+        user_cfg = {
+            'pipeline':
+                {
+                    'right_disp_map': {
+                        'method': 'none'
+                    },
+                    'matching_cost': {
+                        'matching_cost_method': 'zncc',
+                        'window_size': 5,
+                        'subpix': 2
+                    },
+                    'disparity': {
+                        'disparity_method': 'wta'
+                    },
+                    'refinement': {
+                        'refinement_method': 'vfit'
+                    },
+                    'filter': {
+                        'filter_method': 'median'
+                    }
+                }
+        }
+        pandora_machine = PandoraMachine()
+
+        # Update the user configuration with default values
+        cfg = pandora.json_checker.update_conf(pandora.json_checker.default_short_configuration, user_cfg)
+
+        # Run the pandora pipeline
+        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg['pipeline'])  # pylint: disable = unused-variable
+
+        # Check the left disparity map
+        if self.error(left['disparity_map'].data, self.disp_left, 1) > 0.20:
+            raise AssertionError
+
+        # Check the left validity mask cross checking ( bit 8 and 9 )
+        occlusion = np.ones((left['validity_mask'].shape[0], left['validity_mask'].shape[1]))
+        occlusion[left['validity_mask'].data >= 512] = 0
+
+        if self.error_mask(occlusion, self.occlusion) > 0.16:
+            raise AssertionError
+
+    def test_run_2_scales(self):
+        """
+        Test the run method for 2 scales
+
+        """
+        user_cfg = {
+            'pipeline': {
+                'right_disp_map': {
+                    'method': 'accurate'
+                },
+                'matching_cost': {
+                    'matching_cost_method': 'zncc',
+                    'window_size': 5,
+                    'subpix': 4
+                },
+                'disparity': {
+                    'disparity_method': 'wta',
+                    'invalid_disparity': 'np.nan'
+                },
+                'refinement': {
+                    'refinement_method': 'vfit'
+                },
+                'filter': {
+                    'filter_method': 'median'
+                },
+                'validation': {
+                    'validation_method': 'cross_checking',
+                    'right_left_mode': 'accurate'
+                },
+                'multiscale': {
+                    'multiscale_method': 'fixed_zoom_pyramid',
+                    'num_scales': 2,
+                    'scale_factor': 2,
+                    'marge': 3
+                }
+            }
+        }
+        pandora_machine = PandoraMachine()
+
+        # Update the user configuration with default values
+        cfg = pandora.json_checker.update_conf(pandora.json_checker.default_short_configuration, user_cfg)
+
+        # Run the pandora pipeline
+        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg['pipeline'])
+
+        # Check the left disparity map
+        if self.error(left['disparity_map'].data, self.disp_left, 1) > 0.20:
+            raise AssertionError
+
+        # Check the left validity mask cross checking ( bit 8 and 9 )
+        occlusion = np.ones((left['validity_mask'].shape[0], left['validity_mask'].shape[1]))
+        occlusion[left['validity_mask'].data >= 512] = 0
+
+        if self.error_mask(occlusion, self.occlusion) > 0.16:
+            raise AssertionError
+
+        # Check the right disparity map
+        if self.error(-1 * right['disparity_map'].data, self.disp_right, 1) > 0.20:
+            raise AssertionError
+
+    def test_run_3_scales(self):
+        """
+        Test the run method for 3 scales
+
+        """
+        user_cfg = {
+            'pipeline': {'right_disp_map': {
+                'method': 'accurate'
+            },
+                'matching_cost': {
+                    'matching_cost_method': 'zncc',
+                    'window_size': 5,
+                    'subpix': 4
+                },
+                'disparity': {
+                    'disparity_method': 'wta',
+                    'invalid_disparity': 'np.nan'
+                },
+                'refinement': {
+                    'refinement_method': 'vfit'
+                },
+                'filter': {
+                    'filter_method': 'median'
+                },
+                'validation': {
+                    'validation_method': 'cross_checking',
+                    'right_left_mode': 'accurate'
+                },
+                'multiscale': {
+                    'multiscale_method': 'fixed_zoom_pyramid',
+                    'num_scales': 3,
+                    'scale_factor': 2,
+                    'marge': 3
+                }
+            }
+        }
+        pandora_machine = PandoraMachine()
+
+        # Update the user configuration with default values
+        cfg = pandora.json_checker.update_conf(pandora.json_checker.default_short_configuration, user_cfg)
+
+        # Run the pandora pipeline
+        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg['pipeline'])
+        var = self.error(left['disparity_map'].data, self.disp_left, 1)
+        print(var)
         # Check the left disparity map
         if self.error(left['disparity_map'].data, self.disp_left, 1) > 0.20:
             raise AssertionError
@@ -324,16 +490,16 @@ class TestPandora(unittest.TestCase):
                 'disp_min': 'tests/pandora/disp_min_grid.tif',
                 'disp_max': 'tests/pandora/disp_max_grid.tif',
                 'disp_min_right': 'tests/pandora/right_disp_min_grid.tif',
-                'disp_max_right': 'tests/pandora/right_disp_max_grid.tif',
+                'disp_max_right': 'tests/pandora/right_disp_max_grid.tif'
             },
             'pipeline':
                 {
-                    'right_disp_map':  {
+                    'right_disp_map': {
                         'method': 'accurate'
                     },
                     'matching_cost': {
                         'matching_cost_method': 'zncc',
-                        'window_size':  5,
+                        'window_size': 5,
                         'subpix': 2
                     },
                     'disparity': {

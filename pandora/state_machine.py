@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+# pylint:disable=too-many-arguments
+# !/usr/bin/env python
 # coding: utf8
 #
 # Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
@@ -24,7 +25,7 @@ This module contains class associated to the pandora state machine
 """
 
 import logging
-from typing import Dict, Union
+from typing import Dict, Union, List
 import numpy as np
 import xarray as xr
 from json_checker import Checker, And
@@ -38,16 +39,19 @@ from transitions import MachineError
 
 from pandora import aggregation
 from pandora import disparity
-from pandora import filter # pylint: disable=redefined-builtin
+from pandora import filter  # pylint: disable=redefined-builtin
+from pandora import multiscale
 from pandora import optimization
 from pandora import refinement
 from pandora import matching_cost
 from pandora import validation
+from .img_tools import prepare_pyramid
+
 
 
 # This module contains class associated to the pandora state machine
 
-class PandoraMachine(Machine):
+class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
     """
     PandoraMachine class to create and use a state machine
     """
@@ -59,7 +63,11 @@ class PandoraMachine(Machine):
         {'trigger': 'disparity', 'source': 'cost_volume', 'dest': 'disp_map', 'after': 'disparity_run'},
         {'trigger': 'filter', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'filter_run'},
         {'trigger': 'refinement', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'refinement_run'},
-        {'trigger': 'validation', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'validation_run'}
+        {'trigger': 'validation', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'validation_run'},
+        # Conditional state change, if it is the last scale the multiscale state will not be triggered
+        # This way, after the last scale we can still apply a filter state
+        {'trigger': 'multiscale', 'source': 'disp_map', 'conditions': 'is_not_last_scale',
+         'dest': 'begin', 'after': 'run_multiscale'},
     ]
 
     _transitions_check = [
@@ -70,42 +78,71 @@ class PandoraMachine(Machine):
         {'trigger': 'disparity', 'source': 'cost_volume', 'dest': 'disp_map', 'after': 'disparity_check_conf'},
         {'trigger': 'filter', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'filter_check_conf'},
         {'trigger': 'refinement', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'refinement_check_conf'},
-        {'trigger': 'validation', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'validation_check_conf'}
+        {'trigger': 'validation', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'validation_check_conf'},
+        # For the check conf we define the destination of multiscale state as disp_map instead of begin
+        # given the conditional change of state
+        {'trigger': 'multiscale', 'source': 'disp_map', 'dest': 'begin', 'after': 'multiscale_check_conf'}
     ]
 
-    def __init__(self, left_img: xr.Dataset = None, right_img: xr.Dataset = None,
-                 disp_min: Union[int, np.ndarray] = None, disp_max: Union[int, np.ndarray] = None,
-                 right_disp_min: Union[int, np.ndarray] = None, right_disp_max: Union[int, np.ndarray] = None) -> None:
+    def __init__(self, img_left_pyramid: List[xr.Dataset] = None, img_right_pyramid: List[xr.Dataset] = None,
+                 disp_min: Union[np.array, int] = None, disp_max: Union[np.array, int] = None,
+                 right_disp_min: Union[np.array, None] = None, right_disp_max: Union[np.array, None] = None
+                 ) -> None:
+
         """
         Initialize Pandora Machine
 
-        :param left_img: left Dataset image
-        :type left_img:
-            xarray.Dataset containing :
+        :param img_left_pyramid: left pyramid of Dataset image
+        :type img_left_pyramid:
+            List of xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
-        :param right_img: right Dataset image
-        :type right_img:
-            xarray.Dataset containing :
+        :param img_right_pyramid: right pyramid of Dataset image
+        :type img_right_pyramid:
+            List of xarray.Dataset containing :
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :param disp_min: minimal disparity
-        :type disp_min: int or np.ndarray
+        :type disp_min: int or np.array
         :param disp_max: maximal disparity
-        :type disp_max: int or np.ndarray
+        :type disp_max: int or np.array
         :param right_disp_min: minimal disparity of the right image
-        :type right_disp_min: None, int or np.ndarray
+        :type right_disp_min: None or np.array
         :param right_disp_max: maximal disparity of the right image
-        :type right_disp_max: None, int or np.ndarray
+        :type right_disp_max: None or np.array
         :return: None
         """
-
-        self.left_img = left_img
-        self.right_img = right_img
+        # Left image scale pyramid
+        self.img_left_pyramid = img_left_pyramid
+        # Right image scale pyramid
+        self.img_right_pyramid = img_right_pyramid
+        # Left image
+        self.left_img = None
+        # Right image
+        self.right_img = None
+        # Minimum disparity
         self.disp_min = disp_min
+        # Maximum disparity
         self.disp_max = disp_max
+        # Maximum disparity for the right image
         self.right_disp_min = right_disp_min
+        # Minimum disparity for the right image
         self.right_disp_max = right_disp_max
+        # User minimum disparity
+        self.dmin_user = None
+        # User maximum disparity
+        self.dmax_user = None
+        # User minimum disparity right
+        self.dmin_user_right = None
+        # User maximum disparity right
+        self.dmax_user_right = None
+
+        # Scale factor
+        self.scale_factor = None
+        # Number of scales
+        self.num_scales = 1
+        # Current scale
+        self.current_scale = None
 
         # left cost volume
         self.left_cv = None
@@ -118,13 +155,13 @@ class PandoraMachine(Machine):
 
         # Pandora's pipeline configuration
         self.pipeline_cfg = {'pipeline': {}}
-        # Right disparity map computation information: Can be 'none' or 'accurate'
-        # Usefull during the running steps to choose if we must compute left and right objects.
+        # Right disparity map computation information: Can be "none" or "accurate"
+        # Useful during the running steps to choose if we must compute left and right objects.
         self.right_disp_map = 'none'
         # Define avalaible states
         states_ = ['begin', 'cost_volume', 'disp_map']
 
-        # Initiliaze a machine without any transition
+        # Initialize a machine without any transition
         Machine.__init__(self, states=states_, initial='begin', transitions=None, auto_transitions=False)
 
         logging.getLogger('transitions').setLevel(logging.WARNING)
@@ -141,8 +178,14 @@ class PandoraMachine(Machine):
 
         logging.info('Matching cost computation...')
         matching_cost_ = matching_cost.AbstractMatchingCost(**cfg[input_step])
+
+        # Update min and max disparity according to the current scale
+        self.disp_min = self.disp_min * self.scale_factor
+        self.disp_max = self.disp_max * self.scale_factor
+        # Obtain absolute min and max disparities
         dmin_min, dmax_max = matching_cost_.dmin_dmax(self.disp_min, self.disp_max)
 
+        # Compute cost volume and mask it
         if self.right_disp_map != 'accurate':
             self.left_cv = matching_cost_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max)
             matching_cost_.cv_masked(self.left_img, self.right_img, self.left_cv, self.disp_min, self.disp_max)
@@ -151,11 +194,12 @@ class PandoraMachine(Machine):
             self.left_cv = matching_cost_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max)
             matching_cost_.cv_masked(self.left_img, self.right_img, self.left_cv, self.disp_min, self.disp_max)
 
-            if self.right_disp_min is None:
-                self.right_disp_min = -self.disp_max
-                self.right_disp_max = -self.disp_min
-
+            # Update min and max disparity according to the current scale
+            self.right_disp_min = self.right_disp_min * self.scale_factor
+            self.right_disp_max = self.right_disp_max * self.scale_factor
+            # Obtain absolute min and max right disparities
             dmin_min_right, dmax_max_right = matching_cost_.dmin_dmax(self.right_disp_min, self.right_disp_max)
+            # Compute right cost volume and mask it
             self.right_cv = matching_cost_.compute_cost_volume(self.right_img, self.left_img, dmin_min_right,
                                                                dmax_max_right)
             matching_cost_.cv_masked(self.right_img, self.left_img, self.right_cv, self.right_disp_min,
@@ -205,7 +249,7 @@ class PandoraMachine(Machine):
         """
         logging.info('Disparity computation...')
         disparity_ = disparity.AbstractDisparity(**cfg[input_step])
-        if self.right_disp_map == 'none':
+        if self.right_disp_map != 'accurate':
             self.left_disparity = disparity_.to_disp(self.left_cv, self.left_img, self.right_img)
             disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img,
                                      self.left_cv)
@@ -228,7 +272,7 @@ class PandoraMachine(Machine):
         """
         logging.info('Disparity filtering...')
         filter_ = filter.AbstractFilter(**cfg[input_step])
-        if self.right_disp_map == 'none':
+        if self.right_disp_map != 'accurate':
             filter_.filter_disparity(self.left_disparity)
         else:
             filter_.filter_disparity(self.left_disparity)
@@ -245,7 +289,7 @@ class PandoraMachine(Machine):
         """
         refinement_ = refinement.AbstractRefinement(**cfg[input_step])
         logging.info('Subpixel refinement...')
-        if self.right_disp_map == 'none':
+        if self.right_disp_map != 'accurate':
             refinement_.subpixel_refinement(self.left_cv, self.left_disparity)
         else:
             refinement_.subpixel_refinement(self.left_cv, self.left_disparity)
@@ -264,7 +308,7 @@ class PandoraMachine(Machine):
 
         logging.info('Validation...')
 
-        if self.right_disp_map == 'none':
+        if self.right_disp_map != 'accurate':
             self.left_disparity = validation_.disparity_checking(self.left_disparity, self.right_disparity)
 
         else:
@@ -276,11 +320,49 @@ class PandoraMachine(Machine):
                 interpolate_.interpolated_disparity(self.left_disparity)
                 interpolate_.interpolated_disparity(self.right_disparity)
 
+    def run_multiscale(self, cfg: Dict[str, dict], input_step: str) -> None:
+        """
+            Compute the disparity range for the next scale
+            :param cfg: pipeline configuration
+            :type  cfg: dict
+            :param input_step: step to trigger
+            :type input_step: str
+            :return: None
+            """
+
+        logging.info('Disparity range computation...')
+
+        multiscale_ = multiscale.AbstractMultiscale(**cfg[input_step])
+
+        # Update min and max user disparity according to the current scale
+        self.dmin_user = self.dmin_user * self.scale_factor
+        self.dmax_user = self.dmax_user * self.scale_factor
+
+        # Compute disparity range for the next scale level
+        if self.right_disp_map != 'accurate':
+            self.disp_min, self.disp_max = multiscale_.disparity_range(self.left_disparity,
+                                                                        self.dmin_user, self.dmax_user)
+        else:
+            self.disp_min, self.disp_max = multiscale_.disparity_range(self.left_disparity,
+                                                                        self.dmin_user, self.dmax_user)
+            # Update min and max user disparity according to the current scale
+            self.dmin_user_right = self.dmin_user_right * self.scale_factor
+            self.dmax_user_right = self.dmax_user_right * self.scale_factor
+            self.right_disp_min, self.right_disp_max = multiscale_.disparity_range(self.right_disparity,
+                                                                                    self.dmin_user_right,
+                                                                                    self.dmax_user_right)
+
+        # Get the next scale's images
+        self.left_img = self.img_left_pyramid.pop(0)
+        self.right_img = self.img_right_pyramid.pop(0)
+
+        # Update the current scale for the next state
+        self.current_scale = self.current_scale - 1
 
     def run_prepare(self, cfg: Dict[str, dict], left_img: xr.Dataset, right_img: xr.Dataset,
-                    disp_min: Union[int, np.ndarray],
-                    disp_max: Union[int, np.ndarray], right_disp_min: Union[None, int, np.ndarray] = None,
-                    right_disp_max: Union[None, int, np.ndarray] = None) -> None:
+                    disp_min: Union[np.array, int], disp_max: Union[np.array, int], scale_factor: int,
+                    num_scales: int, right_disp_min: Union[None, np.array] = None,
+                    right_disp_max: Union[None, np.array] = None) -> None:
         """
         Prepare the machine before running
         :param cfg:  configuration
@@ -296,27 +378,73 @@ class PandoraMachine(Machine):
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :param disp_min: minimal disparity
-        :type disp_min: int or np.ndarray
+        :type disp_min: int or np.array
         :param disp_max: maximal disparity
-        :type disp_max: int or np.ndarray
-        :param right_disp_min: minimal disparity of the right image
-        :type right_disp_min: None, int or np.ndarray
-        :param right_disp_max: maximal disparity of the right image
-        :type right_disp_max: None, int or np.ndarray
+        :type disp_max: int or np.array
+        :param scale_factor: scale factor for multiscale
+        :type scale_factor: int
+        :param num_scales: scales number for multiscale
+        :type num_scales: int
+        :param disp_min_right: minimal disparity of the right image
+        :type disp_min_right: np.array or None
+        :param disp_max_right: maximal disparity of the right image
+        :type disp_max_right: np.array or None
         :return: None
         """
+        # Total number of scales
+        self.num_scales = num_scales
+        # Scale factor
+        self.scale_factor = scale_factor
 
-        self.left_img = left_img
-        self.right_img = right_img
-        self.disp_min = disp_min
-        self.disp_max = disp_max
-        self.right_disp_max = right_disp_max
-        self.right_disp_min = right_disp_min
+
+        if self.num_scales > 1:
+            # If multiscale processing, create pyramid and select first scale's images
+            self.img_left_pyramid, self.img_right_pyramid = prepare_pyramid(left_img, right_img, self.num_scales,
+                                                                            scale_factor)
+            self.left_img = self.img_left_pyramid.pop(0)
+            self.right_img = self.img_right_pyramid.pop(0)
+            # Initialize current scale
+            self.current_scale = num_scales - 1
+            # If multiscale, disparities can only be int.
+            # Downscale disparities since the pyramid is processed from coarse to original size
+            self.disp_min = int(disp_min / (scale_factor ** self.num_scales))
+            self.disp_max = int(disp_max / (scale_factor ** self.num_scales))
+            # User disparity
+            self.dmin_user = self.disp_min
+            self.dmax_user = self.disp_max
+            # If multiscale disparities can only be int, and right disparity can only be np.array, so right disparity
+            # can not be defined in the input conf
+            # Right disparities
+            self.right_disp_min = -self.disp_max
+            self.right_disp_max = -self.disp_min
+            # Right user disparity
+            self.dmin_user_right = self.right_disp_min
+            self.dmax_user_right = self.right_disp_max
+        else:
+            # If no multiscale processing, select the original images
+            self.left_img = left_img
+            self.right_img = right_img
+            # If no multiscale processing, current scale is zero
+            self.current_scale = 0
+            # Disparities
+            self.disp_min = disp_min
+            self.disp_max = disp_max
+            # Right disparities
+            if right_disp_max is not None and right_disp_min is not None:
+                # If the right disparity was defined in the input conf
+                self.right_disp_min = right_disp_min
+                self.right_disp_max = right_disp_max
+            else:
+                self.right_disp_min = -self.disp_max
+                self.right_disp_max = -self.disp_min
+
+
+        # Initiate output disparity datasets
         self.left_disparity = xr.Dataset()
         self.right_disparity = xr.Dataset()
-
+        # To determine whether the right disparity map has to be computed
         self.right_disp_map = cfg['right_disp_map']['method']
-
+        # Add transitions
         self.add_transitions(self._transitions_run)
 
     def run(self, input_step: str, cfg: Dict[str, dict]) -> None:
@@ -359,7 +487,8 @@ class PandoraMachine(Machine):
         self.remove_transitions(self._transitions_run)
         self.set_state('begin')
 
-    def right_disp_map_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None: #pylint:disable=unused-argument
+    def right_disp_map_check_conf(self, cfg: Dict[str, dict],
+                                  input_step: str) -> None:  # pylint:disable=unused-argument
         """
         Check the right_disp_map configuration
 
@@ -473,19 +602,32 @@ class PandoraMachine(Machine):
         validation_ = validation.AbstractValidation(**cfg[input_step])
         self.pipeline_cfg['pipeline'][input_step] = validation_.cfg
         if 'interpolated_disparity' in validation_.cfg:
-            interpolate_ = validation.AbstractInterpolation(**cfg[input_step]) # pylint: disable=unused-variable
+            interpolate_ = validation.AbstractInterpolation(**cfg[input_step])  # pylint: disable=unused-variable
 
-        if validation_.cfg['validation_method'] == 'cross_checking' and self.right_disp_map == 'none':
+        if validation_.cfg['validation_method'] == 'cross_checking' and self.right_disp_map != 'accurate':
             raise MachineError('Can t trigger event cross-checking validation  if right_disp_map method equal to '
                                + self.right_disp_map)
 
-    def check_conf(self, cfg: Dict[str, dict]) -> None:
+    def multiscale_check_conf(self, cfg: Dict[str, dict], input_step: str):
+        """
+        Check the disparity computation configuration
+
+        :param cfg: disparity computation configuration
+        :type cfg: dict
+        :param input_step: current step
+        :type input_step: string
+        :return:
+        """
+        multiscale_ = multiscale.AbstractMultiscale(**cfg[input_step])
+        self.pipeline_cfg['pipeline'][input_step] = multiscale_.cfg
+
+    def check_conf(self, cfg: Dict[str, dict]):
         """
         Check configuration and transitions
 
         :param cfg: pipeline configuration
         :type  cfg: dict
-        :return: None
+        :return:
         """
 
         # Add transitions to the empty machine.
@@ -538,3 +680,17 @@ class PandoraMachine(Machine):
             if trans['trigger'] not in deleted_triggers:
                 self.remove_transition(trans['trigger'])
                 deleted_triggers.append(trans['trigger'])
+
+    def is_not_last_scale(self, input_step: str, cfg: Dict[str, dict]):  # pylint:disable=unused-argument
+        """
+        Check if the current scale is the last scale
+        :param cfg: configuration
+        :type cfg: dict
+        :param input_step: current step
+        :type input_step: string
+        :return: boolean
+        """
+
+        if self.current_scale == 0:
+            return False
+        return True

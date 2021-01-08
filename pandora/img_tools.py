@@ -27,12 +27,13 @@ import logging
 import warnings
 from typing import List, Union, Tuple
 
-import cv2
 import numpy as np
 import rasterio
 import xarray as xr
 from scipy.ndimage.interpolation import zoom
+from skimage.transform.pyramids import pyramid_gaussian
 
+import pandora.constants as cst
 
 def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.DatasetReader:
     """
@@ -161,69 +162,171 @@ def prepare_pyramid(img_left: xr.Dataset, img_right: xr.Dataset, num_scales: int
     :return: a List that contains the different scaled datasets
     :rtype : List of xarray.Dataset
     """
+    # Fill no data values in image with an interpolation. If no mask was given, create all valid masks
+    img_left_fill, msk_left_fill = fill_nodata_image(img_left)
+    img_right_fill, msk_right_fill = fill_nodata_image(img_right)
 
-    # Create multiscale pyramid.
-    pyramid_left = []
-    pyramid_right = []
+    # Create image pyramids
+    images_left = list(pyramid_gaussian(img_left_fill, max_layer=num_scales - 1, downscale=scale_factor,
+                                        sigma=1.2, order=1, mode='reflect', cval=0))
+    images_right = list(pyramid_gaussian(img_right_fill, max_layer=num_scales - 1, downscale=scale_factor,
+                                         sigma=1.2, order=1, mode='reflect', cval=0))
+    # Create mask pyramids
+    masks_left = masks_pyramid(msk_left_fill, scale_factor, num_scales)
+    masks_right = masks_pyramid(msk_right_fill, scale_factor, num_scales)
 
-    pyramid_left.append(img_left)
-    pyramid_right.append(img_right)
-
-    scales = np.arange(num_scales - 1)
-    for scale in scales: # pylint: disable=unused-variable
-        # Downscale the previous layer
-        pyramid_left.append(create_downsampled_dataset(pyramid_left[-1], scale_factor))
-        pyramid_right.append(create_downsampled_dataset(pyramid_right[-1], scale_factor))
+    # Create dataset pyramids
+    pyramid_left = convert_pyramid_to_dataset(img_left, images_left, masks_left)
+    pyramid_right = convert_pyramid_to_dataset(img_right, images_right, masks_right)
 
     # The pyramid is intended to be from coarse to original size, so we inverse its order.
     return pyramid_left[::-1], pyramid_right[::-1]
 
 
-def create_downsampled_dataset(img_orig: xr.Dataset, scale_factor: int) -> xr.Dataset:
+def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Return a xr.Dataset downsampled dataset
+        Interpolate no data values in image. If no mask was given, create all valid masks
 
-    :param img_orig : original Dataset image
-    :type img_orig:
+        :param dataset: Dataset image
+        :type dataset:
+        xarray.Dataset containing :
+            - im : 2D (row, col) xarray.DataArray
+        :return: a Tuple that contains the filled image and mask
+        :rtype : Tuple of np.ndarray
+        """
+    if 'msk' in dataset:
+        img, msk = interpolate_nodata_sgm(dataset['im'].data, dataset['msk'].data)
+    else:
+        msk = np.full((dataset['im'].data.shape[0], dataset['im'].data.shape[1]), int(dataset.attrs['valid_pixels']))
+        img = dataset['im'].data
+    return img, msk
+
+
+def interpolate_nodata_sgm(img: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Interpolation of the input image to resolve invalid (nodata) pixels.
+    Interpolate invalid pixels by finding the nearest correct pixels in 8 different directions
+    and use the median of their disparities.
+
+    HIRSCHMULLER, Heiko. Stereo processing by semiglobal matching and mutual information.
+    IEEE Transactions on pattern analysis and machine intelligence, 2007, vol. 30, no 2, p. 328-341.
+
+    :param img: input image
+    :type img: 2D np.array (row, col)
+    :param valid: validity mask
+    :type valid: 2D np.array (row, col)
+    :return: the interpolate input image, with the validity mask update :
+        - If out & PANDORA_MSK_PIXEL_FILLED_NODATA != 0 : Invalid pixel : filled nodata pixel
+    :rtype : tuple(2D np.array (row, col), 2D np.array (row, col))
+    """
+    # Output disparity map and validity mask
+    out_img = np.copy(img)
+    out_val = np.copy(valid)
+
+    ncol, nrow = img.shape
+
+    # 8 directions : [row, y]
+    dirs = np.array([[0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0], [1, 1]])
+    # Maximum path length
+    max_path_length = max(nrow, ncol)
+
+    ncol, nrow = img.shape
+    for col in range(ncol):
+        for row in range(nrow):
+            # Mismatched
+            if valid[col, row] & cst.PANDORA_MSK_PIXEL_INVALID != 0:
+                # For each directions
+                valid_neighbors = np.zeros(8, dtype=np.float32)
+                for dir_ind in range(8):
+                    # Find the first valid pixel in the current path
+                    tmp_row = row
+                    tmp_col = col
+                    for i in range(max_path_length): #pylint: disable=unused-variable
+                        tmp_row += dirs[dir_ind][0]
+                        tmp_col += dirs[dir_ind][1]
+
+                        # Edge of the image reached: there is no valid pixel in the current path
+                        if (tmp_col < 0) | (tmp_col >= ncol) | (tmp_row < 0) | (tmp_row >= nrow):
+                            valid_neighbors[dir_ind] = np.nan
+                            break
+
+                        # First valid pixel
+                        if (valid[tmp_col, tmp_row] & cst.PANDORA_MSK_PIXEL_INVALID) == 0:
+                            valid_neighbors[dir_ind] = img[tmp_col, tmp_row]
+                            break
+
+                # Median of the 8 pixels
+                out_img[col, row] = np.nanmedian(valid_neighbors)
+                # Update the validity mask : Information : filled nodata pixel
+                out_val[col, row] = cst.PANDORA_MSK_PIXEL_FILLED_NODATA
+
+    return out_img, out_val
+
+
+def masks_pyramid(msk: np.ndarray, scale_factor: int, num_scales: int) -> List[np.ndarray]:
+    """
+        Return a List with the downsampled masks for each scale
+
+        :param msk: full resolution mask
+        :type msk: np.ndarray
+        :param scale_factor: scale factor
+        :type scale_factor: int
+        :param num_scales: number of scales
+        :type num_scales: int
+        :return: a List that contains the different scaled masks
+        :rtype : List of np.ndarray
+        """
+    msk_pyramid = []
+    # Add the full resolution mask
+    msk_pyramid.append(msk)
+    tmp_msk = msk
+    for scale in range(num_scales - 1): #pylint: disable=unused-variable
+        # Decimate in the two axis
+        tmp_msk = tmp_msk[::scale_factor, ::scale_factor]
+        msk_pyramid.append(tmp_msk)
+    return msk_pyramid
+
+
+def convert_pyramid_to_dataset(img_orig: xr.Dataset, images: List[np.ndarray], masks: List[np.ndarray]) \
+        -> List[xr.Dataset]:
+    """
+    Return a List with the datasets given the image and mask pyramids
+
+    :param img_orig: original Dataset
+    :type img_left:
     xarray.Dataset containing :
         - im : 2D (row, col) xarray.DataArray
-
-    :param scale_factor: factor by which downsample the image
-    :type scale_factor: int
-    :return: a downsampled dataset
-    :rtype : array of xarray.Dataset
+    :param images: list of images at different resolutions
+    :type images: list of np.ndarray
+    :param masks: list of masks at different resolutions
+    :type masks: list of np.ndarray
+    :return: a List that contains the different scaled datasets
+    :rtype : List of xarray.Dataset
     """
 
-    # Downsampling and appliying gaussian kernel to original image
-    if scale_factor == 1:
-        return img_orig
+    pyramid = []
+    for index, image in enumerate(images):
+        # The full resolution image (first in list) has to be the original image and mask
+        if index == 0:
+            pyramid.append(img_orig)
+            continue
 
-    img = cv2.GaussianBlur(img_orig['im'].data, ksize=(5, 5), sigmaX=1.2, sigmaY=1.2)
-    img_downs = cv2.resize(img, dsize=(
-        int(img_orig['im'].data.shape[1] / scale_factor), int(img_orig['im'].data.shape[0] / scale_factor)),
-                           interpolation=cv2.INTER_AREA)
+        # Creating new dataset
+        dataset = xr.Dataset({'im': (['row', 'col'], image.astype(np.float32))},
+                             coords={'row': np.arange(image.shape[0]),
+                                     'col': np.arange(image.shape[1])})
 
-    # Downsampling mask if exists, otherwise create mask of all valid
-    if 'msk' in img_orig:
-        mask_downs = cv2.resize(img, dsize=(
-            int(img_orig['msk'].data.shape[1] / scale_factor), int(img_orig['msk'].data.shape[0] / scale_factor)),
-                                interpolation=cv2.INTER_AREA)
-    else:
-        mask_downs = img_downs * 0
-    # Creating new dataset
-    dataset = xr.Dataset({'im': (['row', 'col'], img_downs.astype(np.float32))},
-                         coords={'row': np.arange(img_downs.shape[0]),
-                                 'col': np.arange(img_downs.shape[1])})
+        # Allocate the mask
+        dataset['msk'] = xr.DataArray(np.full((image.shape[0], image.shape[1]), masks[index].astype(np.int16)),
+                                      dims=['row', 'col'])
 
-    # Allocate the mask
-    dataset['msk'] = xr.DataArray(np.full((img_downs.shape[0], img_downs.shape[1]), mask_downs.astype(np.int16)),
-                                  dims=['row', 'col'])
+        # Add image conf to the image dataset
+        dataset.attrs = {'no_data_img': img_orig.attrs['no_data_img'],
+                         'valid_pixels': img_orig.attrs['valid_pixels'],
+                         'no_data_mask': img_orig.attrs['no_data_mask']}
+        pyramid.append(dataset)
 
-    # Add image conf to the image dataset
-    dataset.attrs = {'no_data_img': img_orig.attrs['no_data_img'],
-                     'valid_pixels': img_orig.attrs['valid_pixels'],
-                     'no_data_mask': img_orig.attrs['no_data_mask']}
-    return dataset
+    return pyramid
 
 
 def shift_right_img(img_right: xr.Dataset, subpix: int) -> List[xr.Dataset]:

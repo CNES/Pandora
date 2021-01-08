@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added 
+
+- Implementation of multi scale processing for the disparity map computation. [#80]
+
 ### Changed
 
 - semantic change: stereo becomes matching_cost (transition name, module, files and class name). [#170]
@@ -43,4 +47,3 @@
 - Creation of mask dataset in `read_img` function of the `img_tools` module. [#133]
 - Management of no data in cbca method. [#125]
 - Detection between false matches and occlusions. [#132]
-

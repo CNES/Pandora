@@ -175,6 +175,29 @@ It is possible to fill in occlusions and mismatches detected during cross-valida
 
 .. note::  The parameter *interpolated_disparity* is used to select the method to correct occlusions and mismatches.
 
+.. _multiscale_processing:
+
+Multiscale processing
+---------------------
+
+If multiscale process is selected, the whole pipeline is repeated for each scale.
+
+An image pyramid is computed according to the given scale factor and number of scales, and pyramid images are processed from coarse to fine.
+
+The disparity map of the previous pipeline is used to construct two disparity grids, one for minimum disparity and one for maximum disparity, representing the disparity range per pixel. And then these two grids are zoomed and multiplied for the next scale.
+
+- If the pixel was invalid in the previous scale, consider the whole disparity range.
+
+- If the pixel was valid in the previous scale, consider the maximum and minimum disparity values of the valid pixels in the pixel window.
+
+    - Add a disparity marge on the maximum and minimum resulting values to ensure the disparity range width.
+
+.. note::
+  The invalid pixels of the full resolution image are interpolated using the method proposed in [5]_ before the Gaussian filtering and decimation to avoid its spreading.
+    However, the full resolution image of the pyramid will be the original image with the original invalid pixels.
+
+
+
 .. [1] Zabih, R., & Woodfill, J. (1994, May). Non-parametric local transforms for computing visual correspondence.
        In European conference on computer vision (pp. 151-158). Springer, Berlin, Heidelberg.
 

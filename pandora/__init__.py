@@ -27,20 +27,20 @@ import logging
 import logging.config
 from typing import Dict, Tuple, Union
 
-import numpy as np
 import xarray as xr
+import numpy as np
 from pkg_resources import iter_entry_points
 
 from . import common
 from .img_tools import read_img, read_disp
-from .json_checker import check_conf, read_config_file
+from .json_checker import check_conf, read_config_file, read_multiscale_params
 from .state_machine import PandoraMachine
 
 
 # pylint: disable=too-many-arguments
-def run(pandora_machine: PandoraMachine, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: Union[int, np.ndarray],
-        disp_max: Union[int, np.ndarray], cfg: Dict[str, dict], disp_min_right: Union[None, int, np.ndarray] = None,
-        disp_max_right: Union[None, int, np.ndarray] = None) -> Tuple[xr.Dataset, xr.Dataset]:
+def run(pandora_machine: PandoraMachine, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: Union[np.array, int],
+        disp_max: Union[np.array, int], cfg: Dict[str, dict], disp_min_right: Union[None, np.array] = None,
+        disp_max_right: Union[None, np.array] = None) -> Tuple[xr.Dataset, xr.Dataset]:
     """
     Run the pandora pipeline
 
@@ -57,15 +57,15 @@ def run(pandora_machine: PandoraMachine, img_left: xr.Dataset, img_right: xr.Dat
             - im : 2D (row, col) xarray.DataArray
             - msk (optional): 2D (row, col) xarray.DataArray
     :param disp_min: minimal disparity
-    :type disp_min: int or np.ndarray
+    :type disp_min: int or np.array
     :param disp_max: maximal disparity
-    :type disp_max: int or np.ndarray
-    :param cfg: configuration
-    :type cfg: dict
+    :type disp_max: int or np.array
+    :param cfg: pipeline configuration
+    :type cfg: Dict[str, dict]
     :param disp_min_right: minimal disparity of the right image
-    :type disp_min_right: None, int or np.ndarray
+    :type disp_min_right: np.array or None
     :param disp_max_right: maximal disparity of the right image
-    :type disp_max_right: None, int or np.ndarray
+    :type disp_max_right: np.array or None
     :return:
         Two xarray.Dataset :
             - left : the left dataset, which contains the variables :
@@ -83,14 +83,23 @@ def run(pandora_machine: PandoraMachine, img_left: xr.Dataset, img_right: xr.Dat
 
     :rtype: tuple (xarray.Dataset, xarray.Dataset)
     """
-    # Prepare machine before running
-    pandora_machine.run_prepare(cfg, img_left, img_right, disp_min, disp_max, disp_min_right, disp_max_right)
 
-    # Trigger the machine step by step
-    # Warning: first element of cfg dictionary is not a transition. It contains information about the way to
-    # compute right disparity map.
-    for elem in list(cfg)[1:]:
-        pandora_machine.run(elem, cfg)
+    # Retrieve the multiscale parameter from the conf. If no multiscale was defined, num_scales=0 and scale_factor=1
+    num_scales, scale_factor = read_multiscale_params(cfg)
+
+    # Prepare the machine before running, including the image pyramid creation
+    pandora_machine.run_prepare(cfg, img_left, img_right, disp_min, disp_max, scale_factor, num_scales, disp_min_right,
+                                disp_max_right)
+
+    # For each scale we run the whole pipeline, the scales will be executed from coarse to fine,
+    # and the machine will store the necessary parameters for the following scale
+    for scale in range(pandora_machine.num_scales): #pylint:disable=unused-variable
+        # Trigger the machine step by step
+        for elem in list(cfg)[1:]:
+            pandora_machine.run(elem, cfg)
+            # If the machine gets to the begin state, pass to next scale
+            if pandora_machine.state == 'begin':
+                break
 
     # Stop the machine which returns to its initial state
     pandora_machine.run_exit()
@@ -110,7 +119,6 @@ def setup_logging(verbose: bool) -> None:
         logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.INFO)
     else:
         logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.ERROR)
-
 
 def import_plugin() -> None:
     """

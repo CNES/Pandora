@@ -1,11 +1,35 @@
 # pylint: disable=missing-module-docstring
+#!/usr/bin/env python
+# coding: utf8
+#
+# Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
+#
+# This file is part of PANDORA
+#
+#     https://github.com/CNES/Pandora_pandora
+#
+# Licensed under the Apache License, Version 2.0 (the 'License');
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an 'AS IS' BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+"""
+This module contains functions allowing to check the configuration given to Pandora pipeline.
+"""
+
 import copy
 import json
 import logging
 import sys
 from collections.abc import Mapping
-from typing import Dict, Union
-from typing import List
+from typing import Dict, Union, List, Tuple
 
 import numpy as np
 from json_checker import Checker, Or, And
@@ -13,6 +37,7 @@ from json_checker import Checker, Or, And
 from pandora.state_machine import PandoraMachine
 from pandora.img_tools import rasterio_open
 
+from pandora import multiscale
 
 def rasterio_can_open_mandatory(file_: str) -> bool:
     """
@@ -279,7 +304,7 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     return cfg
 
 
-def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> Dict[str, dict]:
+def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> dict:
     """
     Complete and check if the dictionary is correct
 
@@ -308,6 +333,12 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> Di
                       'disparity grids and disp_right_min, disp_right_max are none.')
         sys.exit(1)
 
+    if (isinstance(cfg_input['input']['disp_min'], str) or (cfg_input['input']['disp_min_right'], str) or \
+        (isinstance(cfg_input['input']['disp_max'], str)) or (cfg_input['input']['disp_max_right'], str)) and \
+        ('multiscale' in cfg_pipeline['pipeline']):
+        logging.error('Multiscale processing does not accept input disparity grids.')
+        sys.exit(1)
+
     # concatenate updated config
     cfg = concat_conf([cfg_input, cfg_pipeline])
 
@@ -330,6 +361,30 @@ def concat_conf(cfg_list: List[Dict[str, dict]]) -> Dict[str, dict]:
 
     return cfg
 
+
+def read_multiscale_params(cfg: Dict[str, dict]) -> Tuple[int, int]:
+    """
+    Returns the multiscale parameters
+
+    :param cfg: configuration
+    :type cfg: dict
+    :return:
+        - num_scales: number of scales
+        - scale_factor: factor by which each coarser layer is downsampled
+    :rtype: tuple(int, int )
+    """
+
+    if 'multiscale' in cfg:
+        # Multiscale processing in conf
+        multiscale_ = multiscale.AbstractMultiscale(**cfg['multiscale'])
+
+        num_scales = multiscale_.cfg['num_scales']
+        scale_factor = multiscale_.cfg['scale_factor']
+    else:
+        # No multiscale selected
+        num_scales = 1
+        scale_factor = 1
+    return num_scales, scale_factor
 
 input_configuration_schema = {
     'img_left': And(str, rasterio_can_open_mandatory),
@@ -396,7 +451,6 @@ default_short_configuration_pipeline = {
 
 default_short_configuration = concat_conf([default_short_configuration_input,
                                            default_short_configuration_pipeline])
-
 
 def read_config_file(config_file: str) -> Dict[str, dict]:
     """
