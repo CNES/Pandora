@@ -8,6 +8,7 @@
 
 - Call to interpolation functions. [#175]
 - Check right disparities. [#177]
+- Disparity refinement after disparity map filtering step. [#154]
 
 ## 0.5.0 (January 2021)
 
@@ -27,7 +28,6 @@
 ### Fixed
 
 - Confidence measure that computes the distance LR / RL in cross checking method. [#155]
-- Call to interpolation functions. [#175]
 
 ## 0.4.0 (November 2020)
 
