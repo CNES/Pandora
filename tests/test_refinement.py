@@ -31,6 +31,9 @@ import xarray as xr
 import common
 import pandora.constants as cst
 import pandora.refinement as refinement
+import pandora.matching_cost as matching_cost
+import pandora.filter as flt
+import pandora.disparity as disparity
 
 
 class TestRefinement(unittest.TestCase):
@@ -224,6 +227,92 @@ class TestRefinement(unittest.TestCase):
 
         # Check if the cost volume is not change
         np.testing.assert_array_equal(cv['cost_volume'].data, orig_cv['cost_volume'].data)
+
+    @staticmethod
+    def test_refinement_and_filter():
+        """
+        Test refinement after filter
+
+        """
+        # Create left and right images
+        data_left = np.array([[131., 122., 113., 160.],
+                              [135., 134., 119., 153.],
+                              [107., 103., 103., 143.],
+                              [88., 83., 89., 129.]], dtype=np.float32)
+        valid_left = np.zeros(data_left.shape, dtype=np.uint16)
+
+        img_left = xr.Dataset({'im': (['row', 'col'], data_left),
+                               'validity_mask': (['row', 'col'], valid_left)},
+                              coords={'row': np.arange(data_left.shape[0]), 'col': np.arange(data_left.shape[1])})
+
+        data_right = np.array([[82., 116., 176., 172.],
+                               [114., 130., 174., 172.],
+                               [127., 119., 164., 176.],
+                               [137., 118., 125., 174.]], dtype=np.float32)
+        valid_right = np.zeros(data_right.shape, dtype=np.uint16)
+
+        img_right = xr.Dataset({'im': (['row', 'col'], data_right),
+                                'validity_mask': (['row', 'col'], valid_right)},
+                               coords={'row': np.arange(data_right.shape[0]), 'col': np.arange(data_right.shape[1])})
+
+        # Computes cost volume
+        matching_cost_matcher = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
+                                                                      'subpix': 1})
+        cv = matching_cost_matcher.compute_cost_volume(img_left=img_left, img_right=img_right, disp_min=-1,
+                                                       disp_max=1)
+        # Cost volume :
+        # array([[[nan, 49., 15.],
+        #         [40.,  6., 54.],
+        #         [ 3., 63., 59.],
+        #         [16., 12., nan]],
+        #
+        #        [[nan, 21.,  5.],
+        #         [20.,  4., 40.],
+        #         [11., 55., 53.],
+        #         [21., 19., nan]],
+        #
+        #        [[nan, 20., 12.],
+        #         [24., 16., 61.],
+        #         [16., 61., 73.],
+        #         [21., 33., nan]],
+        #
+        #        [[nan, 49., 30.],
+        #         [54., 35., 42.],
+        #         [29., 36., 85.],
+        #         [ 4., 45., nan]]], dtype=float32)
+
+        # Computes disparity map
+        disparity_ = disparity.AbstractDisparity(**{'disparity_method': 'wta', 'invalid_disparity': 0})
+        disp = disparity_.to_disp(cv, img_left, img_right)
+        disparity_.validity_mask(disp, img_left, img_right, cv)
+
+        # Disparity map :
+        # [[ 1.  0. -1.  0.]
+        #  [ 1.  0. -1.  0.]
+        #  [ 1.  0. -1. -1.]
+        #  [ 1.  0. -1. -1.]]
+
+        # Apply median filter to the disparity map
+        filter_median = flt.AbstractFilter(**{'filter_method': 'median', 'filter_size': 3})
+        filter_median.filter_disparity(disp)
+
+        # Disparity map with median filter :
+        # [[ 1.  0. -1.  0.]
+        #  [ 1.  0.  0.  0.]
+        #  [ 1.  0. -1. -1.]
+        #  [ 1.  0. -1. -1.]]
+
+        # Vfit interpolation
+        refinement_ = refinement.AbstractRefinement(**{'refinement_method': 'vfit'})
+        refinement_.subpixel_refinement(cv, disp)
+
+        gt_disparity_after_refinement = np.array([[1, 0 + ((40-54)/(2*(54-6))), -1, 0],
+                                                  [1, 0 + ((20-40)/(2*(40-4))), 0, 0],
+                                                  [1, 0 + ((24-61)/(2*(61-16))), -1, -1],
+                                                  [1, 0 + ((54-42)/(2*(54-35))), -1, -1]])
+
+        # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_allclose(disp['disparity_map'].data, gt_disparity_after_refinement, rtol=1e-06)
 
 
 if __name__ == '__main__':
