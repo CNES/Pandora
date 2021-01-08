@@ -28,7 +28,7 @@ import json_checker
 from transitions import MachineError
 
 import common
-import pandora.json_checker as JSON_checker
+import pandora.check_json as JSON_checker
 from pandora.state_machine import PandoraMachine
 
 
