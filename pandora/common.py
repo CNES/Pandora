@@ -107,7 +107,7 @@ def save_results(left: xr.Dataset, right: xr.Dataset, output: str) -> None:
     mkdir_p(output)
 
     # Save the left results
-    img_rasterio_profile = rasterio.open(left.attrs['im_left_path']).profile
+    img_rasterio_profile = rasterio_open(left.attrs['im_left_path']).profile
     write_data_array(left['disparity_map'],
                      os.path.join(output, get_out_file_path('left_disparity.tif')),
                      crs=img_rasterio_profile['crs'],
@@ -124,7 +124,7 @@ def save_results(left: xr.Dataset, right: xr.Dataset, output: str) -> None:
 
     # If a validation step is configured, save the right results
     if len(right.sizes) != 0:
-        img_rasterio_profile = rasterio.open(right.attrs['im_left_path']).profile
+        img_rasterio_profile = rasterio_open(right.attrs['im_left_path']).profile
         write_data_array(right['disparity_map'],
                          os.path.join(output, get_out_file_path('right_disparity.tif')),
                          crs=img_rasterio_profile['crs'],
