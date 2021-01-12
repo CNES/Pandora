@@ -200,7 +200,7 @@ class TestPandora(unittest.TestCase):
                 },
                 'disparity': {
                     'disparity_method': 'wta',
-                    'invalid_disparity': 'np.nan'
+                    'invalid_disparity': 'NaN'
                 },
                 'refinement': {
                     'refinement_method': 'vfit'
@@ -259,7 +259,7 @@ class TestPandora(unittest.TestCase):
                 },
                 'disparity': {
                     'disparity_method': 'wta',
-                    'invalid_disparity': 'np.nan'
+                    'invalid_disparity': 'NaN'
                 },
                 'refinement': {
                     'refinement_method': 'vfit'
