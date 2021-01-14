@@ -46,12 +46,15 @@ REQUIREMENTS = ['numpy',
                 'transitions',
                 'scikit-image']
 
-REQUIREMENTS_DEV = {'dev': ['sphinx',
-                            'sphinx_rtd_theme',
-                            'sphinx_autoapi',
-                            'nose2',
-                            'pylint',
-                            'pre-commit']}
+REQUIREMENTS_EXTRA = {'dev': ['sphinx',
+                              'sphinx_rtd_theme',
+                              'sphinx_autoapi',
+                              'nose2',
+                              'pylint',
+                              'pre-commit'],
+                      'sgm': ['pandora_plugin_libsgm==0.5.*']
+                      }
+
 
 def readme():
     with copen('README.md', 'r', 'utf-8') as fstream:
@@ -72,7 +75,7 @@ setup(name='pandora',
       },
       python_requires='>=3.6',
       install_requires=REQUIREMENTS,
-      extras_require=REQUIREMENTS_DEV,
+      extras_require=REQUIREMENTS_EXTRA,
       packages=find_packages(),
       cmdclass=CMDCLASS,
       command_options={
