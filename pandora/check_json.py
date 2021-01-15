@@ -482,7 +482,7 @@ def update_conf(def_cfg: Dict[str, dict], user_cfg: Dict[str, dict]) -> Dict[str
         if isinstance(value, Mapping):
             config[key] = update_conf(config.get(key, {}), value)
         else:
-            if value == 'np.nan':
+            if value == 'NaN':
                 value = np.nan
             config[key] = value
     return config

@@ -5,6 +5,7 @@
 ### Added 
 
 - Implementation of multi scale processing for the disparity map computation. [#80]
+- A `./data_sample/` directory with images and configuration files for user's first steps with Pandora [#168]
 
 ### Changed
 
