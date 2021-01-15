@@ -333,9 +333,9 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> di
                       'disparity grids and disp_right_min, disp_right_max are none.')
         sys.exit(1)
 
-    if (isinstance(cfg_input['input']['disp_min'], str) or (cfg_input['input']['disp_min_right'], str) or \
-        (isinstance(cfg_input['input']['disp_max'], str)) or (cfg_input['input']['disp_max_right'], str)) and \
-        ('multiscale' in cfg_pipeline['pipeline']):
+    if (isinstance(cfg_input['input']['disp_min'], str) or isinstance(cfg_input['input']['disp_min_right'], str) or \
+        (isinstance(cfg_input['input']['disp_max'], str)) or isinstance(cfg_input['input']['disp_max_right'], str)) \
+            and ('multiscale' in cfg_pipeline['pipeline']):
         logging.error('Multiscale processing does not accept input disparity grids.')
         sys.exit(1)
 
