@@ -81,7 +81,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         {'trigger': 'validation', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'validation_check_conf'},
         # For the check conf we define the destination of multiscale state as disp_map instead of begin
         # given the conditional change of state
-        {'trigger': 'multiscale', 'source': 'disp_map', 'dest': 'begin', 'after': 'multiscale_check_conf'}
+        {'trigger': 'multiscale', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'multiscale_check_conf'}
     ]
 
     def __init__(self, img_left_pyramid: List[xr.Dataset] = None, img_right_pyramid: List[xr.Dataset] = None,

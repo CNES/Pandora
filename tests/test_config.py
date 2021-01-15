@@ -281,6 +281,7 @@ class TestConfig(unittest.TestCase):
         assert cfg_return == cfg_gt
 
         # Check the configuration returned with left and right disparity grids
+        pandora_machine = PandoraMachine()
         cfg = {
             'input': {
                 'img_left': 'tests/pandora/left.png',
@@ -303,6 +304,7 @@ class TestConfig(unittest.TestCase):
 
         }
         cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
+
         cfg_gt = {
             'input': {
                 'nodata_left': -9999,
@@ -342,6 +344,7 @@ class TestConfig(unittest.TestCase):
         assert cfg_return == cfg_gt
 
         # Check the configuration returned with left disparity grids and cross checking method
+        pandora_machine = PandoraMachine()
         cfg = {
             'input': {
                 'img_left': 'tests/pandora/left.png',
@@ -401,6 +404,7 @@ class TestConfig(unittest.TestCase):
 
         }
         # When left and right disparities are grids, cross checking method can be used
+        pandora_machine = PandoraMachine()
         cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
         cfg_gt = {
             'input': {
@@ -444,6 +448,7 @@ class TestConfig(unittest.TestCase):
         assert cfg_return == cfg_gt
 
         # Check the configuration returned with left disparity grids and multiscale processing
+        pandora_machine = PandoraMachine()
         cfg = {
             'input': {
                 'img_left': 'tests/pandora/left.png',
@@ -475,6 +480,80 @@ class TestConfig(unittest.TestCase):
 
         # When left disparities are grids and multiscale processing cannot be used : the program exits
         self.assertRaises(SystemExit, JSON_checker.check_conf, cfg, pandora_machine)
+
+        # Check the configuration returned with left disparity integer and multiscale processing
+        pandora_machine = PandoraMachine()
+        cfg = {
+            'input': {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': -60,
+                'disp_max': 0
+            },
+            'pipeline':
+                {
+                    'right_disp_map': {
+                        'method': 'none'
+                    },
+                    'matching_cost': {
+                        'matching_cost_method': 'zncc',
+                        'window_size': 5,
+                        'subpix': 2
+                    },
+                    'disparity': {
+                        'disparity_method': 'wta'
+                    },
+                    'multiscale': {
+                        'multiscale_method': 'fixed_zoom_pyramid',
+                        'num_scales': 2,
+                        'scale_factor': 2,
+                        'marge': 3
+                    }
+                }
+        }
+
+        cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
+
+        cfg_gt = {
+            'input': {
+                'nodata_left': -9999,
+                'nodata_right': -9999,
+                'left_mask': None,
+                'right_mask': None,
+                'left_classif': None,
+                'right_classif': None,
+                'left_segm': None,
+                'right_segm': None,
+                'disp_min_right': None,
+                'disp_max_right': None,
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': -60,
+                'disp_max': 0
+            },
+            'pipeline': {
+                'right_disp_map': {
+                    'method': 'none'
+                },
+                'matching_cost': {
+                    'matching_cost_method': 'zncc',
+                    'window_size': 5, 'subpix': 2
+                },
+                'disparity': {
+                    'disparity_method': 'wta',
+                    'invalid_disparity': -9999
+                },
+                'multiscale': {
+                    'multiscale_method': 'fixed_zoom_pyramid',
+                    'num_scales': 2,
+                    'scale_factor': 2,
+                    'marge': 3
+                }
+            }
+        }
+
+        assert cfg_return == cfg_gt
+
 
     def test_check_pipeline_section_with_error(self):
         """
