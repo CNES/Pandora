@@ -1,180 +1,107 @@
-# Pandora
 
-This CNES software implements a stereo pipeline which produces disparity map from a pair of images. Several state-of-the-art 
-stereo algorithms are available. The implementation  is  modular  and  can  easily  be  ex-tended to include other 
-algorithms. 
+<h1 align="center">
+  <a href="https://pandora.readthedocs.io/?badge=latest"><img src="https://raw.githubusercontent.com/CNES/Pandora/master/doc/sources/Images/logo/logo_typo.svg?inline=false" alt="Pandora Stereo Framework" width="432"></a>
+</h1>
 
-The pipeline performs the following steps:
+<h4 align="center">A stereo matching framework that will help you design your stereo matching pipeline with state of the art performances.</h4>
 
-    1. matching cost computation
-    2. cost (support) aggregation
-    3. optimization
-    3. disparity computation
-    4. subpixel cost refinement
-    5. disparity filter, validation
-    6. multiscale
+<p align="center">
+  <a href="https://travis-ci.com/CNES/Pandora"><img src="https://travis-ci.com/CNES/Pandora.svg?branch=master"></a>
+  <a href="https://codecov.io/gh/CNES/Pandora"><img src="https://codecov.io/gh/CNES/Pandora/branch/master/graph/badge.svg?token=IENWO02GB3"/></a>
+  <a href='https://pandora.readthedocs.io/?badge=latest'><img src='https://readthedocs.org/projects/pandora/badge/?version=latest' alt='Documentation Status' /></a>
+  <a href="https://opensource.org/licenses/Apache-2.0/"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg"></a>
+</p>
 
-## Dependencies
+<p align="center">
+  <a href="#overview">Overview</a> •
+  <a href="#install">Install</a> •
+  <a href="#firststep">First Step</a> •
+  <a href="#customize">Customize</a> •
+  <a href="#credits">Credits</a> •
+  <a href="#related">Related</a> •
+  <a href="#license">Reference</a>
+</p>
 
-Dependencies are :
 
-    python >= 3.6, pip, nose2, xarray >= 0.13.*, numpy, scipy, numba >= 0.47.*, rasterio, opencv-python,
-    json-checker
+## Overview
 
-## Installation
+From stereo rectified images to disparity map  |  Pandora is working with cost volumes
+:-------------------------:|:-------------------------:
+![](https://raw.githubusercontent.com/CNES/Pandora/master/doc/sources/Images/schema_readme.png?inline=false)  |  ![](https://raw.githubusercontent.com/CNES/Pandora/master/doc/sources/Images/disparity3D_with_projected_dispartiry_color.gif)
 
-```bash
-    pip install pandora
-``` 
 
-**From sources**
+Pandora aims at shortening the path between a stereo-matching prototype and its industrialized version.  
+By providing a modular pipeline inspired from the (Scharstein et al., 2002) taxonomy, it allows one to emulate, analyse and hopefully improve state of the art stereo algorithms with a few lines of code. 
 
-```bash
-    git clone https://github.com/CNES/Pandora.git
-    cd Pandora
-    pip install .
-```
+We (CNES) have actually been using Pandora to create the stereo matching pipeline for the CNES & Airbus <a href="https://co3d.cnes.fr/en/co3d-0"><img src="https://raw.githubusercontent.com/CNES/Pandora/master/doc/sources/Images/logo_co3D_cnes.jpg" width="32" height="32"/></a> off board processing chain.  
+Leaning on Pandora's versatility and a fast-paced constantly evolving field we are still calling this framework a work in progress !
 
-**Build documentation**
+<img src="https://raw.githubusercontent.com/CNES/Pandora/master/doc/sources/Images/pandora_first_step_long_terminal.webm" width="500"/>
 
-Make sure  latex and dvipng are already installed
+## Install
 
-```
-pip install sphinx-rtd-theme
-pip install sphinx-autoapi
-python setup.py build_sphinx
-```
-
-Documentation is built in pandora/doc/build/html 
-
-## Usage
-
-Run the python script `pandora` with a json configuration file (see `conf` folder as an example) and the following arguments :
+Pandora is available on Pypi and can be installed by:
 
 ```bash
-    usage: pandora [-h] [-v] config
-
-    Pandora stereo matching
-    
-    positional arguments:
-      output_dir          Path to the output director
-      config              Path to a json file containing the input files paths and the algorithm parameters
-    
-    optional arguments:
-      -h, --help          show this help message and exit
-      -v, --verbose       Increase output verbosity
+pip install pandora
 ```
 
-The config file `config.json` is formatted as :
+For stereo reconstruction we invite you to install pandora **and** the required plugins using instead the following shortcut:
 
-    {
-        "input" : {
-            "img_left" : "PATH/TO/img_left.tif",
-            "img_right" : "PATH/TO/img_right.tif",
-            "disp_min" : -100,
-            "disp_max" : 100,
-            "left_mask" : "PATH/TO/left_mask.tif",
-            "right_mask" : "PATH/TO/right_mask.tif"
-        }
-    }
+```bash
+pip install pandora[sgm]
+```
 
-Mandatory fields are :
-   - `img_left` : Path to the left image
-   - `img_right` : Path to the right image
-   - `disp_min` : Minimal disparity
-   - `disp_max` : Maximal disparity
+## First step
 
+Pandora requires a `config.json` to declare the pipeline and the stereo pair of images to process. 
+Download our data sample to start right away ! 
+- [cones stereo pair](https://raw.githubusercontent.com/CNES/Pandora/master/data_samples/images/cones.zip) 
+- [a configuration file](https://raw.githubusercontent.com/CNES/Pandora/master/data_samples/json_conf_files/a_local_block_matching.json)
 
-Optional fields are :
-   - `left_mask` : Path to the left mask
-   - `right_mask` : Path to the right mask
-   - `left_classif` : Path to the left classification map
-   - `right_classif` : Path to the right classification map
-   - `left_segm` : Path to the left segmentation map
-   - `right_segm` : Path to the right segmentation map
+```bash
+# install pandora latest release
+pip install pandora
 
+# download data samples
+wget https://raw.githubusercontent.com/CNES/Pandora/master/data_samples/images/cones.zip  # input stereo pair
+wget https://raw.githubusercontent.com/CNES/Pandora/master/data_samples/json_conf_files/a_local_block_matching.json # configuration file
 
+# uncompress data
+unzip cones.zip
 
-Pandora can also be used as a package : 
+# run pandora
+pandora a_local_block_matching.json output_dir
+```
 
-    import pandora
+## Customize
 
-Input stereo images must be grayscale images. Parameters `nodata1` and `nodata2` of the json configuration file allow to specify
-the value of no data in the left and right images.
+To create you own stereo matching pipeline and choose among the variety of algorithms we provide, please consult [our online documentation](https://CNES.github.io/Pandora/index.html).
 
-The masks are optional, and have the following convention: 0 is a valid pixel, everything else is considered as masked.
+You will learn:
+- which stereo matching steps you can [use and combine](https://pandora.readthedocs.io/userguide/step_by_step.html)
+- how to quickly set up a [Pandora pipeline](https://pandora.readthedocs.io/userguide/sequencing.html)
+- how to add your own private algorithms to [customize your Pandora Framework](https://pandora.readthedocs.io/developer_guide/your_plugin.html)
+- how to use [Pandora API](https://pandora.readthedocs.io/userguide/as_an_api.html) (see [CARS](https://github.com/CNES/CARS) for real life exemple)
 
-All the parameters of the algorithm are stored in the json file. Configuration examples are available in the `conf` folder.
-The file `pandora/config.py` lists all possible parameters and provides some explanations on the role of these parameters. 
-The following paragraphs describe the methods currently implemented for each step of the pipeline.
+## Credits
 
-#### Matching cost computation
+Our data test sample is based on the 2003 Middleburry dataset (D. Scharstein & R. Szeliski, 2003).
 
-The first step calculates a cost volume from the two images and one of the following similarity measures:
+*(D. Scharstein & R. Szeliski, 2002). Scharstein, D., & Szeliski, R. (2002). A taxonomy and evaluation of dense two-frame stereo correspondence algorithms. International journal of computer vision, 47(1-3), 7-42.*  
+*(D. Scharstein & R. Szeliski, 2003). Scharstein, D., & Szeliski, R. (2003, June). High-accuracy stereo depth maps using structured light. In 2003 IEEE Computer Society Conference on Computer Vision and Pattern Recognition, 2003. Proceedings. (Vol. 1, pp. I-I). IEEE.*
 
-    - Sum of absolute differences
-    - Sum of squared differences
-    - Census
-    - Zero mean normalized cross correlation
+## Related
 
-#### Cost (support) aggregation
-
-Aggregate the matching cost by summing or averaging over a support region in the cost volume:
-
-    - Cross-based Cost Aggregation
-
-#### Optimization
-
-Find a disparity function that minimizes a global energy in the cost volume:
-
--   Semi-Global Matching, by using [pugin_libsgm](https://github.com/CNES/Pandora_plugin_libsgm.git) and [libsgm](https://github.com/CNES/Pandora_libsgm.git)
-
-SGM reference: [H. Hirschmuller. Stereo processing by semiglobal matching and mutual information. 
-IEEE Transactions on pattern analysis and machine intelligence, 2007, vol. 30, no 2, p. 328-341]
-
-#### Disparity computation
-
-Choose at each pixel the disparity associated with the minimum cost:
-
-    - Winner-take-all
-
-#### Subpixel cost refinement
-
-The sub-pixel refinement of disparities:
-
-    - vfit
-    - quadratic
-
-#### Disparity filter, validation
-
-Post-processing the computed disparities:
-
-    - median filter
-    - bilateral filter
-    - cross checking     
-    - mismatches and occlusions detection
-
-#### Multiscale processing
-
-Doing the whole pipeline for each number of scales
-
-    - image pyramid computation
-    - processing from coarse to fine
-    - disparity range refinement with the results from the previous coarser scale
-    
-## Notes
-
-For tests, we use images coming from 2003 Middleburry dataset 
-(D. Scharstein and R. Szeliski. High-accuracy stereo depth maps using structured light.
-In IEEE Computer Society Conference on Computer Vision and Pattern Recognition (CVPR 2003), 
-volume 1, pages 195-202, Madison, WI, June 2003.)
-
+[Plugin_LibSGM](https://github.com/CNES/pandora_plugin_libsgm) - Stereo Matching Algorithm plugin for Pandora  
+[Plugin_MC-CNN](https://github.com/CNES/pandora_plugin_mccnn) - MC-CNN Neural Network plugin for Pandora  
+[CARS](https://github.com/CNES/CARS) - CNES 3D reconstruction software
 
 ## References
 
-If you use this CNES software, please cite the following paper: 
+Please cite the following paper when using Pandora:   
+*Cournet, M., Sarrazin, E., Dumas, L., Michel, J., Guinet, J., Youssefi, D., Defonte, V., Fardet, Q., 2020. Ground-truth generation and disparity estimation for optical satellite imagery. ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences.*
 
-Cournet, M., Sarrazin, E., Dumas, L., Michel, J., Guinet, J., Youssefi, D., Defonte, V., Fardet, Q., 2020. 
-Ground-truth generation and disparity estimation for optical satellite imagery.
-ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences.
+
+
 
