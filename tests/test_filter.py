@@ -217,10 +217,10 @@ class TestFilter(unittest.TestCase):
         }
 
         # Build the default configuration
-        cfg = pandora.json_checker.default_short_configuration
+        cfg = pandora.check_json.default_short_configuration
 
         # Update the configuration with default values
-        cfg = pandora.json_checker.update_conf(cfg, user_cfg)
+        cfg = pandora.check_json.update_conf(cfg, user_cfg)
 
         filter_bilateral = flt.AbstractFilter(**cfg['filter'])
 

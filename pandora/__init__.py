@@ -33,7 +33,7 @@ from pkg_resources import iter_entry_points
 
 from . import common
 from .img_tools import read_img, read_disp
-from .json_checker import check_conf, read_config_file, read_multiscale_params
+from .check_json import check_conf, read_config_file, read_multiscale_params
 from .state_machine import PandoraMachine
 
 
