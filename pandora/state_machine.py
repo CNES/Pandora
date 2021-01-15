@@ -92,16 +92,16 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         Initialize Pandora Machine
 
-        :param img_left_pyramid: left pyramid of Dataset image
-        :type img_left_pyramid:
-            List of xarray.Dataset containing :
+        :param img_left_pyramid: left Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
-        :param img_right_pyramid: right pyramid of Dataset image
-        :type img_right_pyramid:
-            List of xarray.Dataset containing :
+        :type img_left_pyramid: xarray.Dataset
+        :param img_right_pyramid: right Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
+        :type img_right_pyramid: xarray.Dataset
         :param disp_min: minimal disparity
         :type disp_min: int or np.array
         :param disp_max: maximal disparity
@@ -365,18 +365,19 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                     right_disp_max: Union[None, np.array] = None) -> None:
         """
         Prepare the machine before running
+
         :param cfg:  configuration
-        :type  cfg: dict
-        :param left_img: left Dataset image
-        :type left_img:
-            xarray.Dataset containing :
+        :type cfg: dict
+        :param left_img: left Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
-        :param right_img: right Dataset image
-        :type right_img:
-            xarray.Dataset containing :
+        :type left_img: xarray.Dataset
+        :param right_img: right Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
+        :type right_img: xarray.Dataset
         :param disp_min: minimal disparity
         :type disp_min: int or np.array
         :param disp_max: maximal disparity

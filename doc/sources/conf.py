@@ -44,7 +44,7 @@ author = 'CNES'
 # The full version, including alpha/beta/rc tags
 # not useful at the moment :  see  https://gitlab.cnes.fr/OutilsCommuns/CorrelateurChaine3D/pandora/issues/124
 # release = '0.2.0'
-# version = '0.2.0'
+version = '0.5.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -63,9 +63,20 @@ extensions = [
 
 autoapi_dirs = ['../../pandora']
 autoapi_root = 'api_reference'
+autoapi_keep_files = True
+autoapi_options = ['members', 'undoc-members', 'private-members', 'show-inheritance', 'show-module-summary',
+                   'special-members']
 # Add any paths that contain templates here, relative to this directory.cd
 templates_path = ['_templates']
 
+# These folders are copied to the documentation's HTML output
+html_static_path = ['_static']
+
+# These paths are either relative to html_static_path
+# or fully qualified paths (eg. https://...)
+html_css_files = [
+    'css/my_custom.css'
+]
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
@@ -78,6 +89,14 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
+
+html_logo = 'Images/logo/logo_typo.svg'
+
+html_theme_options = {
+    'logo_only': True,
+    'navigation_depth': 3,
+}
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

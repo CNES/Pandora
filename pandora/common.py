@@ -81,13 +81,15 @@ def save_results(left: xr.Dataset, right: xr.Dataset, output: str) -> None:
     Save results in the output directory
 
     :param left: left dataset, which contains the variables :
+
         - disparity_map : the disparity map in the geometry of the left image 2D DataArray (row, col)
-        - confidence_measure : the confidence measure in the geometry of the left image 3D DataArray
-            (row, col, indicator)
+        - confidence_measure : the confidence measure in the geometry of the left image 3D DataArray \
+        (row, col, indicator)
         - validity_mask : the validity mask in the geometry of the left image 2D DataArray (row, col)
     :type left: xr.Dataset
-    :param right: right dataset. If there is no validation step, the right Dataset will be empty.
-        If a validation step is configured, the dataset will contain the variables :
+    :param right: right dataset. If there is no validation step, the right Dataset will be empty.If a validation step \
+    is configured, the dataset will contain the variables :
+
         - disparity_map: the disparity map in the geometry of the right image 2D DataArray (row, col)
         - confidence_measure: the confidence in the geometry of the right image 3D DataArray (row, col, indicator)
         - validity_mask: the validity mask in the geometry of the left image 2D DataArray (row, col)

@@ -104,26 +104,26 @@ class AbstractDisparity():
         """
         Disparity computation by applying the Winner Takes All strategy
 
-        :param cv: the cost volume datset
-        :type cv:
-            xarray.Dataset, with the data variables:
+        :param cv: the cost volume datset with the data variables:
+
                 - cv 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing :
+        :type cv: xarray.Dataset,
+        :param img_left: left Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-            :param img_right: right Dataset image
-        :type img_right:
-            xarray.Dataset containing :
+        :type img_left: xarray.Dataset
+        :param img_right: right Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :return: Dataset with the disparity map and the confidence measure
-        :rtype:
-            xarray.Dataset with the data variables :
+        :type img_right: xarray.Dataset
+        :return: Dataset with the disparity map and the confidence measure with the data variables :
+
                 - disparity_map 2D xarray.DataArray (row, col)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :rtype: xarray.Dataset
         """
 
     @staticmethod
@@ -134,7 +134,7 @@ class AbstractDisparity():
         :param cv: cost volume
         :type cv: xarray.Dataset, with the data variables cost_volume 3D xarray.DataArray (row, col, disp)
         :return: the coefficient map
-        :rtype : 2D DataArray (row, col)
+        :rtype: 2D DataArray (row, col)
         """
         row = cv.coords['row']
         col = cv.coords['col']
@@ -157,24 +157,25 @@ class AbstractDisparity():
         Mutual information based semi-global stereo matching on the GPU.
         In : International Symposium on Visual Computing. Springer, Berlin, Heidelberg, 2008. p. 228-239.
 
-        :param cv: the cost volume dataset
-        :type cv:
-            xarray.Dataset, with the data variables:
+        :param cv: the cost volume dataset with the data variables:
+
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :param img_right: right Dataset image
-        :type img_right:
-            xarray.Dataset containing :
+        :type cv: xarray.Dataset
+        :param img_right: right Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
+        :type img_right: xarray.Dataset
         :param invalid_value: disparity to assign to invalid pixels
         :type invalid_value: float
-        :return: Dataset with the right disparity map, the confidence measure and the validity mask
-        :rtype:
-            xarray.Dataset with the data variables :
+        :return: Dataset with the right disparity map, the confidence measure and the validity mask with \
+        the data variables :
+
                 - disparity_map 2D xarray.DataArray (row, col)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
                 - validity_mask 2D xarray.DataArray (row, col)
+        :rtype: xarray.Dataset
         """
         disp_range = cv.coords['disp'].data.astype(float)
         col_range = cv.coords['col'].data
@@ -267,25 +268,25 @@ class AbstractDisparity():
         Create the validity mask of the disparity map
 
         :param disp: dataset with the disparity map and the confidence measure
-        :type disp:
-            xarray.Dataset with the data variables :
+        :type disp: xarray.Dataset with the data variables :
+
                 - disparity_map 2D xarray.DataArray (row, col)
                 - confidence_measure 3D xarray.DataArray(row, col, indicator)
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing :
+        :param img_left: left Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param img_right: right Dataset image
-        :type img_right:
-            xarray.Dataset containing :
+        :type img_left: xarray.Dataset
+        :param img_right: right Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :param cv: cost volume dataset
-        :type cv:
-            xarray.Dataset, with the data variables:
+        :type img_right: xarray.Dataset
+        :param cv: cost volume dataset with the data variables:
+
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :type cv: xarray.Dataset
         :return: None
         """
         # Allocate the validity mask
@@ -345,13 +346,14 @@ class AbstractDisparity():
     @staticmethod
     def mask_border(disp: xr.Dataset):
         """
-       Mask border pixel  which haven't been calculated because of the window's size
-       :param disp: dataset with the disparity map and the confidence measure
-       :type disp:
-             xarray.Dataset with the data variables :
+        Mask border pixel  which haven't been calculated because of the window's size
+
+        :param disp: dataset with the disparity map and the confidence measure  with the data variables :
+
                 - disparity_map 2D xarray.DataArray (row, col)
-                - confidence_measure 3D xarray.DataArray(row, col, indicator):
-        :return:
+                - confidence_measure 3D xarray.DataArray(row, col, indicator)
+        :type disp: xarray.Dataset
+        :return: None
         """
         offset = disp.attrs['offset_row_col']
 
@@ -369,16 +371,16 @@ class AbstractDisparity():
         Mask the pixels that have a missing disparity range, searching in the cost volume
         the pixels where cost_volume(row,col, for all d) = np.nan
 
-        :param disp: dataset with the disparity map and the confidence measure
-        :type disp:
-            xarray.Dataset with the data variables :
+        :param disp: dataset with the disparity map and the confidence measure with the data variables :
+
                 - disparity_map 2D xarray.DataArray (row, col)
                 - confidence_measure 3D xarray.DataArray(row, col, indicator)
-        :param cv: cost volume dataset
-        :type cv:
-            xarray.Dataset, with the data variables:
+        :type disp: xarray.Dataset
+        :param cv: cost volume dataset with the data variables:
+
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :type cv: xarray.Dataset
         :return: None
         """
         indices_nan = np.isnan(cv['cost_volume'].data)
@@ -401,16 +403,16 @@ class AbstractDisparity():
         """
         Allocate the left image mask
 
-        :param disp: dataset with the disparity map and the confidence measure
-        :type disp:
-            xarray.Dataset with the data variables :
+        :param disp: dataset with the disparity map and the confidence measure with the data variables :
+
                 - disparity_map 2D xarray.DataArray (row, col)
                 - confidence_measure 3D xarray.DataArray(row, col, indicator)
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing :
+        :type disp: xarray.Dataset
+        :param img_left: left Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
+        :type img_left: xarray.Dataset
         :return: None
         """
         _, r_mask = xr.align(disp['validity_mask'], img_left['msk'])
@@ -433,16 +435,16 @@ class AbstractDisparity():
         """
         Allocate the right image mask
 
-        :param disp: dataset with the disparity map and the confidence measure
-        :type disp:
-            xarray.Dataset with the data variables :
+        :param disp: dataset with the disparity map and the confidence measure with the data variables :
+
                 - disparity_map 2D xarray.DataArray (row, col)
                 - confidence_measure 3D xarray.DataArray(row, col, indicator)
-        :param img_right: left Dataset image
-        :type img_right:
-            xarray.Dataset containing :
+        :type disp: xarray.Dataset
+        :param img_right: left Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
+        :type img_right: xarray.Dataset
         :param bit_1: where the disparity interval is missing in the right image ( disparity range outside the image )
         :type: ndarray or Tuple
         :return: None
@@ -546,26 +548,26 @@ class WinnerTakesAll(AbstractDisparity):
         """
         Disparity computation by applying the Winner Takes All strategy
 
-        :param cv: the cost volume datset
-        :type cv:
-            xarray.Dataset, with the data variables:
+        :param cv: the cost volume datset with the data variables:
+
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing :
+        :type cv: xarray.Dataset
+        :param img_left: left Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-            :param img_right: right Dataset image
-        :type img_right:
-            xarray.Dataset containing :
+        :type img_left: xarray.Dataset
+        :param img_right: right Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
-        :return: Dataset with the disparity map and the confidence measure
-        :rtype:
-            xarray.Dataset with the data variables :
+        :type img_right: xarray.Dataset
+        :return: Dataset with the disparity map and the confidence measure  with the data variables :
+
                 - disparity_map 2D xarray.DataArray (row, col)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :rtype: xarray.Dataset
         """
         indices_nan = np.isnan(cv['cost_volume'].data)
 

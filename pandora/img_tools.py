@@ -69,11 +69,11 @@ def read_img(img: str, no_data: float, mask: str = None, classif: str = None, se
     :type classif: string
     :param segm: Path to the mask (optional)
     :type segm: string
-    :return: xarray.DataSet
-    :rtype:
-        xarray.DataSet containing the variables :
+    :return: xarray.DataSet containing the variables :
+
             - im : 2D (row, col) xarray.DataArray float32
             - msk : 2D (row, col) xarray.DataArray int16, with the convention defined in the configuration file
+    :rtype: xarray.DataSet
     """
     img_ds = rasterio_open(img)
     data = img_ds.read(1)
@@ -147,20 +147,20 @@ def prepare_pyramid(img_left: xr.Dataset, img_right: xr.Dataset, num_scales: int
     """
     Return a List with the datasets at the different scales
 
-    :param img_left: left Dataset image
-    :type img_left:
-    xarray.Dataset containing :
-        - im : 2D (row, col) xarray.DataArray
-    :param img_right: right Dataset image
-    :type img_right:
-    xarray.Dataset containing :
-        - im : 2D (row, col) xarray.DataArray
+    :param img_left: left Dataset image containing :
+
+            - im : 2D (row, col) xarray.DataArray
+    :type img_left: xarray.Dataset
+    :param img_right: right Dataset containing :
+
+            - im : 2D (row, col) xarray.DataArray
+    :type img_right: xarray.Dataset
     :param num_scales: number of scales
     :type num_scales: int
     :param scale_factor: factor by which downsample the images
     :type scale_factor: int
     :return: a List that contains the different scaled datasets
-    :rtype : List of xarray.Dataset
+    :rtype: List of xarray.Dataset
     """
     # Fill no data values in image with an interpolation. If no mask was given, create all valid masks
     img_left_fill, msk_left_fill = fill_nodata_image(img_left)
@@ -188,11 +188,11 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
         Interpolate no data values in image. If no mask was given, create all valid masks
 
         :param dataset: Dataset image
-        :type dataset:
-        xarray.Dataset containing :
+        :type dataset: xarray.Dataset containing :
+
             - im : 2D (row, col) xarray.DataArray
         :return: a Tuple that contains the filled image and mask
-        :rtype : Tuple of np.ndarray
+        :rtype: Tuple of np.ndarray
         """
     if 'msk' in dataset:
         img, msk = interpolate_nodata_sgm(dataset['im'].data, dataset['msk'].data)
@@ -216,8 +216,9 @@ def interpolate_nodata_sgm(img: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarr
     :param valid: validity mask
     :type valid: 2D np.array (row, col)
     :return: the interpolate input image, with the validity mask update :
+
         - If out & PANDORA_MSK_PIXEL_FILLED_NODATA != 0 : Invalid pixel : filled nodata pixel
-    :rtype : tuple(2D np.array (row, col), 2D np.array (row, col))
+    :rtype: tuple(2D np.array (row, col), 2D np.array (row, col))
     """
     # Output disparity map and validity mask
     out_img = np.copy(img)
@@ -265,17 +266,17 @@ def interpolate_nodata_sgm(img: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarr
 
 def masks_pyramid(msk: np.ndarray, scale_factor: int, num_scales: int) -> List[np.ndarray]:
     """
-        Return a List with the downsampled masks for each scale
+    Return a List with the downsampled masks for each scale
 
-        :param msk: full resolution mask
-        :type msk: np.ndarray
-        :param scale_factor: scale factor
-        :type scale_factor: int
-        :param num_scales: number of scales
-        :type num_scales: int
-        :return: a List that contains the different scaled masks
-        :rtype : List of np.ndarray
-        """
+    :param msk: full resolution mask
+    :type msk: np.ndarray
+    :param scale_factor: scale factor
+    :type scale_factor: int
+    :param num_scales: number of scales
+    :type num_scales: int
+    :return: a List that contains the different scaled masks
+    :rtype: List of np.ndarray
+    """
     msk_pyramid = []
     # Add the full resolution mask
     msk_pyramid.append(msk)
@@ -290,19 +291,24 @@ def masks_pyramid(msk: np.ndarray, scale_factor: int, num_scales: int) -> List[n
 def convert_pyramid_to_dataset(img_orig: xr.Dataset, images: List[np.ndarray], masks: List[np.ndarray]) \
         -> List[xr.Dataset]:
     """
-    Return a List with the datasets given the image and mask pyramids
+    Return a List with the datasets at the different scales
 
-    :param img_orig: original Dataset
-    :type img_left:
-    xarray.Dataset containing :
+    :param img_left: left Dataset image containing :
+
         - im : 2D (row, col) xarray.DataArray
-    :param images: list of images at different resolutions
-    :type images: list of np.ndarray
-    :param masks: list of masks at different resolutions
-    :type masks: list of np.ndarray
+    :type img_left: xarray.Dataset
+    :param img_right: right Dataset image containing :
+
+        - im : 2D (row, col) xarray.DataArray
+    :type img_right: xarray.Dataset
+    :param num_scales: number of scales
+    :type num_scales: int
+    :param scale_factor: factor by which downsample the images
+    :type scale_factor: int
     :return: a List that contains the different scaled datasets
-    :rtype : List of xarray.Dataset
+    :rtype: List of xarray.Dataset
     """
+
 
     pyramid = []
     for index, image in enumerate(images):
@@ -333,15 +339,14 @@ def shift_right_img(img_right: xr.Dataset, subpix: int) -> List[xr.Dataset]:
     """
     Return an array that contains the shifted right images
 
-    :param img_right: right Dataset image
-    :type img_right:
-    xarray.Dataset containing :
-        - im : 2D (row, col) xarray.DataArray
+    :param img_right: right Dataset image containing :
 
+        - im : 2D (row, col) xarray.DataArray
+    :type img_right: xarray.Dataset
     :param subpix: subpixel precision = (1 or 2 or 4)
     :type subpix: int
     :return: an array that contains the shifted right images
-    :rtype : array of xarray.Dataset
+    :rtype: array of xarray.Dataset
     """
     img_right_shift = [img_right]
     ny_, nx_ = img_right['im'].shape
@@ -379,10 +384,10 @@ def check_inside_image(img: xr.Dataset, row: int, col: int) -> bool:
     """
     Check if the coordinates row,col are inside the image
 
-    :param img: Dataset image
-    :type img:
-        xarray.Dataset containing :
+    :param img: Dataset image containing :
+
             - im : 2D (row, col) xarray.DataArray
+    :type img: xarray.Dataset
     :param row: row coordinates
     :type row: int
     :param col: column coordinates
@@ -398,12 +403,13 @@ def census_transform(image: xr.Dataset, window_size: int) -> xr.Dataset:
     """
     Generates the census transformed image from an image
 
-    :param image: Dataset image
-    :type image: xarray.Dataset containing the image im : 2D (row, col) xarray.Dataset
+    :param image: Dataset image containing the image im : 2D (row, col) xarray.Dataset
+    :type image: xarray.Dataset
     :param window_size: Census window size
     :type window_size: int
-    :return: Dataset census transformed uint32
-    :rtype: xarray.Dataset containing the transformed image im: 2D (row, col) xarray.DataArray uint32
+    :return: Dataset census transformed uint32 containing the transformed image im: 2D (row, col) xarray.DataArray \
+    uint32
+    :rtype: xarray.Dataset
     """
     ny_, nx_ = image['im'].shape
     border = int((window_size - 1) / 2)
@@ -440,10 +446,10 @@ def compute_mean_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
     """
     Compute the mean within a sliding window for the whole image
 
-    :param img: Dataset image
-    :type img:
-        xarray.Dataset containing :
+    :param img: Dataset image containing :
+
             - im : 2D (row, col) xarray.DataArray
+    :type img: xarray.Dataset
     :param win_size: window size
     :type win_size: int
     :return: mean raster
@@ -484,10 +490,10 @@ def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np
     """
     Compute the mean within a window centered at position row,col
 
-    :param img: Dataset image
-    :type img:
-        xarray.Dataset containing :
+    :param img: Dataset image containing :
+
             - im : 2D (row, col) xarray.DataArray
+    :type img: xarray.Dataset
     :param row: row coordinates
     :type row: int
     :param col: column coordinates
@@ -495,7 +501,7 @@ def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np
     :param win_size: window size
     :type win_size: int
     :return: mean
-    :rtype : float
+    :rtype: float
     """
     begin_window = (row - int(win_size / 2), col - int(win_size / 2))
     end_window = (row + int(win_size / 2), col + int(win_size / 2))
@@ -515,14 +521,14 @@ def compute_std_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
     Compute the standard deviation within a sliding window for the whole image
     with the formula : std = sqrt( E[row^2] - E[row]^2 )
 
-    :param img: Dataset image
-    :type img:
-        xarray.Dataset containing :
+    :param img: Dataset image containing :
+
             - im : 2D (row, col) xarray.DataArray
+    :type img: xarray.Dataset
     :param win_size: window size
     :type win_size: int
     :return: std raster
-    :rtype : numpy array
+    :rtype: numpy array
     """
     # Computes E[row]
     mean_ = compute_mean_raster(img, win_size)

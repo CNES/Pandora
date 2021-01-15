@@ -6,6 +6,10 @@
 Welcome to Pandora's documentation!
 ===================================
 
+
+**Pandora is a stereo matching framework that will help you design your stereo matching pipeline with state of the art performances.**
+
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:

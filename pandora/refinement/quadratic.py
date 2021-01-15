@@ -85,7 +85,7 @@ class Quadratic(refinement.AbstractRefinement):
         :type disp: float
         :param measure: the type of measure used to create the cost volume
         :param measure: string = min | max
-        :return: the refined disparity (disp + sub_disp), the refined cost and the state of the pixel ( Information:
+        :return: the refined disparity (disp + sub_disp), the refined cost and the state of the pixel ( Information: \
         calculations stopped at the pixel step, sub-pixel interpolation did not succeed )
         :rtype: float, float, int
         """

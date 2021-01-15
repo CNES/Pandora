@@ -101,21 +101,21 @@ class AbstractAggregation():
         """
         Aggregate the cost volume for a pair of images
 
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing :
+        :param img_left: left Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
-        :param img_right: right Dataset image
-        :type img_right:
-            xarray.Dataset containing :
+        :type img_left: xarray.Dataset
+        :param img_right: right Dataset image containing :
+
                 - im : 2D (row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
-        :param cv: the cost volume dataset
-        :type cv:
-            xarray.Dataset, with the data variables:
+        :type img_right: xarray.Dataset
+        :param cv: the cost volume dataset with the data variables:
+
                 - cost_volume 3D xarray.DataArray (row, col, disp)
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
+        :type cv: xarray.Dataset
         :param cfg: images configuration containing the mask convention : valid_pixels, no_data
         :type cfg: dict
         :return: None

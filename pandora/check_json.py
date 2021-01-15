@@ -41,7 +41,7 @@ from pandora import multiscale
 
 def rasterio_can_open_mandatory(file_: str) -> bool:
     """
-    Test if file file_ can be open by rasterio
+    Test if file can be open by rasterio
 
     :param file_: File to test
     :type file_: string
@@ -59,7 +59,7 @@ def rasterio_can_open_mandatory(file_: str) -> bool:
 
 def rasterio_can_open(file_: str) -> bool:
     """
-    Test if file file_ can be open by rasterio
+    Test if file can be open by rasterio
 
     :param file_: File to test
     :type file_: string
@@ -203,8 +203,8 @@ def get_config_pipeline(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
 
     :param user_cfg: user configuration
     :type user_cfg: dict
-    :return cfg: partial configuration
-    :rtype cfg: dict
+    :return: cfg: partial configuration
+    :rtype: cfg: dict
     """
     cfg = {}
 
@@ -242,8 +242,8 @@ def check_pipeline_section(user_cfg: Dict[str, dict], pandora_machine: PandoraMa
     :type user_cfg: dict
     :param pandora_machine: instance of PandoraMachine
     :type pandora_machine: PandoraMachine object
-    :return cfg: pipeline configuration
-    :rtype cfg: dict
+    :return: cfg: pipeline configuration
+    :rtype: cfg: dict
     """
     # Check if user configuration pipeline is compatible with transitions/states of pandora machine.
     cfg = update_conf(default_short_configuration_pipeline, user_cfg)
@@ -267,8 +267,8 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
 
     :param user_cfg: user configuration
     :type user_cfg: dict
-    :return cfg: global configuration
-    :rtype cfg: dict
+    :return: cfg: global configuration
+    :rtype: cfg: dict
     """
     # Add missing steps and inputs defaults values in user_cfg
     cfg = update_conf(default_short_configuration_input, user_cfg)
@@ -312,8 +312,8 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> di
     :type user_cfg: dict
     :param pandora_machine: instance of PandoraMachine
     :type pandora_machine: PandoraMachine
-    :return cfg: global configuration
-    :rtype cfg: dict
+    :return: cfg: global configuration
+    :rtype: cfg: dict
     """
 
     # check input
@@ -351,8 +351,8 @@ def concat_conf(cfg_list: List[Dict[str, dict]]) -> Dict[str, dict]:
 
     :param cfg_list: list of configurations
     :type cfg_list: List of dict
-    :return cfg: global configuration
-    :rtype cfg: dict
+    :return: cfg: global configuration
+    :rtype: cfg: dict
     """
     # concatenate updated config
     cfg = {}
