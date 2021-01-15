@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.5.0 (January 2021)
+
 ### Added 
 
 - Implementation of multi scale processing for the disparity map computation. [#80]
