@@ -7,6 +7,13 @@ repos:
         language: system
         files: \.py$
         stages: [commit]
+    -   id: sphinx-checking
+        name: Checking Sphinx building
+        entry: python setup.py build_sphinx
+        language: system
+        files: ^(doc/.*|pandora/.*)$
+        pass_filenames: False
+        stages: [push]
   - repo: https://github.com/kynan/nbstripout
     rev: master
     hooks:

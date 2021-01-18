@@ -84,4 +84,5 @@ setup(name='pandora',
       command_options={
           'build_sphinx': {
               'build_dir': ('setup.py', 'doc/build/'),
-              'source_dir': ('setup.py', 'doc/sources/')}})
+              'source_dir': ('setup.py', 'doc/sources/'),
+              'warning_is_error': ('setup.py', True)}})
