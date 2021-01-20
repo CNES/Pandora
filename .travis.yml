@@ -1,0 +1,30 @@
+language: python
+python:
+- 3.6
+before_install:
+- python --version
+- pip install -U pip
+- pip install nose2
+- pip install codecov
+install:
+- pip install .
+script:
+- export NUMBA_DISABLE_JIT="1" && nose2 --plugin nose2.plugins.junitxml --with-coverage
+  --coverage pandora --coverage-report xml -X
+after_success:
+- codecov
+- bash <(curl -s https://codecov.io/bash)
+before_deploy:
+- echo 'update version according to the tag name'
+- sed -i "/version=/d" setup.py
+- sed -i 's|long_description=readme(),|long_description=readme(),\n      version='"'${TRAVIS_TAG}'"',|'
+  setup.py
+- cat setup.py | grep version
+deploy:
+  provider: pypi
+  username: __token__
+  password:
+    secure: zeCP6XT85uv9v+kBeSukIQbRvozxwlCXehC3brxTTODW6hDw/kLUQTVzV9xHYY5itmFRXqpQRalCwHohDQ/38442ueUmp+ZmPSimFmYA+FC3596daTGGjdzX8KRwZDTLB1rYY67iwpsHiEU+45d6lovjutJWIKtmBy5sXekSsoQt481Phf1AbSb17jW2BEjD4wOOH+V3Eao3AUlrdlyOyAxAYV4UcVOVcII2g3K8ySs4zcdv4wdNuAObbCJyEb7ijr1fRJswZIJUsmDlZ+g1aZ8LFSyAwClgx3pYB/7Lgz2JHi+ShbfreisVAZrNQ7CUUWE9HjJmR6MZY2ddsgt+Kq16weWyLoS1BPBTskcW2YD70yjwp08T5ly/dybgJjMarzZ5zhmP/ermL2WFk58j98efYvSU1PizPVsstOYee1Zb/0B2e4UxYWF9nMNfz5G6DUEDry+PBcoP/SsyKWKpjX7f5fhQOKrTsUuvDjAgl6UCB1PVaXkqK4SbKR176MVskgTz+jBpm99O4oiOLbLIsmAERhwnRpGGmNisCq+awzlN/fafMvaVqaYT4hwqHiin/lhh9L3lykUjthSDThrYxjH/rRFPyGaFJobe/+uELGAwJlKKDL8lE3X+aXj4vvk5Jm7nrKxyGOefFIprjy/tV095zAlfgV5NBK446y+yn+4=
+  on:
+    tags: true
+  skip_cleanup: true
