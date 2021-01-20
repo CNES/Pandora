@@ -1,4 +1,3 @@
-
 <h1 align="center">
   <a href="https://pandora.readthedocs.io/?badge=latest"><img src="https://raw.githubusercontent.com/CNES/Pandora/master/doc/sources/Images/logo/logo_typo.svg?inline=false" alt="Pandora Stereo Framework" width="432"></a>
 </h1>
@@ -19,7 +18,7 @@
   <a href="#customize">Customize</a> •
   <a href="#credits">Credits</a> •
   <a href="#related">Related</a> •
-  <a href="#license">Reference</a>
+  <a href="#references">References</a>
 </p>
 
 
