@@ -52,7 +52,7 @@ REQUIREMENTS_EXTRA = {'dev': ['sphinx',
                               'nose2',
                               'pylint',
                               'pre-commit'],
-                      'sgm': ['pandora_plugin_libsgm==0.5.*']
+                      'sgm': ['pandora_plugin_libsgm==0.6.*']
                       }
 
 
