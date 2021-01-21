@@ -26,6 +26,7 @@ This module contains functions to test the Pandora pipeline.
 import json
 import os
 import unittest
+import copy
 from tempfile import TemporaryDirectory
 
 import numpy as np
@@ -89,36 +90,12 @@ class TestPandora(unittest.TestCase):
 
         """
         user_cfg = {
-            'pipeline':
-                {
-                    'right_disp_map': {
-                        'method': 'accurate'
-                    },
-                    'matching_cost': {
-                        'matching_cost_method': 'zncc',
-                        'window_size': 5,
-                        'subpix': 2
-                    },
-                    'disparity': {
-                        'disparity_method': 'wta'
-                    },
-                    'refinement': {
-                        'refinement_method': 'vfit'
-                    },
-                    'filter': {
-                        'filter_method': 'median'
-                    },
-                    'validation': {
-                        'validation_method': 'cross_checking',
-                        'right_left_mode': 'accurate'
-                    }
-                }
+            'pipeline': copy.deepcopy(common.validation_pipeline_cfg)
         }
         pandora_machine = PandoraMachine()
 
         # Update the user configuration with default values
         cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
-
         # Run the pandora pipeline
         left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg['pipeline'])
 
@@ -143,26 +120,7 @@ class TestPandora(unittest.TestCase):
 
         """
         user_cfg = {
-            'pipeline':
-                {
-                    'right_disp_map': {
-                        'method': 'none'
-                    },
-                    'matching_cost': {
-                        'matching_cost_method': 'zncc',
-                        'window_size': 5,
-                        'subpix': 2
-                    },
-                    'disparity': {
-                        'disparity_method': 'wta'
-                    },
-                    'refinement': {
-                        'refinement_method': 'vfit'
-                    },
-                    'filter': {
-                        'filter_method': 'median'
-                    }
-                }
+            'pipeline': copy.deepcopy(common.basic_pipeline_cfg)
         }
         pandora_machine = PandoraMachine()
 
@@ -189,37 +147,10 @@ class TestPandora(unittest.TestCase):
 
         """
         user_cfg = {
-            'pipeline': {
-                'right_disp_map': {
-                    'method': 'accurate'
-                },
-                'matching_cost': {
-                    'matching_cost_method': 'zncc',
-                    'window_size': 5,
-                    'subpix': 4
-                },
-                'disparity': {
-                    'disparity_method': 'wta',
-                    'invalid_disparity': 'NaN'
-                },
-                'refinement': {
-                    'refinement_method': 'vfit'
-                },
-                'filter': {
-                    'filter_method': 'median'
-                },
-                'validation': {
-                    'validation_method': 'cross_checking',
-                    'right_left_mode': 'accurate'
-                },
-                'multiscale': {
-                    'multiscale_method': 'fixed_zoom_pyramid',
-                    'num_scales': 2,
-                    'scale_factor': 2,
-                    'marge': 3
-                }
-            }
+            'pipeline': copy.deepcopy(common.multiscale_pipeline_cfg)
         }
+        user_cfg['pipeline']['right_disp_map']['method'] = 'accurate'
+
         pandora_machine = PandoraMachine()
 
         # Update the user configuration with default values
@@ -249,36 +180,11 @@ class TestPandora(unittest.TestCase):
 
         """
         user_cfg = {
-            'pipeline': {'right_disp_map': {
-                'method': 'accurate'
-            },
-                'matching_cost': {
-                    'matching_cost_method': 'zncc',
-                    'window_size': 5,
-                    'subpix': 4
-                },
-                'disparity': {
-                    'disparity_method': 'wta',
-                    'invalid_disparity': 'NaN'
-                },
-                'refinement': {
-                    'refinement_method': 'vfit'
-                },
-                'filter': {
-                    'filter_method': 'median'
-                },
-                'validation': {
-                    'validation_method': 'cross_checking',
-                    'right_left_mode': 'accurate'
-                },
-                'multiscale': {
-                    'multiscale_method': 'fixed_zoom_pyramid',
-                    'num_scales': 3,
-                    'scale_factor': 2,
-                    'marge': 3
-                }
-            }
+            'pipeline': copy.deepcopy(common.multiscale_pipeline_cfg)
         }
+        user_cfg['pipeline']['multiscale']['num_scales'] = 3
+        user_cfg['pipeline']['right_disp_map']['method'] = 'accurate'
+
         pandora_machine = PandoraMachine()
 
         # Update the user configuration with default values
@@ -286,8 +192,6 @@ class TestPandora(unittest.TestCase):
 
         # Run the pandora pipeline
         left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg['pipeline'])
-        var = self.error(left['disparity_map'].data, self.disp_left, 1)
-        print(var)
         # Check the left disparity map
         if self.error(left['disparity_map'].data, self.disp_left, 1) > 0.20:
             raise AssertionError
@@ -333,29 +237,15 @@ class TestPandora(unittest.TestCase):
 
         # Load a configuration
         user_cfg = {
-            'input': {
-                'disp_min': -2,
-                'disp_max': 2
-            },
-            'pipeline': {
-                'right_disp_map': {
-                    'method': 'accurate'
-                },
-                'matching_cost': {
-                    'matching_cost_method': 'census',
-                    'window_size': 5,
-                    'subpix': 1
-                },
-                'disparity': {
-                    'disparity_method': 'wta',
-                    'invalid_disparity': -10
-                },
-                'validation': {
-                    'validation_method': 'cross_checking',
-                    'right_left_mode': 'accurate'
-                }
-            }
+            'input': {'disp_min': -2, 'disp_max': 2},
+            'pipeline': copy.deepcopy(common.validation_pipeline_cfg)
         }
+
+        user_cfg['pipeline']['matching_cost']['matching_cost_method'] = 'census'
+        user_cfg['pipeline']['matching_cost']['subpix'] = 1
+        user_cfg['pipeline']['disparity']['invalid_disparity'] = -10
+        del user_cfg['pipeline']['refinement']
+        del user_cfg['pipeline']['filter']
 
         pandora_machine = PandoraMachine()
 
@@ -427,30 +317,9 @@ class TestPandora(unittest.TestCase):
         """
 
         user_cfg = {
-            'pipeline': {
-                'right_disp_map': {
-                    'method': 'accurate'
-                },
-                'matching_cost': {
-                    'matching_cost_method': 'census',
-                    'window_size': 5,
-                    'subpix': 2
-                },
-                'disparity': {
-                    'disparity_method': 'wta'
-                },
-                'refinement': {
-                    'refinement_method': 'vfit'
-                },
-                'filter': {
-                    'filter_method': 'median'
-                },
-                'validation': {
-                    'validation_method': 'cross_checking',
-                    'right_left_mode': 'accurate'
-                }
-            }
+            'pipeline': copy.deepcopy(common.validation_pipeline_cfg)
         }
+        user_cfg['pipeline']['matching_cost']['matching_cost_method'] = 'census'
 
         pandora_machine = PandoraMachine()
 
@@ -483,39 +352,8 @@ class TestPandora(unittest.TestCase):
         Test that variable range of disparities (grids of local disparities) are well taken into account in Pandora
 
         """
-        cfg = {
-            'input': {
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': 'tests/pandora/disp_min_grid.tif',
-                'disp_max': 'tests/pandora/disp_max_grid.tif',
-                'disp_min_right': 'tests/pandora/right_disp_min_grid.tif',
-                'disp_max_right': 'tests/pandora/right_disp_max_grid.tif'
-            },
-            'pipeline':
-                {
-                    'right_disp_map': {
-                        'method': 'accurate'
-                    },
-                    'matching_cost': {
-                        'matching_cost_method': 'zncc',
-                        'window_size': 5,
-                        'subpix': 2
-                    },
-                    'disparity': {
-                        'disparity_method': 'wta'
-                    },
-                    'refinement': {
-                        'refinement_method': 'vfit'
-                    },
-                    'filter': {
-                        'filter_method': 'median'
-                    },
-                    'validation': {
-                        'validation_method': 'cross_checking'
-                    }
-                }
-        }
+        cfg = {'input': copy.deepcopy(common.input_cfg_left_right_grids),
+               'pipeline': copy.deepcopy(common.validation_pipeline_cfg)}
 
         # Create temporary directory
         with TemporaryDirectory() as tmp_dir:

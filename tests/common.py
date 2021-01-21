@@ -27,6 +27,7 @@ import os
 import logging
 import json
 
+
 def setup_logging(path='logging.json', default_level=logging.WARNING, ):
     """
     Setup the logging configuration
@@ -42,3 +43,104 @@ def setup_logging(path='logging.json', default_level=logging.WARNING, ):
         logging.config.dictConfig(config)
     else:
         logging.basicConfig(level=default_level)
+
+
+basic_pipeline_cfg = {
+            'right_disp_map': {
+                'method': 'none'
+            },
+            'matching_cost': {
+                'matching_cost_method': 'zncc',
+                'window_size': 5,
+                'subpix': 2
+            },
+            'disparity': {
+                'disparity_method': 'wta',
+                'invalid_disparity': -9999
+            },
+            'refinement': {
+                'refinement_method': 'vfit'
+            },
+            'filter': {
+                'filter_method': 'median',
+                'filter_size': 3
+            }
+}
+
+validation_pipeline_cfg = {
+            'right_disp_map': {
+                'method': 'accurate'
+            },
+            'matching_cost': {
+                'matching_cost_method': 'zncc',
+                'window_size': 5,
+                'subpix': 2
+            },
+            'disparity': {
+                'disparity_method': 'wta',
+                    'invalid_disparity': -9999
+            },
+            'refinement': {
+                'refinement_method': 'vfit'
+            },
+            'filter': {
+                'filter_method': 'median',
+                'filter_size': 3
+            },
+            'validation': {
+                'validation_method': 'cross_checking',
+                'cross_checking_threshold': 1.0,
+                'right_left_mode': 'accurate'
+            }
+}
+
+multiscale_pipeline_cfg = {
+                'right_disp_map': {
+                    'method': 'none'
+                },
+                'matching_cost': {
+                    'matching_cost_method': 'zncc',
+                    'window_size': 5,
+                    'subpix': 2
+                },
+                'disparity': {
+                    'disparity_method': 'wta',
+                    'invalid_disparity': -9999
+                },
+                'refinement': {
+                    'refinement_method': 'vfit'
+                },
+                'filter': {
+                    'filter_method': 'median',
+                    'filter_size': 3
+                },
+                'multiscale': {
+                    'multiscale_method': 'fixed_zoom_pyramid',
+                    'num_scales': 2,
+                    'scale_factor': 2,
+                    'marge': 1
+                }
+}
+
+input_cfg_basic = {
+                'img_left': 'tests/pandora/left.png',
+                'img_right': 'tests/pandora/right.png',
+                'disp_min': -60,
+                'disp_max': 0
+}
+
+input_cfg_left_grids = {
+        'img_left': 'tests/pandora/left.png',
+        'img_right': 'tests/pandora/right.png',
+        'disp_min': 'tests/pandora/disp_min_grid.tif',
+        'disp_max': 'tests/pandora/disp_max_grid.tif',
+}
+
+input_cfg_left_right_grids = {
+            'img_left': 'tests/pandora/left.png',
+            'img_right': 'tests/pandora/right.png',
+            'disp_min': 'tests/pandora/disp_min_grid.tif',
+            'disp_max': 'tests/pandora/disp_max_grid.tif',
+            'disp_min_right': 'tests/pandora/right_disp_min_grid.tif',
+            'disp_max_right': 'tests/pandora/right_disp_max_grid.tif'
+}
