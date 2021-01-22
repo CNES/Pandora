@@ -212,7 +212,6 @@ class AbstractDisparity():
         d_range = cv.coords['disp'].data
         disp_map.attrs['disp_min'] = d_range[0]
         disp_map.attrs['disp_max'] = d_range[-1]
-        disp_map.attrs['right_left_mode'] = 'approximate'
         offset = disp_map.attrs['offset_row_col']
 
         indices_nan = np.isnan(cv['cost_volume'].data)

@@ -89,8 +89,7 @@ validation_pipeline_cfg = {
             },
             'validation': {
                 'validation_method': 'cross_checking',
-                'cross_checking_threshold': 1.0,
-                'right_left_mode': 'accurate'
+                'cross_checking_threshold': 1.0
             }
 }
 

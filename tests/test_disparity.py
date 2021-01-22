@@ -328,8 +328,7 @@ class TestDisparity(unittest.TestCase):
                     'refinement_method': 'vfit'
                 },
                 'validation': {
-                    'validation_method': 'cross_checking',
-                    'right_left_mode': 'approximate'
+                    'validation_method': 'cross_checking'
                 }
             }
         }
@@ -355,8 +354,7 @@ class TestDisparity(unittest.TestCase):
                         'refinement_method': 'vfit'
                     },
                     'validation': {
-                        'validation_method': 'cross_checking',
-                        'right_left_mode': 'accurate',
+                        'validation_method': 'cross_checking'
                     }
                 }
         }
