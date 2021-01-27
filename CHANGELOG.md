@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### BREAKING CHANGE
+
+- GeoRef is now supported and both `crs` & `transform` ought to be set as attributes of images dataset provided to Pandora [#158
+
 ## 0.5.1 (January 2021)
 
 ### Fixed
