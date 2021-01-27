@@ -29,7 +29,7 @@ from typing import Tuple, Callable
 
 import numpy as np
 import xarray as xr
-from numba import njit, prange
+from numba import njit, prange, config
 
 import pandora.constants as cst
 
@@ -89,6 +89,8 @@ class AbstractRefinement():
         d_max = cv.coords['disp'].data[-1]
         subpixel = cv.attrs['subpixel']
         measure = cv.attrs['type_measure']
+        # Set numba type of threading layer before parallel target compilation
+        config.THREADING_LAYER = 'omp'
 
         # Conversion to numpy array ( .data ), because Numba does not support Xarray
         itp_coeff, disp['disparity_map'].data, disp['validity_mask'].data = \
@@ -129,6 +131,8 @@ class AbstractRefinement():
         d_max = cv_left.coords['disp'].data[-1]
         subpixel = cv_left.attrs['subpixel']
         measure = cv_left.attrs['type_measure']
+        # Set numba type of threading layer before parallel target compilation
+        config.THREADING_LAYER = 'omp'
 
         # Conversion to numpy array ( .data ), because Numba does not support Xarray
         itp_coeff, disp_right['disparity_map'].data, disp_right[
