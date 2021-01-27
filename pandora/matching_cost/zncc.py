@@ -189,7 +189,6 @@ class Zncc(matching_cost.AbstractMatchingCost):
 
         # Create the xarray.DataSet that will contain the cost_volume of dimensions (row, col, disp)
         cv = self.allocate_costvolume(img_left,
-                                      img_right,
                                       self._subpix,
                                       disp_min,
                                       disp_max,

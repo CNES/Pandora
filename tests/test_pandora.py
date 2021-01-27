@@ -31,6 +31,7 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 import xarray as xr
+from rasterio import Affine
 
 import common
 import pandora
@@ -224,7 +225,8 @@ class TestPandora(unittest.TestCase):
 
         img_left = xr.Dataset({'im': (['row', 'col'], data_left)},
                               coords={'row': np.arange(data_left.shape[0]), 'col': np.arange(data_left.shape[1])})
-        img_left.attrs['img_path'] = '.a/fake/img/lpath'
+        img_left.attrs['crs'] = None
+        img_left.attrs['transform'] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
         data_right = np.array([[1, 2, 1, 2, 5, 3, 1, 6],
                                [2, 3, 5, 3, 2, 1, 4, 3],
                                [0, 2, 4, 2, 3, 2, 2, 3],
@@ -234,7 +236,8 @@ class TestPandora(unittest.TestCase):
                                [1, 2, 2, 3, 3, 2, 3, 0]], dtype=np.float32)
         img_right = xr.Dataset({'im': (['row', 'col'], data_right)},
                                coords={'row': np.arange(data_right.shape[0]), 'col': np.arange(data_right.shape[1])})
-        img_right.attrs['img_path'] = '.a/fake/img/rpath'
+        img_right.attrs['crs'] = None
+        img_right.attrs['transform'] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
         # Load a configuration
         user_cfg = {
             'input': {'disp_min': -2, 'disp_max': 2},

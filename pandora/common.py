@@ -107,37 +107,35 @@ def save_results(left: xr.Dataset, right: xr.Dataset, output: str) -> None:
     mkdir_p(output)
 
     # Save the left results
-    img_rasterio_profile = rasterio_open(left.attrs['im_left_path']).profile
     write_data_array(left['disparity_map'],
                      os.path.join(output, get_out_file_path('left_disparity.tif')),
-                     crs=img_rasterio_profile['crs'],
-                     transform=img_rasterio_profile['transform'])
+                     crs=left.attrs['crs'],
+                     transform=left.attrs['transform'])
     write_data_array(left['confidence_measure'],
                      os.path.join(output, get_out_file_path('left_confidence_measure.tif')),
-                     crs=img_rasterio_profile['crs'],
-                     transform=img_rasterio_profile['transform'])
+                     crs=left.attrs['crs'],
+                     transform=left.attrs['transform'])
     write_data_array(left['validity_mask'],
                      os.path.join(output, get_out_file_path('left_validity_mask.tif')),
                      dtype=rasterio.dtypes.uint16,
-                     crs=img_rasterio_profile['crs'],
-                     transform=img_rasterio_profile['transform'])
+                     crs=left.attrs['crs'],
+                     transform=left.attrs['transform'])
 
     # If a validation step is configured, save the right results
     if len(right.sizes) != 0:
-        img_rasterio_profile = rasterio_open(right.attrs['im_left_path']).profile
         write_data_array(right['disparity_map'],
                          os.path.join(output, get_out_file_path('right_disparity.tif')),
-                         crs=img_rasterio_profile['crs'],
-                         transform=img_rasterio_profile['transform'])
+                         crs=right.attrs['crs'],
+                         transform=right.attrs['transform'])
         write_data_array(right['confidence_measure'],
                          os.path.join(output, get_out_file_path('right_confidence_measure.tif')),
-                         crs=img_rasterio_profile['crs'],
-                         transform=img_rasterio_profile['transform'])
+                         crs=right.attrs['crs'],
+                         transform=right.attrs['transform'])
         write_data_array(right['validity_mask'],
                          os.path.join(output, get_out_file_path('right_validity_mask.tif')),
                          dtype=rasterio.dtypes.uint16,
-                         crs=img_rasterio_profile['crs'],
-                         transform=img_rasterio_profile['transform'])
+                         crs=right.attrs['crs'],
+                         transform=right.attrs['transform'])
 
 
 def sliding_window(base_array: np.array, shape: Tuple[int, int]) -> np.array:
