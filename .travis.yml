@@ -22,9 +22,8 @@ before_deploy:
 - cat setup.py | grep version
 deploy:
   provider: pypi
-  username: __token__
-  password:
-    secure: zeCP6XT85uv9v+kBeSukIQbRvozxwlCXehC3brxTTODW6hDw/kLUQTVzV9xHYY5itmFRXqpQRalCwHohDQ/38442ueUmp+ZmPSimFmYA+FC3596daTGGjdzX8KRwZDTLB1rYY67iwpsHiEU+45d6lovjutJWIKtmBy5sXekSsoQt481Phf1AbSb17jW2BEjD4wOOH+V3Eao3AUlrdlyOyAxAYV4UcVOVcII2g3K8ySs4zcdv4wdNuAObbCJyEb7ijr1fRJswZIJUsmDlZ+g1aZ8LFSyAwClgx3pYB/7Lgz2JHi+ShbfreisVAZrNQ7CUUWE9HjJmR6MZY2ddsgt+Kq16weWyLoS1BPBTskcW2YD70yjwp08T5ly/dybgJjMarzZ5zhmP/ermL2WFk58j98efYvSU1PizPVsstOYee1Zb/0B2e4UxYWF9nMNfz5G6DUEDry+PBcoP/SsyKWKpjX7f5fhQOKrTsUuvDjAgl6UCB1PVaXkqK4SbKR176MVskgTz+jBpm99O4oiOLbLIsmAERhwnRpGGmNisCq+awzlN/fafMvaVqaYT4hwqHiin/lhh9L3lykUjthSDThrYxjH/rRFPyGaFJobe/+uELGAwJlKKDL8lE3X+aXj4vvk5Jm7nrKxyGOefFIprjy/tV095zAlfgV5NBK446y+yn+4=
+  user: __token__
+  password: $pypi_token
   on:
     tags: true
   skip_cleanup: true
