@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.5.1 (January 2021)
+
+### Fixed
+
+- Call to interpolation functions. [#175]
+
 ## 0.5.0 (January 2021)
 
 ### Added 
