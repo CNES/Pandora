@@ -94,6 +94,16 @@ class Quadratic(refinement.AbstractRefinement):
             # Bit 3 = 1: Information: calculations stopped at the pixel step, sub-pixel interpolation did not succeed
             return disp, cost[1], cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
 
+        inverse = 1
+        if measure == 'max':
+            # Additive inverse : if a < b then -a > -b
+            inverse = -1
+
+        # Check if cost[disp] is the minimum cost (or maximum using similarity measure) before fitting
+        # If not, interpolation is not applied
+        if (inverse * cost[1] > inverse * cost[0]) or (inverse * cost[1] > inverse * cost[2]):
+            return disp, cost[1], cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
+
         # Solve the system: col = alpha * row ** 2 + beta * row + gamma
         alpha = (cost[0] - 2 * cost[1] + cost[2]) / 2
         beta = (cost[2] - cost[0]) / 2

@@ -98,6 +98,11 @@ class Vfit(refinement.AbstractRefinement):
             # Additive inverse : if a < b then -a > -b
             inverse = -1
 
+        # Check if cost[disp] is the minimum cost (or maximum using similarity measure) before matching a symmetric V
+        # shape, if not, interpolation is not applied
+        if (inverse * cost[1] > inverse * cost[0]) or (inverse * cost[1] > inverse * cost[2]):
+            return disp, cost[1], cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
+
         # The problem is to approximate sub_cost function with an affine function: y = a * x + origin
         # Calculate the slope
         a = cost[2] - cost[1]
