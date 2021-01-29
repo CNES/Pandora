@@ -176,9 +176,9 @@ def check_disparities(disp_min: Union[int, str, None], disp_max: Union[int, str,
         # Load an image to compare the grid size
         img_left_ = rasterio_open(img_left)
 
-        disp_min_ = rasterio_open(disp_min)
+        disp_min_ = rasterio_open(right_disp_min)
         dmin = disp_min_.read(1)
-        disp_max_ = rasterio_open(disp_max)
+        disp_max_ = rasterio_open(right_disp_max)
         dmax = disp_max_.read(1)
 
         # check that disparity grids is a 1-channel grid
