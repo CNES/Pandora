@@ -71,9 +71,11 @@ unzip cones.zip
 
 # run pandora
 pandora a_local_block_matching.json output_dir
+
+#Left (respectively right) disparity map is saved in output_dir/left_disparity.tif (respectively output_dir/right_disparity.tif)
 ```
 
-## Customize
+## To go further
 
 To create you own stereo matching pipeline and choose among the variety of algorithms we provide, please consult [our online documentation](https://readthedocs.org/projects/pandora/badge/?version=latest).
 
