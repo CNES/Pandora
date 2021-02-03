@@ -11,7 +11,7 @@ Pandora provides a full python API which can be used to compute disparity maps a
     import pandora
     from pandora import common
     from pandora.img_tools import read_img, read_disp
-    from pandora.json_checker import check_conf, read_config_file
+    from pandora.check_json import check_conf, read_config_file
     from pandora.state_machine import PandoraMachine
 
     def pandora_stereo(cfg_path: str, output: str, verbose: bool) -> None:
@@ -63,6 +63,10 @@ Pandora provides a full python API which can be used to compute disparity maps a
 
         # Save the configuration
         common.save_config(output, cfg)
+
+        if __name__ == '__main__':
+
+            pandora_stereo('./data_samples/json_conf_files/a_local_block_matching.json', './output/', True)
 
 If you want to learn  more, please consult our `Pandora Api tutorial notebook <https://github.com/CNES/Pandora/tree/master/notebooks/...>`_.
 It will help you to understand, manipulate and customize our API.

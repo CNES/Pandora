@@ -22,9 +22,9 @@ Configuration and parameters
 +---------------------+--------------------------+------------+---------------+---------------------+----------+
 | Name                | Description              | Type       | Default value | Available value     | Required |
 +=====================+==========================+============+===============+=====================+==========+
-| *disparity _method* | disparity method         | string     |               | "wta"               | Yes      |
+| *disparity _method* | Disparity method         | string     |               | "wta"               | Yes      |
 +---------------------+--------------------------+------------+---------------+---------------------+----------+
-| *invalid_disparity* | invalid disparity value  | int, float |     -9999     | "NaN" for nan value | No       |
+| *invalid_disparity* | Invalid disparity value  | int, float |     -9999     | "NaN" for nan value | No       |
 +---------------------+--------------------------+------------+---------------+---------------------+----------+
 
 **Example**

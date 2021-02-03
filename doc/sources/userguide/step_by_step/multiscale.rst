@@ -17,7 +17,7 @@ The disparity map of the previous pipeline is used to construct two disparity gr
 
 - If the pixel was valid in the previous scale, consider the maximum and minimum disparity values of the valid pixels in the pixel window.
 
-    - Add a disparity marge on the maximum and minimum resulting values to ensure the disparity range width.
+- Add a disparity marge on the maximum and minimum resulting values to ensure the disparity range width.
 
 .. note::
   The invalid pixels of the full resolution image are interpolated using the method proposed in [Hirschmuller2007]_ before the Gaussian filtering and decimation to avoid its spreading.
@@ -32,13 +32,13 @@ Configuration and parameters
 +---------------------+-------------------------------------------------------+------------+---------------+------------------------+----------+
 | Name                | Description                                           | Type       | Default value | Available value        | Required |
 +=====================+=======================================================+============+===============+========================+==========+
-| *multiscale_method* | multiscale method name                                | string     |               | "fixed_zoom_disparity" | Yes      |
+| *multiscale_method* | Multiscale method name                                | string     |               | "fixed_zoom_pyramid"   | Yes      |
 +---------------------+-------------------------------------------------------+------------+---------------+------------------------+----------+
-| *num_scales*        | number of scales to process                           | int        |  2            | >= 2                   | No       |
+| *num_scales*        | Number of scales to process                           | int        |  2            | >= 2                   | No       |
 +---------------------+-------------------------------------------------------+------------+---------------+------------------------+----------+
-| *scale_factor*      | scale factor by which reduce the image between scales | int        |  2            | >= 2                   | No       |
+| *scale_factor*      | Scale factor by which reduce the image between scales | int        |  2            | >= 2                   | No       |
 +---------------------+-------------------------------------------------------+------------+---------------+------------------------+----------+
-| *marge*             | marge to avoid zero disparity range                   | int        |  1            | >= 0                   | No       |
+| *marge*             | Marge to avoid zero disparity range                   | int        |  1            | >= 0                   | No       |
 +---------------------+-------------------------------------------------------+------------+---------------+------------------------+----------+
 
 .. note::
@@ -59,7 +59,7 @@ Configuration and parameters
        {
             ...
             "multiscale": {
-                "multiscale _method": "fixed_zoom_disparity",
+                "multiscale _method": "fixed_zoom_pyramid",
                 "num_scales": 3,
                 "marge": 2
             }
