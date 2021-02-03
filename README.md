@@ -1,5 +1,5 @@
 <h1 align="center">
-  <a href="https://pandora.readthedocs.io/?badge=latest"><img src="https://raw.githubusercontent.com/CNES/Pandora/master/doc/sources/Images/logo/logo_typo.svg?inline=false" alt="Pandora Stereo Framework" width="432"></a>
+  <a href="https://pandora.readthedocs.io/?badge=latest"><img src="https://raw.githubusercontent.com/CNES/Pandora/master/doc/sources/Images/logo/logo_typo_large.png?inline=false" alt="Pandora Stereo Framework" width="432"></a>
 </h1>
 
 <h4 align="center">A stereo matching framework that will help you design your stereo matching pipeline with state of the art performances.</h4>
