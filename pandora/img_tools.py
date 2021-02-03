@@ -7,14 +7,14 @@
 #
 #     https://github.com/CNES/Pandora
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an 'AS IS' BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
@@ -26,6 +26,8 @@ This module contains functions associated to raster images.
 import logging
 import warnings
 from typing import List, Union, Tuple
+import sys
+import copy
 
 import numpy as np
 import rasterio
@@ -35,6 +37,7 @@ from skimage.transform.pyramids import pyramid_gaussian
 from numba import njit
 
 import pandora.constants as cst
+
 
 def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.DatasetReader:
     """
@@ -143,6 +146,71 @@ def read_img(img: str, no_data: float, mask: str = None, classif: str = None, se
     dataset['msk'].data[no_data_pixels] = int(dataset.attrs['no_data_mask'])
 
     return dataset
+
+
+def check_dataset(dataset: xr.Dataset) -> xr.Dataset:
+    """
+    Check if input dataset is correct, and return the corresponding xarray.DataSet
+
+    :param dataset: dataset
+    :type dataset: xr.Dataset
+    :return: full dataset
+    :rtype: xarray.DataSet
+    """
+    new_dataset = copy.copy(dataset)
+
+    # Check image
+    if 'im' not in dataset:
+        logging.error('User must provide an image im')
+        sys.exit(1)
+
+    # Check mask
+    if 'msk' not in dataset:
+        logging.warning('User should provide a mask msk')
+    else:
+        if dataset['im'].data.shape != dataset['msk'].data.shape:
+            logging.error('image and mask must have the same shape')
+            sys.exit(1)
+
+    # Check segmentation
+    if 'segm' not in dataset:
+        logging.warning('No segmentation map provided')
+    else:
+        if dataset['im'].data.shape != dataset['segm'].data.shape:
+            logging.error('image and segmentation must have the same shape')
+            sys.exit(1)
+
+    # Check classification
+    if 'classif' not in dataset:
+        logging.warning('Np classification map provided')
+    else:
+        if dataset['im'].data.shape != dataset['classif'].data.shape:
+            logging.error('image and classification must have the same shape')
+            sys.exit(1)
+
+    # Check no_data_img
+    if 'no_data_img' not in dataset.attrs:
+        logging.error('User must provide the image nodata value ')
+        sys.exit(1)
+
+    # Check valid_pixels
+    if 'valid_pixels' not in dataset.attrs:
+        logging.error('User must provide the valid pixels value')
+        sys.exit(1)
+
+    # Check valid_pixels
+    if 'no_data_mask' not in dataset.attrs:
+        logging.error('User must provide the no_data_mask pixels value')
+        sys.exit(1)
+
+    # Check georef
+    if 'crs' not in dataset.attrs:
+        logging.error('User must provide image crs')
+        sys.exit(1)
+    if 'transform' not in dataset.attrs:
+        logging.error('User must provide image transform')
+
+    return new_dataset
 
 
 def prepare_pyramid(img_left: xr.Dataset, img_right: xr.Dataset, num_scales: int, scale_factor: int) -> \
