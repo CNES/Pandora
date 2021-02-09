@@ -32,6 +32,7 @@ import rasterio
 import xarray as xr
 from scipy.ndimage.interpolation import zoom
 from skimage.transform.pyramids import pyramid_gaussian
+from numba import njit
 
 import pandora.constants as cst
 
@@ -202,6 +203,7 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
     return img, msk
 
 
+@njit()
 def interpolate_nodata_sgm(img: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """
     Interpolation of the input image to resolve invalid (nodata) pixels.
@@ -228,33 +230,13 @@ def interpolate_nodata_sgm(img: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarr
 
     # 8 directions : [row, y]
     dirs = np.array([[0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0], [1, 1]])
-    # Maximum path length
-    max_path_length = max(nrow, ncol)
 
     ncol, nrow = img.shape
     for col in range(ncol):
         for row in range(nrow):
             # Mismatched
             if valid[col, row] & cst.PANDORA_MSK_PIXEL_INVALID != 0:
-                # For each directions
-                valid_neighbors = np.zeros(8, dtype=np.float32)
-                for dir_ind in range(8):
-                    # Find the first valid pixel in the current path
-                    tmp_row = row
-                    tmp_col = col
-                    for i in range(max_path_length): #pylint: disable=unused-variable
-                        tmp_row += dirs[dir_ind][0]
-                        tmp_col += dirs[dir_ind][1]
-
-                        # Edge of the image reached: there is no valid pixel in the current path
-                        if (tmp_col < 0) | (tmp_col >= ncol) | (tmp_row < 0) | (tmp_row >= nrow):
-                            valid_neighbors[dir_ind] = np.nan
-                            break
-
-                        # First valid pixel
-                        if (valid[tmp_col, tmp_row] & cst.PANDORA_MSK_PIXEL_INVALID) == 0:
-                            valid_neighbors[dir_ind] = img[tmp_col, tmp_row]
-                            break
+                valid_neighbors = find_valid_neighbors(dirs, img, valid, row, col)
 
                 # Median of the 8 pixels
                 out_img[col, row] = np.nanmedian(valid_neighbors)
@@ -484,6 +466,47 @@ def compute_mean_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
     r_mean = r_mean[:, win_size:] - r_mean[:, :-win_size]
     # r_mean : 44
     return r_mean / float(win_size * win_size)
+
+
+@njit()
+def find_valid_neighbors(dirs: np.ndarray, disp: np.ndarray, valid: np.ndarray,
+                         row: int, col: int):
+    """
+    :param dirs: directions
+    :type dirs: 2D np.array (row, col)
+    :param disp: disparity map
+    :type disp: 2D np.array (row, col)
+    :param valid: validity mask
+    :type valid: 2D np.array (row, col)
+    :param row: row current value
+    :type row: int
+    :param col: col current value
+    :type col: int
+    :return: valid neighbors
+    :rtype : 2D np.array
+    """
+    ncol, nrow = disp.shape
+    # Maximum path length
+    max_path_length = max(nrow, ncol)
+    # For each directions
+    valid_neighbors = np.zeros(8, dtype=np.float32)
+    for direction in range(8):
+        # Find the first valid pixel in the current path
+        tmp_row = row
+        tmp_col = col
+        for i in range(max_path_length):  # pylint: disable= unused-variable
+            tmp_row += dirs[direction][0]
+            tmp_col += dirs[direction][1]
+
+            # Edge of the image reached: there is no valid pixel in the current path
+            if (tmp_col < 0) | (tmp_col >= ncol) | (tmp_row < 0) | (tmp_row >= nrow):
+                valid_neighbors[direction] = np.nan
+                break
+            # First valid pixel
+            if (valid[tmp_col, tmp_row] & cst.PANDORA_MSK_PIXEL_INVALID) == 0:
+                valid_neighbors[direction] = disp[tmp_col, tmp_row]
+                break
+    return valid_neighbors
 
 
 def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np.ndarray:
