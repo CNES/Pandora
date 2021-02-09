@@ -21,7 +21,7 @@ and 7 transitions, each one corresponding to a stereo step described in :ref:`st
  - validation (:ref:`validation`)
  - multiscale (:ref:`multiscale`)
 
-Pandora machine starts at the begin state. To go from a state from another one, transitions are called and triggered
+Pandora machine starts at the begin state. To go from a state to another one, transitions are called and triggered
 by specific name. It corresponds to the name of Pandora steps you can write in configuration file.
 
 The following diagram highligts all states and possible transitions.
@@ -266,7 +266,7 @@ Configuration to produce a disparity map, computed by SSD method with mutliscale
                 "invalid_disparity": "NaN"
             },
             "multiscale": {
-                "multiscale _method": "fixed_zoom_disparity",
+                "multiscale _method": "fixed_zoom_pyramid",
                 "num_scales": 3
             }
         }
