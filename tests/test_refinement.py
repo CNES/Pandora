@@ -27,6 +27,7 @@ import unittest
 
 import numpy as np
 import xarray as xr
+from rasterio import Affine
 
 import common
 import pandora.constants as cst
@@ -244,6 +245,8 @@ class TestRefinement(unittest.TestCase):
         img_left = xr.Dataset({'im': (['row', 'col'], data_left),
                                'validity_mask': (['row', 'col'], valid_left)},
                               coords={'row': np.arange(data_left.shape[0]), 'col': np.arange(data_left.shape[1])})
+        img_left.attrs['crs'] = None
+        img_left.attrs['transform'] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
 
         data_right = np.array([[82., 116., 176., 172.],
                                [114., 130., 174., 172.],
@@ -254,6 +257,8 @@ class TestRefinement(unittest.TestCase):
         img_right = xr.Dataset({'im': (['row', 'col'], data_right),
                                 'validity_mask': (['row', 'col'], valid_right)},
                                coords={'row': np.arange(data_right.shape[0]), 'col': np.arange(data_right.shape[1])})
+        img_right.attrs['crs'] = None
+        img_right.attrs['transform'] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
 
         # Computes cost volume
         matching_cost_matcher = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 1,
