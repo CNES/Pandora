@@ -23,7 +23,7 @@
 This module contains functions to test the configuration
 """
 import unittest
-
+import copy
 import json_checker
 from transitions import MachineError
 
@@ -51,12 +51,7 @@ class TestConfig(unittest.TestCase):
 
         # Test configuration with left disparity grids and right disparity = none
         cfg = {
-            'input': {
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': 'tests/pandora/disp_min_grid.tif',
-                'disp_max': 'tests/pandora/disp_max_grid.tif'
-            }
+            'input': copy.deepcopy(common.input_cfg_left_grids)
         }
         cfg_return = JSON_checker.check_input_section(cfg)
         if (cfg_return['input']['disp_min_right'] is not None) and (cfg_return['input']['disp_max_right'] is not None):
@@ -64,12 +59,7 @@ class TestConfig(unittest.TestCase):
 
         # Test configuration with left disparity as integer
         cfg = {
-            'input': {
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': -60,
-                'disp_max': 0
-            }
+            'input': copy.deepcopy(common.input_cfg_basic)
         }
         cfg_return = JSON_checker.check_input_section(cfg)
         if (cfg_return['input']['disp_min_right'] is not None) and (cfg_return['input']['disp_max_right'] is not None):
@@ -77,29 +67,17 @@ class TestConfig(unittest.TestCase):
 
         # Test configuration with left and right disparity grids
         cfg = {
-            'input': {
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': 'tests/pandora/disp_min_grid.tif',
-                'disp_max': 'tests/pandora/disp_max_grid.tif',
-                'disp_min_right': 'tests/pandora/disp_min_grid.tif',
-                'disp_max_right': 'tests/pandora/disp_max_grid.tif'
-            }
+            'input': copy.deepcopy(common.input_cfg_left_right_grids)
         }
         cfg_return = JSON_checker.check_input_section(cfg)
 
-        if (cfg_return['input']['disp_min_right'] != 'tests/pandora/disp_min_grid.tif') and \
-                (cfg_return['input']['disp_max_right'] != 'tests/pandora/disp_max_grid.tif'):
+        if (cfg_return['input']['disp_min_right'] != 'tests/pandora/right_disp_min_grid.tif') and \
+                (cfg_return['input']['disp_max_right'] != 'tests/pandora/right_disp_max_grid.tif'):
             raise AssertionError
 
         # Test configuration with left disparity grids and right disparity = none and classif and segm = none
         cfg = {
-            'input': {
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': 'tests/pandora/disp_min_grid.tif',
-                'disp_max': 'tests/pandora/disp_max_grid.tif'
-            }
+            'input': copy.deepcopy(common.input_cfg_left_grids)
         }
         cfg_return = JSON_checker.check_input_section(cfg)
         if (cfg_return['input']['left_classif'] is not None) and (
@@ -111,15 +89,11 @@ class TestConfig(unittest.TestCase):
         # Test configuration with left disparity grids and right disparity = none and classif_left filled
         #           and segm filled with artificial data from left and right images
         cfg = {
-            'input': {
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': 'tests/pandora/disp_min_grid.tif',
-                'disp_max': 'tests/pandora/disp_max_grid.tif',
-                'left_classif': 'tests/pandora/right.png',
-                'left_segm': 'tests/pandora/left.png'
-            }
+            'input': copy.deepcopy(common.input_cfg_left_grids)
         }
+        cfg['input']['left_classif'] = 'tests/pandora/right.png'
+        cfg['input']['left_segm'] = 'tests/pandora/left.png'
+
         cfg_return = JSON_checker.check_input_section(cfg)
         if (cfg_return['input']['left_classif'] != 'tests/pandora/right.png') and (
                 cfg_return['input']['left_segm'] != 'tests/pandora/left.png') and (
@@ -130,15 +104,11 @@ class TestConfig(unittest.TestCase):
         # Test configuration with left disparity grids and right disparity = none and right filled
         #           and segm filled with artificial data from left and right images
         cfg = {
-            'input': {
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': 'tests/pandora/disp_min_grid.tif',
-                'disp_max': 'tests/pandora/disp_max_grid.tif',
-                'right_classif': 'tests/pandora/right.png',
-                'right_segm': 'tests/pandora/left.png'
-            }
+            'input': copy.deepcopy(common.input_cfg_left_grids)
         }
+        cfg['input']['right_classif'] = 'tests/pandora/right.png'
+        cfg['input']['right_segm'] = 'tests/pandora/left.png'
+
         cfg_return = JSON_checker.check_input_section(cfg)
         if (cfg_return['input']['right_classif'] != 'tests/pandora/right.png') and (
                 cfg_return['input']['right_segm'] != 'tests/pandora/left.png') and (
@@ -152,67 +122,47 @@ class TestConfig(unittest.TestCase):
         """
         # Test configuration with left disparity min as grids and left disparity max as integer
         cfg = {
-            'input': {
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': 'tests/pandora/disp_min_grid.tif',
-                'disp_max': 45,
-            }
+            'input': copy.deepcopy(common.input_cfg_left_grids)
         }
+        cfg['input']['disp_max'] = 45
+
         # Json checker must raise an error
         self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
 
         # Test configuration with left disparity grids and right disparity max as integer
         cfg = {
-            'input': {
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': 'tests/pandora/disp_min_grid.tif',
-                'disp_max': 'tests/pandora/disp_max_grid.tif',
-                'disp_max_right': -4
-            }
+            'input': copy.deepcopy(common.input_cfg_left_grids)
         }
+        cfg['input']['disp_max_right'] = -4
+
         # Json checker must raise an error
         self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
 
         # Test configuration with left disparity grids and right disparity max as integer
         cfg = {
-            'input': {
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': 'tests/pandora/disp_min_grid.tif',
-                'disp_max': 'tests/pandora/disp_max_grid.tif',
-                'disp_max_right': -4,
-                'disp_min_right': 'tests/pandora/disp_max_grid.tif'
-            }
+            'input': copy.deepcopy(common.input_cfg_left_right_grids)
         }
+        cfg['input']['disp_max_right'] = -4
+
         # Json checker must raise an error
         self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
 
         # Test configuration with left disparity grids and right disparity min as integer
         cfg = {
-            'input': {
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': 'tests/pandora/disp_min_grid.tif',
-                'disp_max': 'tests/pandora/disp_max_grid.tif',
-                'disp_min_right': -4
-            }
+            'input': copy.deepcopy(common.input_cfg_left_grids)
         }
+        cfg['input']['disp_min_right'] = -4
+
         # Json checker must raise an error
         self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
 
         # Test configuration with left disparity grids and right disparities as integer
         cfg = {
-            'input': {
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': 'tests/pandora/disp_min_grid.tif',
-                'disp_max': 'tests/pandora/disp_max_grid.tif',
-                'disp_min_right': -4,
-                'disp_max_right': 0
-            }
+            'input': copy.deepcopy(common.input_cfg_left_grids)
         }
+        cfg['input']['disp_min_right'] = -4
+        cfg['input']['disp_max_right'] = 0
+
         # Json checker must raise an error
         self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
 
@@ -329,12 +279,7 @@ class TestConfig(unittest.TestCase):
 
         pandora_machine = PandoraMachine()
         cfg = {
-            'input': {
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': 'tests/pandora/disp_min_grid.tif',
-                'disp_max': 'tests/pandora/disp_max_grid.tif'
-            },
+            'input': copy.deepcopy(common.input_cfg_left_grids),
             'pipeline': {
                 'matching_cost': {
                     'matching_cost_method': 'zncc',
@@ -366,35 +311,17 @@ class TestConfig(unittest.TestCase):
                 'disp_max': 'tests/pandora/disp_max_grid.tif'
             },
 
-            'pipeline': {
-                'right_disp_map': {
-                    'method': 'none'
-                },
-                'matching_cost': {
-                    'matching_cost_method': 'zncc',
-                    'window_size': 5,
-                    'subpix': 2
-                },
-                'disparity': {
-                    'disparity_method': 'wta',
-                    'invalid_disparity': -9999
-                }
-            }
+            'pipeline': copy.deepcopy(common.basic_pipeline_cfg)
 
         }
+        del cfg_gt['pipeline']['refinement']
+        del cfg_gt['pipeline']['filter']
         assert cfg_return == cfg_gt
 
         # Check the configuration returned with left and right disparity grids
         pandora_machine = PandoraMachine()
         cfg = {
-            'input': {
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': 'tests/pandora/disp_min_grid.tif',
-                'disp_max': 'tests/pandora/disp_max_grid.tif',
-                'disp_min_right': 'tests/pandora/disp_min_grid.tif',
-                'disp_max_right': 'tests/pandora/disp_max_grid.tif'
-            },
+            'input': copy.deepcopy(common.input_cfg_left_right_grids),
             'pipeline': {
                 'matching_cost': {
                     'matching_cost_method': 'zncc',
@@ -419,60 +346,28 @@ class TestConfig(unittest.TestCase):
                 'left_segm': None,
                 'right_classif': None,
                 'right_segm': None,
-                'disp_min_right': 'tests/pandora/disp_min_grid.tif',
-                'disp_max_right': 'tests/pandora/disp_max_grid.tif',
+                'disp_min_right': 'tests/pandora/right_disp_min_grid.tif',
+                'disp_max_right': 'tests/pandora/right_disp_max_grid.tif',
                 'img_left': 'tests/pandora/left.png',
                 'img_right': 'tests/pandora/right.png',
                 'disp_min': 'tests/pandora/disp_min_grid.tif',
                 'disp_max': 'tests/pandora/disp_max_grid.tif'
             },
 
-            'pipeline':
-                {
-                    'right_disp_map': {
-                        'method': 'none'
-                    },
-                    'matching_cost': {
-                        'matching_cost_method': 'zncc',
-                        'window_size': 5,
-                        'subpix': 2
-                    },
-                    'disparity': {
-                        'disparity_method': 'wta',
-                        'invalid_disparity': -9999
-                    }
+            'pipeline': copy.deepcopy(common.basic_pipeline_cfg)
                 }
 
-        }
+        del cfg_gt['pipeline']['refinement']
+        del cfg_gt['pipeline']['filter']
+
 
         assert cfg_return == cfg_gt
 
         # Check the configuration returned with left disparity grids and cross checking method
         pandora_machine = PandoraMachine()
         cfg = {
-            'input': {
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': 'tests/pandora/disp_min_grid.tif',
-                'disp_max': 'tests/pandora/disp_max_grid.tif'
-            },
-            'pipeline':
-                {
-                    'right_disp_map': {
-                        'method': 'accurate'
-                    },
-                    'matching_cost': {
-                        'matching_cost_method': 'zncc',
-                        'window_size': 5,
-                        'subpix': 2
-                    },
-                    'disparity': {
-                        'disparity_method': 'wta'
-                    },
-                    'validation': {
-                        'validation_method': 'cross_checking'
-                    }
-                }
+            'input': copy.deepcopy(common.input_cfg_left_grids),
+            'pipeline': copy.deepcopy(common.validation_pipeline_cfg)
         }
 
         # When left disparities are grids and right are none, cross checking method cannot be used : the program exits
@@ -480,73 +375,30 @@ class TestConfig(unittest.TestCase):
 
         # Check the configuration returned with left and right disparity grids and cross checking method
         cfg = {
-            'input': {
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': 'tests/pandora/disp_min_grid.tif',
-                'disp_max': 'tests/pandora/disp_max_grid.tif',
-                'disp_min_right': 'tests/pandora/disp_min_grid.tif',
-                'disp_max_right': 'tests/pandora/disp_max_grid.tif',
-            },
-            'pipeline': {
-                'right_disp_map': {
-                    'method': 'accurate'
-                },
-                'matching_cost': {
-                    'matching_cost_method': 'zncc',
-                    'window_size': 5,
-                    'subpix': 2
-                },
-                'disparity': {
-                    'disparity_method': 'wta',
-                    'invalid_disparity': -9999
-                },
-                'validation': {
-                    'validation_method': 'cross_checking'
-                }
-            }
-
+            'input': copy.deepcopy(common.input_cfg_left_right_grids),
+            'pipeline': copy.deepcopy(common.validation_pipeline_cfg)
         }
         # When left and right disparities are grids, cross checking method can be used
         pandora_machine = PandoraMachine()
         cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
         cfg_gt = {
-            'input': {
-                'nodata_left': -9999,
-                'nodata_right': -9999,
-                'left_mask': None,
-                'right_mask': None,
-                'left_classif': None,
-                'left_segm': None,
-                'right_classif': None,
-                'right_segm': None,
-                'disp_min_right': 'tests/pandora/disp_min_grid.tif',
-                'disp_max_right': 'tests/pandora/disp_max_grid.tif',
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': 'tests/pandora/disp_min_grid.tif',
-                'disp_max': 'tests/pandora/disp_max_grid.tif'
-            },
-            'pipeline': {
-                'right_disp_map': {
-                    'method': 'accurate'
-                },
-                'matching_cost': {
-                    'matching_cost_method': 'zncc',
-                    'window_size': 5,
-                    'subpix': 2
-                },
-                'disparity': {
-                    'disparity_method': 'wta',
-                    'invalid_disparity': -9999
-                },
-                'validation': {
-                    'validation_method': 'cross_checking',
-                    'cross_checking_threshold': 1.0,
-                    'right_left_mode': 'accurate'
-                }
-            }
-
+            'input':
+                {'nodata_left': -9999,
+                 'nodata_right': -9999,
+                 'left_mask': None,
+                 'right_mask': None,
+                 'left_classif': None,
+                 'right_classif': None,
+                 'left_segm': None,
+                 'right_segm': None,
+                 'disp_min_right': 'tests/pandora/right_disp_min_grid.tif',
+                 'disp_max_right': 'tests/pandora/right_disp_max_grid.tif',
+                 'img_left': 'tests/pandora/left.png',
+                 'img_right': 'tests/pandora/right.png',
+                 'disp_min': 'tests/pandora/disp_min_grid.tif',
+                 'disp_max': 'tests/pandora/disp_max_grid.tif'
+                 },
+            'pipeline': common.validation_pipeline_cfg
         }
 
         assert cfg_return == cfg_gt
@@ -554,32 +406,8 @@ class TestConfig(unittest.TestCase):
         # Check the configuration returned with left disparity grids and multiscale processing
         pandora_machine = PandoraMachine()
         cfg = {
-            'input': {
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': 'tests/pandora/disp_min_grid.tif',
-                'disp_max': 'tests/pandora/disp_max_grid.tif'
-            },
-            'pipeline':
-                {
-                    'right_disp_map': {
-                        'method': 'accurate'
-                    },
-                    'matching_cost': {
-                        'matching_cost_method': 'zncc',
-                        'window_size': 5,
-                        'subpix': 2
-                    },
-                    'disparity': {
-                        'disparity_method': 'wta'
-                    },
-                    'multiscale': {
-                        'multiscale_method': 'fixed_zoom_pyramid',
-                        'num_scales': 2,
-                        'scale_factor': 2,
-                        'marge': 3
-                    }
-                }
+            'input': copy.deepcopy(common.input_cfg_left_grids),
+            'pipeline': copy.deepcopy(common.multiscale_pipeline_cfg)
         }
 
         # When left disparities are grids and multiscale processing cannot be used : the program exits
@@ -588,76 +416,32 @@ class TestConfig(unittest.TestCase):
         # Check the configuration returned with left disparity integer and multiscale processing
         pandora_machine = PandoraMachine()
         cfg = {
-            'input': {
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': -60,
-                'disp_max': 0
-            },
-            'pipeline':
-                {
-                    'right_disp_map': {
-                        'method': 'none'
-                    },
-                    'matching_cost': {
-                        'matching_cost_method': 'zncc',
-                        'window_size': 5,
-                        'subpix': 2
-                    },
-                    'disparity': {
-                        'disparity_method': 'wta'
-                    },
-                    'multiscale': {
-                        'multiscale_method': 'fixed_zoom_pyramid',
-                        'num_scales': 2,
-                        'scale_factor': 2,
-                        'marge': 3
-                    }
-                }
+            'input': copy.deepcopy(common.input_cfg_basic),
+            'pipeline': copy.deepcopy(common.multiscale_pipeline_cfg)
         }
 
         cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
 
         cfg_gt = {
-            'input': {
-                'nodata_left': -9999,
-                'nodata_right': -9999,
-                'left_mask': None,
-                'right_mask': None,
-                'left_classif': None,
-                'right_classif': None,
-                'left_segm': None,
-                'right_segm': None,
-                'disp_min_right': None,
-                'disp_max_right': None,
-                'img_left': 'tests/pandora/left.png',
-                'img_right': 'tests/pandora/right.png',
-                'disp_min': -60,
-                'disp_max': 0
-            },
-            'pipeline': {
-                'right_disp_map': {
-                    'method': 'none'
-                },
-                'matching_cost': {
-                    'matching_cost_method': 'zncc',
-                    'window_size': 5, 'subpix': 2
-                },
-                'disparity': {
-                    'disparity_method': 'wta',
-                    'invalid_disparity': -9999
-                },
-                'multiscale': {
-                    'multiscale_method': 'fixed_zoom_pyramid',
-                    'num_scales': 2,
-                    'scale_factor': 2,
-                    'marge': 3
-                }
-            }
+            'input':
+                {'nodata_left': -9999,
+                 'nodata_right': -9999,
+                 'left_mask': None,
+                 'right_mask': None,
+                 'left_classif': None,
+                 'right_classif': None,
+                 'left_segm': None,
+                 'right_segm': None,
+                 'disp_min_right': None,
+                 'disp_max_right': None,
+                 'img_left': 'tests/pandora/left.png',
+                 'img_right': 'tests/pandora/right.png',
+                 'disp_min': -60, 'disp_max': 0
+                 },
+            'pipeline': copy.deepcopy(common.multiscale_pipeline_cfg)
         }
 
         assert cfg_return == cfg_gt
-
 
     def test_check_pipeline_section_with_error(self):
         """
@@ -670,7 +454,7 @@ class TestConfig(unittest.TestCase):
                     'method': 'accurate'
                 },
                 'matching_cost': {
-                    'matching_cost_method': 'zncc',
+                    'matching_cost_method': 'census',
                     'window_size': 5,
                     'subpix': 2
                 },
@@ -686,6 +470,7 @@ class TestConfig(unittest.TestCase):
                 }
             }
         }
+
 
         pandora_machine = PandoraMachine()
 
