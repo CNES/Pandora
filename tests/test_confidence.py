@@ -120,6 +120,7 @@ class TestConfidence(unittest.TestCase):
                           'valid_pixels': 0,  # arbitrary default value
                           'no_data_mask': 1}  # arbitrary default value
         user_cfg = {
+            'input': {'disp_min': -1, 'disp_max': 1},
             'pipeline':
                 {
                     'matching_cost': {
@@ -146,7 +147,7 @@ class TestConfidence(unittest.TestCase):
         pandora_machine = PandoraMachine()
 
         # Update the user configuration with default values
-        cfg = pandora.json_checker.update_conf(pandora.json_checker.default_short_configuration, user_cfg)
+        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
         left, _ = pandora.run(pandora_machine, left_im, right_im, -1, 1, cfg['pipeline'])
