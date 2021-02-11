@@ -69,7 +69,7 @@ class TestConfidence(unittest.TestCase):
         ambiguity_.confidence_prediction(None, None, None, cv_)
 
         # Ambiguity integral not normalized
-        amb_int = np.array([[4., 4., 3.],
+        amb_int = np.array([[4., 4., 3.], # pylint: disable=unused-variable
                             [6., 6., 6.]])
         # Normalized ambiguity
         amb_int = np.array([[(4. - 3.) / (6. - 3.), (4. - 3.) / (6. - 3.), 0],
@@ -248,6 +248,44 @@ class TestConfidence(unittest.TestCase):
         # Check if the calculated confidence_measure is equal to the ground truth (same shape and all elements equals)
         assert np.sum(cv_with_intensity.coords['indicator'].data != ['stereo_pandora_intensityStd']) == 0
         np.testing.assert_array_equal(cv_with_intensity['confidence_measure'].data, std_bright_ground_truth)
+
+    @staticmethod
+    def test_compute_ambiguity_and_sampled_ambiguity():
+        """
+        Test ambiguity and sampled ambiguity
+
+        """
+        cv_ = np.array([[[np.nan, 1, 3],
+                         [4, 1, 1],
+                         [1.2, 1, 2]],
+
+                        [[5, np.nan, np.nan],
+                         [6.2, np.nan, np.nan],
+                         [0, np.nan, 0]]], dtype=np.float32)
+
+        ambiguity_ = confidence.AbstractCostVolumeConfidence(**{'confidence_method': 'ambiguity', 'eta_max': 0.2,
+                                                                'eta_step': 0.1})
+
+        amb, sampled_amb = ambiguity_.compute_ambiguity_and_sampled_ambiguity(cv_, 0., 0.2, 0.1)
+
+        # Ambiguity integral not normalized
+        amb_int = np.array([[4., 4., 3.], # pylint: disable=unused-variable
+                            [6., 6., 6.]])
+        # Normalized ambiguity
+        gt_amb_int = np.array([[(4. - 3.) / (6. - 3.), (4. - 3.) / (6. - 3.), 0],
+                               [1., 1., 1.]])
+
+        # Sampled ambiguity
+        gt_sam_amb = np.array([[[2, 2],
+                                [2, 2],
+                                [1, 2]],
+                               [[3, 3],
+                                [3, 3],
+                                [3, 3]]], dtype=np.float32)
+
+        # Check if the calculated ambiguity is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_allclose(amb, gt_amb_int, rtol=1e-06)
+        np.testing.assert_allclose(sampled_amb, gt_sam_amb, rtol=1e-06)
 
 
 if __name__ == '__main__':

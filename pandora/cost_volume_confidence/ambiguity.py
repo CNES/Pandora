@@ -27,8 +27,9 @@ from typing import Dict, Tuple
 
 import numpy as np
 from json_checker import Checker, And
-from numba import njit, prange, float32
+from numba import njit, prange
 import xarray as xr
+
 
 from . import cost_volume_confidence
 
@@ -116,7 +117,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         return disp, cv
 
     @staticmethod
-    @njit(float32[:, :](float32[:, :, :], float32, float32, float32), parallel=True, cache=True)
+    @njit('f4[:, :](f4[:, :, :], f4, f4, f4)', parallel=True, cache=True)
     def compute_ambiguity(cv: np.ndarray, _eta_min: float, _eta_max: float, _eta_step: float) -> np.ndarray:
         """
         Computes the normalized ambiguity.
@@ -168,3 +169,65 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         # Ambiguity normalization
         ambiguity = (ambiguity - np.min(ambiguity)) / (np.max(ambiguity) - np.min(ambiguity))
         return ambiguity
+
+    @staticmethod
+    @njit('Tuple((f4[:, :],f4[:, :, :]))(f4[:, :, :], f4, f4, f4)', parallel=True, cache=True)
+    def compute_ambiguity_and_sampled_ambiguity(cv: np.ndarray, _eta_min: float, _eta_max: float, _eta_step: float):
+        """
+        Return the normalized ambiguity and sampled ambiguity, useful for evaluating ambiguity in notebooks
+
+        :param cv: cost volume
+        :type cv: 3D np.array (row, col, disp)
+        :param _eta_min: minimal eta
+        :type _eta_min: float
+        :param _eta_max: maximal eta
+        :type _eta_max: float
+        :param _eta_step: eta step
+        :type _eta_step: float
+        :return: the normalized ambiguity and sampled ambiguity
+        :rtype: Tuple(2D np.array (row, col) dtype = float32, 3D np.array (row, col) dtype = float32)
+        """
+        #  Miniumum and maximum of all costs, useful to normalize the cost volume
+        min_cost = np.nanmin(cv)
+        max_cost = np.nanmax(cv)
+
+        n_row, n_col, nb_disps = cv.shape
+
+        etas = np.arange(_eta_min, _eta_max, _eta_step)
+
+        # Numba does not support the np.tile operation
+        two_dim_etas = np.repeat(etas, nb_disps).reshape((-1, nb_disps)).T.flatten()
+
+        # integral of ambiguity
+        ambiguity = np.zeros((n_row, n_col), dtype=np.float32)
+        sampled_ambiguity = np.zeros((n_row, n_col, etas.shape[0]), dtype=np.float32)
+
+        for row in prange(n_row):  # pylint: disable=not-an-iterable
+            for col in prange(n_col):  # pylint: disable=not-an-iterable
+                # Normalized minimum cost for one point
+                normalized_min_cost = ((np.nanmin(cv[row, col, :]) - min_cost) / (max_cost - min_cost))
+
+                # If all costs are at nan, set the maximum value of the ambiguity for this point
+                if np.isnan(normalized_min_cost):
+                    ambiguity[row, col] = (etas.shape[0] * nb_disps)
+                else:
+                    normalized_min_cost = np.repeat(normalized_min_cost, nb_disps * etas.shape[0])
+
+                    # Normalized cost volume for one point
+                    normalized_cv = ((cv[row, col, :] - min_cost) / (max_cost - min_cost))
+
+                    # Mask nan to -inf to increase the value of the ambiguity if a point contains nan costs
+                    normalized_cv[np.isnan(normalized_cv)] = -np.inf
+                    normalized_cv = np.repeat(normalized_cv, etas.shape[0])
+
+                    # fill integral ambiguity
+                    ambiguity[row, col] += np.sum(normalized_cv <= (normalized_min_cost + two_dim_etas))
+
+                    # fill sampled ambiguity
+                    costs_comparison = (normalized_cv <= (normalized_min_cost + two_dim_etas))
+                    costs_comparison = costs_comparison.reshape((nb_disps, etas.shape[0]))
+                    sampled_ambiguity[row, col, :] += np.sum(costs_comparison, axis=0)
+
+        # Ambiguity normalization
+        ambiguity = (ambiguity - np.min(ambiguity)) / (np.max(ambiguity) - np.min(ambiguity))
+        return ambiguity, sampled_ambiguity
