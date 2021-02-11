@@ -72,7 +72,7 @@ class TestConfidence(unittest.TestCase):
         amb_int = np.array([[4., 4., 3.], # pylint: disable=unused-variable
                             [6., 6., 6.]])
         # Normalized ambiguity
-        amb_int = np.array([[(4. - 3.) / (6. - 3.), (4. - 3.) / (6. - 3.), 0],
+        amb_int = np.array([[(4. - 3.05) / (6. - 3.05), (4. - 3.05) / (6. - 3.05), 0],
                             [1., 1., 1.]])
         # Ambiguity to confidence measure
         ambiguity_ground_truth = (1 - amb_int)
@@ -268,12 +268,9 @@ class TestConfidence(unittest.TestCase):
 
         amb, sampled_amb = ambiguity_.compute_ambiguity_and_sampled_ambiguity(cv_, 0., 0.2, 0.1)
 
-        # Ambiguity integral not normalized
-        amb_int = np.array([[4., 4., 3.], # pylint: disable=unused-variable
-                            [6., 6., 6.]])
-        # Normalized ambiguity
-        gt_amb_int = np.array([[(4. - 3.) / (6. - 3.), (4. - 3.) / (6. - 3.), 0],
-                               [1., 1., 1.]])
+        # Ambiguity integral
+        gt_amb_int = np.array([[4., 4., 3.],
+                               [6., 6., 6.]])
 
         # Sampled ambiguity
         gt_sam_amb = np.array([[[2, 2],

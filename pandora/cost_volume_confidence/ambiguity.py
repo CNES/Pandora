@@ -43,6 +43,8 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
     _ETA_MIN = 0.
     _ETA_MAX = 0.7
     _ETA_STEP = 0.01
+    # Percentile value to nozmalize ambiguity
+    _PERCENTILE = 1.
 
     def __init__(self, **cfg: str) -> None:
         """
@@ -53,6 +55,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         """
         self.cfg = self.check_conf(**cfg)
         self._eta_min = self._ETA_MIN
+        self._percentile = self._PERCENTILE
         self._eta_max = float(self.cfg['eta_max'])
         self._eta_step = float(self.cfg['eta_step'])
 
@@ -106,8 +109,10 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
             Tuple(xarray.Dataset, xarray.Dataset) with the data variables:
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
-        # Computes the normalized ambiguity using numba in parallel for memory and computation time optimization
+        # Computes ambiguity using numba in parallel for memory and computation time optimization
         ambiguity = self.compute_ambiguity(cv['cost_volume'].data, self._eta_min, self._eta_max, self._eta_step)
+        # Ambiguity normalization with percentile
+        ambiguity = self.normalize_with_percentile(ambiguity)
 
         # Conversion of ambiguity into a confidence measure
         ambiguity = (1 - ambiguity)
@@ -116,11 +121,27 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
 
         return disp, cv
 
+    def normalize_with_percentile(self, ambiguity):
+        """
+        Normalize ambiguity with percentile
+
+        :param ambiguity: ambiguity
+        :type ambiguity: 2D np.array (row, col) dtype = float32
+        :return: the normalized ambiguity
+        :rtype: 2D np.array (row, col) dtype = float32
+        """
+        norm_amb = np.copy(ambiguity)
+        perc_min = np.percentile(norm_amb, self._percentile)
+        perc_max = np.percentile(norm_amb, 100 - self._percentile)
+        np.clip(norm_amb, perc_min, perc_max, out=norm_amb)
+
+        return (norm_amb - np.min(norm_amb)) / (np.max(norm_amb) - np.min(norm_amb))
+
     @staticmethod
     @njit('f4[:, :](f4[:, :, :], f4, f4, f4)', parallel=True, cache=True)
     def compute_ambiguity(cv: np.ndarray, _eta_min: float, _eta_max: float, _eta_step: float) -> np.ndarray:
         """
-        Computes the normalized ambiguity.
+        Computes ambiguity.
 
         :param cv: cost volume
         :type cv: 3D np.array (row, col, disp)
@@ -166,15 +187,13 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
 
                     ambiguity[row, col] += np.sum(normalized_cv <= (normalized_min_cost + two_dim_etas))
 
-        # Ambiguity normalization
-        ambiguity = (ambiguity - np.min(ambiguity)) / (np.max(ambiguity) - np.min(ambiguity))
         return ambiguity
 
     @staticmethod
     @njit('Tuple((f4[:, :],f4[:, :, :]))(f4[:, :, :], f4, f4, f4)', parallel=True, cache=True)
     def compute_ambiguity_and_sampled_ambiguity(cv: np.ndarray, _eta_min: float, _eta_max: float, _eta_step: float):
         """
-        Return the normalized ambiguity and sampled ambiguity, useful for evaluating ambiguity in notebooks
+        Return the ambiguity and sampled ambiguity, useful for evaluating ambiguity in notebooks
 
         :param cv: cost volume
         :type cv: 3D np.array (row, col, disp)
@@ -228,6 +247,4 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
                     costs_comparison = costs_comparison.reshape((nb_disps, etas.shape[0]))
                     sampled_ambiguity[row, col, :] += np.sum(costs_comparison, axis=0)
 
-        # Ambiguity normalization
-        ambiguity = (ambiguity - np.min(ambiguity)) / (np.max(ambiguity) - np.min(ambiguity))
         return ambiguity, sampled_ambiguity
