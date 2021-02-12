@@ -44,9 +44,6 @@
 
 - Confidence measure that computes the distance LR / RL in cross checking method. [#155]
 
-### Added
-
-- Implementation of the ambiguity confidence measure. [#162] 
 
 ## 0.4.0 (November 2020)
 
