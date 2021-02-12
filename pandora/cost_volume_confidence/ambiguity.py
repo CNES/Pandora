@@ -104,9 +104,9 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         :param cv: cost volume dataset
         :type cv: xarray.Dataset
         :return: the disparity map and the cost volume with a new indicator 'ambiguity_confidence' in the DataArray
-        confidence_measure
-        :rtype:
-            Tuple(xarray.Dataset, xarray.Dataset) with the data variables:
+                 confidence_measure
+        :rtype: Tuple(xarray.Dataset, xarray.Dataset) with the data variables:
+
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
         # Computes ambiguity using numba in parallel for memory and computation time optimization

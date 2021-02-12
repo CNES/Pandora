@@ -86,10 +86,10 @@ class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
         :type img_right: xarray.Dataset
         :param cv: cost volume dataset
         :type cv: xarray.Dataset
-        :return: the disparity map and the cost volume with a new indicator 'stereo_pandora_intensityStd' in the
-        DataArray confidence_measure
-        :rtype:
-            Tuple(xarray.Dataset, xarray.Dataset) with the data variables:
+        :return: the disparity map and the cost volume with a new indicator 'ambiguity_confidence' in the DataArray
+                 confidence_measure
+        :rtype: Tuple(xarray.Dataset, xarray.Dataset) with the data variables:
+
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
         nb_row, nb_col = img_left['im'].shape
