@@ -35,7 +35,7 @@ By providing a modular pipeline inspired from the (Scharstein et al., 2002) taxo
 We (CNES) have actually been using Pandora to create the stereo matching pipeline for the CNES & Airbus <a href="https://co3d.cnes.fr/en/co3d-0"><img src="https://raw.githubusercontent.com/CNES/Pandora/master/doc/sources/Images/logo_co3D_cnes.jpg" width="32" height="32"/></a> off board processing chain.  
 Leaning on Pandora's versatility and a fast-paced constantly evolving field we are still calling this framework a work in progress !
 
-<img src="https://raw.githubusercontent.com/CNES/Pandora/master/doc/sources/Images/pandora_first_step_long_terminal.webm" width="500"/>
+<img src="https://raw.githubusercontent.com/CNES/Pandora/master/doc/sources/Images/pandora_first_step_terminal.gif" width="500"/>
 
 ## Install
 
