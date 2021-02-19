@@ -26,6 +26,7 @@ This module contains functions to test the confidence module.
 import unittest
 
 import numpy as np
+from rasterio import Affine
 import xarray as xr
 
 import pandora
@@ -100,9 +101,10 @@ class TestConfidence(unittest.TestCase):
         left_im = xr.Dataset({'im': (['row', 'col'], left_im), 'msk': (['row', 'col'], mask_)},
                              coords={'row': np.arange(left_im.shape[0]), 'col': np.arange(left_im.shape[1])})
         # Add image conf to the image dataset
-        left_im.attrs = {'no_data_img': 0,
-                         'valid_pixels': 0,  # arbitrary default value
-                         'no_data_mask': 1}  # arbitrary default value
+
+        left_im.attrs = {'no_data_img': 0,'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
+
         right_im = np.array([[1, 2, 1, 2],
                              [2, 3, 5, 3],
                              [0, 2, 4, 2],
@@ -116,9 +118,9 @@ class TestConfidence(unittest.TestCase):
         right_im = xr.Dataset({'im': (['row', 'col'], right_im), 'msk': (['row', 'col'], mask_)},
                               coords={'row': np.arange(right_im.shape[0]), 'col': np.arange(right_im.shape[1])})
         # Add image conf to the image dataset
-        right_im.attrs = {'no_data_img': 0,
-                          'valid_pixels': 0,  # arbitrary default value
-                          'no_data_mask': 1}  # arbitrary default value
+        right_im.attrs = {'no_data_img': 0,'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
+
         user_cfg = {
             'input': {'disp_min': -1, 'disp_max': 1},
             'pipeline':
@@ -211,7 +213,9 @@ class TestConfidence(unittest.TestCase):
                               [1, 1, 1, 1, 1, 1]), dtype=np.float64)
         left = xr.Dataset({'im': (['row', 'col'], left_data)},
                           coords={'row': np.arange(left_data.shape[0]), 'col': np.arange(left_data.shape[1])})
-        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+
+        left.attrs = {'no_data_img': 0, 'valid_pixels': 0, 'no_data_mask': 1,
+                         'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         right_data = np.array(([1, 1, 1, 2, 2, 2],
                                [1, 1, 1, 4, 2, 4],
@@ -220,7 +224,9 @@ class TestConfidence(unittest.TestCase):
                                [1, 1, 1, 1, 1, 1]), dtype=np.float64)
         right = xr.Dataset({'im': (['row', 'col'], right_data)},
                            coords={'row': np.arange(right_data.shape[0]), 'col': np.arange(right_data.shape[1])})
-        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+
+        right.attrs = {'no_data_img': 0, 'valid_pixels': 0, 'no_data_mask': 1,
+                         'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         # load plugins
         stereo_matcher = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
