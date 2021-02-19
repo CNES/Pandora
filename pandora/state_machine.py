@@ -360,9 +360,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         self.current_scale = self.current_scale - 1
 
     def run_prepare(self, cfg: Dict[str, dict], left_img: xr.Dataset, right_img: xr.Dataset,
-                    disp_min: Union[np.array, int], disp_max: Union[np.array, int], scale_factor: int,
-                    num_scales: int, right_disp_min: Union[None, np.array] = None,
-                    right_disp_max: Union[None, np.array] = None) -> None:
+                    disp_min: Union[np.array, int], disp_max: Union[np.array, int],
+                    scale_factor: Union[None, int] = None, num_scales: Union[None, int] = None,
+                    right_disp_min: Union[None, np.array] = None, right_disp_max: Union[None, np.array] = None) -> None:
         """
         Prepare the machine before running
 
@@ -383,20 +383,22 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :param disp_max: maximal disparity
         :type disp_max: int or np.array
         :param scale_factor: scale factor for multiscale
-        :type scale_factor: int
+        :type scale_factor: int or None
         :param num_scales: scales number for multiscale
-        :type num_scales: int
+        :type num_scales: int or None
         :param disp_min_right: minimal disparity of the right image
         :type disp_min_right: np.array or None
         :param disp_max_right: maximal disparity of the right image
         :type disp_max_right: np.array or None
         :return: None
         """
-        # Total number of scales
-        self.num_scales = num_scales
-        # Scale factor
-        self.scale_factor = scale_factor
-
+        # Mono-resolution processing by default if num_scales or scale_factor are not specified
+        if num_scales is None or scale_factor is None:
+            self.num_scales = 1
+            self.scale_factor = 1
+        else:
+            self.num_scales = num_scales
+            self.scale_factor = scale_factor
 
         if self.num_scales > 1:
             # If multiscale processing, create pyramid and select first scale's images
