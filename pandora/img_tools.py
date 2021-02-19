@@ -172,22 +172,6 @@ def check_dataset(dataset: xr.Dataset) -> xr.Dataset:
             logging.error('image and mask must have the same shape')
             sys.exit(1)
 
-    # Check segmentation
-    if 'segm' not in dataset:
-        logging.warning('No segmentation map provided')
-    else:
-        if dataset['im'].data.shape != dataset['segm'].data.shape:
-            logging.error('image and segmentation must have the same shape')
-            sys.exit(1)
-
-    # Check classification
-    if 'classif' not in dataset:
-        logging.warning('Np classification map provided')
-    else:
-        if dataset['im'].data.shape != dataset['classif'].data.shape:
-            logging.error('image and classification must have the same shape')
-            sys.exit(1)
-
     # Check no_data_img
     if 'no_data_img' not in dataset.attrs:
         logging.error('User must provide the image nodata value ')
