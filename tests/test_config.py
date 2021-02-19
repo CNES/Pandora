@@ -471,7 +471,6 @@ class TestConfig(unittest.TestCase):
             }
         }
 
-
         pandora_machine = PandoraMachine()
 
         self.assertRaises(MachineError, JSON_checker.check_pipeline_section, cfg_pipeline, pandora_machine)

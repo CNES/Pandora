@@ -179,13 +179,10 @@ class CrossChecking(AbstractValidation):
         # Give the default value if the required element is not in the configuration
         if 'cross_checking_threshold' not in cfg:
             cfg['cross_checking_threshold'] = self._THRESHOLD
-        if 'right_left_mode' not in cfg:
-            cfg['right_left_mode'] = 'accurate'
 
         schema = {
             'validation_method': And(str, lambda input: 'cross_checking'),
             'cross_checking_threshold': Or(int, float),
-            'right_left_mode': And(str, lambda input: common.is_method(input, ['accurate', 'approximate'])),
             OptionalKey('interpolated_disparity'): And(str, lambda input: common.is_method(input, ['mc-cnn', 'sgm']))
         }
 

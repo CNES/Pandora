@@ -28,8 +28,7 @@
       "filter_method": "median"
     },
     "validation": {
-      "validation_method": "cross_checking",
-      "right_left_mode": "accurate"
+      "validation_method": "cross_checking"
     }
   }
 }

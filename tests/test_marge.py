@@ -52,8 +52,7 @@ class TestMargins(unittest.TestCase):
                    'optimization': {'optimization_method': 'sgm'},
                    'refinement': {'refinement_method': 'vfit'},
                    'filter': {'filter_method': 'median', 'filter_size': 3},
-                   'validation': {'validation_method': 'cross_checking', 'cross_checking_threshold': 1,
-                                  'right_left_mode': 'accurate'}}
+                   'validation': {'validation_method': 'cross_checking', 'cross_checking_threshold': 1}}
 
         res = pandora.marge.get_margins(-13, 14, cfg_sgm)
         np.testing.assert_array_equal(res.loc[dict(image='left_margin')].values, np.array([54, 40, 54, 40]))
@@ -79,8 +78,7 @@ class TestMargins(unittest.TestCase):
         cfg = {'matching_cost': {'matching_cost_method': 'census', 'window_size': 3},
                'optimization': {'optimization_method': 'none'},
                'refinement': {'refinement_method': 'vfit'}, 'filter': {'filter_method': 'median', 'filter_size': 3},
-               'validation': {'validation_method': 'cross_checking', 'cross_checking_threshold': 1,
-                              'right_left_mode': 'accurate'}}
+               'validation': {'validation_method': 'cross_checking', 'cross_checking_threshold': 1}}
 
         res = pandora.marge.get_margins(-13, 14, cfg)
         np.testing.assert_array_equal(res.loc[dict(image='left_margin')].values, np.array([17, 2, 17, 2]))
@@ -91,8 +89,7 @@ class TestMargins(unittest.TestCase):
         cfg = {'matching_cost': {'matching_cost_method': 'sad', 'window_size': 9},
                'optimization': {'optimization_method': 'none'},
                'refinement': {'refinement_method': 'vfit'}, 'filter': {'filter_method': 'median', 'filter_size': 3},
-               'validation': {'validation_method': 'cross_checking', 'cross_checking_threshold': 1,
-                              'right_left_mode': 'accurate'}}
+               'validation': {'validation_method': 'cross_checking', 'cross_checking_threshold': 1}}
 
         res = pandora.marge.get_margins(3, 14, cfg)
         np.testing.assert_array_equal(res.loc[dict(image='left_margin')].values, np.array([20, 5, 20, 5]))
@@ -103,8 +100,7 @@ class TestMargins(unittest.TestCase):
         cfg = {'matching_cost': {'matching_cost_method': 'sad', 'window_size': 1},
                'optimization': {'optimization_method': 'none'},
                'refinement': {'refinement_method': 'vfit'}, 'filter': {'filter_method': 'median', 'filter_size': 5},
-               'validation': {'validation_method': 'cross_checking', 'cross_checking_threshold': 1,
-                              'right_left_mode': 'accurate'}}
+               'validation': {'validation_method': 'cross_checking', 'cross_checking_threshold': 1}}
 
         res = pandora.marge.get_margins(-13, -2, cfg)
         np.testing.assert_array_equal(res.loc[dict(image='left_margin')].values, np.array([16, 2, 16, 2]))
