@@ -132,7 +132,8 @@ class AbstractMatchingCost():
         """
 
     @staticmethod
-    def allocate_costvolume(img_left: xr.Dataset, subpix: int, disp_min: int, disp_max: int, window_size: int,
+    def allocate_costvolume(img_left: xr.Dataset, subpix: int,
+                            disp_min: int, disp_max: int, window_size: int,
                             metadata: dict, np_data: np.ndarray = None) -> xr.Dataset:
         """
         Allocate the cost volume
@@ -184,6 +185,8 @@ class AbstractMatchingCost():
         cost_volume = xr.Dataset({'cost_volume': (['row', 'col', 'disp'], np_data)},
                                  coords={'row': row, 'col': col, 'disp': disparity_range})
         cost_volume.attrs = metadata
+        cost_volume.attrs['crs'] = img_left.attrs['crs']
+        cost_volume.attrs['transform'] = img_left.attrs['transform']
 
         # Allocate the confidence measure in the cost volume Dataset
         confidence_measure = compute_std_raster(img_left, window_size).reshape((len(row_off), len(col_off), 1))

@@ -26,7 +26,7 @@ This module contains functions allowing to save the results and the configuratio
 import errno
 import json
 import os
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Union
 import logging
 
 import numpy as np
@@ -37,7 +37,9 @@ from pandora.output_tree_design import get_out_dir, get_out_file_path
 from pandora.img_tools import rasterio_open
 
 def write_data_array(data_array: xr.DataArray, filename: str,
-                     dtype: rasterio.dtypes = rasterio.dtypes.float32) -> None:
+                     dtype: rasterio.dtypes = rasterio.dtypes.float32,
+                     crs: Union[rasterio.crs.CRS, None] = None,
+                     transform: rasterio.Affine = rasterio.Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)) -> None:
     """
     Write a xarray.DataArray in a tiff file
 
@@ -46,19 +48,22 @@ def write_data_array(data_array: xr.DataArray, filename: str,
     :param filename:  output filename
     :type filename: string
     :param dtype: band types
-    :type dtype: GDALDataType
+    :type dtype: rasterio.dtypes
+    :param crs: coordinate reference support
+    :type dtype: rasterio.crs.CRS
+    :param transform: geospatial transform matrix
+    :type dtype: rasterio.Affine
     :return: None
     """
     if len(data_array.shape) == 2:
         row, col = data_array.shape
         with rasterio_open(filename, mode='w+', driver='GTiff', width=col, height=row, count=1,
-                           dtype=dtype) as source_ds:
+                           dtype=dtype, crs=crs, transform=transform) as source_ds:
             source_ds.write(data_array.data, 1)
-
     else:
         row, col, depth = data_array.shape
         with rasterio_open(filename, mode='w+', driver='GTiff', width=col, height=row, count=depth,
-                           dtype=dtype) as source_ds:
+                           dtype=dtype, crs=crs, transform=transform) as source_ds:
             for dsp in range(1, depth + 1):
                 source_ds.write(data_array.data[:, :, dsp - 1], dsp)
 
@@ -102,18 +107,35 @@ def save_results(left: xr.Dataset, right: xr.Dataset, output: str) -> None:
     mkdir_p(output)
 
     # Save the left results
-    write_data_array(left['disparity_map'], os.path.join(output, get_out_file_path('left_disparity.tif')))
-    write_data_array(left['confidence_measure'], os.path.join(output, get_out_file_path('left_confidence_measure.tif')))
-    write_data_array(left['validity_mask'], os.path.join(output, get_out_file_path('left_validity_mask.tif')),
-                     dtype=rasterio.dtypes.uint16)
+    write_data_array(left['disparity_map'],
+                     os.path.join(output, get_out_file_path('left_disparity.tif')),
+                     crs=left.attrs['crs'],
+                     transform=left.attrs['transform'])
+    write_data_array(left['confidence_measure'],
+                     os.path.join(output, get_out_file_path('left_confidence_measure.tif')),
+                     crs=left.attrs['crs'],
+                     transform=left.attrs['transform'])
+    write_data_array(left['validity_mask'],
+                     os.path.join(output, get_out_file_path('left_validity_mask.tif')),
+                     dtype=rasterio.dtypes.uint16,
+                     crs=left.attrs['crs'],
+                     transform=left.attrs['transform'])
 
     # If a validation step is configured, save the right results
     if len(right.sizes) != 0:
-        write_data_array(right['disparity_map'], os.path.join(output, get_out_file_path('right_disparity.tif')))
+        write_data_array(right['disparity_map'],
+                         os.path.join(output, get_out_file_path('right_disparity.tif')),
+                         crs=right.attrs['crs'],
+                         transform=right.attrs['transform'])
         write_data_array(right['confidence_measure'],
-                         os.path.join(output, get_out_file_path('right_confidence_measure.tif')))
-        write_data_array(right['validity_mask'], os.path.join(output, get_out_file_path('right_validity_mask.tif')),
-                         dtype=rasterio.dtypes.uint16)
+                         os.path.join(output, get_out_file_path('right_confidence_measure.tif')),
+                         crs=right.attrs['crs'],
+                         transform=right.attrs['transform'])
+        write_data_array(right['validity_mask'],
+                         os.path.join(output, get_out_file_path('right_validity_mask.tif')),
+                         dtype=rasterio.dtypes.uint16,
+                         crs=right.attrs['crs'],
+                         transform=right.attrs['transform'])
 
 
 def sliding_window(base_array: np.array, shape: Tuple[int, int]) -> np.array:

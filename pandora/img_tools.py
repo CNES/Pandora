@@ -96,6 +96,8 @@ def read_img(img: str, no_data: float, mask: str = None, classif: str = None, se
                                  'col': np.arange(data.shape[1])})
     # Add image conf to the image dataset
     dataset.attrs = {'no_data_img': no_data,
+                     'crs': img_ds.profile['crs'],
+                     'transform': img_ds.profile['transform'],
                      'valid_pixels': 0, # arbitrary default value
                      'no_data_mask': 1} # arbitrary default value
 
@@ -309,9 +311,8 @@ def convert_pyramid_to_dataset(img_orig: xr.Dataset, images: List[np.ndarray], m
                                       dims=['row', 'col'])
 
         # Add image conf to the image dataset
-        dataset.attrs = {'no_data_img': img_orig.attrs['no_data_img'],
-                         'valid_pixels': img_orig.attrs['valid_pixels'],
-                         'no_data_mask': img_orig.attrs['no_data_mask']}
+        # - attributes are linked to each others
+        dataset.attrs = img_orig.attrs
         pyramid.append(dataset)
 
     return pyramid

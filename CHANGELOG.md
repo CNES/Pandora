@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### BREAKING CHANGE
+
+- GeoRef is now supported and both `crs` & `transform` ought to be set as attributes of images dataset provided to Pandora [#158
+
 ## 0.5.1 (January 2021)
 
 ### Fixed
@@ -9,6 +13,12 @@
 - Call to interpolation functions. [#175]
 - Check right disparities. [#177]
 - Disparity refinement after disparity map filtering step. [#154]
+
+## 0.5.1 (January 2021)
+
+### Fixed
+
+- Call to interpolation functions. [#175]
 
 ## 0.5.0 (January 2021)
 

@@ -28,6 +28,7 @@ import unittest
 
 import numpy as np
 import xarray as xr
+from rasterio import Affine
 
 import common
 import pandora.matching_cost as matching_cost
@@ -52,7 +53,8 @@ class TestMatchingCost(unittest.TestCase):
                          [1, 1, 1, 1, 1, 1]), dtype=np.float64)
         self.left = xr.Dataset({'im': (['row', 'col'], data)},
                                coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        self.left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        self.left.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         data = np.array(([1, 1, 1, 2, 2, 2],
                          [1, 1, 1, 4, 2, 4],
@@ -61,7 +63,8 @@ class TestMatchingCost(unittest.TestCase):
                          [1, 1, 1, 1, 1, 1]), dtype=np.float64)
         self.right = xr.Dataset({'im': (['row', 'col'], data)},
                                 coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        self.right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        self.right.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
     def test_ssd_cost(self):
         """
@@ -151,14 +154,16 @@ class TestMatchingCost(unittest.TestCase):
                          [1, 1, 1, 1]), dtype=np.float64)
         left = xr.Dataset({'im': (['row', 'col'], data)},
                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-
+        left.attrs['crs'] = None
+        left.attrs['transform'] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
         data = np.array(([5, 1, 2, 3],
                          [1, 2, 1, 0],
                          [2, 2, 0, 1],
                          [1, 1, 1, 1]), dtype=np.float64)
         right = xr.Dataset({'im': (['row', 'col'], data)},
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-
+        right.attrs['crs'] = None
+        right.attrs['transform'] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
         # census ground truth for the images left, right, window size = 3 and disp = -1
         census_ground_truth_d1 = np.array(([np.nan, np.nan, np.nan, np.nan],
                                            [np.nan, np.nan, 3, np.nan],
@@ -232,13 +237,15 @@ class TestMatchingCost(unittest.TestCase):
                          [1, 1, 3, 6]), dtype=np.float64)
         left = xr.Dataset({'im': (['row', 'col'], data)},
                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-
+        left.attrs['crs'] = None
+        left.attrs['transform'] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
         data = np.array(([6, 7, 8, 10],
                          [2, 4, 1, 6],
                          [9, 10, 1, 2]), dtype=np.float64)
         right = xr.Dataset({'im': (['row', 'col'], data)},
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-
+        right.attrs['crs'] = None
+        right.attrs['transform'] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
         # Cost Volume ground truth for the stereo image simple_stereo_imgs,
         # with disp_min = -2, disp_max = 1, sad measure and subpixel_offset = 0
         ground_truth = np.array([[[np.nan, np.nan, np.nan, np.nan],
@@ -352,13 +359,15 @@ class TestMatchingCost(unittest.TestCase):
                          [8, 9, 10, 0, 0]), dtype=np.float64)
         left = xr.Dataset({'im': (['row', 'col'], data)},
                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-
+        left.attrs['crs'] = None
+        left.attrs['transform'] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
         data = np.array(([1, 5, 6, 3, 4],
                          [2, 5, 10, 6, 9],
                          [0, 7, 5, 3, 1]), dtype=np.float64)
         right = xr.Dataset({'im': (['row', 'col'], data)},
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-
+        right.attrs['crs'] = None
+        right.attrs['transform'] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
         # Computes the cost volume for disp min -2 disp max 2 and subpix = 2
         matching_cost_matcher = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
                                                                       'subpix': 2})
@@ -416,7 +425,8 @@ class TestMatchingCost(unittest.TestCase):
                            'msk': (['row', 'col'], mask)},
                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         data = np.array(([5, 1, 2, 3, 4],
                          [1, 2, 1, 0, 2],
@@ -428,7 +438,8 @@ class TestMatchingCost(unittest.TestCase):
                             'msk': (['row', 'col'], mask)},
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         dmin = -1
         dmax = 1
@@ -496,7 +507,8 @@ class TestMatchingCost(unittest.TestCase):
                            'msk': (['row', 'col'], mask)},
                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         data = np.array(([5, 1, 2, 3, 4],
                          [1, 2, 1, 0, 2],
@@ -510,7 +522,8 @@ class TestMatchingCost(unittest.TestCase):
                             'msk': (['row', 'col'], mask)},
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         dmin = -1
         dmax = 1
@@ -577,7 +590,8 @@ class TestMatchingCost(unittest.TestCase):
                            'msk': (['row', 'col'], mask)},
                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         data = np.array(([5, 1, 2, 3, 4],
                          [1, 2, 1, 0, 2],
@@ -591,7 +605,8 @@ class TestMatchingCost(unittest.TestCase):
                             'msk': (['row', 'col'], mask)},
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         dmin = -1
         dmax = 1
@@ -661,7 +676,8 @@ class TestMatchingCost(unittest.TestCase):
         left = xr.Dataset({'im': (['row', 'col'], data),
                            'msk': (['row', 'col'], mask)},
                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
         data = np.array(([0, 0, 0, 0, 0, 0, 0],
                          [0, 5, 1, 2, 3, 4, 0],
                          [0, 1, 2, 1, 0, 2, 0],
@@ -678,7 +694,8 @@ class TestMatchingCost(unittest.TestCase):
         right = xr.Dataset({'im': (['row', 'col'], data),
                             'msk': (['row', 'col'], mask)},
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         dmin = -1
         dmax = 1
@@ -752,7 +769,8 @@ class TestMatchingCost(unittest.TestCase):
         left = xr.Dataset({'im': (['row', 'col'], data),
                            'msk': (['row', 'col'], mask)},
                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         data = np.array(([5, 1, 2, 3, 4],
                          [1, 1, 1, 1, 2]), dtype=np.float64)
@@ -761,7 +779,8 @@ class TestMatchingCost(unittest.TestCase):
         right = xr.Dataset({'im': (['row', 'col'], data),
                             'msk': (['row', 'col'], mask)},
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
-        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         dmin = -1
         dmax = 1
@@ -807,7 +826,8 @@ class TestMatchingCost(unittest.TestCase):
                            'msk': (['row', 'col'], mask)},
                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         data = np.array(([5, 1, 2, 3, 4],
                          [1, 2, 1, 0, 2],
@@ -821,7 +841,8 @@ class TestMatchingCost(unittest.TestCase):
                             'msk': (['row', 'col'], mask)},
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         dmin = -1
         dmax = 1
@@ -879,7 +900,8 @@ class TestMatchingCost(unittest.TestCase):
                            'msk': (['row', 'col'], mask)},
                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         data = np.array(([5, 1, 2, 3, 4],
                          [1, 1, 1, 1, 2]), dtype=np.float64)
@@ -889,7 +911,8 @@ class TestMatchingCost(unittest.TestCase):
                             'msk': (['row', 'col'], mask)},
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         dmin = -1
         dmax = 1
@@ -948,7 +971,8 @@ class TestMatchingCost(unittest.TestCase):
                            'msk': (['row', 'col'], mask)},
                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        left.attrs = {'valid_pixels': 5, 'no_data_mask': 7}
+        left.attrs = {'valid_pixels': 5, 'no_data_mask': 7,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         data = np.array(([5, 1, 2],
                          [1, 1, 1]), dtype=np.float64)
@@ -958,7 +982,8 @@ class TestMatchingCost(unittest.TestCase):
                             'msk': (['row', 'col'], mask)},
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        right.attrs = {'valid_pixels': 5, 'no_data_mask': 7}
+        right.attrs = {'valid_pixels': 5, 'no_data_mask': 7,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         dmin = -1
         dmax = 1
@@ -1013,7 +1038,8 @@ class TestMatchingCost(unittest.TestCase):
                            'msk': (['row', 'col'], mask)},
                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        left.attrs = {'valid_pixels': 5, 'no_data_mask': 7}
+        left.attrs = {'valid_pixels': 5, 'no_data_mask': 7,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         data = np.array(([5, 1, 2, 3, 4],
                          [1, 2, 1, 0, 2],
@@ -1027,7 +1053,8 @@ class TestMatchingCost(unittest.TestCase):
                             'msk': (['row', 'col'], mask)},
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        right.attrs = {'valid_pixels': 5, 'no_data_mask': 7}
+        right.attrs = {'valid_pixels': 5, 'no_data_mask': 7,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         dmin = -1
         dmax = 1
@@ -1094,7 +1121,8 @@ class TestMatchingCost(unittest.TestCase):
                            'msk': (['row', 'col'], mask)},
                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        left.attrs = {'valid_pixels': 5, 'no_data_mask': 7}
+        left.attrs = {'valid_pixels': 5, 'no_data_mask': 7,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         data = np.array(([5, 1, 2, 3],
                          [1, 2, 1, 0],
@@ -1108,7 +1136,8 @@ class TestMatchingCost(unittest.TestCase):
                             'msk': (['row', 'col'], mask)},
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        right.attrs = {'valid_pixels': 5, 'no_data_mask': 7}
+        right.attrs = {'valid_pixels': 5, 'no_data_mask': 7,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         dmin = -1
         dmax = 1
@@ -1157,7 +1186,8 @@ class TestMatchingCost(unittest.TestCase):
                            'msk': (['row', 'col'], mask)},
                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         data = np.array(([5, 1, 2, 3, 4],
                          [1, 2, 1, 0, 2],
@@ -1171,7 +1201,8 @@ class TestMatchingCost(unittest.TestCase):
                             'msk': (['row', 'col'], mask)},
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         dmin = -1
         dmax = 1
@@ -1231,7 +1262,8 @@ class TestMatchingCost(unittest.TestCase):
                            'msk': (['row', 'col'], mask)},
                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        left.attrs = {'valid_pixels': 5, 'no_data_mask': 7}
+        left.attrs = {'valid_pixels': 5, 'no_data_mask': 7,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         data = np.array(([5, 1, 2, 3, 4],
                          [1, 2, 1, 0, 2],
@@ -1245,7 +1277,8 @@ class TestMatchingCost(unittest.TestCase):
                             'msk': (['row', 'col'], mask)},
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        right.attrs = {'valid_pixels': 5, 'no_data_mask': 7}
+        right.attrs = {'valid_pixels': 5, 'no_data_mask': 7,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         # masks_dilatation(self, img_left, img_right, offset_row_col, window_size, subp, cfg)
         matching_cost_ = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
@@ -1409,7 +1442,8 @@ class TestMatchingCost(unittest.TestCase):
         left = xr.Dataset({'im': (['row', 'col'], data)},
                           coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        left.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         data = np.array(([5, 1, 2, 3, 4, 7, 9, 6, 5, 2, 7],
                          [1, 3, 0, 2, 5, 3, 7, 8, 7, 6, 5],
@@ -1419,7 +1453,8 @@ class TestMatchingCost(unittest.TestCase):
         right = xr.Dataset({'im': (['row', 'col'], data)},
                            coords={'row': np.arange(data.shape[0]), 'col': np.arange(data.shape[1])})
 
-        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1}
+        right.attrs = {'valid_pixels': 0, 'no_data_mask': 1,
+        'crs': None, 'transform': Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
         dmin_grid = np.array([[-0, -0, -0, -0, -0, -0, -0, -0, -0, -0, -0],
                               [-0, -8, -8, -5, -8, -4, -6, -7, -9, -8, -0],

@@ -31,6 +31,7 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 import xarray as xr
+from rasterio import Affine
 
 import common
 import pandora
@@ -224,7 +225,8 @@ class TestPandora(unittest.TestCase):
 
         img_left = xr.Dataset({'im': (['row', 'col'], data_left)},
                               coords={'row': np.arange(data_left.shape[0]), 'col': np.arange(data_left.shape[1])})
-
+        img_left.attrs['crs'] = None
+        img_left.attrs['transform'] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
         data_right = np.array([[1, 2, 1, 2, 5, 3, 1, 6],
                                [2, 3, 5, 3, 2, 1, 4, 3],
                                [0, 2, 4, 2, 3, 2, 2, 3],
@@ -234,7 +236,8 @@ class TestPandora(unittest.TestCase):
                                [1, 2, 2, 3, 3, 2, 3, 0]], dtype=np.float32)
         img_right = xr.Dataset({'im': (['row', 'col'], data_right)},
                                coords={'row': np.arange(data_right.shape[0]), 'col': np.arange(data_right.shape[1])})
-
+        img_right.attrs['crs'] = None
+        img_right.attrs['transform'] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
         # Load a configuration
         user_cfg = {
             'input': {'disp_min': -2, 'disp_max': 2},
@@ -308,6 +311,17 @@ class TestPandora(unittest.TestCase):
             out_occlusion = rasterio_open(tmp_dir + '/left_validity_mask.tif').read(1)
             occlusion = np.ones((out_occlusion.shape[0], out_occlusion.shape[1]))
             occlusion[out_occlusion >= 512] = 0
+
+            # Check the crs & transform properties
+            left_im_prop = rasterio_open('tests/pandora/left.png').profile
+            left_disp_prop = rasterio_open(os.path.join(tmp_dir, 'left_disparity.tif')).profile
+            right_im_prop = rasterio_open('tests/pandora/right.png').profile
+            right_disp_prop = rasterio_open(os.path.join(tmp_dir, 'right_disparity.tif')).profile
+            assert left_im_prop['crs'] == left_disp_prop['crs']
+            assert left_im_prop['transform'] == left_disp_prop['transform']
+            assert right_im_prop['crs'] == right_disp_prop['crs']
+            assert right_im_prop['transform'] == right_disp_prop['transform']
+            assert left_disp_prop != right_disp_prop
 
     @staticmethod
     def test_dataset_image():

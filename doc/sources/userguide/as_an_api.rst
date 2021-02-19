@@ -93,6 +93,8 @@ Example of an image dataset
         msk      (row, col) int16 0 0 0 0 0 0 0 0 0 0 0 0 ... 0 0 0 0 0 0 0 0 0 0 0
     Attributes:
         no_data_img:   0
+        crs:           None
+        transform:     | 1.00, 0.00, 0.00|\n| 0.00, 1.00, 0.00|\n| 0.00, 0.00, 1.00|
         valid_pixels:  0
         no_data_mask:  1
 
@@ -152,6 +154,8 @@ Example of a cost volume
         type_measure:    min
         cmax:            24
         optimization:    sgm
+        crs:             None
+        transform:       | 1.00, 0.00, 0.00|\n| 0.00, 1.00, 0.00|\n| 0.00, 0.00, 1.00|
 
 The cost volume corresponds to the variable cv ( and cv_right for the right / left cost volume ) in the file pandora/__init__.py :
 
@@ -203,6 +207,8 @@ This Dataset also has a :
         filter:                 median
         validation:             cross_checking
         interpolated_disparity: none
+        crs:                    None
+        transform:              | 1.00, 0.00, 0.00|\n| 0.00, 1.00, 0.00|\n| 0.00, 0.00, 1.00|
 
 
 Validity mask
