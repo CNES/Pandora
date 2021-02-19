@@ -76,9 +76,12 @@ validation_pipeline_cfg = {
                 'window_size': 5,
                 'subpix': 2
             },
+            'cost_volume_confidence': {
+                'confidence_method': 'std_intensity'
+            },
             'disparity': {
                 'disparity_method': 'wta',
-                    'invalid_disparity': -9999
+                'invalid_disparity': -9999
             },
             'refinement': {
                 'refinement_method': 'vfit'

@@ -272,31 +272,6 @@ class TestMatchingCost(unittest.TestCase):
         # Check if the calculated mean is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv['cost_volume'].data, ground_truth)
 
-    def test_confidence_measure(self):
-        """
-        Test the confidence measure at the matching cost computation step
-        """
-        # load plugins
-        matching_cost_matcher = matching_cost.AbstractMatchingCost(**{'matching_cost_method': 'sad', 'window_size': 3,
-                                                                      'subpix': 1})
-
-        # Compute bright standard deviation inside a window of size 3 and create the confidence measure
-        std_bright_ground_truth = np.array([[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                                            [np.nan, 0., np.sqrt(8 / 9), np.sqrt(10 / 9), np.sqrt(10 / 9), np.nan],
-                                            [np.nan, 0., np.sqrt(8 / 9), np.sqrt(10 / 9), np.sqrt(10 / 9), np.nan],
-                                            [np.nan, 0., np.sqrt(8 / 9), np.sqrt(92 / 81), np.sqrt(92 / 81), np.nan],
-                                            [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]],
-                                           dtype=np.float32)
-
-        std_bright_ground_truth = std_bright_ground_truth.reshape((5, 6, 1))
-
-        # compute with compute_cost_volume
-        cv = matching_cost_matcher.compute_cost_volume(self.left, self.right, disp_min=-2, disp_max=1)
-        matching_cost_matcher.cv_masked(self.left, self.right, cv, -2, 1)
-
-        # Check if the calculated confidence_measure is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(cv['confidence_measure'].data, std_bright_ground_truth)
-
     def test_popcount32b(self):
         """
         Test the popcount32b method

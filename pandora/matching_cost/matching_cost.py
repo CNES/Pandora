@@ -32,7 +32,6 @@ import numpy as np
 import xarray as xr
 from scipy.ndimage.morphology import binary_dilation
 
-from pandora.img_tools import compute_std_raster
 from pandora.img_tools import shift_right_img
 
 
@@ -158,18 +157,14 @@ class AbstractMatchingCost():
         :return: the dataset cost volume with the cost_volume and the confidence measure with the data variables:
 
                 - cost_volume 3D xarray.DataArray (row, col, disp)
-                - confidence_measure 3D xarray.DataArray (row, col, indicator)
         :rtype: xarray.Dataset
         """
         c_row = img_left['im'].coords['row']
         c_col = img_left['im'].coords['col']
 
         # First pixel in the image that is fully computable (aggregation windows are complete)
-        offset_row_col = int((window_size - 1) / 2)
         row = np.arange(c_row[0], c_row[-1] + 1)
         col = np.arange(c_col[0], c_col[-1] + 1)
-        row_off = np.arange(c_row[0] + offset_row_col, c_row[-1] - offset_row_col + 1)
-        col_off = np.arange(c_col[0] + offset_row_col, c_col[-1] - offset_row_col + 1)
 
         # Compute the disparity range
         if subpix == 1:
@@ -185,22 +180,11 @@ class AbstractMatchingCost():
         cost_volume = xr.Dataset({'cost_volume': (['row', 'col', 'disp'], np_data)},
                                  coords={'row': row, 'col': col, 'disp': disparity_range})
         cost_volume.attrs = metadata
+
         cost_volume.attrs['crs'] = img_left.attrs['crs']
         cost_volume.attrs['transform'] = img_left.attrs['transform']
 
-        # Allocate the confidence measure in the cost volume Dataset
-        confidence_measure = compute_std_raster(img_left, window_size).reshape((len(row_off), len(col_off), 1))
-        # Create the confidence measure with the original image size and fill it
-        confidence_measure_full = np.full((len(row), len(col), 1), np.nan, dtype=np.float32)
-        if offset_row_col != 0:
-            confidence_measure_full[offset_row_col: - offset_row_col, offset_row_col: - offset_row_col, :] = \
-                confidence_measure
-        else:
-            confidence_measure_full = confidence_measure
-
-        cost_volume = cost_volume.assign_coords(indicator=['stereo_pandora_intensityStd'])
-        cost_volume['confidence_measure'] = xr.DataArray(data=confidence_measure_full.astype(np.float32),
-                                                         dims=['row', 'col', 'indicator'])
+        cost_volume.attrs['window_size'] = window_size
 
         return cost_volume
 
@@ -388,7 +372,6 @@ class AbstractMatchingCost():
         :param cost_volume: the cost_volume DataSet with the data variables:
 
                 - cost_volume 3D xarray.DataArray (row, col, disp)
-                - confidence_measure 3D xarray.DataArray (row, col, indicator)
         :type cost_volume: xarray.Dataset
         :param disp_min: minimum disparity
         :type disp_min: int or np.ndarray

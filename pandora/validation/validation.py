@@ -33,6 +33,7 @@ from json_checker import Checker, And, Or, OptionalKey
 
 import pandora.constants as cst
 from pandora import common
+from pandora.cost_volume_confidence.cost_volume_confidence import AbstractCostVolumeConfidence
 
 
 class AbstractValidation():
@@ -212,13 +213,11 @@ class CrossChecking(AbstractValidation):
         :param dataset_left: left Dataset with the variables :
 
             - disparity_map 2D xarray.DataArray (row, col)
-            - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
         :type dataset_left: xarray.Dataset
         :param dataset_right: right Dataset with the variables :
 
             - disparity_map 2D xarray.DataArray (row, col)
-            - confidence_measure 3D xarray.DataArray (row, col, indicator)
             - validity_mask 2D xarray.DataArray (row, col)
         :type dataset_right: xarray.Dataset
         :param img_left: left Datset image containing :
@@ -246,20 +245,11 @@ class CrossChecking(AbstractValidation):
                 - If out & MSK_PIXEL_MISMATCH  != 0  : Invalid pixel : mismatched pixel
         :rtype: xarray.Dataset
         """
-        nb_row, nb_col, nb_indicator = dataset_left['confidence_measure'].shape
+        nb_row, nb_col = dataset_left['disparity_map'].shape
         disparity_range = np.arange(dataset_left.attrs['disp_min'], dataset_left.attrs['disp_max'] + 1)
 
-        # Add a new indicator to the confidence measure DataArray
-        conf_measure = np.full((nb_row, nb_col, nb_indicator + 1), np.nan, dtype=np.float32)
-        conf_measure[:, :, :-1] = dataset_left['confidence_measure'].data
-
-        indicator = np.copy(dataset_left.coords['indicator'])
-        indicator = np.append(indicator, 'validation_pandora_distanceOfDisp')
-
-        # Remove confidence_measure dataArray from the dataset to update it
-        dataset_left = dataset_left.drop_dims('indicator')
-        dataset_left = dataset_left.assign_coords(indicator=indicator)
-        dataset_left['confidence_measure'] = xr.DataArray(data=conf_measure, dims=['row', 'col', 'indicator'])
+        # Confidence measure which calculates the distance LR / RL
+        conf_measure = np.full((nb_row, nb_col), np.nan, dtype=np.float32)
 
         for row in range(0, nb_row):
             # Exclude invalid pixel :
@@ -287,7 +277,7 @@ class CrossChecking(AbstractValidation):
             left_disp[np.isnan(left_disp)] = np.inf
 
             # Allocate to the measure map, the distance disp LR / disp RL indicator
-            dataset_left['confidence_measure'].data[row, col_left[inside_right], -1] = np.abs(right_disp + left_disp)
+            conf_measure[row, col_left[inside_right]] = np.abs(right_disp + left_disp)
 
             # left image pixels invalidated by the cross checking
             invalid = np.abs(right_disp + left_disp) > self._threshold
@@ -325,5 +315,8 @@ class CrossChecking(AbstractValidation):
             dataset_left['validity_mask'].data[row, col_left[outside_right]] += cst.PANDORA_MSK_PIXEL_OCCLUSION
 
         dataset_left.attrs['validation'] = 'cross_checking'
+
+        dataset_left, _ = AbstractCostVolumeConfidence.allocate_confidence_map('validation_pandora_distanceOfDisp',
+                                                                               conf_measure, dataset_left, cv)
 
         return dataset_left

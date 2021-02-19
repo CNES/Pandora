@@ -46,7 +46,7 @@ from pandora import refinement
 from pandora import matching_cost
 from pandora import validation
 from .img_tools import prepare_pyramid
-
+from pandora import cost_volume_confidence
 
 
 # This module contains class associated to the pandora state machine
@@ -68,6 +68,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # This way, after the last scale we can still apply a filter state
         {'trigger': 'multiscale', 'source': 'disp_map', 'conditions': 'is_not_last_scale',
          'dest': 'begin', 'after': 'run_multiscale'},
+        {'trigger': 'cost_volume_confidence', 'source': 'cost_volume', 'dest': 'cost_volume',
+         'after': 'cost_volume_confidence_run'}
     ]
 
     _transitions_check = [
@@ -81,7 +83,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         {'trigger': 'validation', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'validation_check_conf'},
         # For the check conf we define the destination of multiscale state as disp_map instead of begin
         # given the conditional change of state
-        {'trigger': 'multiscale', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'multiscale_check_conf'}
+        {'trigger': 'multiscale', 'source': 'disp_map', 'dest': 'disp_map', 'after': 'multiscale_check_conf'},
+        {'trigger': 'cost_volume_confidence', 'source': 'cost_volume', 'dest': 'cost_volume',
+         'after': 'cost_volume_confidence_check_conf'}
     ]
 
     def __init__(self, img_left_pyramid: List[xr.Dataset] = None, img_right_pyramid: List[xr.Dataset] = None,
@@ -203,7 +207,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             self.right_cv = matching_cost_.compute_cost_volume(self.right_img, self.left_img, dmin_min_right,
                                                                dmax_max_right)
             matching_cost_.cv_masked(self.right_img, self.left_img, self.right_cv, self.right_disp_min,
-                              self.right_disp_max)
+                                     self.right_disp_max)
 
     def aggregation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -358,6 +362,29 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         # Update the current scale for the next state
         self.current_scale = self.current_scale - 1
+
+    def cost_volume_confidence_run(self, cfg: Dict[str, dict], input_step: str) -> None:
+        """
+        Confidence prediction
+        :param cfg: pipeline configuration
+        :type  cfg: dict
+        :param input_step: step to trigger
+        :type input_step: str
+        :return: None
+        """
+        confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg[input_step])
+
+        logging.info('Confidence prediction...')
+
+        if self.right_disp_map == 'none':
+            self.left_disparity, self.left_cv = confidence_.confidence_prediction(self.left_disparity, self.left_img,
+                                                                                  self.right_img, self.left_cv)
+        else:
+            self.left_disparity, self.left_cv = confidence_.confidence_prediction(self.left_disparity, self.left_img,
+                                                                                  self.right_img, self.left_cv)
+            self.right_disparity, self.right_cv = confidence_.confidence_prediction(self.right_disparity,
+                                                                                    self.right_img, self.left_img,
+                                                                                    self.right_cv)
 
     def run_prepare(self, cfg: Dict[str, dict], left_img: xr.Dataset, right_img: xr.Dataset,
                     disp_min: Union[np.array, int], disp_max: Union[np.array, int],
@@ -623,6 +650,19 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         multiscale_ = multiscale.AbstractMultiscale(**cfg[input_step])
         self.pipeline_cfg['pipeline'][input_step] = multiscale_.cfg
+
+    def cost_volume_confidence_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
+        """
+        Check the confidence configuration
+
+        :param cfg: configuration
+        :type cfg: dict
+        :param input_step: current step
+        :type input_step: string
+        :return: None
+        """
+        confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg[input_step])
+        self.pipeline_cfg['pipeline'][input_step] = confidence_.cfg
 
     def check_conf(self, cfg: Dict[str, dict]):
         """

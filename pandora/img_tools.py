@@ -473,6 +473,8 @@ def compute_mean_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
 def find_valid_neighbors(dirs: np.ndarray, disp: np.ndarray, valid: np.ndarray,
                          row: int, col: int):
     """
+    Find valid neighbors along directions
+
     :param dirs: directions
     :type dirs: 2D np.array (row, col)
     :param disp: disparity map
@@ -484,7 +486,7 @@ def find_valid_neighbors(dirs: np.ndarray, disp: np.ndarray, valid: np.ndarray,
     :param col: col current value
     :type col: int
     :return: valid neighbors
-    :rtype : 2D np.array
+    :rtype: 2D np.array
     """
     ncol, nrow = disp.shape
     # Maximum path length

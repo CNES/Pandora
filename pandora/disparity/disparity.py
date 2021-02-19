@@ -601,7 +601,8 @@ class WinnerTakesAll(AbstractDisparity):
 
         # ----- Confidence measure -----
         # Allocate the confidence measure in the disparity_map dataset
-        disp_map['confidence_measure'] = cv['confidence_measure']
+        if 'confidence_measure' in cv.data_vars:
+            disp_map['confidence_measure'] = cv['confidence_measure']
 
         # Remove temporary values
         del indices_nan
