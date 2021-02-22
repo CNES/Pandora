@@ -193,6 +193,7 @@ def check_dataset(dataset: xr.Dataset) -> xr.Dataset:
         sys.exit(1)
     if 'transform' not in dataset.attrs:
         logging.error('User must provide image transform')
+        sys.exit(1)
 
     return new_dataset
 
