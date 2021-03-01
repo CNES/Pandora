@@ -42,7 +42,6 @@ REQUIREMENTS = ['numpy',
                 'rasterio',
                 'json-checker',
                 'numba>=0.47.*',
-                'opencv-python-headless',
                 'transitions',
                 'scikit-image']
 
