@@ -4,12 +4,17 @@
 
 ### Added
 
-- Implementation of the ambiguity confidence measure. [#162]
+- Implementation of the ambiguity confidence measure. [#162] 
+- Implementation of the  bilateral filter to suppress OpenCV dependency. [#148] 
 - Checker to check if an image dataset is valid. [#196]
+
+### Fixed
+
+- Correct Nan propagation of the bilateral filter. [#159]
 
 ### BREAKING CHANGE
 
-- GeoRef is now supported and both `crs` & `transform` ought to be set as attributes of images dataset provided to Pandora [#158
+- GeoRef is now supported and both `crs` & `transform` ought to be set as attributes of images dataset provided to Pandora [#158]
 
 ## 0.5.1 (January 2021)
 
