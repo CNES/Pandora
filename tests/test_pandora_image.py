@@ -24,6 +24,7 @@ This module contains functions to test all the methods in img_tools module.
 """
 
 import unittest
+import copy
 
 import numpy as np
 import xarray as xr
@@ -288,6 +289,53 @@ class TestImgTools(unittest.TestCase):
 
         # Check if the calculated disparity is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(disp_, gt)
+
+    def test_check_dataset(self):
+        """
+        Test the method check_dataset
+
+        """
+        # Build the default configuration
+        default_cfg = pandora.check_json.default_short_configuration
+
+        # Computes the dataset image
+        dst__correct = img_tools.read_img(img='tests/image/left_img.tif', no_data=default_cfg['input']['nodata_left'])
+
+        # Test if a correct dataset returns no errors
+        try:
+            img_tools.check_dataset(dst__correct)
+        except Exception:
+            self.fail('The dataset should be correct')
+
+        # Test if a false dataset exits when no no_data_img provided
+        false_dst_no_no_data_img = copy.copy(dst__correct)
+        del false_dst_no_no_data_img.attrs['no_data_img']
+
+        self.assertRaises(SystemExit, img_tools.check_dataset, false_dst_no_no_data_img)
+
+        # Test if a false dataset exits when no valid_pixels provided
+        false_dst_no_valid_pixels = copy.copy(dst__correct)
+        del false_dst_no_valid_pixels.attrs['valid_pixels']
+
+        self.assertRaises(SystemExit, img_tools.check_dataset, false_dst_no_valid_pixels)
+
+        # Test if a false dataset exits when no no_data_mask provided
+        false_dst_no_no_data_mask = copy.copy(dst__correct)
+        del false_dst_no_no_data_mask.attrs['no_data_mask']
+
+        self.assertRaises(SystemExit, img_tools.check_dataset, false_dst_no_no_data_mask)
+
+        # Test if a false dataset exits when no crs provided
+        false_dst_no_crs = copy.copy(dst__correct)
+        del false_dst_no_crs.attrs['crs']
+
+        self.assertRaises(SystemExit, img_tools.check_dataset, false_dst_no_crs)
+
+        # Test if a false dataset exits when no transform provided
+        false_dst_no_transform = copy.copy(dst__correct)
+        del false_dst_no_transform.attrs['transform']
+
+        self.assertRaises(SystemExit, img_tools.check_dataset, false_dst_no_transform)
 
 
 if __name__ == '__main__':

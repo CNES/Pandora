@@ -4,7 +4,8 @@
 
 ### Added
 
-- Implementation of the ambiguity confidence measure. [#162] 
+- Implementation of the ambiguity confidence measure. [#162]
+- Checker to check if an image dataset is valid. [#196]
 
 ### BREAKING CHANGE
 
