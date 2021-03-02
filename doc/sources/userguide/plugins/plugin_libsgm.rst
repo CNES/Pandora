@@ -23,21 +23,21 @@ Some are already avalaible and computed by the plugin_libsgm:
 Configuration and parameters
 ****************************
 
-+--------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------+----------------------------------------------------------+
-| Name               | Description                                             | Type   | Default value | Available value                                    | Required                                                 |
-+====================+=========================================================+========+===============+====================================================+==========================================================+
-| penalty_estimation | Method for penalty estimation                           | string | "sgm_penalty" | "sgm_penalty","mc_cnn_penalty"                     | No                                                       |
-+--------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------+----------------------------------------------------------+
-| p2_method          | Method for p2 penalty estimation                        | String | "constant"    | "constant" , "negativeGradient", "inverseGradient" | No. Only available if penalty_estimation = "sgm_penalty" |
-+--------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------+----------------------------------------------------------+
-| overcounting       | overcounting correction                                 | Boolean| False         | True, False                                        | No                                                       |
-+--------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------+----------------------------------------------------------+
-| min_cost_paths     | Number of sgm paths that give the same final disparity  | Boolean| False         | True, False                                        | No                                                       |
-+--------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------+----------------------------------------------------------+
++--------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
+| Name               | Description                                             | Type   | Default value | Available value                                                | Required                                             |
++====================+=========================================================+========+===============+================================================================+======================================================+
+| penalty_method     | Method for penalty estimation                           | string | "sgm_penalty" | "sgm_penalty","mc_cnn_fast_penalty", "mc_cnn_accurate_penalty" | No                                                   |
++--------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
+| p2_method          | Method for p2 penalty estimation                        | String | "constant"    | "constant" , "negativeGradient", "inverseGradient"             | No. Only available if penalty_method = "sgm_penalty" |
++--------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
+| overcounting       | overcounting correction                                 | Boolean| False         | True, False                                                    | No                                                   |
++--------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
+| min_cost_paths     | Number of sgm paths that give the same final disparity  | Boolean| False         | True, False                                                    | No                                                   |
++--------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
 
-There are some parameters depending on penalty_estimation choice and p2_method choice.
+There are some parameters depending on penalty_method choice and p2_method choice.
 
-- penalty_estimation = "sgm_penalty" and  p2_method = "constant"
+- penalty_method = "sgm_penalty" and  p2_method = "constant"
 
 +-------+-------------------+--------------+---------------+-----------------+----------+
 | Name  | Description       | Type         | Default value | Available value | Required |
@@ -47,7 +47,7 @@ There are some parameters depending on penalty_estimation choice and p2_method c
 | P2    | Penalty parameter | int or float | 32            | P2 > P1         | No       |
 +-------+-------------------+--------------+---------------+-----------------+----------+
 
-- penalty_estimation = "sgm_penalty" and p2_method = "negativeGradient"
+- penalty_method = "sgm_penalty" and p2_method = "negativeGradient"
 
 :math:`P2 = - \alpha \mid I(p)-I(p-r) \mid + \gamma \ ` with I for intensity on left image
 
@@ -63,7 +63,7 @@ There are some parameters depending on penalty_estimation choice and p2_method c
 | gamma | Penalty parameter | int or float | 1             |                 | No       |
 +-------+-------------------+--------------+---------------+-----------------+----------+
 
-- penalty_estimation = "sgm_penalty" and p2_method = "inverseGradient"
+- penalty_method = "sgm_penalty" and p2_method = "inverseGradient"
 
 :math:`P2 = \frac{\alpha}{\mid I(p)-I(p-r) \mid + \beta} + \gamma \ ` with I for intensity on left image
 
@@ -81,13 +81,33 @@ There are some parameters depending on penalty_estimation choice and p2_method c
 | gamma | Penalty parameter | int or float | 1             |                 | No       |
 +-------+-------------------+--------------+---------------+-----------------+----------+
 
-- penalty_estimation = "mc_cnn_penalty"
+- penalty_method = "mc_cnn_fast_penalty"
 
 .. math::
   D1 &= \mid I_{l}(p-d)-I_{l}(p-d-r) \mid \ , D2 = \mid I_{r}(p-d)-I_{r}(p-d-r) \mid \\
   P1 &= sgm_P1 \ , P2 = sgm_P2 \ if \ D1<sgm_D \ , D2<sgm_D \\
   P1 &= \frac{sgm_P1}{sgm_Q2} \ , P2 = \frac{sgm_P2}{sgm_Q2} \ if \ D1 \geq sgm_D \ , D2 \geq sgm_D \\
   P1 &= \frac{sgm_P1}{sgm_Q1} \ , P2 = \frac{sgm_P2}{sgm_Q1} \ otherwise
+
++------+-------------------+--------------+---------------+-----------------+----------+
+| Name | Description       | Type         | Default value | Available value | Required |
++======+===================+==============+===============+=================+==========+
+| P1   | Penalty parameter | int or float | 2.3           | >0              | No       |
++------+-------------------+--------------+---------------+-----------------+----------+
+| P2   | Penalty parameter | int or float | 55.9          | P2 > P1         | No       |
++------+-------------------+--------------+---------------+-----------------+----------+
+| Q1   | Penalty parameter | int or float | 4             |                 | No       |
++------+-------------------+--------------+---------------+-----------------+----------+
+| Q2   | Penalty parameter | int or float | 2             |                 | No       |
++------+-------------------+--------------+---------------+-----------------+----------+
+| D    | Penalty parameter | int or float | 0.08          |                 | No       |
++------+-------------------+--------------+---------------+-----------------+----------+
+| V    | Penalty parameter | int or float | 1.5           |                 | No       |
++------+-------------------+--------------+---------------+-----------------+----------+
+
+.. note:: P1, P2, Q1, Q2, D, V represent sgm_P1, sgm_P2, sgm_Q1, smg_Q2, sgm_D, sgm_V respectively
+
+- penalty_method = "mc_cnn_accurate_penalty"
 
 +------+-------------------+--------------+---------------+-----------------+----------+
 | Name | Description       | Type         | Default value | Available value | Required |
@@ -105,7 +125,6 @@ There are some parameters depending on penalty_estimation choice and p2_method c
 | V    | Penalty parameter | int or float | 2.75          |                 | No       |
 +------+-------------------+--------------+---------------+-----------------+----------+
 
-.. note:: P1, P2, Q1, Q2, D, V represent sgm_P1, sgm_P2, sgm_Q1, smg_Q2, sgm_D, sgm_V respectively
 
 **Example**
 
@@ -120,7 +139,7 @@ There are some parameters depending on penalty_estimation choice and p2_method c
             ...
             "optimization": {
                 "optimization_method": "sgm",
-                "penalty_estimation": "sgm_penalty",
+                "penalty_method": "sgm_penalty",
                 "P1": 4,
                 "P2": 20
             }
