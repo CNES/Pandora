@@ -124,7 +124,9 @@ disable=print-statement,
         inconsistent-return-statements,
         unnecessary-lambda,
         invalid-unary-operand-type,
-        broad-except
+        broad-except,
+        unsubscriptable-object,
+        unsupported-membership-test
 
 
 # Enable the message, report, category or checker with the given id(s). You can

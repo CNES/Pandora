@@ -43,7 +43,7 @@ import numpy as np
 import xarray as xr
 
 
-def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.DataArray:
+def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.Dataset:
     """
     Calculates the margins for the left and right images according to the configuration
 
@@ -55,12 +55,15 @@ def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.DataAr
     :type cfg: dict of dict
     :return: margin for the images, 2D (image, corner) DataArray, with the dimensions image = \
      ['left_margin', 'right_margin'], corner = ['left', 'up', 'right', 'down']
-    :rtype: DataArray
+    :rtype: xr.dataset
     """
-    margin = xr.DataArray(np.zeros((2, 4), dtype=int),
-                          coords=[['left_margin', 'right_margin'], ['left', 'up', 'right', 'down']],
-                          dims=['image', 'corner'])
-    margin.name = 'Margins'
+    corner = ['left', 'up', 'right', 'down']
+    data = np.zeros(len(corner))
+    col = np.arange(len(corner))
+    margin = xr.Dataset({'left_margin': (['col'], data)},
+                          coords={'col': col})
+    margin['right_margin'] = xr.DataArray(data,
+                          dims=['col'])
 
     # Margins for the left image and for the right image
 
@@ -76,8 +79,8 @@ def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.DataAr
         s_marg = np.array([-disp_min, 0, + disp_max, 0])
 
         if cfg['matching_cost']['window_size'] != 1:
-            r_marg += int(cfg['matching_cost']['window_size'] / 2)
-            s_marg += int(cfg['matching_cost']['window_size'] / 2)
+            r_marg += int(cfg['matching_cost']['window_size'] / 2) # type:ignore
+            s_marg += int(cfg['matching_cost']['window_size'] / 2) # type:ignore
 
         if cfg['refinement']['refinement_method'] == 'vfit':
             r_marg[0] += 1
@@ -86,13 +89,13 @@ def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.DataAr
             s_marg[2] += 1
 
         if cfg['filter']['filter_method'] == 'median':
-            r_marg += int(cfg['filter']['filter_size'] / 2)
-            s_marg += int(cfg['filter']['filter_size'] / 2)
+            r_marg += int(cfg['filter']['filter_size'] / 2) # type:ignore
+            s_marg += int(cfg['filter']['filter_size'] / 2) # type:ignore
 
     # Same margin for left and right: take the larger
     same_margin = list(map(lambda input: max(input[0], input[1]), zip(r_marg, s_marg)))
-    margin.loc[dict(image='left_margin')] = same_margin
-    margin.loc[dict(image='right_margin')] = same_margin
+    margin['left_margin'].data = same_margin
+    margin['right_margin'].data = same_margin
 
     # Save disp_min and disp_max
     margin.attrs['disp_min'] = disp_min

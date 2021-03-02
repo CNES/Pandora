@@ -25,7 +25,7 @@ This module contains functions associated to the multiscale step.
 
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Tuple, Union
+from typing import Tuple, Union, Dict
 
 import numpy as np
 import xarray as xr
@@ -39,7 +39,8 @@ class AbstractMultiscale:
     """
     __metaclass__ = ABCMeta
 
-    multiscale_methods_avail = {}
+    multiscale_methods_avail : Dict = {}
+    cfg = None
 
     def __new__(cls, **cfg: Union[str, int]):
         """
@@ -57,7 +58,7 @@ class AbstractMultiscale:
                     logging.error('No multiscale matching method named % supported', cfg['multiscale_method'])
                     raise KeyError
             else:
-                if isinstance(cfg['multiscale_method'], unicode):  # pylint:disable=undefined-variable
+                if isinstance(cfg['multiscale_method'], unicode):# type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractMultiscale, cls).__new__(
@@ -68,6 +69,7 @@ class AbstractMultiscale:
                         raise KeyError
         else:
             return super(AbstractMultiscale, cls).__new__(cls)
+        return None
 
     @classmethod
     def register_subclass(cls, short_name: str, *args):

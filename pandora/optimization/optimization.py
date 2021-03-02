@@ -37,9 +37,10 @@ class AbstractOptimization():
     """
     __metaclass__ = ABCMeta
 
-    optimization_methods_avail = {}
+    optimization_methods_avail : Dict = {}
+    cfg = None
 
-    def __new__(cls, **cfg: Dict[str, dict]) -> object:
+    def __new__(cls, **cfg: Dict[str, dict]):
         """
         Return the plugin associated with the optimization_method given in the configuration
 
@@ -55,7 +56,7 @@ class AbstractOptimization():
                     logging.error('No optimization method named % supported', cfg['optimization_method'])
                     sys.exit(1)
             else:
-                if isinstance(cfg['optimization_method'], unicode): # pylint: disable=undefined-variable
+                if isinstance(cfg['optimization_method'], unicode):# type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractOptimization, cls).__new__(
@@ -65,6 +66,7 @@ class AbstractOptimization():
                         sys.exit(1)
         else:
             return super(AbstractOptimization, cls).__new__(cls)
+        return None
 
     @classmethod
     def register_subclass(cls, short_name: str):

@@ -63,9 +63,9 @@ class Census(matching_cost.AbstractMatchingCost):
         """
         # Give the default value if the required element is not in the conf
         if 'window_size' not in cfg:
-            cfg['window_size'] = self._WINDOW_SIZE
+            cfg['window_size'] = self._WINDOW_SIZE# type: ignore
         if 'subpix' not in cfg:
-            cfg['subpix'] = self._SUBPIX
+            cfg['subpix'] = self._SUBPIX# type: ignore
 
         schema = {
             'matching_cost_method': And(str, lambda input: 'census'),
@@ -75,7 +75,7 @@ class Census(matching_cost.AbstractMatchingCost):
 
         checker = Checker(schema)
         checker.validate(cfg)
-        return cfg
+        return cfg# type: ignore
 
     def desc(self) -> None:
         """

@@ -26,7 +26,7 @@ This module contains functions associated to the cost volume measure step.
 import logging
 from abc import ABCMeta, abstractmethod
 from math import ceil, floor
-from typing import Tuple, List, Union
+from typing import Tuple, List, Union, Dict
 
 import numpy as np
 import xarray as xr
@@ -41,9 +41,12 @@ class AbstractMatchingCost():
     """
     __metaclass__ = ABCMeta
 
-    matching_cost_methods_avail = {}
+    matching_cost_methods_avail : Dict = {}
+    _subpix = None
+    _window_size = None
+    cfg = None
 
-    def __new__(cls, **cfg: Union[str, int]) -> object:
+    def __new__(cls, **cfg: Union[str, int]):
         """
         Return the plugin associated with the matching_cost_method given in the configuration
 
@@ -60,7 +63,7 @@ class AbstractMatchingCost():
                     logging.error('No matching_cost method named % supported', cfg['matching_cost_method'])
                     raise KeyError
             else:
-                if isinstance(cfg['matching_cost_method'], unicode):  # pylint: disable=undefined-variable
+                if isinstance(cfg['matching_cost_method'], unicode):# type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractMatchingCost, cls).__new__(
@@ -70,6 +73,7 @@ class AbstractMatchingCost():
                         raise KeyError
         else:
             return super(AbstractMatchingCost, cls).__new__(cls)
+        return None
 
     @classmethod
     def register_subclass(cls, short_name: str, *args):
@@ -413,19 +417,17 @@ class AbstractMatchingCost():
         # ----- Masking disparity range -----
 
         # Fixed range of disparities
-        if isinstance(disp_min, int) and isinstance(disp_max, int):
-            return
+        if isinstance(disp_min, np.ndarray) and isinstance(disp_max, np.ndarray):
+            # Disparity range may be one size bigger in y axis
+            if disp_min.shape[0] > ny_:
+                disp_min = disp_min[0: ny_, :]
+                disp_max = disp_max[0: ny_, :]
+            if disp_min.shape[1] > nx_:
+                disp_min = disp_min[:, 0: nx_]
+                disp_max = disp_max[:, 0: nx_]
 
-        # Disparity range may be one size bigger in y axis
-        if disp_min.shape[0] > ny_:
-            disp_min = disp_min[0: ny_, :]
-            disp_max = disp_max[0: ny_, :]
-        if disp_min.shape[1] > nx_:
-            disp_min = disp_min[:, 0: nx_]
-            disp_max = disp_max[:, 0: nx_]
-
-        # Mask the costs computed with a disparity lower than disp_min and higher than disp_max
-        for dsp in range(nd_):
-            masking = np.where(np.logical_or(cost_volume.coords['disp'].data[dsp] < disp_min,
-                                             cost_volume.coords['disp'].data[dsp] > disp_max))
-            cost_volume['cost_volume'].data[masking[0], masking[1], dsp] = np.nan
+            # Mask the costs computed with a disparity lower than disp_min and higher than disp_max
+            for dsp in range(nd_):
+                masking = np.where(np.logical_or(cost_volume.coords['disp'].data[dsp] < disp_min,
+                                                 cost_volume.coords['disp'].data[dsp] > disp_max))
+                cost_volume['cost_volume'].data[masking[0], masking[1], dsp] = np.nan
