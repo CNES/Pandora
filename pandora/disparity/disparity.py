@@ -42,9 +42,10 @@ class AbstractDisparity():
     """
     __metaclass__ = ABCMeta
 
-    disparity_methods_avail = {}
+    disparity_methods_avail : Dict = {}
+    cfg = None
 
-    def __new__(cls, **cfg: dict) -> object:
+    def __new__(cls, **cfg: dict):
         """
         Return the plugin associated with the validation_method given in the configuration
 
@@ -59,7 +60,7 @@ class AbstractDisparity():
                     logging.error('No disparity method named % supported', cfg['disparity_method'])
                     raise KeyError
             else:
-                if isinstance(cfg['disparity_method'], unicode): # pylint: disable=undefined-variable
+                if isinstance(cfg['disparity_method'], unicode):# type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractDisparity, cls).__new__(
@@ -70,6 +71,7 @@ class AbstractDisparity():
                         raise KeyError
         else:
             return super(AbstractDisparity, cls).__new__(cls)
+        return None
 
     @classmethod
     def register_subclass(cls, short_name: str):
@@ -248,7 +250,7 @@ class AbstractDisparity():
                     disp_map['validity_mask'].loc[dict(col=col)] += \
                         cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
 
-                disp_map['disparity_map'].loc[dict(col=col)] = -1 * np.flip(disp_range[valid])[min_.data]
+                disp_map['disparity_map'].loc[dict(col=col)] = -1 * np.flip(disp_range[valid])[min_.data] # type:ignore
 
         cv['cost_volume'].data[indices_nan] = np.nan
         invalid_mc = np.min(indices_nan, axis=2)

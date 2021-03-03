@@ -26,7 +26,7 @@ This module contains classes and functions associated to the disparity map filte
 import logging
 import sys
 from abc import ABCMeta, abstractmethod
-
+from typing import Dict
 import xarray as xr
 
 
@@ -36,9 +36,10 @@ class AbstractFilter():
     """
     __metaclass__ = ABCMeta
 
-    filter_methods_avail = {}
+    filter_methods_avail : Dict = {}
+    cfg = None
 
-    def __new__(cls, **cfg: dict) -> object:
+    def __new__(cls, **cfg: dict):
         """
         Return the plugin associated with the filter_method given in the configuration
 
@@ -53,7 +54,7 @@ class AbstractFilter():
                     logging.error('No filter method named % supported', cfg['filter_method'])
                     sys.exit(1)
             else:
-                if isinstance(cfg['filter_method'], unicode): # pylint: disable=undefined-variable
+                if isinstance(cfg['filter_method'], unicode):# type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractFilter, cls).__new__(
@@ -63,6 +64,7 @@ class AbstractFilter():
                         sys.exit(1)
         else:
             return super(AbstractFilter, cls).__new__(cls)
+        return None
 
     @classmethod
     def register_subclass(cls, short_name: str):

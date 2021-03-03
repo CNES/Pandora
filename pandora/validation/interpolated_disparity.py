@@ -26,7 +26,7 @@ This module contains classes and functions associated to the interpolation of th
 import logging
 import math
 from abc import ABCMeta, abstractmethod
-from typing import Tuple
+from typing import Tuple, Dict
 
 import numpy as np
 import xarray as xr
@@ -42,9 +42,9 @@ class AbstractInterpolation():
     """
     __metaclass__ = ABCMeta
 
-    interpolation_methods_avail = {}
+    interpolation_methods_avail : Dict = {}
 
-    def __new__(cls, **cfg: dict) -> object:
+    def __new__(cls, **cfg: dict):
         """
         Return the plugin associated with the interpolated_disparity given in the configuration
 
@@ -60,7 +60,7 @@ class AbstractInterpolation():
                     logging.error('No interpolation method named % supported', cfg['interpolated_disparity'])
                     raise KeyError
             else:
-                if isinstance(cfg['interpolated_disparity'], unicode):  # pylint: disable=undefined-variable
+                if isinstance(cfg['interpolated_disparity'], unicode):# type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractInterpolation, cls).__new__(
@@ -70,6 +70,7 @@ class AbstractInterpolation():
                         raise KeyError
         else:
             return super(AbstractInterpolation, cls).__new__(cls)
+        return None
 
     @classmethod
     def register_subclass(cls, short_name: str):

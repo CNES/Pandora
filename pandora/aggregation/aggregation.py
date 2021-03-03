@@ -26,7 +26,7 @@ This module contains classes and functions associated to the cost volume aggrega
 import logging
 import sys
 from abc import ABCMeta, abstractmethod
-from typing import Union
+from typing import Union, Dict
 
 import xarray as xr
 
@@ -37,9 +37,10 @@ class AbstractAggregation():
     """
     __metaclass__ = ABCMeta
 
-    aggreg_methods_avail = {}
+    aggreg_methods_avail : Dict = {}
+    cfg = None
 
-    def __new__(cls, **cfg: dict) -> object:
+    def __new__(cls, **cfg: dict):
         """
         Return the plugin associated with the aggregation_method given in the configuration
 
@@ -55,7 +56,7 @@ class AbstractAggregation():
                     logging.error('No aggregation method named % supported', cfg['aggregation_method'])
                     sys.exit(1)
             else:
-                if isinstance(cfg['aggregation_method'], unicode): # pylint: disable=undefined-variable
+                if isinstance(cfg['aggregation_method'], unicode):# type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractAggregation, cls).__new__(
@@ -65,6 +66,7 @@ class AbstractAggregation():
                         sys.exit(1)
         else:
             return super(AbstractAggregation, cls).__new__(cls)
+        return None
 
     @classmethod
     def register_subclass(cls, short_name: str):

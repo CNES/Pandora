@@ -25,7 +25,7 @@ This module contains classes and functions associated to the subpixel refinement
 
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Tuple, Callable
+from typing import Tuple, Callable, Dict
 
 import numpy as np
 import xarray as xr
@@ -40,9 +40,11 @@ class AbstractRefinement():
     """
     __metaclass__ = ABCMeta
 
-    subpixel_methods_avail = {}
+    subpixel_methods_avail : Dict = {}
+    _refinement_method_name = None
+    cfg = None
 
-    def __new__(cls, **cfg: dict) -> object:
+    def __new__(cls, **cfg: dict):
         """
         Return the plugin associated with the refinement_method given in the configuration
 
@@ -57,7 +59,7 @@ class AbstractRefinement():
                     logging.error('No subpixel method named % supported', cfg['refinement_method'])
                     raise KeyError
             else:
-                if isinstance(cfg['refinement_method'], unicode): # pylint: disable=undefined-variable
+                if isinstance(cfg['refinement_method'], unicode):# type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractRefinement, cls).__new__(
@@ -67,6 +69,7 @@ class AbstractRefinement():
                         raise KeyError
         else:
             return super(AbstractRefinement, cls).__new__(cls)
+        return None
 
     def subpixel_refinement(self, cv: xr.Dataset, disp: xr.Dataset) -> None:
         """
@@ -99,7 +102,7 @@ class AbstractRefinement():
 
         disp.attrs['refinement'] = self._refinement_method_name
         disp['interpolated_coeff'] = xr.DataArray(itp_coeff,
-                                                  coords=[disp.coords['row'], disp.coords['col']],
+                                                  coords=[('row', disp.coords['row']), ('col', disp.coords['col'])],
                                                   dims=['row', 'col'])
 
     def approximate_subpixel_refinement(self, cv_left: xr.Dataset, disp_right: xr.Dataset) -> xr.Dataset:
@@ -143,7 +146,8 @@ class AbstractRefinement():
 
         disp_right.attrs['refinement'] = self._refinement_method_name
         disp_right['interpolated_coeff'] = xr.DataArray(itp_coeff,
-                                                        coords=[disp_right.coords['row'], disp_right.coords['col']],
+                                                        coords=[('row', disp_right.coords['row']),
+                                                                ('col', disp_right.coords['col'])],
                                                         dims=['row', 'col'])
         return disp_right
 
@@ -219,7 +223,7 @@ class AbstractRefinement():
                     if not np.isnan(cv[row, col, dsp]):
                         if (disp[row, col] != d_min) and (disp[row, col] != d_max):
 
-                            sub_disp, sub_cost, valid = method(
+                            sub_disp, sub_cost, valid = method(         # type: ignore
                                 [cv[row, col, dsp - 1], cv[row, col, dsp], cv[row, col, dsp + 1]],
                                 disp[row, col],
                                 measure)
@@ -301,7 +305,7 @@ class AbstractRefinement():
                             # (1 * subpixel) because in fast mode, we can not have sub-pixel disparity for the right
                             # image.
                             # We therefore interpolate between pixel disparities
-                            sub_disp, cost, valid = method([cv[row, diagonal - 1, dsp + (1 * subpixel)],
+                            sub_disp, cost, valid = method([cv[row, diagonal - 1, dsp + (1 * subpixel)], # type: ignore
                                                             cv[row, diagonal, dsp],
                                                             cv[row, diagonal + 1, dsp - (1 * subpixel)]],
                                                            disp[row, col],

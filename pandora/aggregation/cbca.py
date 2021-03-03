@@ -49,7 +49,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         :param cfg: optional configuration, {'cbca_intensity': value, 'cbca_distance': value}
         :type cfg: dict
         """
-        self.cfg = self.check_conf(**cfg)
+        self.cfg = self.check_conf(**cfg)# type: ignore
         self._cbca_intensity = self.cfg['cbca_intensity']
         self._cbca_distance = self.cfg['cbca_distance']
 
@@ -171,7 +171,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         cv.attrs['aggregation'] = 'cbca'
 
         # Maximal cost of the cost volume after agregation
-        cmax = cv.attrs['cmax'] * ((self._cbca_distance * 2) - 1) ** 2
+        cmax = cv.attrs['cmax'] * ((self._cbca_distance * 2) - 1) ** 2# type: ignore
         cv.attrs['cmax'] = cmax
 
     def computes_cross_supports(self, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset) -> \
@@ -205,14 +205,14 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         img_right_shift = shift_right_img(img_right, subpix)
 
         # Median filter on valid pixels
-        filter_ = AbstractFilter(**{'filter_method': 'median', 'filter_size': 3})
+        filter_ = AbstractFilter(**{'filter_method': 'median', 'filter_size': 3})# type: ignore
 
         # Invalid and no data pixels are masked with np.nan to avoid propagating the values with the median filter
         left_masked = np.copy(img_left['im'].data)
         if 'msk' in img_left.data_vars:
             left_masked[np.where(img_left['msk'].data != img_left.attrs['valid_pixels'])] = np.nan
 
-        left_masked = filter_.median_filter(left_masked)
+        left_masked = filter_.median_filter(left_masked)# type: ignore
         # Convert nan to inf to be able to use the comparison operators < and > in cross_support function
         np.nan_to_num(left_masked, copy=False, nan=np.inf)
         # Compute left cross support using numba to reduce running time
@@ -253,7 +253,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
                 right_masked += shift_mask
 
             #  Apply a 3×3 median filter to the input image
-            right_masked = filter_.median_filter(right_masked)
+            right_masked = filter_.median_filter(right_masked)# type: ignore
             # Convert nan to inf to be able to use the comparison operators < and > in cross_support function
             np.nan_to_num(right_masked, copy=False, nan=np.inf)
             # Compute right cross support using numba to reduce running time

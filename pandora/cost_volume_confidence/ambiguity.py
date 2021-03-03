@@ -23,7 +23,7 @@
 This module contains functions for estimating confidence from ambiguity.
 """
 
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
 
 import numpy as np
 from json_checker import Checker, And
@@ -43,7 +43,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
     _ETA_MIN = 0.
     _ETA_MAX = 0.7
     _ETA_STEP = 0.01
-    # Percentile value to nozmalize ambiguity
+    # Percentile value to normalize ambiguity
     _PERCENTILE = 1.
 
     def __init__(self, **cfg: str) -> None:
@@ -59,7 +59,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         self._eta_max = float(self.cfg['eta_max'])
         self._eta_step = float(self.cfg['eta_step'])
 
-    def check_conf(self, **cfg: str) -> Dict[str, str]:
+    def check_conf(self, **cfg: Union[str, float]) -> Dict[str, Union[str, float]]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 

@@ -45,8 +45,8 @@ from pandora import optimization
 from pandora import refinement
 from pandora import matching_cost
 from pandora import validation
-from .img_tools import prepare_pyramid
 from pandora import cost_volume_confidence
+from .img_tools import prepare_pyramid
 
 
 # This module contains class associated to the pandora state machine
@@ -117,48 +117,48 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :return: None
         """
         # Left image scale pyramid
-        self.img_left_pyramid = img_left_pyramid
+        self.img_left_pyramid: List[xr.Dataset] = img_left_pyramid
         # Right image scale pyramid
-        self.img_right_pyramid = img_right_pyramid
+        self.img_right_pyramid: List[xr.Dataset] = img_right_pyramid
         # Left image
-        self.left_img = None
+        self.left_img: xr.Dataset = None
         # Right image
-        self.right_img = None
+        self.right_img: xr.Dataset = None
         # Minimum disparity
-        self.disp_min = disp_min
+        self.disp_min: Union[np.array, int] = disp_min
         # Maximum disparity
-        self.disp_max = disp_max
+        self.disp_max: Union[np.array, int] = disp_max
         # Maximum disparity for the right image
-        self.right_disp_min = right_disp_min
+        self.right_disp_min: Union[np.array, None] = right_disp_min
         # Minimum disparity for the right image
-        self.right_disp_max = right_disp_max
+        self.right_disp_max: Union[np.array, None] = right_disp_max
         # User minimum disparity
-        self.dmin_user = None
+        self.dmin_user: Union[np.array, int] = None
         # User maximum disparity
-        self.dmax_user = None
+        self.dmax_user: Union[np.array, int] = None
         # User minimum disparity right
-        self.dmin_user_right = None
+        self.dmin_user_right: Union[np.array, None] = None
         # User maximum disparity right
-        self.dmax_user_right = None
+        self.dmax_user_right: Union[np.array, None] = None
 
         # Scale factor
-        self.scale_factor = None
+        self.scale_factor: int = None
         # Number of scales
-        self.num_scales = 1
+        self.num_scales: int = 1
         # Current scale
-        self.current_scale = None
+        self.current_scale: int = None
 
         # left cost volume
-        self.left_cv = None
+        self.left_cv : xr.Dataset = None
         # right cost volume
-        self.right_cv = None
+        self.right_cv : xr.Dataset = None
         # left disparity map
-        self.left_disparity = None
+        self.left_disparity : xr.Dataset = None
         # right disparity map
-        self.right_disparity = None
+        self.right_disparity : xr.Dataset = None
 
         # Pandora's pipeline configuration
-        self.pipeline_cfg = {'pipeline': {}}
+        self.pipeline_cfg : Dict = {'pipeline': {}}
         # Right disparity map computation information: Can be "none" or "accurate"
         # Useful during the running steps to choose if we must compute left and right objects.
         self.right_disp_map = 'none'
@@ -181,7 +181,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
 
         logging.info('Matching cost computation...')
-        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg[input_step])
+        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg[input_step])# type: ignore
 
         # Update min and max disparity according to the current scale
         self.disp_min = self.disp_min * self.scale_factor
@@ -218,7 +218,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
-        aggregation_ = aggregation.AbstractAggregation(**cfg[input_step])
+        aggregation_ = aggregation.AbstractAggregation(**cfg[input_step])# type: ignore
         if self.right_disp_map != 'accurate':
             aggregation_.cost_volume_aggregation(self.left_img, self.right_img, self.left_cv)
         else:
@@ -234,7 +234,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
-        optimization_ = optimization.AbstractOptimization(**cfg[input_step])
+        optimization_ = optimization.AbstractOptimization(**cfg[input_step])# type: ignore
         logging.info('Cost optimization...')
         if self.right_disp_map != 'accurate':
             self.left_cv = optimization_.optimize_cv(self.left_cv, self.left_img, self.right_img)
@@ -252,7 +252,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :return: None
         """
         logging.info('Disparity computation...')
-        disparity_ = disparity.AbstractDisparity(**cfg[input_step])
+        disparity_ = disparity.AbstractDisparity(**cfg[input_step])# type: ignore
         if self.right_disp_map != 'accurate':
             self.left_disparity = disparity_.to_disp(self.left_cv, self.left_img, self.right_img)
             disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img,
@@ -275,7 +275,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :return: None
         """
         logging.info('Disparity filtering...')
-        filter_ = filter.AbstractFilter(**cfg[input_step])
+        filter_ = filter.AbstractFilter(**cfg[input_step])# type: ignore
         if self.right_disp_map != 'accurate':
             filter_.filter_disparity(self.left_disparity)
         else:
@@ -291,7 +291,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
-        refinement_ = refinement.AbstractRefinement(**cfg[input_step])
+        refinement_ = refinement.AbstractRefinement(**cfg[input_step])# type: ignore
         logging.info('Subpixel refinement...')
         if self.right_disp_map != 'accurate':
             refinement_.subpixel_refinement(self.left_cv, self.left_disparity)
@@ -308,7 +308,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
-        validation_ = validation.AbstractValidation(**cfg[input_step])
+        validation_ = validation.AbstractValidation(**cfg[input_step])# type: ignore
 
         logging.info('Validation...')
 
@@ -320,7 +320,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             self.right_disparity = validation_.disparity_checking(self.right_disparity, self.left_disparity)
             # Interpolated mismatch and occlusions
             if 'interpolated_disparity' in cfg[input_step]:
-                interpolate_ = validation.AbstractInterpolation(**cfg[input_step])
+                interpolate_ = validation.AbstractInterpolation(**cfg[input_step])# type: ignore
                 interpolate_.interpolated_disparity(self.left_disparity)
                 interpolate_.interpolated_disparity(self.right_disparity)
 
@@ -336,7 +336,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         logging.info('Disparity range computation...')
 
-        multiscale_ = multiscale.AbstractMultiscale(**cfg[input_step])
+        multiscale_ = multiscale.AbstractMultiscale(**cfg[input_step])# type: ignore
 
         # Update min and max user disparity according to the current scale
         self.dmin_user = self.dmin_user * self.scale_factor
@@ -372,7 +372,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
-        confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg[input_step])
+        confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg[input_step]) # type: ignore
 
         logging.info('Confidence prediction...')
 
@@ -550,7 +550,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :return: None
         """
 
-        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg[input_step])
+        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg[input_step])# type: ignore
         self.pipeline_cfg['pipeline'][input_step] = matching_cost_.cfg
 
     def disparity_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -563,7 +563,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        disparity_ = disparity.AbstractDisparity(**cfg[input_step])
+        disparity_ = disparity.AbstractDisparity(**cfg[input_step])# type: ignore
         self.pipeline_cfg['pipeline'][input_step] = disparity_.cfg
 
     def filter_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -576,7 +576,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        filter_ = filter.AbstractFilter(**cfg[input_step])
+        filter_ = filter.AbstractFilter(**cfg[input_step])# type: ignore
         self.pipeline_cfg['pipeline'][input_step] = filter_.cfg
 
     def refinement_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -589,7 +589,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        refinement_ = refinement.AbstractRefinement(**cfg[input_step])
+        refinement_ = refinement.AbstractRefinement(**cfg[input_step])# type: ignore
         self.pipeline_cfg['pipeline'][input_step] = refinement_.cfg
 
     def aggregation_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -602,7 +602,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        aggregation_ = aggregation.AbstractAggregation(**cfg[input_step])
+        aggregation_ = aggregation.AbstractAggregation(**cfg[input_step])# type: ignore
         self.pipeline_cfg['pipeline'][input_step] = aggregation_.cfg
 
     def optimization_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -615,7 +615,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        optimization_ = optimization.AbstractOptimization(**cfg[input_step])
+        optimization_ = optimization.AbstractOptimization(**cfg[input_step])# type: ignore
         self.pipeline_cfg['pipeline'][input_step] = optimization_.cfg
 
     def validation_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -629,16 +629,16 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :return: None
         """
 
-        validation_ = validation.AbstractValidation(**cfg[input_step])
+        validation_ = validation.AbstractValidation(**cfg[input_step])# type: ignore
         self.pipeline_cfg['pipeline'][input_step] = validation_.cfg
         if 'interpolated_disparity' in validation_.cfg:
-            interpolate_ = validation.AbstractInterpolation(**cfg[input_step])  # pylint: disable=unused-variable
+            interpolate_ = validation.AbstractInterpolation(**cfg[input_step])# type: ignore # pylint: disable=unused-variable
 
         if validation_.cfg['validation_method'] == 'cross_checking' and self.right_disp_map != 'accurate':
             raise MachineError('Can t trigger event cross-checking validation  if right_disp_map method equal to '
                                + self.right_disp_map)
 
-    def multiscale_check_conf(self, cfg: Dict[str, dict], input_step: str):
+    def multiscale_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Check the disparity computation configuration
 
@@ -648,7 +648,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return:
         """
-        multiscale_ = multiscale.AbstractMultiscale(**cfg[input_step])
+        multiscale_ = multiscale.AbstractMultiscale(**cfg[input_step])# type: ignore
         self.pipeline_cfg['pipeline'][input_step] = multiscale_.cfg
 
     def cost_volume_confidence_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -661,10 +661,10 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg[input_step])
+        confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg[input_step])# type: ignore
         self.pipeline_cfg['pipeline'][input_step] = confidence_.cfg
 
-    def check_conf(self, cfg: Dict[str, dict]):
+    def check_conf(self, cfg: Dict[str, dict]) -> None:
         """
         Check configuration and transitions
 
@@ -707,7 +707,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # Coming back to the initial state
         self.set_state('begin')
 
-    def remove_transitions(self, transition_list: Dict[str, dict]) -> None:
+    def remove_transitions(self, transition_list: List[Dict[str, str]]) -> None:
         """
         Delete all transitions defined in the input list
 
@@ -720,11 +720,11 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # deleted_triggers list is used to avoid multiple call of 'remove_transition'' with the same trigger name.
         deleted_triggers = []
         for trans in transition_list:
-            if trans['trigger'] not in deleted_triggers:
+            if trans not in deleted_triggers:
                 self.remove_transition(trans['trigger'])
                 deleted_triggers.append(trans['trigger'])
 
-    def is_not_last_scale(self, input_step: str, cfg: Dict[str, dict]):  # pylint:disable=unused-argument
+    def is_not_last_scale(self, input_step: str, cfg: Dict[str, dict]) -> bool:  # pylint:disable=unused-argument
         """
         Check if the current scale is the last scale
         :param cfg: configuration

@@ -376,7 +376,7 @@ def read_multiscale_params(cfg: Dict[str, dict]) -> Tuple[int, int]:
 
     if 'multiscale' in cfg:
         # Multiscale processing in conf
-        multiscale_ = multiscale.AbstractMultiscale(**cfg['multiscale'])
+        multiscale_ = multiscale.AbstractMultiscale(**cfg['multiscale'])# type: ignore
 
         num_scales = multiscale_.cfg['num_scales']
         scale_factor = multiscale_.cfg['scale_factor']

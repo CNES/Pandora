@@ -49,7 +49,7 @@ class FixedZoomPyramid(multiscale.AbstractMultiscale):
         :param cfg: optional configuration, {  "num_scales": int, "scale_factor": int, "marge" int}
         :type cfg: dict
         """
-        self.cfg = self.check_conf(**cfg)
+        self.cfg = self.check_conf(**cfg)# type: ignore
         self._num_scales = self.cfg['num_scales']
         self._scale_factor = self.cfg['scale_factor']
         self._marge = self.cfg['marge']

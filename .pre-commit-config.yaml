@@ -7,6 +7,12 @@ repos:
         language: system
         files: \.py$
         stages: [commit]
+    -   id: mypy
+        name: mypy
+        entry: mypy
+        language: system
+        files: \.py$
+        stages: [ commit ]
     -   id: sphinx-checking
         name: Checking Sphinx building
         entry: python setup.py build_sphinx

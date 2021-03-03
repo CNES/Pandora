@@ -42,9 +42,10 @@ class AbstractValidation():
     """
     __metaclass__ = ABCMeta
 
-    validation_methods_avail = {}
+    validation_methods_avail : Dict = {}
+    cfg = None
 
-    def __new__(cls, **cfg: dict) -> object:
+    def __new__(cls, **cfg: dict):
         """
         Return the plugin associated with the validation_method given in the configuration
 
@@ -60,7 +61,7 @@ class AbstractValidation():
                     logging.error('No validation method named % supported', cfg['validation_method'])
                     raise KeyError
             else:
-                if isinstance(cfg['validation_method'], unicode): # pylint: disable=undefined-variable
+                if isinstance(cfg['validation_method'], unicode):# type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractValidation, cls).__new__(
@@ -70,6 +71,7 @@ class AbstractValidation():
                         raise KeyError
         else:
             return super(AbstractValidation, cls).__new__(cls)
+        return None
 
     @classmethod
     def register_subclass(cls, short_name: str):
