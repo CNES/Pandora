@@ -50,8 +50,8 @@ class BilateralFilter(filter.AbstractFilter):
         :type cfg: dict
         """
         self.cfg = self.check_conf(**cfg)
-        self._sigma_color = self.cfg['sigma_color']
-        self._sigma_space = self.cfg['sigma_space']
+        self._sigma_color = float(self.cfg['sigma_color'])
+        self._sigma_space = float(self.cfg['sigma_space'])
 
     def check_conf(self, **cfg: Union[str, float]) -> Dict[str, Union[str, float]]:
         """

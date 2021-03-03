@@ -45,8 +45,8 @@ from pandora import optimization
 from pandora import refinement
 from pandora import matching_cost
 from pandora import validation
-from .img_tools import prepare_pyramid
 from pandora import cost_volume_confidence
+from .img_tools import prepare_pyramid
 
 
 # This module contains class associated to the pandora state machine
@@ -144,9 +144,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # Scale factor
         self.scale_factor: int = None
         # Number of scales
-        self.num_scales: int  = 1
+        self.num_scales: int = 1
         # Current scale
-        self.current_scale: int  = None
+        self.current_scale: int = None
 
         # left cost volume
         self.left_cv : xr.Dataset = None
@@ -372,7 +372,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
-        confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg[input_step])
+        confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg[input_step]) # type: ignore
 
         logging.info('Confidence prediction...')
 
@@ -661,7 +661,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg[input_step])
+        confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg[input_step])# type: ignore
         self.pipeline_cfg['pipeline'][input_step] = confidence_.cfg
 
     def check_conf(self, cfg: Dict[str, dict]) -> None:

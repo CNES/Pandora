@@ -39,8 +39,9 @@ class AbstractCostVolumeConfidence():
     __metaclass__ = ABCMeta
 
     confidence_methods_avail = {}
+    cfg = None
 
-    def __new__(cls, **cfg: dict) -> object:
+    def __new__(cls, **cfg: dict):
         """
         Return the plugin associated with the confidence_method given in the configuration
 
@@ -57,6 +58,7 @@ class AbstractCostVolumeConfidence():
                     sys.exit(1)
         else:
             return super(AbstractCostVolumeConfidence, cls).__new__(cls)
+        return None
 
     @classmethod
     def register_subclass(cls, short_name: str):
@@ -89,7 +91,7 @@ class AbstractCostVolumeConfidence():
 
     @abstractmethod
     def confidence_prediction(self, disp: xr.Dataset, img_left: xr.Dataset, img_right: xr.Dataset,
-                              cv: xr.Dataset) -> None:
+                              cv: xr.Dataset) -> Tuple[xr.Dataset, xr.Dataset]:
         """
         Computes a confidence prediction.
 
