@@ -8,11 +8,32 @@ Theoretical basics
 
 `Pandora plugin <https://github.com/CNES/Pandora_plugin_libSGM>`_ to optimize the cost volume following SGM algorithm [Hirschmuller2008]_ with the `libSGM library <https://github.com/CNES/Pandora_libSGM>`_ .
 
-One can implement their own penalty estimation methods, corresponding to P1 and P2 parameters of SGM equation.
-Some are already avalaible and computed by the plugin_libsgm:
+As a reminder, SGM equation: :math:`E(D) = \sum_{p}{C(p,Dp)} + \sum_{q \in Np}{P_{1}T(|D_{p} - D_{q}|=1)} + \sum_{q \in Np}{P_{2}T(|D_{p} - D_{q}|>1)}`
+with :math:`D` the disparity image and :math:`N_{p}` the neigborhood of :math:`p`.
 
-* Methods depending on intensity gradient of the left image [Banz2012]_.
-* Method depending on intensity gradient of left and right image [Zbontar2016]_.
+One can implement their own penalty estimation methods, corresponding to :math:`P_{1}` and :math:`P_{2}` parameters of SGM equation.
+Some are already avalaible,computed by the plugin_libsgm and divided in two categories:
+
+1. Methods inspired by the one defined on [Hirschmuller2008]_ which are identified by *penalty_method=sgm_penalty*
+
+    - Constant for :math:`P_{1}` and :math:`P_{2}`.
+    - Methods depending on intensity gradient of the left image for :math:`P_{2}` estimation defined in [Banz2012]_.
+
+        - The negative gradient: :math:`P_{2} = - \alpha \mid I(p)-I(p-r) \mid + \gamma \ ` with I for intensity on left image
+        - The inverse gradient :math:`P_{2} = \frac{\alpha}{\mid I(p)-I(p-r) \mid + \beta} + \gamma \ ` with I for intensity on left image
+
+2. Method defined by [Zbontar2016]_,depending on intensity gradient of left and right images which is identified by:
+
+    - *penalty_method=mc_cnn_fast_penalty*, recommended when *mc_cnn_fast* matching cost method used.
+    - *penalty_method=mc_cnn_accurate_penalty*,  recommended when *mc_cnn_fast* matching cost method used.
+
+    For both of them, same equation but different default values for parameters as :math:`sgm_P1`, :math:`sgm_P2` ...
+
+    .. math::
+      D1 &= \mid I_{l}(p-d)-I_{l}(p-d-r) \mid \ , D2 = \mid I_{r}(p-d)-I_{r}(p-d-r) \mid \\
+      P_1 &= sgm_P1 \ , P_2 = sgm_P2 \ if \ D1<sgm_D \ , D2<sgm_D \\
+      P_1 &= \frac{sgm_P1}{sgm_Q2} \ , P_2 = \frac{sgm_P2}{sgm_Q2} \ if \ D1 \geq sgm_D \ , D2 \geq sgm_D \\
+      P_1 &= \frac{sgm_P1}{sgm_Q1} \ , P_2 = \frac{sgm_P2}{sgm_Q1} \ otherwise
 
 .. [Hirschmuller2008] H. Hirschmuller, "Stereo Processing by Semiglobal Matching and Mutual Information," in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 30, no. 2, pp. 328-341, Feb. 2008. doi: 10.1109/TPAMI.2007.1166
 .. [Banz2012] Banz, C. & Pirsch, P. & Blume, Holger. (2012). EVALUATION OF PENALTY FUNCTIONS FOR SEMI-GLOBAL MATCHING COST AGGREGATION. ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences. XXXIX-B3. 1-6. 10.5194/isprsarchives-XXXIX-B3-1-2012.
@@ -28,7 +49,7 @@ Configuration and parameters
 +====================+=========================================================+========+===============+================================================================+======================================================+
 | penalty_method     | Method for penalty estimation                           | string | "sgm_penalty" | "sgm_penalty","mc_cnn_fast_penalty", "mc_cnn_accurate_penalty" | No                                                   |
 +--------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
-| p2_method          | Method for p2 penalty estimation                        | String | "constant"    | "constant" , "negativeGradient", "inverseGradient"             | No. Only available if penalty_method = "sgm_penalty" |
+| p2_method          | sub-method of *sgm_penalty* for P2 penalty estimation   | String | "constant"    | "constant" , "negativeGradient", "inverseGradient"             | No. Only available if *penalty_method = sgm_penalty* |
 +--------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
 | overcounting       | overcounting correction                                 | Boolean| False         | True, False                                                    | No                                                   |
 +--------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
@@ -37,7 +58,7 @@ Configuration and parameters
 
 There are some parameters depending on penalty_method choice and p2_method choice.
 
-- penalty_method = "sgm_penalty" and  p2_method = "constant"
+- *penalty_method = sgm_penalty* and  *p2_method = constant*
 
 +-------+-------------------+--------------+---------------+-----------------+----------+
 | Name  | Description       | Type         | Default value | Available value | Required |
@@ -47,9 +68,9 @@ There are some parameters depending on penalty_method choice and p2_method choic
 | P2    | Penalty parameter | int or float | 32            | P2 > P1         | No       |
 +-------+-------------------+--------------+---------------+-----------------+----------+
 
-- penalty_method = "sgm_penalty" and p2_method = "negativeGradient"
+.. note::  The default values are intended for use with Census matching cost method. We cannot say that they are suitable with other matching cost method.
 
-:math:`P2 = - \alpha \mid I(p)-I(p-r) \mid + \gamma \ ` with I for intensity on left image
+- *penalty_method = sgm_penalty* and *p2_method = negativeGradient*
 
 +-------+-------------------+--------------+---------------+-----------------+----------+
 | Name  | Description       | Type         | Default value | Available value | Required |
@@ -63,9 +84,7 @@ There are some parameters depending on penalty_method choice and p2_method choic
 | gamma | Penalty parameter | int or float | 1             |                 | No       |
 +-------+-------------------+--------------+---------------+-----------------+----------+
 
-- penalty_method = "sgm_penalty" and p2_method = "inverseGradient"
-
-:math:`P2 = \frac{\alpha}{\mid I(p)-I(p-r) \mid + \beta} + \gamma \ ` with I for intensity on left image
+- *penalty_method = sgm_penalty* and *p2_method = inverseGradient*
 
 +-------+-------------------+--------------+---------------+-----------------+----------+
 | Name  | Description       | Type         | Default value | Available value | Required |
@@ -81,13 +100,7 @@ There are some parameters depending on penalty_method choice and p2_method choic
 | gamma | Penalty parameter | int or float | 1             |                 | No       |
 +-------+-------------------+--------------+---------------+-----------------+----------+
 
-- penalty_method = "mc_cnn_fast_penalty"
-
-.. math::
-  D1 &= \mid I_{l}(p-d)-I_{l}(p-d-r) \mid \ , D2 = \mid I_{r}(p-d)-I_{r}(p-d-r) \mid \\
-  P1 &= sgm_P1 \ , P2 = sgm_P2 \ if \ D1<sgm_D \ , D2<sgm_D \\
-  P1 &= \frac{sgm_P1}{sgm_Q2} \ , P2 = \frac{sgm_P2}{sgm_Q2} \ if \ D1 \geq sgm_D \ , D2 \geq sgm_D \\
-  P1 &= \frac{sgm_P1}{sgm_Q1} \ , P2 = \frac{sgm_P2}{sgm_Q1} \ otherwise
+- *penalty_method = mc_cnn_fast_penalty*
 
 +------+-------------------+--------------+---------------+-----------------+----------+
 | Name | Description       | Type         | Default value | Available value | Required |
@@ -107,7 +120,7 @@ There are some parameters depending on penalty_method choice and p2_method choic
 
 .. note:: P1, P2, Q1, Q2, D, V represent sgm_P1, sgm_P2, sgm_Q1, smg_Q2, sgm_D, sgm_V respectively
 
-- penalty_method = "mc_cnn_accurate_penalty"
+- *penalty_method = mc_cnn_accurate_penalty*
 
 +------+-------------------+--------------+---------------+-----------------+----------+
 | Name | Description       | Type         | Default value | Available value | Required |
