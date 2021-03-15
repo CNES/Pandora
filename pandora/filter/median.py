@@ -30,15 +30,16 @@ import xarray as xr
 from json_checker import Checker, And
 
 import pandora.constants as cst
-from . import filter # pylint: disable= redefined-builtin
+from . import filter  # pylint: disable= redefined-builtin
 from ..common import sliding_window
 
 
-@filter.AbstractFilter.register_subclass('median')
+@filter.AbstractFilter.register_subclass("median")
 class MedianFilter(filter.AbstractFilter):
     """
     MedianFilter class allows to perform the filtering step
     """
+
     # Default configuration, do not change this value
     _FILTER_SIZE = 3
 
@@ -48,7 +49,7 @@ class MedianFilter(filter.AbstractFilter):
         :type cfg: dictionary
         """
         self.cfg = self.check_conf(**cfg)
-        self._filter_size = cast(int, self.cfg['filter_size'])
+        self._filter_size = cast(int, self.cfg["filter_size"])
 
     def check_conf(self, **cfg: Union[str, int]) -> Dict[str, Union[str, int]]:
         """
@@ -60,12 +61,12 @@ class MedianFilter(filter.AbstractFilter):
         :rtype: dict
         """
         # Give the default value if the required element is not in the configuration
-        if 'filter_size' not in cfg:
-            cfg['filter_size'] = self._FILTER_SIZE
+        if "filter_size" not in cfg:
+            cfg["filter_size"] = self._FILTER_SIZE
 
         schema = {
-            'filter_method': And(str, lambda input: 'median'),
-            'filter_size': And(int, lambda input: input >= 1 and input % 2 != 0)
+            "filter_method": And(str, lambda input: "median"),
+            "filter_size": And(int, lambda input: input >= 1 and input % 2 != 0),
         }
 
         checker = Checker(schema)
@@ -76,10 +77,15 @@ class MedianFilter(filter.AbstractFilter):
         """
         Describes the filtering method
         """
-        print('Median filter description')
+        print("Median filter description")
 
-    def filter_disparity(self, disp: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None,
-                         cv: xr.Dataset = None) -> None:
+    def filter_disparity(
+        self,
+        disp: xr.Dataset,
+        img_left: xr.Dataset = None,
+        img_right: xr.Dataset = None,
+        cv: xr.Dataset = None,
+    ) -> None:
         """
         Apply a median filter on valid pixels.
         Invalid pixels are not filtered. If a valid pixel contains an invalid pixel in its filter, the invalid pixel is
@@ -100,15 +106,18 @@ class MedianFilter(filter.AbstractFilter):
         :return: None
         """
         # Invalid pixels are nan
-        masked_data = disp['disparity_map'].copy(deep=True).data
-        masked_data[np.where((disp['validity_mask'].data & cst.PANDORA_MSK_PIXEL_INVALID) != 0)] = np.nan
+        masked_data = disp["disparity_map"].copy(deep=True).data
+        masked_data[np.where((disp["validity_mask"].data & cst.PANDORA_MSK_PIXEL_INVALID) != 0)] = np.nan
 
         valid = np.isfinite(masked_data)
         disp_median = self.median_filter(masked_data)
 
-        disp['disparity_map'].data[valid] = disp_median[valid]
-        disp.attrs['filter'] = 'median'
-        del disp_median, masked_data,
+        disp["disparity_map"].data[valid] = disp_median[valid]
+        disp.attrs["filter"] = "median"
+        del (
+            disp_median,
+            masked_data,
+        )
 
     def median_filter(self, data) -> np.ndarray:
         """
@@ -135,16 +144,16 @@ class MedianFilter(filter.AbstractFilter):
         y_begin = radius
 
         with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+            warnings.filterwarnings("ignore", r"All-NaN (slice|axis) encountered")
             # numpy.nanmedian : Compute the median along the specified axis, while ignoring NaNs (i.e if valid pixel
             # contains an invalid pixel in its filter, the invalid pixel is ignored because invalid pixels are nan )
-            for col, disp_y in enumerate(disp_chunked_y): # pylint: disable= unused-variable
+            for col, disp_y in enumerate(disp_chunked_y):  # pylint: disable= unused-variable
                 # To reduce memory, the data array is split (along the col axis) into multiple sub-arrays,
                 # with a step of 100
                 disp_chunked_x = np.array_split(disp_y, np.arange(chunk_size, nx_, chunk_size), axis=1)
                 x_begin = radius
 
-                for rox, disp_x in enumerate(disp_chunked_x): # pylint: disable= unused-variable
+                for rox, disp_x in enumerate(disp_chunked_x):  # pylint: disable= unused-variable
                     y_end = y_begin + disp_y.shape[0]
                     x_end = x_begin + disp_x.shape[1]
                     data_median[y_begin:y_end, x_begin:x_end] = np.nanmedian(disp_x, axis=(2, 3))

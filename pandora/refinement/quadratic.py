@@ -33,7 +33,7 @@ import pandora.constants as cst
 from . import refinement
 
 
-@refinement.AbstractRefinement.register_subclass('quadratic')
+@refinement.AbstractRefinement.register_subclass("quadratic")
 class Quadratic(refinement.AbstractRefinement):
     """
     Quadratic class allows to perform the subpixel cost refinement step
@@ -46,7 +46,7 @@ class Quadratic(refinement.AbstractRefinement):
         :return: None
         """
         self.cfg = self.check_conf(**cfg)
-        self._refinement_method_name = str(self.cfg['refinement_method'])
+        self._refinement_method_name = str(self.cfg["refinement_method"])
 
     @staticmethod
     def check_conf(**cfg: str) -> Dict[str, str]:
@@ -58,9 +58,7 @@ class Quadratic(refinement.AbstractRefinement):
         :return cfg: refinement configuration updated
         :rtype: dict
         """
-        schema = {
-            'refinement_method': And(str, lambda input: 'quadratic')
-        }
+        schema = {"refinement_method": And(str, lambda input: "quadratic")}
 
         checker = Checker(schema)
         checker.validate(cfg)
@@ -71,7 +69,7 @@ class Quadratic(refinement.AbstractRefinement):
         Describes the subpixel refinement method
         :return: None
         """
-        print('Quadratic refinement method')
+        print("Quadratic refinement method")
 
     @staticmethod
     @njit(cache=True)
@@ -95,7 +93,7 @@ class Quadratic(refinement.AbstractRefinement):
             return disp, cost[1], cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
 
         inverse = 1
-        if measure == 'max':
+        if measure == "max":
             # Additive inverse : if a < b then -a > -b
             inverse = -1
 

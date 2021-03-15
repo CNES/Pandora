@@ -31,13 +31,14 @@ from typing import Dict
 import xarray as xr
 
 
-class AbstractOptimization():
+class AbstractOptimization:
     """
     Abstract Optimizationinput class
     """
+
     __metaclass__ = ABCMeta
 
-    optimization_methods_avail : Dict = {}
+    optimization_methods_avail: Dict = {}
     cfg = None
 
     def __new__(cls, **cfg: Dict[str, dict]):
@@ -48,21 +49,29 @@ class AbstractOptimization():
         :type cfg: dictionary
         """
         if cls is AbstractOptimization:
-            if isinstance(cfg['optimization_method'], str):
+            if isinstance(cfg["optimization_method"], str):
                 try:
                     return super(AbstractOptimization, cls).__new__(
-                        cls.optimization_methods_avail[cfg['optimization_method']])
+                        cls.optimization_methods_avail[cfg["optimization_method"]]
+                    )
                 except KeyError:
-                    logging.error('No optimization method named % supported', cfg['optimization_method'])
+                    logging.error(
+                        "No optimization method named % supported",
+                        cfg["optimization_method"],
+                    )
                     sys.exit(1)
             else:
-                if isinstance(cfg['optimization_method'], unicode):# type: ignore # pylint: disable=undefined-variable
+                if isinstance(cfg["optimization_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractOptimization, cls).__new__(
-                            cls.optimization_methods_avail[cfg['optimization_method'].encode('utf-8')])
+                            cls.optimization_methods_avail[cfg["optimization_method"].encode("utf-8")]
+                        )
                     except KeyError:
-                        logging.error('No optimization method named % supported', cfg['optimization_method'])
+                        logging.error(
+                            "No optimization method named % supported",
+                            cfg["optimization_method"],
+                        )
                         sys.exit(1)
         else:
             return super(AbstractOptimization, cls).__new__(cls)
@@ -95,7 +104,7 @@ class AbstractOptimization():
         Describes the optimization method
         :return: None
         """
-        print('Optimization method description')
+        print("Optimization method description")
 
     @abstractmethod
     def optimize_cv(self, cv: xr.Dataset, img_left: xr.Dataset, img_right: xr.Dataset) -> xr.Dataset:

@@ -33,11 +33,12 @@ from pandora.img_tools import shift_right_img, census_transform
 from pandora.matching_cost import matching_cost
 
 
-@matching_cost.AbstractMatchingCost.register_subclass('census')
+@matching_cost.AbstractMatchingCost.register_subclass("census")
 class Census(matching_cost.AbstractMatchingCost):
     """
     Census class allows to compute the cost volume
     """
+
     # Default configuration, do not change these values
     _WINDOW_SIZE = 5
     _SUBPIX = 1
@@ -49,8 +50,8 @@ class Census(matching_cost.AbstractMatchingCost):
         :return: None
         """
         self.cfg = self.check_conf(**cfg)
-        self._window_size = self.cfg['window_size']
-        self._subpix = self.cfg['subpix']
+        self._window_size = self.cfg["window_size"]
+        self._subpix = self.cfg["subpix"]
 
     def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
         """
@@ -62,30 +63,31 @@ class Census(matching_cost.AbstractMatchingCost):
         :rtype: dict
         """
         # Give the default value if the required element is not in the conf
-        if 'window_size' not in cfg:
-            cfg['window_size'] = self._WINDOW_SIZE# type: ignore
-        if 'subpix' not in cfg:
-            cfg['subpix'] = self._SUBPIX# type: ignore
+        if "window_size" not in cfg:
+            cfg["window_size"] = self._WINDOW_SIZE  # type: ignore
+        if "subpix" not in cfg:
+            cfg["subpix"] = self._SUBPIX  # type: ignore
 
         schema = {
-            'matching_cost_method': And(str, lambda input: 'census'),
-            'window_size': And(int, lambda input: input in (3, 5)),
-            'subpix': And(int, lambda input: input in (1, 2, 4))
+            "matching_cost_method": And(str, lambda input: "census"),
+            "window_size": And(int, lambda input: input in (3, 5)),
+            "subpix": And(int, lambda input: input in (1, 2, 4)),
         }
 
         checker = Checker(schema)
         checker.validate(cfg)
-        return cfg# type: ignore
+        return cfg  # type: ignore
 
     def desc(self) -> None:
         """
         Describes the matching cost method
         :return: None
         """
-        print('census similarity measure')
+        print("census similarity measure")
 
-    def compute_cost_volume(self, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: int,
-                            disp_max: int) -> xr.Dataset:
+    def compute_cost_volume(
+        self, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: int, disp_max: int
+    ) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
 
@@ -115,9 +117,14 @@ class Census(matching_cost.AbstractMatchingCost):
         # Maximal cost of the cost volume with census measure
         cmax = int(self._window_size ** 2)
         offset_row_col = int((self._window_size - 1) / 2)
-        metadata = {'measure': 'census', 'subpixel': self._subpix,
-                    'offset_row_col': offset_row_col, 'window_size': self._window_size,
-                    'type_measure': 'min', 'cmax': cmax}
+        metadata = {
+            "measure": "census",
+            "subpixel": self._subpix,
+            "offset_row_col": offset_row_col,
+            "window_size": self._window_size,
+            "type_measure": "min",
+            "cmax": cmax,
+        }
 
         # Apply census transformation
         left = census_transform(img_left, self._window_size)
@@ -132,12 +139,15 @@ class Census(matching_cost.AbstractMatchingCost):
             disparity_range = np.append(disparity_range, [disp_max])
 
         # Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
-        cv = np.zeros((len(disparity_range), img_left['im'].shape[1], img_left['im'].shape[0]), dtype=np.float32)
+        cv = np.zeros(
+            (len(disparity_range), img_left["im"].shape[1], img_left["im"].shape[0]),
+            dtype=np.float32,
+        )
         cv += np.nan
 
         # If offset, do not consider border position for cost computation
         if offset_row_col != 0:
-            cv_crop= cv[:, offset_row_col:-offset_row_col, offset_row_col: -offset_row_col]
+            cv_crop = cv[:, offset_row_col:-offset_row_col, offset_row_col:-offset_row_col]
         else:
             cv_crop = cv
 
@@ -176,24 +186,33 @@ class Census(matching_cost.AbstractMatchingCost):
             point_p, point_q = self.point_interval(left, img_right_shift[i_right], disp)
             dsp = int((disp - disp_min) * self._subpix)
 
-            cv_crop[dsp, point_p[0]:point_p[1], :] = np.swapaxes(
-                self.census_cost(point_p, point_q, left, img_right_shift[i_right]), 0, 1)
+            cv_crop[dsp, point_p[0] : point_p[1], :] = np.swapaxes(
+                self.census_cost(point_p, point_q, left, img_right_shift[i_right]), 0, 1
+            )
 
         # Create the xarray.DataSet that will contain the cv of dimensions (row, col, disp)
-        cv = self.allocate_costvolume(img_left, self._subpix,
-                                      disp_min, disp_max,
-                                      self._window_size,
-                                      metadata,
-                                      np.swapaxes(cv, 0, 2))
+        cv = self.allocate_costvolume(
+            img_left,
+            self._subpix,
+            disp_min,
+            disp_max,
+            self._window_size,
+            metadata,
+            np.swapaxes(cv, 0, 2),
+        )
 
         # Remove temporary values
         del left, img_right_shift
 
         return cv
 
-    def census_cost(self, point_p: Tuple[int, int], point_q: Tuple[int, int], img_left: xr.Dataset,
-                    img_right: xr.Dataset) -> \
-            List[int]:
+    def census_cost(
+        self,
+        point_p: Tuple[int, int],
+        point_q: Tuple[int, int],
+        img_left: xr.Dataset,
+        img_right: xr.Dataset,
+    ) -> List[int]:
         """
         Computes xor pixel-wise between pre-processed images by census transform
 
@@ -214,8 +233,9 @@ class Census(matching_cost.AbstractMatchingCost):
         :return: the xor pixel-wise between elements in the interval
         :rtype: numpy array
         """
-        xor_ = img_left['im'].data[:, point_p[0]:point_p[1]].astype('uint32') ^ img_right['im'].data[:,
-                                                                                point_q[0]:point_q[1]].astype('uint32')
+        xor_ = img_left["im"].data[:, point_p[0] : point_p[1]].astype("uint32") ^ img_right["im"].data[
+            :, point_q[0] : point_q[1]
+        ].astype("uint32")
         return list(map(self.popcount32b, xor_))
 
     @staticmethod
@@ -231,7 +251,7 @@ class Census(matching_cost.AbstractMatchingCost):
         """
         row -= (row >> 1) & 0x55555555
         row = (row & 0x33333333) + ((row >> 2) & 0x33333333)
-        row = (row + (row >> 4)) & 0x0f0f0f0f
+        row = (row + (row >> 4)) & 0x0F0F0F0F
         row += row >> 8
         row += row >> 16
-        return row & 0x7f
+        return row & 0x7F

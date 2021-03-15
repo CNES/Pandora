@@ -54,12 +54,11 @@ def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.Da
     """
     # this silence chosen category of warnings only for the following instructions
     with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', category=UserWarning)
+        warnings.filterwarnings("ignore", category=UserWarning)
         return rasterio.open(*args, **kwargs)
 
 
-def read_img(img: str, no_data: float, mask: str = None, classif: str = None, segm: str = None) ->\
-        xr.Dataset:
+def read_img(img: str, no_data: float, mask: str = None, classif: str = None, segm: str = None) -> xr.Dataset:
     """
     Read image and mask, and return the corresponding xarray.DataSet
 
@@ -94,27 +93,34 @@ def read_img(img: str, no_data: float, mask: str = None, classif: str = None, se
         data[no_data_pixels] = -9999
         no_data = -9999
 
-    dataset = xr.Dataset({'im': (['row', 'col'], data.astype(np.float32))},
-                         coords={'row': np.arange(data.shape[0]),
-                                 'col': np.arange(data.shape[1])})
+    dataset = xr.Dataset(
+        {"im": (["row", "col"], data.astype(np.float32))},
+        coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
+    )
     # Add image conf to the image dataset
-    dataset.attrs = {'no_data_img': no_data,
-                     'crs': img_ds.profile['crs'],
-                     'transform': img_ds.profile['transform'],
-                     'valid_pixels': 0, # arbitrary default value
-                     'no_data_mask': 1} # arbitrary default value
+    dataset.attrs = {
+        "no_data_img": no_data,
+        "crs": img_ds.profile["crs"],
+        "transform": img_ds.profile["transform"],
+        "valid_pixels": 0,  # arbitrary default value
+        "no_data_mask": 1,
+    }  # arbitrary default value
 
     if classif is not None:
         input_classif = rasterio_open(classif).read(1)
-        dataset['classif'] = xr.DataArray(np.full((data.shape[0], data.shape[1]), 0).astype(np.int16),
-                                          dims=['row', 'col'])
-        dataset['classif'].data = input_classif
+        dataset["classif"] = xr.DataArray(
+            np.full((data.shape[0], data.shape[1]), 0).astype(np.int16),
+            dims=["row", "col"],
+        )
+        dataset["classif"].data = input_classif
 
     if segm is not None:
         input_segm = rasterio_open(segm).read(1)
-        dataset['segm'] = xr.DataArray(np.full((data.shape[0], data.shape[1]), 0).astype(np.int16),
-                                       dims=['row', 'col'])
-        dataset['segm'].data = input_segm
+        dataset["segm"] = xr.DataArray(
+            np.full((data.shape[0], data.shape[1]), 0).astype(np.int16),
+            dims=["row", "col"],
+        )
+        dataset["segm"].data = input_segm
 
     # If there is no mask, and no data in the images, do not create the mask to minimize calculation time
     if mask is None and no_data_pixels[0].size == 0:
@@ -126,8 +132,10 @@ def read_img(img: str, no_data: float, mask: str = None, classif: str = None, se
     # dataset.attrs['valid_pixels'] : a valid pixel
     # dataset.attrs['no_data_mask'] : a no_data_pixel
     # other value : an invalid_pixel
-    dataset['msk'] = xr.DataArray(np.full((data.shape[0], data.shape[1]),
-                                          dataset.attrs['valid_pixels']).astype(np.int16), dims=['row', 'col'])
+    dataset["msk"] = xr.DataArray(
+        np.full((data.shape[0], data.shape[1]), dataset.attrs["valid_pixels"]).astype(np.int16),
+        dims=["row", "col"],
+    )
 
     # Mask invalid pixels if needed
     # convention: input_mask contains information to identify valid / invalid pixels.
@@ -137,13 +145,14 @@ def read_img(img: str, no_data: float, mask: str = None, classif: str = None, se
         input_mask = rasterio_open(mask).read(1)
         # Masks invalid pixels
         # All pixels that are not valid_pixels, on the input mask, are considered as invalid pixels
-        dataset['msk'].data[np.where(input_mask > 0)] = dataset.attrs['valid_pixels'] + \
-                                                        dataset.attrs['no_data_mask'] + 1
+        dataset["msk"].data[np.where(input_mask > 0)] = (
+            dataset.attrs["valid_pixels"] + dataset.attrs["no_data_mask"] + 1
+        )
 
     # Masks no_data pixels
     # If a pixel is invalid due to the input mask, and it is also no_data, then the value of this pixel in the
     # generated mask will be = no_data
-    dataset['msk'].data[no_data_pixels] = int(dataset.attrs['no_data_mask'])
+    dataset["msk"].data[no_data_pixels] = int(dataset.attrs["no_data_mask"])
 
     return dataset
 
@@ -160,46 +169,47 @@ def check_dataset(dataset: xr.Dataset) -> xr.Dataset:
     new_dataset = copy.copy(dataset)
 
     # Check image
-    if 'im' not in dataset:
-        logging.error('User must provide an image im')
+    if "im" not in dataset:
+        logging.error("User must provide an image im")
         sys.exit(1)
 
     # Check mask
-    if 'msk' not in dataset:
-        logging.warning('User should provide a mask msk')
+    if "msk" not in dataset:
+        logging.warning("User should provide a mask msk")
     else:
-        if dataset['im'].data.shape != dataset['msk'].data.shape:
-            logging.error('image and mask must have the same shape')
+        if dataset["im"].data.shape != dataset["msk"].data.shape:
+            logging.error("image and mask must have the same shape")
             sys.exit(1)
 
     # Check no_data_img
-    if 'no_data_img' not in dataset.attrs:
-        logging.error('User must provide the image nodata value ')
+    if "no_data_img" not in dataset.attrs:
+        logging.error("User must provide the image nodata value ")
         sys.exit(1)
 
     # Check valid_pixels
-    if 'valid_pixels' not in dataset.attrs:
-        logging.error('User must provide the valid pixels value')
+    if "valid_pixels" not in dataset.attrs:
+        logging.error("User must provide the valid pixels value")
         sys.exit(1)
 
     # Check valid_pixels
-    if 'no_data_mask' not in dataset.attrs:
-        logging.error('User must provide the no_data_mask pixels value')
+    if "no_data_mask" not in dataset.attrs:
+        logging.error("User must provide the no_data_mask pixels value")
         sys.exit(1)
 
     # Check georef
-    if 'crs' not in dataset.attrs:
-        logging.error('User must provide image crs')
+    if "crs" not in dataset.attrs:
+        logging.error("User must provide image crs")
         sys.exit(1)
-    if 'transform' not in dataset.attrs:
-        logging.error('User must provide image transform')
+    if "transform" not in dataset.attrs:
+        logging.error("User must provide image transform")
         sys.exit(1)
 
     return new_dataset
 
 
-def prepare_pyramid(img_left: xr.Dataset, img_right: xr.Dataset, num_scales: int, scale_factor: int) -> \
-        Tuple[List[xr.Dataset], List[xr.Dataset]]:
+def prepare_pyramid(
+    img_left: xr.Dataset, img_right: xr.Dataset, num_scales: int, scale_factor: int
+) -> Tuple[List[xr.Dataset], List[xr.Dataset]]:
     """
     Return a List with the datasets at the different scales
 
@@ -223,10 +233,28 @@ def prepare_pyramid(img_left: xr.Dataset, img_right: xr.Dataset, num_scales: int
     img_right_fill, msk_right_fill = fill_nodata_image(img_right)
 
     # Create image pyramids
-    images_left = list(pyramid_gaussian(img_left_fill, max_layer=num_scales - 1, downscale=scale_factor,
-                                        sigma=1.2, order=1, mode='reflect', cval=0))
-    images_right = list(pyramid_gaussian(img_right_fill, max_layer=num_scales - 1, downscale=scale_factor,
-                                         sigma=1.2, order=1, mode='reflect', cval=0))
+    images_left = list(
+        pyramid_gaussian(
+            img_left_fill,
+            max_layer=num_scales - 1,
+            downscale=scale_factor,
+            sigma=1.2,
+            order=1,
+            mode="reflect",
+            cval=0,
+        )
+    )
+    images_right = list(
+        pyramid_gaussian(
+            img_right_fill,
+            max_layer=num_scales - 1,
+            downscale=scale_factor,
+            sigma=1.2,
+            order=1,
+            mode="reflect",
+            cval=0,
+        )
+    )
     # Create mask pyramids
     masks_left = masks_pyramid(msk_left_fill, scale_factor, num_scales)
     masks_right = masks_pyramid(msk_right_fill, scale_factor, num_scales)
@@ -241,20 +269,23 @@ def prepare_pyramid(img_left: xr.Dataset, img_right: xr.Dataset, num_scales: int
 
 def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
     """
-        Interpolate no data values in image. If no mask was given, create all valid masks
+    Interpolate no data values in image. If no mask was given, create all valid masks
 
-        :param dataset: Dataset image
-        :type dataset: xarray.Dataset containing :
+    :param dataset: Dataset image
+    :type dataset: xarray.Dataset containing :
 
-            - im : 2D (row, col) xarray.DataArray
-        :return: a Tuple that contains the filled image and mask
-        :rtype: Tuple of np.ndarray
-        """
-    if 'msk' in dataset:
-        img, msk = interpolate_nodata_sgm(dataset['im'].data, dataset['msk'].data)
+        - im : 2D (row, col) xarray.DataArray
+    :return: a Tuple that contains the filled image and mask
+    :rtype: Tuple of np.ndarray
+    """
+    if "msk" in dataset:
+        img, msk = interpolate_nodata_sgm(dataset["im"].data, dataset["msk"].data)
     else:
-        msk = np.full((dataset['im'].data.shape[0], dataset['im'].data.shape[1]), int(dataset.attrs['valid_pixels']))
-        img = dataset['im'].data
+        msk = np.full(
+            (dataset["im"].data.shape[0], dataset["im"].data.shape[1]),
+            int(dataset.attrs["valid_pixels"]),
+        )
+        img = dataset["im"].data
     return img, msk
 
 
@@ -318,15 +349,16 @@ def masks_pyramid(msk: np.ndarray, scale_factor: int, num_scales: int) -> List[n
     # Add the full resolution mask
     msk_pyramid.append(msk)
     tmp_msk = msk
-    for scale in range(num_scales - 1): #pylint: disable=unused-variable
+    for scale in range(num_scales - 1):  # pylint: disable=unused-variable
         # Decimate in the two axis
         tmp_msk = tmp_msk[::scale_factor, ::scale_factor]
         msk_pyramid.append(tmp_msk)
     return msk_pyramid
 
 
-def convert_pyramid_to_dataset(img_orig: xr.Dataset, images: List[np.ndarray], masks: List[np.ndarray]) \
-        -> List[xr.Dataset]:
+def convert_pyramid_to_dataset(
+    img_orig: xr.Dataset, images: List[np.ndarray], masks: List[np.ndarray]
+) -> List[xr.Dataset]:
     """
     Return a List with the datasets at the different scales
 
@@ -346,7 +378,6 @@ def convert_pyramid_to_dataset(img_orig: xr.Dataset, images: List[np.ndarray], m
     :rtype: List of xarray.Dataset
     """
 
-
     pyramid = []
     for index, image in enumerate(images):
         # The full resolution image (first in list) has to be the original image and mask
@@ -355,13 +386,16 @@ def convert_pyramid_to_dataset(img_orig: xr.Dataset, images: List[np.ndarray], m
             continue
 
         # Creating new dataset
-        dataset = xr.Dataset({'im': (['row', 'col'], image.astype(np.float32))},
-                             coords={'row': np.arange(image.shape[0]),
-                                     'col': np.arange(image.shape[1])})
+        dataset = xr.Dataset(
+            {"im": (["row", "col"], image.astype(np.float32))},
+            coords={"row": np.arange(image.shape[0]), "col": np.arange(image.shape[1])},
+        )
 
         # Allocate the mask
-        dataset['msk'] = xr.DataArray(np.full((image.shape[0], image.shape[1]), masks[index].astype(np.int16)),
-                                      dims=['row', 'col'])
+        dataset["msk"] = xr.DataArray(
+            np.full((image.shape[0], image.shape[1]), masks[index].astype(np.int16)),
+            dims=["row", "col"],
+        )
 
         # Add image conf to the image dataset
         # - attributes are linked to each others
@@ -385,34 +419,50 @@ def shift_right_img(img_right: xr.Dataset, subpix: int) -> List[xr.Dataset]:
     :rtype: array of xarray.Dataset
     """
     img_right_shift = [img_right]
-    ny_, nx_ = img_right['im'].shape
+    ny_, nx_ = img_right["im"].shape
 
     # zoom factor = (number of columns with zoom / number of original columns)
     if subpix == 2:
         # Shift the right image for subpixel precision 0.5
-        data = zoom(img_right['im'].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 2::4]
-        col = np.arange(img_right.coords['col'][0] + 0.5, img_right.coords['col'][-1], step=1)
-        img_right_shift.append(xr.Dataset({'im': (['row', 'col'], data)},
-                                          coords={'row': np.arange(ny_), 'col': col}))
+        data = zoom(img_right["im"].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 2::4]
+        col = np.arange(img_right.coords["col"][0] + 0.5, img_right.coords["col"][-1], step=1)
+        img_right_shift.append(
+            xr.Dataset(
+                {"im": (["row", "col"], data)},
+                coords={"row": np.arange(ny_), "col": col},
+            )
+        )
 
     if subpix == 4:
         # Shift the right image for subpixel precision 0.25
-        data = zoom(img_right['im'].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 1::4]
-        col = np.arange(img_right.coords['col'][0] + 0.25, img_right.coords['col'][-1], step=1)
-        img_right_shift.append(xr.Dataset({'im': (['row', 'col'], data)},
-                                          coords={'row': np.arange(ny_), 'col': col}))
+        data = zoom(img_right["im"].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 1::4]
+        col = np.arange(img_right.coords["col"][0] + 0.25, img_right.coords["col"][-1], step=1)
+        img_right_shift.append(
+            xr.Dataset(
+                {"im": (["row", "col"], data)},
+                coords={"row": np.arange(ny_), "col": col},
+            )
+        )
 
         # Shift the right image for subpixel precision 0.5
-        data = zoom(img_right['im'].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 2::4]
-        col = np.arange(img_right.coords['col'][0] + 0.5, img_right.coords['col'][-1], step=1)
-        img_right_shift.append(xr.Dataset({'im': (['row', 'col'], data)},
-                                          coords={'row': np.arange(ny_), 'col': col}))
+        data = zoom(img_right["im"].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 2::4]
+        col = np.arange(img_right.coords["col"][0] + 0.5, img_right.coords["col"][-1], step=1)
+        img_right_shift.append(
+            xr.Dataset(
+                {"im": (["row", "col"], data)},
+                coords={"row": np.arange(ny_), "col": col},
+            )
+        )
 
         # Shift the right image for subpixel precision 0.75
-        data = zoom(img_right['im'].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 3::4]
-        col = np.arange(img_right.coords['col'][0] + 0.75, img_right.coords['col'][-1], step=1)
-        img_right_shift.append(xr.Dataset({'im': (['row', 'col'], data)},
-                                          coords={'row': np.arange(ny_), 'col': col}))
+        data = zoom(img_right["im"].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 3::4]
+        col = np.arange(img_right.coords["col"][0] + 0.75, img_right.coords["col"][-1], step=1)
+        img_right_shift.append(
+            xr.Dataset(
+                {"im": (["row", "col"], data)},
+                coords={"row": np.arange(ny_), "col": col},
+            )
+        )
     return img_right_shift
 
 
@@ -431,7 +481,7 @@ def check_inside_image(img: xr.Dataset, row: int, col: int) -> bool:
     :return: a boolean
     :rtype: boolean
     """
-    nx_, ny_ = img['im'].shape
+    nx_, ny_ = img["im"].shape
     return 0 <= row < nx_ and 0 <= col < ny_
 
 
@@ -447,22 +497,27 @@ def census_transform(image: xr.Dataset, window_size: int) -> xr.Dataset:
     uint32
     :rtype: xarray.Dataset
     """
-    ny_, nx_ = image['im'].shape
+    ny_, nx_ = image["im"].shape
     border = int((window_size - 1) / 2)
 
     # Create a sliding window of using as_strided function : this function create a new a view (by manipulating data
     #  pointer) of the image array with a different shape. The new view pointing to the same memory block as
     # image so it does not consume any additional memory.
-    str_row, str_col = image['im'].data.strides
-    shape_windows = (ny_ - (window_size - 1), nx_ - (window_size - 1), window_size, window_size)
+    str_row, str_col = image["im"].data.strides
+    shape_windows = (
+        ny_ - (window_size - 1),
+        nx_ - (window_size - 1),
+        window_size,
+        window_size,
+    )
     strides_windows = (str_row, str_col, str_row, str_col)
-    windows = np.lib.stride_tricks.as_strided(image['im'].data, shape_windows, strides_windows, writeable=False)
+    windows = np.lib.stride_tricks.as_strided(image["im"].data, shape_windows, strides_windows, writeable=False)
 
     # Pixels inside the image which can be centers of windows
-    central_pixels = image['im'].data[border:-border, border:-border]
+    central_pixels = image["im"].data[border:-border, border:-border]
 
     # Allocate the census mask
-    census = np.zeros((ny_ - (window_size - 1), nx_ - (window_size - 1)), dtype='uint32')
+    census = np.zeros((ny_ - (window_size - 1), nx_ - (window_size - 1)), dtype="uint32")
 
     shift = (window_size * window_size) - 1
     for row in range(window_size):
@@ -471,9 +526,13 @@ def census_transform(image: xr.Dataset, window_size: int) -> xr.Dataset:
             census[:, :] += ((windows[:, :, row, col] > central_pixels[:, :]) << shift).astype(np.uint32)
             shift -= 1
 
-    census = xr.Dataset({'im': (['row', 'col'], census)},
-                        coords={'row': np.arange(border, ny_ - border),
-                                'col': np.arange(border, nx_ - border)})
+    census = xr.Dataset(
+        {"im": (["row", "col"], census)},
+        coords={
+            "row": np.arange(border, ny_ - border),
+            "col": np.arange(border, nx_ - border),
+        },
+    )
 
     return census
 
@@ -491,7 +550,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
     :return: mean raster
     :rtype: numpy array
     """
-    ny_, nx_ = img['im'].shape
+    ny_, nx_ = img["im"].shape
 
     # Example with win_size = 3 and the input :
     #           10 | 5  | 3
@@ -499,7 +558,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
     #            5 | 3  | 1
 
     # Compute the cumulative sum of the elements along the column axis
-    r_mean = np.r_[np.zeros((1, nx_)), img['im']]
+    r_mean = np.r_[np.zeros((1, nx_)), img["im"]]
     # r_mean :   0 | 0  | 0
     #           10 | 5  | 3
     #            2 | 10 | 5
@@ -523,8 +582,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
 
 
 @njit()
-def find_valid_neighbors(dirs: np.ndarray, disp: np.ndarray, valid: np.ndarray,
-                         row: int, col: int):
+def find_valid_neighbors(dirs: np.ndarray, disp: np.ndarray, valid: np.ndarray, row: int, col: int):
     """
     Find valid neighbors along directions
 
@@ -586,12 +644,15 @@ def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np
     end_window = (row + int(win_size / 2), col + int(win_size / 2))
 
     # Check if the window is inside the image, and compute the mean
-    if check_inside_image(img, begin_window[0], begin_window[1]) and \
-            check_inside_image(img, end_window[0], end_window[1]):
-        return np.mean(img['im'][begin_window[1]:end_window[1] + 1, begin_window[0]:end_window[0] + 1],
-                       dtype=np.float32)
+    if check_inside_image(img, begin_window[0], begin_window[1]) and check_inside_image(
+        img, end_window[0], end_window[1]
+    ):
+        return np.mean(
+            img["im"][begin_window[1] : end_window[1] + 1, begin_window[0] : end_window[0] + 1],
+            dtype=np.float32,
+        )
 
-    logging.error('The window is outside the image')
+    logging.error("The window is outside the image")
     raise IndexError
 
 
@@ -613,8 +674,13 @@ def compute_std_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
     mean_ = compute_mean_raster(img, win_size)
 
     # Computes E[row^2]
-    raster_power_two = xr.Dataset({'im': (['row', 'col'], img['im'].data ** 2)},
-                                  coords={'row': np.arange(img['im'].shape[0]), 'col': np.arange(img['im'].shape[1])})
+    raster_power_two = xr.Dataset(
+        {"im": (["row", "col"], img["im"].data ** 2)},
+        coords={
+            "row": np.arange(img["im"].shape[0]),
+            "col": np.arange(img["im"].shape[1]),
+        },
+    )
     mean_power_two = compute_mean_raster(raster_power_two, win_size)
 
     # Compute sqrt( E[row^2] - E[row]^2 )

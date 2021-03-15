@@ -35,10 +35,13 @@ def get_parser():
 
     :return parser
     """
-    parser = argparse.ArgumentParser(description='Pandora stereo matching')
-    parser.add_argument('config', help='Path to a json file containing the input files paths and algorithm parameters')
-    parser.add_argument('output_dir', help='Path to the output directory')
-    parser.add_argument('-v', '--verbose', help='Increase output verbosity', action='store_true')
+    parser = argparse.ArgumentParser(description="Pandora stereo matching")
+    parser.add_argument(
+        "config",
+        help="Path to a json file containing the input files paths and algorithm parameters",
+    )
+    parser.add_argument("output_dir", help="Path to the output directory")
+    parser.add_argument("-v", "--verbose", help="Increase output verbosity", action="store_true")
     return parser
 
 
@@ -54,5 +57,5 @@ def main():
     pandora.main(args.config, args.output_dir, args.verbose)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

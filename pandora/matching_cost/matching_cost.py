@@ -35,13 +35,14 @@ from scipy.ndimage.morphology import binary_dilation
 from pandora.img_tools import shift_right_img
 
 
-class AbstractMatchingCost():
+class AbstractMatchingCost:
     """
     Abstract Matching Cost class
     """
+
     __metaclass__ = ABCMeta
 
-    matching_cost_methods_avail : Dict = {}
+    matching_cost_methods_avail: Dict = {}
     _subpix = None
     _window_size = None
     cfg = None
@@ -55,21 +56,29 @@ class AbstractMatchingCost():
         """
 
         if cls is AbstractMatchingCost:
-            if isinstance(cfg['matching_cost_method'], str):
+            if isinstance(cfg["matching_cost_method"], str):
                 try:
-                    return super(AbstractMatchingCost, cls).__new__(cls.matching_cost_methods_avail
-                                                                    [cfg['matching_cost_method']])
+                    return super(AbstractMatchingCost, cls).__new__(
+                        cls.matching_cost_methods_avail[cfg["matching_cost_method"]]
+                    )
                 except KeyError:
-                    logging.error('No matching_cost method named % supported', cfg['matching_cost_method'])
+                    logging.error(
+                        "No matching_cost method named % supported",
+                        cfg["matching_cost_method"],
+                    )
                     raise KeyError
             else:
-                if isinstance(cfg['matching_cost_method'], unicode):# type: ignore # pylint: disable=undefined-variable
+                if isinstance(cfg["matching_cost_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractMatchingCost, cls).__new__(
-                            cls.matching_cost_methods_avail[cfg['matching_cost_method'].encode('utf-8')])
+                            cls.matching_cost_methods_avail[cfg["matching_cost_method"].encode("utf-8")]
+                        )
                     except KeyError:
-                        logging.error('No matching_cost method named % supported', cfg['matching_cost_method'])
+                        logging.error(
+                            "No matching_cost method named % supported",
+                            cfg["matching_cost_method"],
+                        )
                         raise KeyError
         else:
             return super(AbstractMatchingCost, cls).__new__(cls)
@@ -105,11 +114,12 @@ class AbstractMatchingCost():
         Describes the matching cost method
         :return: None
         """
-        print('Matching cost description')
+        print("Matching cost description")
 
     @abstractmethod
-    def compute_cost_volume(self, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: int, disp_max: int
-                            ) -> xr.Dataset:
+    def compute_cost_volume(
+        self, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: int, disp_max: int
+    ) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
 
@@ -135,9 +145,15 @@ class AbstractMatchingCost():
         """
 
     @staticmethod
-    def allocate_costvolume(img_left: xr.Dataset, subpix: int,
-                            disp_min: int, disp_max: int, window_size: int,
-                            metadata: dict, np_data: np.ndarray = None) -> xr.Dataset:
+    def allocate_costvolume(
+        img_left: xr.Dataset,
+        subpix: int,
+        disp_min: int,
+        disp_max: int,
+        window_size: int,
+        metadata: dict,
+        np_data: np.ndarray = None,
+    ) -> xr.Dataset:
         """
         Allocate the cost volume
 
@@ -163,8 +179,8 @@ class AbstractMatchingCost():
                 - cost_volume 3D xarray.DataArray (row, col, disp)
         :rtype: xarray.Dataset
         """
-        c_row = img_left['im'].coords['row']
-        c_col = img_left['im'].coords['col']
+        c_row = img_left["im"].coords["row"]
+        c_col = img_left["im"].coords["col"]
 
         # First pixel in the image that is fully computable (aggregation windows are complete)
         row = np.arange(c_row[0], c_row[-1] + 1)
@@ -181,20 +197,23 @@ class AbstractMatchingCost():
         if np_data is None:
             np_data = np.zeros((len(row), len(col), len(disparity_range)), dtype=np.float32)
 
-        cost_volume = xr.Dataset({'cost_volume': (['row', 'col', 'disp'], np_data)},
-                                 coords={'row': row, 'col': col, 'disp': disparity_range})
+        cost_volume = xr.Dataset(
+            {"cost_volume": (["row", "col", "disp"], np_data)},
+            coords={"row": row, "col": col, "disp": disparity_range},
+        )
         cost_volume.attrs = metadata
 
-        cost_volume.attrs['crs'] = img_left.attrs['crs']
-        cost_volume.attrs['transform'] = img_left.attrs['transform']
+        cost_volume.attrs["crs"] = img_left.attrs["crs"]
+        cost_volume.attrs["transform"] = img_left.attrs["transform"]
 
-        cost_volume.attrs['window_size'] = window_size
+        cost_volume.attrs["window_size"] = window_size
 
         return cost_volume
 
     @staticmethod
-    def point_interval(img_left: xr.Dataset, img_right: xr.Dataset, disp: float) -> \
-            Tuple[Tuple[int, int], Tuple[int, int]]:
+    def point_interval(
+        img_left: xr.Dataset, img_right: xr.Dataset, disp: float
+    ) -> Tuple[Tuple[int, int], Tuple[int, int]]:
         """
         Computes the range of points over which the similarity measure will be applied
 
@@ -213,8 +232,8 @@ class AbstractMatchingCost():
         :return: the range of the left and right image over which the similarity measure will be applied
         :rtype: tuple
         """
-        _, nx_left = img_left['im'].shape
-        _, nx_right = img_right['im'].shape
+        _, nx_left = img_left["im"].shape
+        _, nx_right = img_right["im"].shape
 
         # range in the left image
         point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))
@@ -232,8 +251,9 @@ class AbstractMatchingCost():
         return point_p, point_q
 
     @staticmethod
-    def masks_dilatation(img_left: xr.Dataset, img_right: xr.Dataset, window_size: int,
-                         subp: int) -> Tuple[xr.DataArray, List[xr.DataArray]]:
+    def masks_dilatation(
+        img_left: xr.Dataset, img_right: xr.Dataset, window_size: int, subp: int
+    ) -> Tuple[xr.DataArray, List[xr.DataArray]]:
         """
         Return the left and right mask with the convention :
             - Invalid pixels are nan
@@ -265,37 +285,49 @@ class AbstractMatchingCost():
         :rtype: tuple (left mask, list[right mask, right mask shifted by 0.5])
         """
         # Create the left mask with the convention : 0 = valid, nan = invalid and no_data
-        if 'msk' in img_left.data_vars:
-            dilatate_left_mask = np.zeros(img_left['msk'].shape)
+        if "msk" in img_left.data_vars:
+            dilatate_left_mask = np.zeros(img_left["msk"].shape)
             # Invalid pixels are nan
             dilatate_left_mask[
-                np.where((img_left['msk'].data != img_left.attrs['valid_pixels']) & (
-                        img_left['msk'].data != img_left.attrs['no_data_mask']))] = np.nan
+                np.where(
+                    (img_left["msk"].data != img_left.attrs["valid_pixels"])
+                    & (img_left["msk"].data != img_left.attrs["no_data_mask"])
+                )
+            ] = np.nan
             # Dilatation : pixels that contains no_data in their aggregation window become no_data = nan
-            dil = binary_dilation(img_left['msk'].data == img_left.attrs['no_data_mask'],
-                                  structure=np.ones((window_size, window_size)), iterations=1)
+            dil = binary_dilation(
+                img_left["msk"].data == img_left.attrs["no_data_mask"],
+                structure=np.ones((window_size, window_size)),
+                iterations=1,
+            )
             dilatate_left_mask[dil] = np.nan
         else:
             # All pixels are valid
-            dilatate_left_mask = np.zeros(img_left['im'].shape)
+            dilatate_left_mask = np.zeros(img_left["im"].shape)
 
         # Create the right mask with the convention : 0 = valid, nan = invalid and no_data
-        if 'msk' in img_right.data_vars:
-            dilatate_right_mask = np.zeros(img_right['msk'].shape)
+        if "msk" in img_right.data_vars:
+            dilatate_right_mask = np.zeros(img_right["msk"].shape)
             # Invalid pixels are nan
             dilatate_right_mask[
-                np.where((img_right['msk'].data != img_right.attrs['valid_pixels']) & (
-                        img_right['msk'].data != img_right.attrs['no_data_mask']))] = np.nan
+                np.where(
+                    (img_right["msk"].data != img_right.attrs["valid_pixels"])
+                    & (img_right["msk"].data != img_right.attrs["no_data_mask"])
+                )
+            ] = np.nan
             # Dilatation : pixels that contains no_data in their aggregation window become no_data = nan
-            dil = binary_dilation(img_right['msk'].data == img_right.attrs['no_data_mask'],
-                                  structure=np.ones((window_size, window_size)), iterations=1)
+            dil = binary_dilation(
+                img_right["msk"].data == img_right.attrs["no_data_mask"],
+                structure=np.ones((window_size, window_size)),
+                iterations=1,
+            )
             dilatate_right_mask[dil] = np.nan
 
         else:
             # All pixels are valid
-            dilatate_right_mask = np.zeros(img_left['im'].shape)
+            dilatate_right_mask = np.zeros(img_left["im"].shape)
 
-        ny_, nx_ = img_left['im'].shape
+        ny_, nx_ = img_left["im"].shape
         row = np.arange(0, ny_)
         col = np.arange(0, nx_)
 
@@ -306,7 +338,11 @@ class AbstractMatchingCost():
             # Since the interpolation of the right image is of order 1, the shifted right mask corresponds
             # to an aggregation of two columns of the dilated right mask
             str_row, str_col = dilatate_right_mask.strides
-            shape_windows = (dilatate_right_mask.shape[0], dilatate_right_mask.shape[1] - 1, 2)
+            shape_windows = (
+                dilatate_right_mask.shape[0],
+                dilatate_right_mask.shape[1] - 1,
+                2,
+            )
             strides_windows = (str_row, str_col, str_col)
             aggregation_window = np.lib.stride_tricks.as_strided(dilatate_right_mask, shape_windows, strides_windows)
             dilatate_right_mask_shift = np.sum(aggregation_window, 2)
@@ -314,13 +350,12 @@ class AbstractMatchingCost():
             # Whatever the sub-pixel precision, only one sub-pixel mask is created,
             # since 0.5 shifted mask == 0.25 shifted mask
             col_shift = np.arange(0 + 0.5, nx_ - 1, step=1)
-            dilatate_right_mask_shift = xr.DataArray(dilatate_right_mask_shift,
-                                                     coords=[row, col_shift], dims=['row', 'col'])
+            dilatate_right_mask_shift = xr.DataArray(
+                dilatate_right_mask_shift, coords=[row, col_shift], dims=["row", "col"]
+            )
 
-        dilatate_left_mask = xr.DataArray(dilatate_left_mask,
-                                          coords=[row, col], dims=['row', 'col'])
-        dilatate_right_mask = xr.DataArray(dilatate_right_mask,
-                                           coords=[row, col], dims=['row', 'col'])
+        dilatate_left_mask = xr.DataArray(dilatate_left_mask, coords=[row, col], dims=["row", "col"])
+        dilatate_right_mask = xr.DataArray(dilatate_right_mask, coords=[row, col], dims=["row", "col"])
 
         return dilatate_left_mask, [dilatate_right_mask, dilatate_right_mask_shift]
 
@@ -354,8 +389,14 @@ class AbstractMatchingCost():
 
         return dmin_min, dmax_max
 
-    def cv_masked(self, img_left: xr.Dataset, img_right: xr.Dataset, cost_volume: xr.Dataset,
-                  disp_min: Union[int, np.ndarray], disp_max: Union[int, np.ndarray]) -> None:
+    def cv_masked(
+        self,
+        img_left: xr.Dataset,
+        img_right: xr.Dataset,
+        cost_volume: xr.Dataset,
+        disp_min: Union[int, np.ndarray],
+        disp_max: Union[int, np.ndarray],
+    ) -> None:
         """
         Masks the cost volume :
             - costs which are not inside their disparity range, are masked with a nan value
@@ -385,9 +426,9 @@ class AbstractMatchingCost():
         :type cfg: dict
         :return: None
         """
-        ny_, nx_, nd_ = cost_volume['cost_volume'].shape # pylint: disable=unused-variable
+        ny_, nx_, nd_ = cost_volume["cost_volume"].shape  # pylint: disable=unused-variable
 
-        dmin, dmax = self.dmin_dmax(disp_min, disp_max) # pylint: disable=unused-variable
+        dmin, dmax = self.dmin_dmax(disp_min, disp_max)  # pylint: disable=unused-variable
 
         # ----- Masking invalid pixels -----
 
@@ -398,7 +439,7 @@ class AbstractMatchingCost():
         # Valid pixels are = 0
         mask_left, mask_right = self.masks_dilatation(img_left, img_right, self._window_size, self._subpix)
 
-        for disp in cost_volume.coords['disp'].data:
+        for disp in cost_volume.coords["disp"].data:
             i_right = int((disp % 1) * self._subpix)
             point_p, point_q = self.point_interval(img_left, img_right_shift[i_right], disp)
 
@@ -411,8 +452,9 @@ class AbstractMatchingCost():
             dsp = int((disp - dmin) * self._subpix)
 
             # Invalid costs in the cost volume
-            cost_volume['cost_volume'].data[:, p_mask[0]:p_mask[1], dsp] += (
-                    mask_right[i_mask_right].data[:, q_mask[0]:q_mask[1]] + mask_left.data[:, p_mask[0]:p_mask[1]])
+            cost_volume["cost_volume"].data[:, p_mask[0] : p_mask[1], dsp] += (
+                mask_right[i_mask_right].data[:, q_mask[0] : q_mask[1]] + mask_left.data[:, p_mask[0] : p_mask[1]]
+            )
 
         # ----- Masking disparity range -----
 
@@ -420,14 +462,18 @@ class AbstractMatchingCost():
         if isinstance(disp_min, np.ndarray) and isinstance(disp_max, np.ndarray):
             # Disparity range may be one size bigger in y axis
             if disp_min.shape[0] > ny_:
-                disp_min = disp_min[0: ny_, :]
-                disp_max = disp_max[0: ny_, :]
+                disp_min = disp_min[0:ny_, :]
+                disp_max = disp_max[0:ny_, :]
             if disp_min.shape[1] > nx_:
-                disp_min = disp_min[:, 0: nx_]
-                disp_max = disp_max[:, 0: nx_]
+                disp_min = disp_min[:, 0:nx_]
+                disp_max = disp_max[:, 0:nx_]
 
             # Mask the costs computed with a disparity lower than disp_min and higher than disp_max
             for dsp in range(nd_):
-                masking = np.where(np.logical_or(cost_volume.coords['disp'].data[dsp] < disp_min,
-                                                 cost_volume.coords['disp'].data[dsp] > disp_max))
-                cost_volume['cost_volume'].data[masking[0], masking[1], dsp] = np.nan
+                masking = np.where(
+                    np.logical_or(
+                        cost_volume.coords["disp"].data[dsp] < disp_min,
+                        cost_volume.coords["disp"].data[dsp] > disp_max,
+                    )
+                )
+                cost_volume["cost_volume"].data[masking[0], masking[1], dsp] = np.nan

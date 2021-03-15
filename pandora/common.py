@@ -36,10 +36,14 @@ import xarray as xr
 from pandora.output_tree_design import get_out_dir, get_out_file_path
 from pandora.img_tools import rasterio_open
 
-def write_data_array(data_array: xr.DataArray, filename: str,
-                     dtype: rasterio.dtypes = rasterio.dtypes.float32,
-                     crs: Union[rasterio.crs.CRS, None] = None,
-                     transform: rasterio.Affine = rasterio.Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)) -> None:
+
+def write_data_array(
+    data_array: xr.DataArray,
+    filename: str,
+    dtype: rasterio.dtypes = rasterio.dtypes.float32,
+    crs: Union[rasterio.crs.CRS, None] = None,
+    transform: rasterio.Affine = rasterio.Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+) -> None:
     """
     Write a xarray.DataArray in a tiff file
 
@@ -57,13 +61,31 @@ def write_data_array(data_array: xr.DataArray, filename: str,
     """
     if len(data_array.shape) == 2:
         row, col = data_array.shape
-        with rasterio_open(filename, mode='w+', driver='GTiff', width=col, height=row, count=1,
-                           dtype=dtype, crs=crs, transform=transform) as source_ds:
+        with rasterio_open(
+            filename,
+            mode="w+",
+            driver="GTiff",
+            width=col,
+            height=row,
+            count=1,
+            dtype=dtype,
+            crs=crs,
+            transform=transform,
+        ) as source_ds:
             source_ds.write(data_array.data, 1)
     else:
         row, col, depth = data_array.shape
-        with rasterio_open(filename, mode='w+', driver='GTiff', width=col, height=row, count=depth,
-                           dtype=dtype, crs=crs, transform=transform) as source_ds:
+        with rasterio_open(
+            filename,
+            mode="w+",
+            driver="GTiff",
+            width=col,
+            height=row,
+            count=depth,
+            dtype=dtype,
+            crs=crs,
+            transform=transform,
+        ) as source_ds:
             for dsp in range(1, depth + 1):
                 source_ds.write(data_array.data[:, :, dsp - 1], dsp)
 
@@ -80,6 +102,7 @@ def mkdir_p(path: str) -> None:
             pass
         else:
             raise
+
 
 def save_results(left: xr.Dataset, right: xr.Dataset, output: str) -> None:
     """
@@ -107,35 +130,47 @@ def save_results(left: xr.Dataset, right: xr.Dataset, output: str) -> None:
     mkdir_p(output)
 
     # Save the left results
-    write_data_array(left['disparity_map'],
-                     os.path.join(output, get_out_file_path('left_disparity.tif')),
-                     crs=left.attrs['crs'],
-                     transform=left.attrs['transform'])
-    write_data_array(left['confidence_measure'],
-                     os.path.join(output, get_out_file_path('left_confidence_measure.tif')),
-                     crs=left.attrs['crs'],
-                     transform=left.attrs['transform'])
-    write_data_array(left['validity_mask'],
-                     os.path.join(output, get_out_file_path('left_validity_mask.tif')),
-                     dtype=rasterio.dtypes.uint16,
-                     crs=left.attrs['crs'],
-                     transform=left.attrs['transform'])
+    write_data_array(
+        left["disparity_map"],
+        os.path.join(output, get_out_file_path("left_disparity.tif")),
+        crs=left.attrs["crs"],
+        transform=left.attrs["transform"],
+    )
+    write_data_array(
+        left["confidence_measure"],
+        os.path.join(output, get_out_file_path("left_confidence_measure.tif")),
+        crs=left.attrs["crs"],
+        transform=left.attrs["transform"],
+    )
+    write_data_array(
+        left["validity_mask"],
+        os.path.join(output, get_out_file_path("left_validity_mask.tif")),
+        dtype=rasterio.dtypes.uint16,
+        crs=left.attrs["crs"],
+        transform=left.attrs["transform"],
+    )
 
     # If a validation step is configured, save the right results
     if len(right.sizes) != 0:
-        write_data_array(right['disparity_map'],
-                         os.path.join(output, get_out_file_path('right_disparity.tif')),
-                         crs=right.attrs['crs'],
-                         transform=right.attrs['transform'])
-        write_data_array(right['confidence_measure'],
-                         os.path.join(output, get_out_file_path('right_confidence_measure.tif')),
-                         crs=right.attrs['crs'],
-                         transform=right.attrs['transform'])
-        write_data_array(right['validity_mask'],
-                         os.path.join(output, get_out_file_path('right_validity_mask.tif')),
-                         dtype=rasterio.dtypes.uint16,
-                         crs=right.attrs['crs'],
-                         transform=right.attrs['transform'])
+        write_data_array(
+            right["disparity_map"],
+            os.path.join(output, get_out_file_path("right_disparity.tif")),
+            crs=right.attrs["crs"],
+            transform=right.attrs["transform"],
+        )
+        write_data_array(
+            right["confidence_measure"],
+            os.path.join(output, get_out_file_path("right_confidence_measure.tif")),
+            crs=right.attrs["crs"],
+            transform=right.attrs["transform"],
+        )
+        write_data_array(
+            right["validity_mask"],
+            os.path.join(output, get_out_file_path("right_validity_mask.tif")),
+            dtype=rasterio.dtypes.uint16,
+            crs=right.attrs["crs"],
+            transform=right.attrs["transform"],
+        )
 
 
 def sliding_window(base_array: np.array, shape: Tuple[int, int]) -> np.array:
@@ -168,10 +203,10 @@ def save_config(output: str, user_cfg: Dict) -> None:
     """
 
     # Create the output dir
-    mkdir_p(os.path.join(output, get_out_dir('config.json')))
+    mkdir_p(os.path.join(output, get_out_dir("config.json")))
 
     # Save user configuration in json file
-    with open(os.path.join(output, get_out_file_path('config.json')), 'w') as file_:
+    with open(os.path.join(output, get_out_file_path("config.json")), "w") as file_:
         json.dump(user_cfg, file_, indent=2)
 
 
@@ -190,5 +225,5 @@ def is_method(string_method: str, methods: List[str]) -> bool:
     if string_method in methods:
         return True
 
-    logging.error('% is not in available methods : ', string_method + ', '.join(methods))
+    logging.error("% is not in available methods : ", string_method + ", ".join(methods))
     return False

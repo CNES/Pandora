@@ -34,11 +34,12 @@ from pandora import common
 from pandora.matching_cost import matching_cost
 
 
-@matching_cost.AbstractMatchingCost.register_subclass('sad', 'ssd')
+@matching_cost.AbstractMatchingCost.register_subclass("sad", "ssd")
 class SadSsd(matching_cost.AbstractMatchingCost):
     """
     SadSsd class allows to compute the cost volume
     """
+
     # Default configuration, do not change these values
     _WINDOW_SIZE = 5
     _SUBPIX = 1
@@ -50,10 +51,10 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         :return: None
         """
         self.cfg = self.check_conf(**cfg)
-        self._method = str(self.cfg['matching_cost_method'])
-        self._window_size = self.cfg['window_size']
-        self._subpix = self.cfg['subpix']
-        self._pixel_wise_methods = {'sad': self.ad_cost, 'ssd': self.sd_cost}
+        self._method = str(self.cfg["matching_cost_method"])
+        self._window_size = self.cfg["window_size"]
+        self._subpix = self.cfg["subpix"]
+        self._pixel_wise_methods = {"sad": self.ad_cost, "ssd": self.sd_cost}
 
     def check_conf(self, **cfg: Union[str, int]) -> Dict[str, Union[str, int]]:
         """
@@ -65,15 +66,15 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         :rtype: dict
         """
         # Give the default value if the required element is not in the conf
-        if 'window_size' not in cfg:
-            cfg['window_size'] = self._WINDOW_SIZE
-        if 'subpix' not in cfg:
-            cfg['subpix'] = self._SUBPIX
+        if "window_size" not in cfg:
+            cfg["window_size"] = self._WINDOW_SIZE
+        if "subpix" not in cfg:
+            cfg["subpix"] = self._SUBPIX
 
         schema = {
-            'matching_cost_method': And(str, lambda input: common.is_method(input, ['ssd', 'sad'])),
-            'window_size': And(int, lambda input: input > 0 and (input % 2) != 0),
-            'subpix': And(int, lambda input: input in (1, 2, 4))
+            "matching_cost_method": And(str, lambda input: common.is_method(input, ["ssd", "sad"])),
+            "window_size": And(int, lambda input: input > 0 and (input % 2) != 0),
+            "subpix": And(int, lambda input: input in (1, 2, 4)),
         }
 
         checker = Checker(schema)
@@ -85,10 +86,11 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         Describes the matching cost method
         :return: None
         """
-        print(str(self._method) + ' similarity measure')
+        print(str(self._method) + " similarity measure")
 
-    def compute_cost_volume(self, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: int,
-                            disp_max: int) -> xr.Dataset:
+    def compute_cost_volume(
+        self, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: int, disp_max: int
+    ) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
 
@@ -116,23 +118,28 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         img_right_shift = shift_right_img(img_right, self._subpix)
 
         # Computes the maximal cost of the cost volume
-        min_left = np.amin(img_left['im'].data)
-        max_left = np.amax(img_left['im'].data)
+        min_left = np.amin(img_left["im"].data)
+        max_left = np.amax(img_left["im"].data)
 
-        min_right = np.amin(img_right['im'].data)
-        max_right = np.amax(img_right['im'].data)
+        min_right = np.amin(img_right["im"].data)
+        max_right = np.amax(img_right["im"].data)
         cmax = None
 
-        if self._method == 'sad':
+        if self._method == "sad":
             # Maximal cost of the cost volume with sad measure
             cmax = int(max(abs(max_left - min_right), abs(max_right - min_left)) * (self._window_size ** 2))
-        if self._method == 'ssd':
+        if self._method == "ssd":
             # Maximal cost of the cost volume with ssd measure
             cmax = int(max(abs(max_left - min_right) ** 2, abs(max_right - min_left) ** 2) * (self._window_size ** 2))
         offset_row_col = int((self._window_size - 1) / 2)
-        metadata = {'measure': self._method, 'subpixel': self._subpix,
-                    'offset_row_col': offset_row_col, 'window_size': self._window_size,
-                    'type_measure': 'min', 'cmax': cmax}
+        metadata = {
+            "measure": self._method,
+            "subpixel": self._subpix,
+            "offset_row_col": offset_row_col,
+            "window_size": self._window_size,
+            "type_measure": "min",
+            "cmax": cmax,
+        }
 
         # Disparity range # pylint: disable=undefined-variable
         if self._subpix == 1:
@@ -146,12 +153,25 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         # The following computation will reduce the dimension during the pixel wise aggregation so the final
         # cv dimension will be equal to the correct one.
         if offset_row_col != 0:
-            cv_enlarge = np.zeros((len(disparity_range), img_left['im'].shape[1] + 2 * offset_row_col,
-                                   img_left['im'].shape[0] + 2 * offset_row_col), dtype=np.float32)
+            cv_enlarge = np.zeros(
+                (
+                    len(disparity_range),
+                    img_left["im"].shape[1] + 2 * offset_row_col,
+                    img_left["im"].shape[0] + 2 * offset_row_col,
+                ),
+                dtype=np.float32,
+            )
             cv_enlarge += np.nan
-            cv = cv_enlarge[:, offset_row_col:-offset_row_col, offset_row_col: -offset_row_col]
+            cv = cv_enlarge[:, offset_row_col:-offset_row_col, offset_row_col:-offset_row_col]
         else:
-            cv = np.zeros((len(disparity_range), img_left['im'].shape[1], img_left['im'].shape[0] ), dtype=np.float32)
+            cv = np.zeros(
+                (
+                    len(disparity_range),
+                    img_left["im"].shape[1],
+                    img_left["im"].shape[0],
+                ),
+                dtype=np.float32,
+            )
             cv += np.nan
 
         # Giving the 2 images, the matching cost will be calculated as :
@@ -189,36 +209,39 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             point_p, point_q = self.point_interval(img_left, img_right_shift[i_right], disp)
             dsp = int((disp - disp_min) * self._subpix)
 
-            cv[dsp, point_p[0]:point_p[1], :] = \
-                np.swapaxes(
-                    self._pixel_wise_methods[self._method](point_p, point_q, img_left, img_right_shift[i_right]), 0, 1)
+            cv[dsp, point_p[0] : point_p[1], :] = np.swapaxes(
+                self._pixel_wise_methods[self._method](point_p, point_q, img_left, img_right_shift[i_right]),
+                0,
+                1,
+            )
 
         # Pixel wise aggregation modifies border values so it is important to reconvert to nan values
         if offset_row_col != 0:
             cv = self.pixel_wise_aggregation(cv_enlarge.data)
             cv = np.swapaxes(cv, 0, 2)
             cv[:offset_row_col, :, :] = np.nan
-            cv[-offset_row_col:, :, ] = np.nan
+            cv[
+                -offset_row_col:,
+                :,
+            ] = np.nan
             cv[:, :offset_row_col, :] = np.nan
-            cv[:, -offset_row_col:,:] = np.nan
+            cv[:, -offset_row_col:, :] = np.nan
         else:
             cv = self.pixel_wise_aggregation(cv.data)
             cv = np.swapaxes(cv, 0, 2)
 
         # Create the xarray.DataSet that will contain the cv of dimensions (row, col, disp)
-        cv = self.allocate_costvolume(img_left,
-                                      self._subpix,
-                                      disp_min,
-                                      disp_max,
-                                      self._window_size,
-                                      metadata,
-                                      cv)
+        cv = self.allocate_costvolume(img_left, self._subpix, disp_min, disp_max, self._window_size, metadata, cv)
 
         return cv
 
     @staticmethod
-    def ad_cost(point_p: Tuple[int, int], point_q: Tuple[int, int], img_left: xr.Dataset,
-                img_right: xr.Dataset) -> np.ndarray:
+    def ad_cost(
+        point_p: Tuple[int, int],
+        point_q: Tuple[int, int],
+        img_left: xr.Dataset,
+        img_right: xr.Dataset,
+    ) -> np.ndarray:
         """
         Computes the absolute difference
 
@@ -239,7 +262,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         :return: the absolute difference pixel-wise between elements in the interval
         :rtype: numpy array
         """
-        return abs(img_left['im'].data[:, point_p[0]:point_p[1]] - img_right['im'].data[:, point_q[0]:point_q[1]])
+        return abs(img_left["im"].data[:, point_p[0] : point_p[1]] - img_right["im"].data[:, point_q[0] : point_q[1]])
 
     @staticmethod
     def sd_cost(point_p: Tuple, point_q: Tuple, img_left: xr.Dataset, img_right: xr.Dataset) -> np.ndarray:
@@ -263,7 +286,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         :return: the squared difference pixel-wise between elements in the interval
         :rtype: numpy array
         """
-        return (img_left['im'].data[:, point_p[0]:point_p[1]] - img_right['im'].data[:, point_q[0]:point_q[1]]) ** 2
+        return (img_left["im"].data[:, point_p[0] : point_p[1]] - img_right["im"].data[:, point_q[0] : point_q[1]]) ** 2
 
     def pixel_wise_aggregation(self, cost_volume: np.ndarray) -> np.ndarray:
         """
@@ -282,9 +305,15 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         str_disp, str_col, str_row = cost_volume.strides
 
         shape_windows = (
-            self._window_size, self._window_size, nb_disp, nx_ - (self._window_size - 1), ny_ - (self._window_size - 1))
+            self._window_size,
+            self._window_size,
+            nb_disp,
+            nx_ - (self._window_size - 1),
+            ny_ - (self._window_size - 1),
+        )
         strides_windows = (str_row, str_col, str_disp, str_col, str_row)
-        aggregation_window = np.lib.stride_tricks.as_strided(cost_volume, shape_windows, strides_windows,
-                                                             writeable=False)
+        aggregation_window = np.lib.stride_tricks.as_strided(
+            cost_volume, shape_windows, strides_windows, writeable=False
+        )
         cost_volume = np.sum(aggregation_window, (0, 1))
         return cost_volume

@@ -33,16 +33,19 @@ from json_checker import Checker, And, Or, OptionalKey
 
 import pandora.constants as cst
 from pandora import common
-from pandora.cost_volume_confidence.cost_volume_confidence import AbstractCostVolumeConfidence
+from pandora.cost_volume_confidence.cost_volume_confidence import (
+    AbstractCostVolumeConfidence,
+)
 
 
-class AbstractValidation():
+class AbstractValidation:
     """
     Abstract Validation class
     """
+
     __metaclass__ = ABCMeta
 
-    validation_methods_avail : Dict = {}
+    validation_methods_avail: Dict = {}
     cfg = None
 
     def __new__(cls, **cfg: dict):
@@ -53,21 +56,29 @@ class AbstractValidation():
         :type cfg: dictionary
         """
         if cls is AbstractValidation:
-            if isinstance(cfg['validation_method'], str):
+            if isinstance(cfg["validation_method"], str):
                 try:
                     return super(AbstractValidation, cls).__new__(
-                        cls.validation_methods_avail[cfg['validation_method']])
+                        cls.validation_methods_avail[cfg["validation_method"]]
+                    )
                 except KeyError:
-                    logging.error('No validation method named % supported', cfg['validation_method'])
+                    logging.error(
+                        "No validation method named % supported",
+                        cfg["validation_method"],
+                    )
                     raise KeyError
             else:
-                if isinstance(cfg['validation_method'], unicode):# type: ignore # pylint: disable=undefined-variable
+                if isinstance(cfg["validation_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractValidation, cls).__new__(
-                            cls.validation_methods_avail[cfg['validation_method'].encode('utf-8')])
+                            cls.validation_methods_avail[cfg["validation_method"].encode("utf-8")]
+                        )
                     except KeyError:
-                        logging.error('No validation method named % supported', cfg['validation_method'])
+                        logging.error(
+                            "No validation method named % supported",
+                            cfg["validation_method"],
+                        )
                         raise KeyError
         else:
             return super(AbstractValidation, cls).__new__(cls)
@@ -100,11 +111,17 @@ class AbstractValidation():
         Describes the validation method
         :return: None
         """
-        print('Validation method description')
+        print("Validation method description")
 
     @abstractmethod
-    def disparity_checking(self, dataset_left: xr.Dataset, dataset_right: xr.Dataset, img_left: xr.Dataset = None,
-                           img_right: xr.Dataset = None, cv: xr.Dataset = None) -> xr.Dataset:
+    def disparity_checking(
+        self,
+        dataset_left: xr.Dataset,
+        dataset_right: xr.Dataset,
+        img_left: xr.Dataset = None,
+        img_right: xr.Dataset = None,
+        cv: xr.Dataset = None,
+    ) -> xr.Dataset:
         """
         Determination of occlusions and false matches by performing a consistency check on valid pixels.
         Update the validity_mask :
@@ -152,13 +169,14 @@ class AbstractValidation():
         """
 
 
-@AbstractValidation.register_subclass('cross_checking')
+@AbstractValidation.register_subclass("cross_checking")
 class CrossChecking(AbstractValidation):
     """
     CrossChecking class allows to perform the validation step
     """
+
     # Default configuration, do not change this value
-    _THRESHOLD = 1.
+    _THRESHOLD = 1.0
 
     def __init__(self, **cfg) -> None:
         """
@@ -168,7 +186,7 @@ class CrossChecking(AbstractValidation):
         :return: None
         """
         self.cfg = self.check_conf(**cfg)
-        self._threshold = self.cfg['cross_checking_threshold']
+        self._threshold = self.cfg["cross_checking_threshold"]
 
     def check_conf(self, **cfg: Union[str, int, float, bool]) -> Dict[str, Union[str, int, float, bool]]:
         """
@@ -180,13 +198,13 @@ class CrossChecking(AbstractValidation):
         :rtype: dict
         """
         # Give the default value if the required element is not in the configuration
-        if 'cross_checking_threshold' not in cfg:
-            cfg['cross_checking_threshold'] = self._THRESHOLD
+        if "cross_checking_threshold" not in cfg:
+            cfg["cross_checking_threshold"] = self._THRESHOLD
 
         schema = {
-            'validation_method': And(str, lambda input: 'cross_checking'),
-            'cross_checking_threshold': Or(int, float),
-            OptionalKey('interpolated_disparity'): And(str, lambda input: common.is_method(input, ['mc-cnn', 'sgm']))
+            "validation_method": And(str, lambda input: "cross_checking"),
+            "cross_checking_threshold": Or(int, float),
+            OptionalKey("interpolated_disparity"): And(str, lambda input: common.is_method(input, ["mc-cnn", "sgm"])),
         }
 
         checker = Checker(schema)
@@ -198,10 +216,16 @@ class CrossChecking(AbstractValidation):
         Describes the validation method
         :return: None
         """
-        print('Cross-checking method')
+        print("Cross-checking method")
 
-    def disparity_checking(self, dataset_left: xr.Dataset, dataset_right: xr.Dataset, img_left: xr.Dataset = None,
-                           img_right: xr.Dataset = None, cv: xr.Dataset = None) -> xr.Dataset:
+    def disparity_checking(
+        self,
+        dataset_left: xr.Dataset,
+        dataset_right: xr.Dataset,
+        img_left: xr.Dataset = None,
+        img_right: xr.Dataset = None,
+        cv: xr.Dataset = None,
+    ) -> xr.Dataset:
         """
         Determination of occlusions and false matches by performing a consistency check on valid pixels.
 
@@ -247,20 +271,20 @@ class CrossChecking(AbstractValidation):
                 - If out & MSK_PIXEL_MISMATCH  != 0  : Invalid pixel : mismatched pixel
         :rtype: xarray.Dataset
         """
-        nb_row, nb_col = dataset_left['disparity_map'].shape
-        disparity_range = np.arange(dataset_left.attrs['disp_min'], dataset_left.attrs['disp_max'] + 1)
+        nb_row, nb_col = dataset_left["disparity_map"].shape
+        disparity_range = np.arange(dataset_left.attrs["disp_min"], dataset_left.attrs["disp_max"] + 1)
 
         # Confidence measure which calculates the distance LR / RL
         conf_measure = np.full((nb_row, nb_col), np.nan, dtype=np.float32)
 
         for row in range(0, nb_row):
             # Exclude invalid pixel :
-            valid_pixel = np.where((dataset_left['validity_mask'].data[row, :] & cst.PANDORA_MSK_PIXEL_INVALID) == 0)
+            valid_pixel = np.where((dataset_left["validity_mask"].data[row, :] & cst.PANDORA_MSK_PIXEL_INVALID) == 0)
 
             col_left = np.arange(nb_col, dtype=np.int)
             col_left = col_left[valid_pixel]
 
-            col_right = col_left + dataset_left['disparity_map'].data[row, col_left]
+            col_right = col_left + dataset_left["disparity_map"].data[row, col_left]
             # Round elements of the array to the nearest integer
             col_right = np.rint(col_right).astype(int)
 
@@ -273,9 +297,9 @@ class CrossChecking(AbstractValidation):
             inside_right = np.where((col_right >= 0) & (col_right < nb_col))
 
             # Conversion from nan to inf
-            right_disp = dataset_right['disparity_map'].data[row, col_right[inside_right]]
+            right_disp = dataset_right["disparity_map"].data[row, col_right[inside_right]]
             right_disp[np.isnan(right_disp)] = np.inf
-            left_disp = dataset_left['disparity_map'].data[row, col_left[inside_right]]
+            left_disp = dataset_left["disparity_map"].data[row, col_left[inside_right]]
             left_disp[np.isnan(left_disp)] = np.inf
 
             # Allocate to the measure map, the distance disp LR / disp RL indicator
@@ -290,35 +314,40 @@ class CrossChecking(AbstractValidation):
             # occlusion otherwise
 
             # Index : i + d, for any other d. 2D np array (nb invalid pixels, nb disparity )
-            index = np.tile(disparity_range, (len(col_left[inside_right][invalid]), 1)).astype(np.float32) + \
-                    np.tile(col_left[inside_right][invalid], (len(disparity_range), 1)).transpose()
+            index = (
+                np.tile(disparity_range, (len(col_left[inside_right][invalid]), 1)).astype(np.float32)
+                + np.tile(col_left[inside_right][invalid], (len(disparity_range), 1)).transpose()
+            )
 
             inside_col_disp = np.where((index >= 0) & (index < nb_col))
 
             # disp_right : Disp_right(i + d)
             disp_right = np.full(index.shape, np.inf, dtype=np.float32)
-            disp_right[inside_col_disp] = dataset_right['disparity_map'].data[row, index[inside_col_disp].astype(int)]
+            disp_right[inside_col_disp] = dataset_right["disparity_map"].data[row, index[inside_col_disp].astype(int)]
 
             # Check if rint(Disp_right(i + d)) == -d
-            comp = (np.rint(disp_right) == np.tile(-1 * disparity_range,
-                                                   (len(col_left[inside_right][invalid]), 1)).astype(
-                np.float32))
+            comp = np.rint(disp_right) == np.tile(
+                -1 * disparity_range, (len(col_left[inside_right][invalid]), 1)
+            ).astype(np.float32)
             comp = np.sum(comp, axis=1)
             comp[comp > 1] = 1
 
-            dataset_left['validity_mask'].data[row, col_left[inside_right][invalid]] += cst.PANDORA_MSK_PIXEL_OCCLUSION
-            dataset_left['validity_mask'].data[row, col_left[inside_right][invalid]] += \
-                (cst.PANDORA_MSK_PIXEL_MISMATCH * comp).astype(np.uint16)
-            dataset_left['validity_mask'].data[row, col_left[inside_right][invalid]] -= \
-                (cst.PANDORA_MSK_PIXEL_OCCLUSION * comp).astype(np.uint16)
+            dataset_left["validity_mask"].data[row, col_left[inside_right][invalid]] += cst.PANDORA_MSK_PIXEL_OCCLUSION
+            dataset_left["validity_mask"].data[row, col_left[inside_right][invalid]] += (
+                cst.PANDORA_MSK_PIXEL_MISMATCH * comp
+            ).astype(np.uint16)
+            dataset_left["validity_mask"].data[row, col_left[inside_right][invalid]] -= (
+                cst.PANDORA_MSK_PIXEL_OCCLUSION * comp
+            ).astype(np.uint16)
 
             # Pixels i + round(Disp_left(i) outside the right image are occlusions
             outside_right = np.where((col_right < 0) & (col_right >= nb_col))
-            dataset_left['validity_mask'].data[row, col_left[outside_right]] += cst.PANDORA_MSK_PIXEL_OCCLUSION
+            dataset_left["validity_mask"].data[row, col_left[outside_right]] += cst.PANDORA_MSK_PIXEL_OCCLUSION
 
-        dataset_left.attrs['validation'] = 'cross_checking'
+        dataset_left.attrs["validation"] = "cross_checking"
 
-        dataset_left, _ = AbstractCostVolumeConfidence.allocate_confidence_map('validation_pandora_distanceOfDisp',
-                                                                               conf_measure, dataset_left, cv)
+        dataset_left, _ = AbstractCostVolumeConfidence.allocate_confidence_map(
+            "validation_pandora_distanceOfDisp", conf_measure, dataset_left, cv
+        )
 
         return dataset_left

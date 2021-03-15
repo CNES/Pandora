@@ -33,7 +33,7 @@ import pandora.constants as cst
 from . import refinement
 
 
-@refinement.AbstractRefinement.register_subclass('vfit')
+@refinement.AbstractRefinement.register_subclass("vfit")
 class Vfit(refinement.AbstractRefinement):
     """
     Vfit class allows to perform the subpixel cost refinement step
@@ -46,7 +46,7 @@ class Vfit(refinement.AbstractRefinement):
         :return: None
         """
         self.cfg = self.check_conf(**cfg)
-        self._refinement_method_name = str(self.cfg['refinement_method'])
+        self._refinement_method_name = str(self.cfg["refinement_method"])
 
     @staticmethod
     def check_conf(**cfg: str) -> Dict[str, str]:
@@ -58,9 +58,7 @@ class Vfit(refinement.AbstractRefinement):
         :return cfg: refinement configuration updated
         :rtype: dict
         """
-        schema = {
-            'refinement_method': And(str, lambda x: 'vfit')
-        }
+        schema = {"refinement_method": And(str, lambda x: "vfit")}
 
         checker = Checker(schema)
         checker.validate(cfg)
@@ -71,7 +69,7 @@ class Vfit(refinement.AbstractRefinement):
         Describes the subpixel refinement method
         :return: None
         """
-        print('Vfit refinement method')
+        print("Vfit refinement method")
 
     @staticmethod
     @njit()
@@ -94,7 +92,7 @@ class Vfit(refinement.AbstractRefinement):
             return disp, cost[1], cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
 
         inverse = 1
-        if measure == 'max':
+        if measure == "max":
             # Additive inverse : if a < b then -a > -b
             inverse = -1
 
@@ -111,12 +109,12 @@ class Vfit(refinement.AbstractRefinement):
         if (inverse * cost[0]) > (inverse * cost[2]):
             a = cost[0] - cost[1]
 
-        if abs(a) < 1.e-15:
+        if abs(a) < 1.0e-15:
             return disp, cost[1], 0
 
         # Problem is resolved with tangents equality, due to the symmetric V shape of 3 points (cv0, cv2 and (x,y))
         # sub_disp is dx
-        sub_disp = ((cost[0] - cost[2]) / (2 * a))
+        sub_disp = (cost[0] - cost[2]) / (2 * a)
 
         # sub_cost is y
         sub_cost = a * (sub_disp - 1) + cost[2]

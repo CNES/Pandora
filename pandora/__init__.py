@@ -38,9 +38,16 @@ from .state_machine import PandoraMachine
 
 
 # pylint: disable=too-many-arguments
-def run(pandora_machine: PandoraMachine, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: Union[np.array, int],
-        disp_max: Union[np.array, int], cfg: Dict[str, dict], disp_min_right: Union[None, np.array] = None,
-        disp_max_right: Union[None, np.array] = None) -> Tuple[xr.Dataset, xr.Dataset]:
+def run(
+    pandora_machine: PandoraMachine,
+    img_left: xr.Dataset,
+    img_right: xr.Dataset,
+    disp_min: Union[np.array, int],
+    disp_max: Union[np.array, int],
+    cfg: Dict[str, dict],
+    disp_min_right: Union[None, np.array] = None,
+    disp_max_right: Union[None, np.array] = None,
+) -> Tuple[xr.Dataset, xr.Dataset]:
     """
     Run the pandora pipeline
 
@@ -89,17 +96,26 @@ def run(pandora_machine: PandoraMachine, img_left: xr.Dataset, img_right: xr.Dat
     num_scales, scale_factor = read_multiscale_params(cfg)
 
     # Prepare the machine before running, including the image pyramid creation
-    pandora_machine.run_prepare(cfg, img_left, img_right, disp_min, disp_max, scale_factor, num_scales, disp_min_right,
-                                disp_max_right)
+    pandora_machine.run_prepare(
+        cfg,
+        img_left,
+        img_right,
+        disp_min,
+        disp_max,
+        scale_factor,
+        num_scales,
+        disp_min_right,
+        disp_max_right,
+    )
 
     # For each scale we run the whole pipeline, the scales will be executed from coarse to fine,
     # and the machine will store the necessary parameters for the following scale
-    for scale in range(pandora_machine.num_scales): #pylint:disable=unused-variable
+    for scale in range(pandora_machine.num_scales):  # pylint:disable=unused-variable
         # Trigger the machine step by step
         for elem in list(cfg)[1:]:
             pandora_machine.run(elem, cfg)
             # If the machine gets to the begin state, pass to next scale
-            if pandora_machine.state == 'begin':
+            if pandora_machine.state == "begin":
                 break
 
     # Stop the machine which returns to its initial state
@@ -117,16 +133,17 @@ def setup_logging(verbose: bool) -> None:
     :return: None
     """
     if verbose:
-        logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.INFO)
+        logging.basicConfig(format="[%(asctime)s][%(levelname)s] %(message)s", level=logging.INFO)
     else:
-        logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.ERROR)
+        logging.basicConfig(format="[%(asctime)s][%(levelname)s] %(message)s", level=logging.ERROR)
+
 
 def import_plugin() -> None:
     """
     Load all the registered entry points
     :return: None
     """
-    for entry_point in iter_entry_points(group='pandora.plugin'):
+    for entry_point in iter_entry_points(group="pandora.plugin"):
         entry_point.load()
 
 
@@ -158,21 +175,38 @@ def main(cfg_path: str, output: str, verbose: bool) -> None:
     setup_logging(verbose)
 
     # Read images and masks
-    img_left = read_img(cfg['input']['img_left'], no_data=cfg['input']['nodata_left'],mask=cfg['input']['left_mask'],
-                        classif=cfg['input']['left_classif'], segm=cfg['input']['left_segm'])
-    img_right = read_img(cfg['input']['img_right'], no_data=cfg['input']['nodata_right'],
-                         mask=cfg['input']['right_mask'], classif=cfg['input']['right_classif'],
-                         segm=cfg['input']['right_segm'])
+    img_left = read_img(
+        cfg["input"]["img_left"],
+        no_data=cfg["input"]["nodata_left"],
+        mask=cfg["input"]["left_mask"],
+        classif=cfg["input"]["left_classif"],
+        segm=cfg["input"]["left_segm"],
+    )
+    img_right = read_img(
+        cfg["input"]["img_right"],
+        no_data=cfg["input"]["nodata_right"],
+        mask=cfg["input"]["right_mask"],
+        classif=cfg["input"]["right_classif"],
+        segm=cfg["input"]["right_segm"],
+    )
 
     # Read range of disparities
-    disp_min = read_disp(cfg['input']['disp_min'])
-    disp_max = read_disp(cfg['input']['disp_max'])
-    disp_min_right = read_disp(cfg['input']['disp_min_right'])
-    disp_max_right = read_disp(cfg['input']['disp_max_right'])
+    disp_min = read_disp(cfg["input"]["disp_min"])
+    disp_max = read_disp(cfg["input"]["disp_max"])
+    disp_min_right = read_disp(cfg["input"]["disp_min_right"])
+    disp_max_right = read_disp(cfg["input"]["disp_max_right"])
 
     # Run the Pandora pipeline
-    left, right = run(pandora_machine, img_left, img_right, disp_min, disp_max, cfg['pipeline'], disp_min_right,
-                      disp_max_right)
+    left, right = run(
+        pandora_machine,
+        img_left,
+        img_right,
+        disp_min,
+        disp_max,
+        cfg["pipeline"],
+        disp_min_right,
+        disp_max_right,
+    )
 
     # Save the left and right DataArray in tiff files
     common.save_results(left, right, output)

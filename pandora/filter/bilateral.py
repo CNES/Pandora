@@ -35,14 +35,15 @@ from . import filter  # pylint: disable=redefined-builtin
 from ..common import sliding_window
 
 
-@filter.AbstractFilter.register_subclass('bilateral')
+@filter.AbstractFilter.register_subclass("bilateral")
 class BilateralFilter(filter.AbstractFilter):
     """
     BilateralFilter class allows to perform the filtering step
     """
+
     # Default configuration, do not change these values
-    _SIGMA_COLOR = 2.
-    _SIGMA_SPACE = 6.
+    _SIGMA_COLOR = 2.0
+    _SIGMA_SPACE = 6.0
 
     def __init__(self, **cfg: Union[str, float]):
         """
@@ -50,8 +51,8 @@ class BilateralFilter(filter.AbstractFilter):
         :type cfg: dict
         """
         self.cfg = self.check_conf(**cfg)
-        self._sigma_color = float(self.cfg['sigma_color'])
-        self._sigma_space = float(self.cfg['sigma_space'])
+        self._sigma_color = float(self.cfg["sigma_color"])
+        self._sigma_space = float(self.cfg["sigma_space"])
 
     def check_conf(self, **cfg: Union[str, float]) -> Dict[str, Union[str, float]]:
         """
@@ -63,15 +64,15 @@ class BilateralFilter(filter.AbstractFilter):
         :rtype: dict
         """
         # Give the default value if the required element is not in the configuration
-        if 'sigma_color' not in cfg:
-            cfg['sigma_color'] = self._SIGMA_COLOR
-        if 'sigma_space' not in cfg:
-            cfg['sigma_space'] = self._SIGMA_SPACE
+        if "sigma_color" not in cfg:
+            cfg["sigma_color"] = self._SIGMA_COLOR
+        if "sigma_space" not in cfg:
+            cfg["sigma_space"] = self._SIGMA_SPACE
 
         schema = {
-            'filter_method': And(str, lambda input: 'bilateral'),
-            'sigma_color': And(float, lambda input: input > 0),
-            'sigma_space': And(float, lambda input: input > 0)
+            "filter_method": And(str, lambda input: "bilateral"),
+            "sigma_color": And(float, lambda input: input > 0),
+            "sigma_space": And(float, lambda input: input > 0),
         }
 
         checker = Checker(schema)
@@ -82,10 +83,15 @@ class BilateralFilter(filter.AbstractFilter):
         """
         Describes the filtering method
         """
-        print('Bilateral filter description')
+        print("Bilateral filter description")
 
-    def filter_disparity(self, disp: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None,
-                         cv: xr.Dataset = None) -> None:
+    def filter_disparity(
+        self,
+        disp: xr.Dataset,
+        img_left: xr.Dataset = None,
+        img_right: xr.Dataset = None,
+        cv: xr.Dataset = None,
+    ) -> None:
         """
         Apply bilateral filter.
         Filter size is computed from sigmaSpace
@@ -104,15 +110,18 @@ class BilateralFilter(filter.AbstractFilter):
         :type cv: xarray.Dataset
         :return: None
         """
-        masked_data = disp['disparity_map'].copy(deep=True).data
-        masked_data[np.where((disp['validity_mask'].data & cst.PANDORA_MSK_PIXEL_INVALID) != 0)] = np.nan
+        masked_data = disp["disparity_map"].copy(deep=True).data
+        masked_data[np.where((disp["validity_mask"].data & cst.PANDORA_MSK_PIXEL_INVALID) != 0)] = np.nan
 
         valid = np.isfinite(masked_data)
         disp_bilateral = self.filter_bilateral(masked_data, self._sigma_space, self._sigma_color)
 
-        disp['disparity_map'].data[valid] = disp_bilateral[valid]
-        disp.attrs['filter'] = 'bilateral'
-        del disp_bilateral, masked_data,
+        disp["disparity_map"].data[valid] = disp_bilateral[valid]
+        disp.attrs["filter"] = "bilateral"
+        del (
+            disp_bilateral,
+            masked_data,
+        )
 
     def filter_bilateral(self, data: np.ndarray, sigma_space: float, sigma_color: float) -> np.ndarray:
         """
@@ -158,8 +167,9 @@ class BilateralFilter(filter.AbstractFilter):
                 for disp_x in disp_chunked_x:
                     y_end = y_begin + disp_y.shape[0]
                     x_end = x_begin + disp_x.shape[1]
-                    data_bilateral[y_begin:y_end, x_begin:x_end] = self.bilateral_kernel(disp_x, gauss_spatial_kernel,
-                                                                                         sigma_color, offset)
+                    data_bilateral[y_begin:y_end, x_begin:x_end] = self.bilateral_kernel(
+                        disp_x, gauss_spatial_kernel, sigma_color, offset
+                    )
                     x_begin += disp_x.shape[1]
 
                 y_begin += disp_y.shape[0]
@@ -181,7 +191,7 @@ class BilateralFilter(filter.AbstractFilter):
         :rtype: 2D np.array(row, col)
         """
         arr = np.zeros((kernel_size, kernel_size))
-        for [i, j], val in np.ndenumerate(arr): # pylint:disable=unused-variable
+        for [i, j], val in np.ndenumerate(arr):  # pylint:disable=unused-variable
             arr[i, j] = np.sqrt(abs(i - kernel_size // 2) ** 2 + abs(j - kernel_size // 2) ** 2)
         return self.normalized_gaussian(arr, sigma)
 
@@ -196,10 +206,15 @@ class BilateralFilter(filter.AbstractFilter):
         :return: The filtered array
         :rtype: 2D np.array
         """
-        return np.exp(-(array / sigma) ** 2 * 0.5) / (sigma * np.sqrt(2 * np.pi))
+        return np.exp(-((array / sigma) ** 2) * 0.5) / (sigma * np.sqrt(2 * np.pi))
 
-    def bilateral_kernel(self, windows: np.ndarray, gauss_spatial_kernel: np.ndarray, sigma_color: float,
-                         offset: int) -> np.ndarray:
+    def bilateral_kernel(
+        self,
+        windows: np.ndarray,
+        gauss_spatial_kernel: np.ndarray,
+        sigma_color: float,
+        offset: int,
+    ) -> np.ndarray:
         """
         Bilateral filtering on each window.
 
@@ -224,5 +239,5 @@ class BilateralFilter(filter.AbstractFilter):
         pixel_weights = np.multiply(windows, weights)
         del gauss_int_kernel, int_kernel, windows
         # Return filtered pixel
-        warnings.filterwarnings('ignore', r'invalid value encountered in true_divide')
+        warnings.filterwarnings("ignore", r"invalid value encountered in true_divide")
         return np.nansum(pixel_weights, axis=(2, 3)) / np.nansum(weights, axis=(2, 3))

@@ -35,13 +35,14 @@ from pandora.img_tools import shift_right_img
 from . import aggregation
 
 
-@aggregation.AbstractAggregation.register_subclass('cbca')
+@aggregation.AbstractAggregation.register_subclass("cbca")
 class CrossBasedCostAggregation(aggregation.AbstractAggregation):
     """
     CrossBasedCostAggregation class, allows to perform the aggregation step
     """
+
     # Default configuration, do not change these values
-    _CBCA_INTENSITY = 30.
+    _CBCA_INTENSITY = 30.0
     _CBCA_DISTANCE = 5
 
     def __init__(self, **cfg: dict):
@@ -49,9 +50,9 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         :param cfg: optional configuration, {'cbca_intensity': value, 'cbca_distance': value}
         :type cfg: dict
         """
-        self.cfg = self.check_conf(**cfg)# type: ignore
-        self._cbca_intensity = self.cfg['cbca_intensity']
-        self._cbca_distance = self.cfg['cbca_distance']
+        self.cfg = self.check_conf(**cfg)  # type: ignore
+        self._cbca_intensity = self.cfg["cbca_intensity"]
+        self._cbca_distance = self.cfg["cbca_distance"]
 
     def check_conf(self, **cfg: Union[str, float, int]) -> Dict[str, Union[str, float, int]]:
         """
@@ -63,15 +64,15 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         :rtype: dict
         """
         # Give the default value if the required element is not in the configuration
-        if 'cbca_intensity' not in cfg:
-            cfg['cbca_intensity'] = self._CBCA_INTENSITY
-        if 'cbca_distance' not in cfg:
-            cfg['cbca_distance'] = self._CBCA_DISTANCE
+        if "cbca_intensity" not in cfg:
+            cfg["cbca_intensity"] = self._CBCA_INTENSITY
+        if "cbca_distance" not in cfg:
+            cfg["cbca_distance"] = self._CBCA_DISTANCE
 
         schema = {
-            'aggregation_method': And(str, lambda input: 'cbca'),
-            'cbca_intensity': And(float, lambda input: input > 0),
-            'cbca_distance': And(int, lambda input: input > 0)
+            "aggregation_method": And(str, lambda input: "cbca"),
+            "cbca_intensity": And(float, lambda input: input > 0),
+            "cbca_distance": And(int, lambda input: input > 0),
         }
 
         checker = Checker(schema)
@@ -82,10 +83,11 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         """
         Describes the aggregation method
         """
-        print('CrossBasedCostAggregation method')
+        print("CrossBasedCostAggregation method")
 
-    def cost_volume_aggregation(self, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset,
-                                **cfg: Union[str, int]) -> None:
+    def cost_volume_aggregation(
+        self, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset, **cfg: Union[str, int]
+    ) -> None:
         """
         Aggregated the cost volume with Cross-Based Cost Aggregation, using the pipeline define in
         Zhang, K., Lu, J., & Lafruit, G. (2009).
@@ -113,12 +115,12 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         """
         cross_left, cross_right = self.computes_cross_supports(img_left, img_right, cv)
 
-        offset = int(cv.attrs['offset_row_col'])
+        offset = int(cv.attrs["offset_row_col"])
         # Cost volume has input image size, if offset > 0 do not consider the marge
         if offset > 0:
-            cv_data = cv['cost_volume'].data[offset: -offset, offset: -offset]
+            cv_data = cv["cost_volume"].data[offset:-offset, offset:-offset]
         else:
-            cv_data = cv['cost_volume'].data
+            cv_data = cv["cost_volume"].data
         n_col_, n_row_, nb_disp = cv_data.shape
 
         # Allocate the numpy aggregated cost volume cv = (disp, col, row), for efficient memory management
@@ -133,11 +135,11 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         agg += np.swapaxes(cv_data, 0, 2)
         agg *= 0
 
-        disparity_range = cv.coords['disp'].data
+        disparity_range = cv.coords["disp"].data
         range_col = np.arange(0, n_row_)
 
         for dsp in range(nb_disp):
-            i_right = int((disparity_range[dsp] % 1) * cv.attrs['subpixel'])
+            i_right = int((disparity_range[dsp] % 1) * cv.attrs["subpixel"])
 
             # Step 1 : horizontal integral image
             step1 = cbca_step_1(cv_data[:, :, dsp])
@@ -146,15 +148,26 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
             valid_index = np.where((range_col_right >= 0) & (range_col_right < cross_right[i_right].shape[1]))
 
             # Step 2 : horizontal matching cost
-            step2, sum2 = cbca_step_2(step1, cross_left, cross_right[i_right], range_col[valid_index],
-                                      range_col_right[valid_index].astype(int))
+            step2, sum2 = cbca_step_2(
+                step1,
+                cross_left,
+                cross_right[i_right],
+                range_col[valid_index],
+                range_col_right[valid_index].astype(int),
+            )
 
             # Step 3 : vertical integral image
             step3 = cbca_step_3(step2)
 
             # Step 4 : aggregate cost volume
-            step4, sum4 = cbca_step_4(step3, sum2, cross_left, cross_right[i_right], range_col[valid_index],
-                                      range_col_right[valid_index].astype(int))
+            step4, sum4 = cbca_step_4(
+                step3,
+                sum2,
+                cross_left,
+                cross_right[i_right],
+                range_col[valid_index],
+                range_col_right[valid_index].astype(int),
+            )
 
             # Added the pixel anchor pixel to the number of support pixels used during the aggregation
             sum4 += 1
@@ -165,17 +178,18 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
 
         cv_data = np.swapaxes(agg, 0, 2)
         if offset > 0:
-            cv['cost_volume'].data[offset: -offset, offset: -offset] = cv_data
+            cv["cost_volume"].data[offset:-offset, offset:-offset] = cv_data
         else:
-            cv['cost_volume'].data = cv_data
-        cv.attrs['aggregation'] = 'cbca'
+            cv["cost_volume"].data = cv_data
+        cv.attrs["aggregation"] = "cbca"
 
         # Maximal cost of the cost volume after agregation
-        cmax = cv.attrs['cmax'] * ((self._cbca_distance * 2) - 1) ** 2# type: ignore
-        cv.attrs['cmax'] = cmax
+        cmax = cv.attrs["cmax"] * ((self._cbca_distance * 2) - 1) ** 2  # type: ignore
+        cv.attrs["cmax"] = cmax
 
-    def computes_cross_supports(self, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset) -> \
-            Tuple[np.ndarray, List[np.ndarray]]:
+    def computes_cross_supports(
+        self, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset
+    ) -> Tuple[np.ndarray, List[np.ndarray]]:
         """
         Prepare images and compute the cross support region of the left and right images.
         A 3x3 median filter is applied to the images before calculating the cross support region.
@@ -198,28 +212,31 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         :return: the left and right cross support region
         :rtype: Tuples(left cross support region, List(right cross support region))
         """
-        subpix = cv.attrs['subpixel']
-        offset = int(cv.attrs['offset_row_col'])
+        subpix = cv.attrs["subpixel"]
+        offset = int(cv.attrs["offset_row_col"])
 
         # shift the right image
         img_right_shift = shift_right_img(img_right, subpix)
 
         # Median filter on valid pixels
-        filter_ = AbstractFilter(**{'filter_method': 'median', 'filter_size': 3})# type: ignore
+        filter_ = AbstractFilter(**{"filter_method": "median", "filter_size": 3})  # type: ignore
 
         # Invalid and no data pixels are masked with np.nan to avoid propagating the values with the median filter
-        left_masked = np.copy(img_left['im'].data)
-        if 'msk' in img_left.data_vars:
-            left_masked[np.where(img_left['msk'].data != img_left.attrs['valid_pixels'])] = np.nan
+        left_masked = np.copy(img_left["im"].data)
+        if "msk" in img_left.data_vars:
+            left_masked[np.where(img_left["msk"].data != img_left.attrs["valid_pixels"])] = np.nan
 
-        left_masked = filter_.median_filter(left_masked)# type: ignore
+        left_masked = filter_.median_filter(left_masked)  # type: ignore
         # Convert nan to inf to be able to use the comparison operators < and > in cross_support function
         np.nan_to_num(left_masked, copy=False, nan=np.inf)
         # Compute left cross support using numba to reduce running time
         if offset != 0:
             # Cross support to the size of the cost volume
-            cross_left = cross_support(left_masked[offset: -offset, offset: -offset], self._cbca_distance,
-                                       self._cbca_intensity)
+            cross_left = cross_support(
+                left_masked[offset:-offset, offset:-offset],
+                self._cbca_distance,
+                self._cbca_intensity,
+            )
         else:
             cross_left = cross_support(left_masked, self._cbca_distance, self._cbca_intensity)
 
@@ -227,16 +244,16 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         cross_right = []
         for shift, img in enumerate(img_right_shift):
             # Invalid and nodata pixels are masked with np.nan to avoid propagating the values with the median filter
-            right_masked = np.copy(img['im'].data)
+            right_masked = np.copy(img["im"].data)
 
             # Pixel precision
-            if ('msk' in img_right.data_vars) and (shift == 0):
-                right_masked[np.where(img_right['msk'].data != img_right.attrs['valid_pixels'])] = np.nan
+            if ("msk" in img_right.data_vars) and (shift == 0):
+                right_masked[np.where(img_right["msk"].data != img_right.attrs["valid_pixels"])] = np.nan
 
             # Subpixel precision : computes the shifted right mask
-            if ('msk' in img_right.data_vars) and (shift != 0):
-                shift_mask = np.zeros(img_right['msk'].data.shape)
-                shift_mask[np.where(img_right['msk'].data != img_right.attrs['valid_pixels'])] = np.nan
+            if ("msk" in img_right.data_vars) and (shift != 0):
+                shift_mask = np.zeros(img_right["msk"].data.shape)
+                shift_mask[np.where(img_right["msk"].data != img_right.attrs["valid_pixels"])] = np.nan
 
                 # Since the interpolation of the right image is of order 1, the shifted right mask corresponds
                 # to an aggregation of two columns of the right mask
@@ -244,30 +261,39 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
                 # Create a sliding window of shape 2 using as_strided function : this function create a new a view (by
                 # manipulating data pointer)of the shift_mask array with a different shape. The new view pointing to the
                 # same memory block as shift_mask so it does not consume any additional memory.
-                str_row, str_col = shift_mask.strides  # pylint: disable=unpacking-non-sequence
+                (  # pylint: disable=unpacking-non-sequence
+                    str_row,
+                    str_col,
+                ) = shift_mask.strides
                 shape_windows = (shift_mask.shape[0], shift_mask.shape[1] - 1, 2)
                 strides_windows = (str_row, str_col, str_col)
-                aggregation_window = np.lib.stride_tricks.as_strided(shift_mask, shape_windows, strides_windows,
-                                                                     writeable=False)
+                aggregation_window = np.lib.stride_tricks.as_strided(
+                    shift_mask, shape_windows, strides_windows, writeable=False
+                )
                 shift_mask = np.sum(aggregation_window, 2)
                 right_masked += shift_mask
 
             #  Apply a 3×3 median filter to the input image
-            right_masked = filter_.median_filter(right_masked)# type: ignore
+            right_masked = filter_.median_filter(right_masked)  # type: ignore
             # Convert nan to inf to be able to use the comparison operators < and > in cross_support function
             np.nan_to_num(right_masked, copy=False, nan=np.inf)
             # Compute right cross support using numba to reduce running time
             if offset != 0:
                 # Cross support to the size of the cost volume
-                cross_right.append(cross_support(right_masked[offset: -offset, offset: -offset], self._cbca_distance,
-                                                 self._cbca_intensity))
+                cross_right.append(
+                    cross_support(
+                        right_masked[offset:-offset, offset:-offset],
+                        self._cbca_distance,
+                        self._cbca_intensity,
+                    )
+                )
             else:
                 cross_right.append(cross_support(right_masked, self._cbca_distance, self._cbca_intensity))
 
         return cross_left, cross_right
 
 
-@njit('f4[:, :](f4[:, :])', cache=True)
+@njit("f4[:, :](f4[:, :])", cache=True)
 def cbca_step_1(cv: np.ndarray) -> np.ndarray:
     """
     Giving the matching cost for one disparity, build a horizontal integral image storing the cumulative row sum,
@@ -294,9 +320,14 @@ def cbca_step_1(cv: np.ndarray) -> np.ndarray:
     return step1
 
 
-@njit('(f4[:, :], i2[:, :, :], i2[:, :, :], i8[:], i8[:])', cache=True)
-def cbca_step_2(step1: np.ndarray, cross_left: np.ndarray, cross_right: np.ndarray, range_col: np.ndarray,
-                range_col_right: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+@njit("(f4[:, :], i2[:, :, :], i2[:, :, :], i8[:], i8[:])", cache=True)
+def cbca_step_2(
+    step1: np.ndarray,
+    cross_left: np.ndarray,
+    cross_right: np.ndarray,
+    range_col: np.ndarray,
+    range_col_right: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Giving the horizontal integral image, computed the horizontal matching cost for one disparity,
     E_h(row, col) = S_h(row + right_arm_length, col) - S_h(row - left_arm_length -1, col)
@@ -325,15 +356,21 @@ def cbca_step_2(step1: np.ndarray, cross_left: np.ndarray, cross_right: np.ndarr
 
     for col in range(step1.shape[0]):
         for row in range(range_col.shape[0]):
-            right = min(cross_left[col, range_col[row], 1], cross_right[col, range_col_right[row], 1])
-            left = min(cross_left[col, range_col[row], 0], cross_right[col, range_col_right[row], 0])
+            right = min(
+                cross_left[col, range_col[row], 1],
+                cross_right[col, range_col_right[row], 1],
+            )
+            left = min(
+                cross_left[col, range_col[row], 0],
+                cross_right[col, range_col_right[row], 0],
+            )
             step2[col, range_col[row]] = step1[col, range_col[row] + right] - step1[col, range_col[row] - left - 1]
-            sum_step2[col, range_col[row]] += (right + left)
+            sum_step2[col, range_col[row]] += right + left
 
     return step2, sum_step2
 
 
-@njit('f4[:, :](f4[:, :])', cache=True)
+@njit("f4[:, :](f4[:, :])", cache=True)
 def cbca_step_3(step2: np.ndarray) -> np.ndarray:
     """
     Giving the horizontal matching cost, build a vertical integral image for one disparity,
@@ -357,9 +394,15 @@ def cbca_step_3(step2: np.ndarray) -> np.ndarray:
     return step3
 
 
-@njit('(f4[:, :], f4[:, :], i2[:, :, :], i2[:, :, :], i8[:], i8[:])', cache=True)
-def cbca_step_4(step3: np.ndarray, sum2: np.ndarray, cross_left: np.ndarray, cross_right: np.ndarray,
-                range_col: np.ndarray, range_col_right: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+@njit("(f4[:, :], f4[:, :], i2[:, :, :], i2[:, :, :], i8[:], i8[:])", cache=True)
+def cbca_step_4(
+    step3: np.ndarray,
+    sum2: np.ndarray,
+    cross_left: np.ndarray,
+    cross_right: np.ndarray,
+    range_col: np.ndarray,
+    range_col_right: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Giving the vertical integral image, build the fully aggregated matching cost for one disparity,
     E = S_v(row, col + bottom_arm_length) - S_v(row, col - top_arm_length - 1)
@@ -388,21 +431,27 @@ def cbca_step_4(step3: np.ndarray, sum2: np.ndarray, cross_left: np.ndarray, cro
     sum4 = np.copy(sum2)
     for col in range(step4.shape[0]):
         for row in range(range_col.shape[0]):
-            top = min(cross_left[col, range_col[row], 2], cross_right[col, range_col_right[row], 2])
-            bot = min(cross_left[col, range_col[row], 3], cross_right[col, range_col_right[row], 3])
+            top = min(
+                cross_left[col, range_col[row], 2],
+                cross_right[col, range_col_right[row], 2],
+            )
+            bot = min(
+                cross_left[col, range_col[row], 3],
+                cross_right[col, range_col_right[row], 3],
+            )
 
             step4[col, range_col[row]] = step3[col + bot, range_col[row]] - step3[col - top - 1, range_col[row]]
 
-            sum4[col, range_col[row]] += (top + bot)
+            sum4[col, range_col[row]] += top + bot
             if top != 0:
-                sum4[col, range_col[row]] += np.sum(sum2[col - top:col, range_col[row]])
+                sum4[col, range_col[row]] += np.sum(sum2[col - top : col, range_col[row]])
             if bot != 0:
-                sum4[col, range_col[row]] += np.sum(sum2[col + 1:col + bot + 1, range_col[row]])
+                sum4[col, range_col[row]] += np.sum(sum2[col + 1 : col + bot + 1, range_col[row]])
 
     return step4, sum4
 
 
-@njit('i2[:, :, :](f4[:, :], i2, f4)', cache=True)
+@njit("i2[:, :, :](f4[:, :], i2, f4)", cache=True)
 def cross_support(image: np.ndarray, len_arms: int, intensity: float) -> np.ndarray:
     """
     Compute the cross support for an image: find the 4 arms.

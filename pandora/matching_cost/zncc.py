@@ -33,12 +33,13 @@ from pandora.img_tools import shift_right_img, compute_mean_raster, compute_std_
 from pandora.matching_cost import matching_cost
 
 
-@matching_cost.AbstractMatchingCost.register_subclass('zncc')
+@matching_cost.AbstractMatchingCost.register_subclass("zncc")
 class Zncc(matching_cost.AbstractMatchingCost):
     """
     Zero mean normalized cross correlation
     Zncc class allows to compute the cost volume
     """
+
     # Default configuration, do not change these values
     _WINDOW_SIZE = 5
     _SUBPIX = 1
@@ -50,8 +51,8 @@ class Zncc(matching_cost.AbstractMatchingCost):
         :return: None
         """
         self.cfg = self.check_conf(**cfg)
-        self._window_size = self.cfg['window_size']
-        self._subpix = self.cfg['subpix']
+        self._window_size = self.cfg["window_size"]
+        self._subpix = self.cfg["subpix"]
 
     def check_conf(self, **cfg: Union[str, int]) -> Dict[str, Union[str, int]]:
         """
@@ -63,15 +64,15 @@ class Zncc(matching_cost.AbstractMatchingCost):
         :rtype: dict
         """
         # Give the default value if the required element is not in the configuration
-        if 'window_size' not in cfg:
-            cfg['window_size'] = self._WINDOW_SIZE
-        if 'subpix' not in cfg:
-            cfg['subpix'] = self._SUBPIX
+        if "window_size" not in cfg:
+            cfg["window_size"] = self._WINDOW_SIZE
+        if "subpix" not in cfg:
+            cfg["subpix"] = self._SUBPIX
 
         schema = {
-            'matching_cost_method': And(str, lambda input: 'zncc'),
-            'window_size': And(int, lambda input: input > 0 and (input % 2) != 0),
-            'subpix': And(int, lambda input: input in (1, 2, 4))
+            "matching_cost_method": And(str, lambda input: "zncc"),
+            "window_size": And(int, lambda input: input > 0 and (input % 2) != 0),
+            "subpix": And(int, lambda input: input in (1, 2, 4)),
         }
 
         checker = Checker(schema)
@@ -83,10 +84,11 @@ class Zncc(matching_cost.AbstractMatchingCost):
         Describes the matching cost method
         :return: None
         """
-        print('zncc similarity measure')
+        print("zncc similarity measure")
 
-    def compute_cost_volume(self, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: int,
-                            disp_max: int) -> xr.Dataset:
+    def compute_cost_volume(
+        self, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: int, disp_max: int
+    ) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
 
@@ -132,9 +134,14 @@ class Zncc(matching_cost.AbstractMatchingCost):
 
         # Cost volume metadata
         offset_row_col = int((self._window_size - 1) / 2)
-        metadata = {'measure': 'zncc', 'subpixel': self._subpix,
-                    'offset_row_col': offset_row_col, 'window_size': self._window_size,
-                    'type_measure': 'max', 'cmax': cmax}
+        metadata = {
+            "measure": "zncc",
+            "subpixel": self._subpix,
+            "offset_row_col": offset_row_col,
+            "window_size": self._window_size,
+            "type_measure": "max",
+            "cmax": cmax,
+        }
 
         # Disparity range
         if self._subpix == 1:
@@ -144,13 +151,15 @@ class Zncc(matching_cost.AbstractMatchingCost):
             disparity_range = np.append(disparity_range, [disp_max])
 
         # Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
-        cv = np.zeros((len(disparity_range), img_left['im'].shape[1],
-                       img_right['im'].shape[0] ), dtype=np.float32)
+        cv = np.zeros(
+            (len(disparity_range), img_left["im"].shape[1], img_right["im"].shape[0]),
+            dtype=np.float32,
+        )
         cv += np.nan
 
         # If offset, do not consider border position for cost computation
         if offset_row_col != 0:
-            cv_crop= cv[:, offset_row_col:-offset_row_col, offset_row_col: -offset_row_col]
+            cv_crop = cv[:, offset_row_col:-offset_row_col, offset_row_col:-offset_row_col]
         else:
             cv_crop = cv
 
@@ -167,33 +176,44 @@ class Zncc(matching_cost.AbstractMatchingCost):
             q_std = (point_q[0], point_q[1] - (int(self._window_size / 2) * 2))
 
             # Compute the normalized summation of the product of intensities
-            zncc_ = img_left['im'].data[:, point_p[0]:point_p[1]] * img_right_shift[i_right]['im'].data[:,
-                                                                    point_q[0]:point_q[1]]
-            zncc_ = xr.Dataset({'im': (['row', 'col'], zncc_)},
-                               coords={'row': np.arange(zncc_.shape[0]), 'col': np.arange(zncc_.shape[1])})
+            zncc_ = (
+                img_left["im"].data[:, point_p[0] : point_p[1]]
+                * img_right_shift[i_right]["im"].data[:, point_q[0] : point_q[1]]
+            )
+            zncc_ = xr.Dataset(
+                {"im": (["row", "col"], zncc_)},
+                coords={
+                    "row": np.arange(zncc_.shape[0]),
+                    "col": np.arange(zncc_.shape[1]),
+                },
+            )
             zncc_ = compute_mean_raster(zncc_, self._window_size)
             # Subtracting  the  local mean  value  of  intensities
-            zncc_ -= (img_left_mean[:, p_std[0]:p_std[1]] * img_right_mean[i_right][:, q_std[0]:q_std[1]])
+            zncc_ -= img_left_mean[:, p_std[0] : p_std[1]] * img_right_mean[i_right][:, q_std[0] : q_std[1]]
 
             # Divide by the standard deviation of the intensities of the images :
             # If the standard deviation of the intensities of the images is greater than 0
-            divide_standard = np.multiply(img_left_std[:, p_std[0]:p_std[1]],
-                                          img_right_std[i_right][:, q_std[0]:q_std[1]])
+            divide_standard = np.multiply(
+                img_left_std[:, p_std[0] : p_std[1]],
+                img_right_std[i_right][:, q_std[0] : q_std[1]],
+            )
             valid = np.where(divide_standard > 0)
             zncc_[valid] /= divide_standard[valid]
             # Else, zncc = 0
             zncc_[np.where(divide_standard <= 0)] = 0
 
             # Places the result in the cost_volume
-            cv_crop[dsp, point_p[0]:p_std[1], :] = np.swapaxes(zncc_, 0, 1)
+            cv_crop[dsp, point_p[0] : p_std[1], :] = np.swapaxes(zncc_, 0, 1)
 
         # Create the xarray.DataSet that will contain the cost_volume of dimensions (row, col, disp)
-        cv = self.allocate_costvolume(img_left,
-                                      self._subpix,
-                                      disp_min,
-                                      disp_max,
-                                      self._window_size,
-                                      metadata,
-                                      np.swapaxes(cv, 0, 2))
+        cv = self.allocate_costvolume(
+            img_left,
+            self._subpix,
+            disp_min,
+            disp_max,
+            self._window_size,
+            metadata,
+            np.swapaxes(cv, 0, 2),
+        )
 
         return cv

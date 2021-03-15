@@ -35,11 +35,12 @@ from . import multiscale
 from ..common import sliding_window
 
 
-@multiscale.AbstractMultiscale.register_subclass('fixed_zoom_pyramid')
+@multiscale.AbstractMultiscale.register_subclass("fixed_zoom_pyramid")
 class FixedZoomPyramid(multiscale.AbstractMultiscale):
     """
     FixedZoomPyramid class, allows to perform the multiscale processing
     """
+
     _PYRAMID_NUM_SCALES = 2
     _PYRAMID_SCALE_FACTOR = 2
     _PYRAMID_MARGE = 1
@@ -49,10 +50,10 @@ class FixedZoomPyramid(multiscale.AbstractMultiscale):
         :param cfg: optional configuration, {  "num_scales": int, "scale_factor": int, "marge" int}
         :type cfg: dict
         """
-        self.cfg = self.check_conf(**cfg)# type: ignore
-        self._num_scales = self.cfg['num_scales']
-        self._scale_factor = self.cfg['scale_factor']
-        self._marge = self.cfg['marge']
+        self.cfg = self.check_conf(**cfg)  # type: ignore
+        self._num_scales = self.cfg["num_scales"]
+        self._scale_factor = self.cfg["scale_factor"]
+        self._marge = self.cfg["marge"]
 
     def check_conf(self, **cfg: Union[str, float, int]) -> Dict[str, Union[str, float, int]]:
         """
@@ -64,18 +65,18 @@ class FixedZoomPyramid(multiscale.AbstractMultiscale):
         :rtype: dict
         """
         # Give the default value if the required element is not in the configuration
-        if 'num_scales' not in cfg:
-            cfg['num_scales'] = self._PYRAMID_NUM_SCALES
-        if 'scale_factor' not in cfg:
-            cfg['scale_factor'] = self._PYRAMID_SCALE_FACTOR
-        if 'marge' not in cfg:
-            cfg['marge'] = self._PYRAMID_MARGE
+        if "num_scales" not in cfg:
+            cfg["num_scales"] = self._PYRAMID_NUM_SCALES
+        if "scale_factor" not in cfg:
+            cfg["scale_factor"] = self._PYRAMID_SCALE_FACTOR
+        if "marge" not in cfg:
+            cfg["marge"] = self._PYRAMID_MARGE
 
         schema = {
-            'multiscale_method': And(str, lambda x: 'fixed_zoom_pyramid'),
-            'num_scales': And(int, lambda x: x > 1),
-            'scale_factor': And(int, lambda x: x > 1),
-            'marge': And(int, lambda x: x >= 0),
+            "multiscale_method": And(str, lambda x: "fixed_zoom_pyramid"),
+            "num_scales": And(int, lambda x: x > 1),
+            "scale_factor": And(int, lambda x: x > 1),
+            "marge": And(int, lambda x: x >= 0),
         }
 
         checker = Checker(schema)
@@ -86,10 +87,9 @@ class FixedZoomPyramid(multiscale.AbstractMultiscale):
         """
         Describes the aggregation method
         """
-        print('FixedZoomPyramid method')
+        print("FixedZoomPyramid method")
 
-    def disparity_range(self, disp: xr.Dataset, disp_min: int, disp_max: int) -> \
-            Tuple[np.array, np.array]:
+    def disparity_range(self, disp: xr.Dataset, disp_min: int, disp_max: int) -> Tuple[np.array, np.array]:
         """
         Disparity range computation by seeking the max and min values in the window.
         Invalid disparities are given the full disparity range
@@ -108,8 +108,8 @@ class FixedZoomPyramid(multiscale.AbstractMultiscale):
 
         :rtype: tuple (np.ndarray, np.ndarray)
         """
-        ncol, nrow = disp['disparity_map'].shape
-        offset = int((disp.attrs['window_size'] - 1) / 2)
+        ncol, nrow = disp["disparity_map"].shape
+        offset = int((disp.attrs["window_size"] - 1) / 2)
 
         # Initialize ranges on max and min disparity values
         disp_max_range = np.ones((ncol, nrow), dtype=np.float32) * disp_max
@@ -120,9 +120,9 @@ class FixedZoomPyramid(multiscale.AbstractMultiscale):
         invalid_ind = np.where(np.isnan(tmp_disp_map))
 
         # Disparity windows
-        disparity_windows = sliding_window(tmp_disp_map, (disp.attrs['window_size'], disp.attrs['window_size']))
+        disparity_windows = sliding_window(tmp_disp_map, (disp.attrs["window_size"], disp.attrs["window_size"]))
         # Ignore warning in case the window is All-NaN
-        warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+        warnings.filterwarnings("ignore", r"All-NaN (slice|axis) encountered")
 
         # To reduce memory, the data array is split (along the row axis) into multiple sub-arrays with a step of 100
         chunk_size = 100
@@ -130,7 +130,7 @@ class FixedZoomPyramid(multiscale.AbstractMultiscale):
         y_begin = offset
 
         with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+            warnings.filterwarnings("ignore", r"All-NaN (slice|axis) encountered")
             # numpy.nanmin/nanmax : Compute the median along the specified axis, while ignoring NaNs
             for col in np.arange(len(disp_chunked_y)):
                 # To reduce memory, the data array is split (along the col axis) into multiple sub-arrays,
@@ -142,10 +142,12 @@ class FixedZoomPyramid(multiscale.AbstractMultiscale):
                     y_end = y_begin + disp_chunked_y[col].shape[0]
                     x_end = x_begin + disp_chunked_x[row].shape[1]
 
-                    disp_min_range[y_begin:y_end, x_begin:x_end] = np.nanmin(disp_chunked_x[row],
-                                                                             axis=(2, 3)) - self._marge
-                    disp_max_range[y_begin:y_end, x_begin:x_end] = np.nanmax(disp_chunked_x[row],
-                                                                             axis=(2, 3)) + self._marge
+                    disp_min_range[y_begin:y_end, x_begin:x_end] = (
+                        np.nanmin(disp_chunked_x[row], axis=(2, 3)) - self._marge
+                    )
+                    disp_max_range[y_begin:y_end, x_begin:x_end] = (
+                        np.nanmax(disp_chunked_x[row], axis=(2, 3)) + self._marge
+                    )
                     x_begin += disp_chunked_x[row].shape[1]
 
                 y_begin += disp_chunked_y[col].shape[0]
