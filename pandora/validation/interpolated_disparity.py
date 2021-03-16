@@ -36,13 +36,14 @@ import pandora.constants as cst
 from pandora.img_tools import find_valid_neighbors
 
 
-class AbstractInterpolation():
+class AbstractInterpolation:
     """
     Abstract Interpolation class
     """
+
     __metaclass__ = ABCMeta
 
-    interpolation_methods_avail : Dict = {}
+    interpolation_methods_avail: Dict = {}
 
     def __new__(cls, **cfg: dict):
         """
@@ -52,21 +53,29 @@ class AbstractInterpolation():
         :type cfg: dictionary
         """
         if cls is AbstractInterpolation:
-            if isinstance(cfg['interpolated_disparity'], str):
+            if isinstance(cfg["interpolated_disparity"], str):
                 try:
                     return super(AbstractInterpolation, cls).__new__(
-                        cls.interpolation_methods_avail[cfg['interpolated_disparity']])
+                        cls.interpolation_methods_avail[cfg["interpolated_disparity"]]
+                    )
                 except KeyError:
-                    logging.error('No interpolation method named % supported', cfg['interpolated_disparity'])
+                    logging.error(
+                        "No interpolation method named % supported",
+                        cfg["interpolated_disparity"],
+                    )
                     raise KeyError
             else:
-                if isinstance(cfg['interpolated_disparity'], unicode):# type: ignore # pylint: disable=undefined-variable
+                if isinstance(cfg["interpolated_disparity"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractInterpolation, cls).__new__(
-                            cls.interpolation_methods_avail[cfg['interpolated_disparity'].encode('utf-8')])
+                            cls.interpolation_methods_avail[cfg["interpolated_disparity"].encode("utf-8")]
+                        )
                     except KeyError:
-                        logging.error('No interpolation method named % supported', cfg['interpolated_disparity'])
+                        logging.error(
+                            "No interpolation method named % supported",
+                            cfg["interpolated_disparity"],
+                        )
                         raise KeyError
         else:
             return super(AbstractInterpolation, cls).__new__(cls)
@@ -99,11 +108,16 @@ class AbstractInterpolation():
         Describes the disparity interpolation method for the validation step
         :return: None
         """
-        print('Disparity interpolation method description for the validation step')
+        print("Disparity interpolation method description for the validation step")
 
     @abstractmethod
-    def interpolated_disparity(self, left: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None,
-                               cv: xr.Dataset = None) -> None:
+    def interpolated_disparity(
+        self,
+        left: xr.Dataset,
+        img_left: xr.Dataset = None,
+        img_right: xr.Dataset = None,
+        cv: xr.Dataset = None,
+    ) -> None:
         """
         Interpolation of the left disparity map to resolve occlusion and mismatch conflicts.
 
@@ -132,11 +146,11 @@ class AbstractInterpolation():
         """
 
 
-@AbstractInterpolation.register_subclass('mc-cnn')
+@AbstractInterpolation.register_subclass("mc-cnn")
 class McCnnInterpolation(AbstractInterpolation):
     """
-        McCnnInterpolation class allows to perform the interpolation of the disparity map
-        """
+    McCnnInterpolation class allows to perform the interpolation of the disparity map
+    """
 
     def __init__(self, **cfg: dict) -> None:
         """
@@ -161,10 +175,15 @@ class McCnnInterpolation(AbstractInterpolation):
         Describes the disparity interpolation method
         :return: None
         """
-        print('MC-CNN interpolation method')
+        print("MC-CNN interpolation method")
 
-    def interpolated_disparity(self, left: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None,
-                               cv: xr.Dataset = None) -> None:
+    def interpolated_disparity(
+        self,
+        left: xr.Dataset,
+        img_left: xr.Dataset = None,
+        img_right: xr.Dataset = None,
+        cv: xr.Dataset = None,
+    ) -> None:
         """
         Interpolation of the left disparity map to resolve occlusion and mismatch conflicts.
 
@@ -192,12 +211,16 @@ class McCnnInterpolation(AbstractInterpolation):
         :return: None
         """
 
-        left['disparity_map'].data, left['validity_mask'].data = \
-            self.interpolate_occlusion_mc_cnn(left['disparity_map'].data, left['validity_mask'].data)
-        left['disparity_map'].data, left['validity_mask'].data = \
-            self.interpolate_mismatch_mc_cnn(left['disparity_map'].data, left['validity_mask'].data)
+        (
+            left["disparity_map"].data,
+            left["validity_mask"].data,
+        ) = self.interpolate_occlusion_mc_cnn(left["disparity_map"].data, left["validity_mask"].data)
+        (
+            left["disparity_map"].data,
+            left["validity_mask"].data,
+        ) = self.interpolate_mismatch_mc_cnn(left["disparity_map"].data, left["validity_mask"].data)
 
-        left.attrs['interpolated_disparity'] = 'mc-cnn'
+        left.attrs["interpolated_disparity"] = "mc-cnn"
 
     @staticmethod
     @njit()
@@ -231,7 +254,7 @@ class McCnnInterpolation(AbstractInterpolation):
                     # interpolate occlusion by moving left until we find a position labeled correct
 
                     #  valid pixels mask
-                    msk = (valid[col, 0:row + 1] & cst.PANDORA_MSK_PIXEL_INVALID) == 0
+                    msk = (valid[col, 0 : row + 1] & cst.PANDORA_MSK_PIXEL_INVALID) == 0
                     # Find the first valid pixel
                     msk = msk[::-1]
                     arg_valid = np.argmax(msk)
@@ -283,8 +306,26 @@ class McCnnInterpolation(AbstractInterpolation):
         ncol, nrow = disp.shape
 
         # 16 directions : [row, col]
-        dirs = np.array([[0., 1.], [-0.5, 1.], [-1., 1.], [-1., 0.5], [-1., 0.], [-1., -0.5], [-1., -1.], [-0.5, -1.],
-                         [0., -1.], [0.5, -1.], [1., -1.], [1., -0.5], [1., 0.], [1., 0.5], [1., 1.], [0.5, 1.]])
+        dirs = np.array(
+            [
+                [0.0, 1.0],
+                [-0.5, 1.0],
+                [-1.0, 1.0],
+                [-1.0, 0.5],
+                [-1.0, 0.0],
+                [-1.0, -0.5],
+                [-1.0, -1.0],
+                [-0.5, -1.0],
+                [0.0, -1.0],
+                [0.5, -1.0],
+                [1.0, -1.0],
+                [1.0, -0.5],
+                [1.0, 0.0],
+                [1.0, 0.5],
+                [1.0, 1.0],
+                [0.5, 1.0],
+            ]
+        )
 
         # Maximum path length
         max_path_length = max(nrow, ncol)
@@ -322,11 +363,11 @@ class McCnnInterpolation(AbstractInterpolation):
         return out_disp, out_val
 
 
-@AbstractInterpolation.register_subclass('sgm')
+@AbstractInterpolation.register_subclass("sgm")
 class SgmInterpolation(AbstractInterpolation):
     """
-        SgmInterpolation class allows to perform the interpolation of the disparity map
-        """
+    SgmInterpolation class allows to perform the interpolation of the disparity map
+    """
 
     def __init__(self, **cfg: dict) -> None:
         """
@@ -351,10 +392,15 @@ class SgmInterpolation(AbstractInterpolation):
         Describes the disparity interpolation method
         :return: None
         """
-        print('SGM interpolation method')
+        print("SGM interpolation method")
 
-    def interpolated_disparity(self, left: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None,
-                               cv: xr.Dataset = None) -> None:
+    def interpolated_disparity(
+        self,
+        left: xr.Dataset,
+        img_left: xr.Dataset = None,
+        img_right: xr.Dataset = None,
+        cv: xr.Dataset = None,
+    ) -> None:
         """
         Interpolation of the left disparity map to resolve occlusion and mismatch conflicts.
 
@@ -382,13 +428,15 @@ class SgmInterpolation(AbstractInterpolation):
         :return: None
         """
 
-        left['disparity_map'].data, left['validity_mask'].data = self.interpolate_mismatch_sgm(
-            left['disparity_map'].data,
-            left['validity_mask'].data)
-        left['disparity_map'].data, left['validity_mask'].data = self.interpolate_occlusion_sgm(
-            left['disparity_map'].data,
-            left['validity_mask'].data)
-        left.attrs['interpolated_disparity'] = 'sgm'
+        (
+            left["disparity_map"].data,
+            left["validity_mask"].data,
+        ) = self.interpolate_mismatch_sgm(left["disparity_map"].data, left["validity_mask"].data)
+        (
+            left["disparity_map"].data,
+            left["validity_mask"].data,
+        ) = self.interpolate_occlusion_sgm(left["disparity_map"].data, left["validity_mask"].data)
+        left.attrs["interpolated_disparity"] = "sgm"
 
     @staticmethod
     @njit()
@@ -470,9 +518,16 @@ class SgmInterpolation(AbstractInterpolation):
                 if valid[col, row] & cst.PANDORA_MSK_PIXEL_MISMATCH != 0:
 
                     # Mismatched pixel areas that are direct neighbors of occluded pixels are treated as occlusions
-                    if np.sum(valid[max(0, col - 1):min(ncol - 1, col + 1) + 1,
-                              max(0, row - 1):min(nrow - 1, row + 1) + 1] &
-                              cst.PANDORA_MSK_PIXEL_OCCLUSION) != 0:
+                    if (
+                        np.sum(
+                            valid[
+                                max(0, col - 1) : min(ncol - 1, col + 1) + 1,
+                                max(0, row - 1) : min(nrow - 1, row + 1) + 1,
+                            ]
+                            & cst.PANDORA_MSK_PIXEL_OCCLUSION
+                        )
+                        != 0
+                    ):
                         out_val[col, row] -= cst.PANDORA_MSK_PIXEL_MISMATCH
                         out_val[col, row] += cst.PANDORA_MSK_PIXEL_OCCLUSION
 

@@ -31,13 +31,14 @@ from typing import Union, Dict
 import xarray as xr
 
 
-class AbstractAggregation():
+class AbstractAggregation:
     """
     Abstract Aggregation class
     """
+
     __metaclass__ = ABCMeta
 
-    aggreg_methods_avail : Dict = {}
+    aggreg_methods_avail: Dict = {}
     cfg = None
 
     def __new__(cls, **cfg: dict):
@@ -49,20 +50,27 @@ class AbstractAggregation():
         """
 
         if cls is AbstractAggregation:
-            if isinstance(cfg['aggregation_method'], str):
+            if isinstance(cfg["aggregation_method"], str):
                 try:
-                    return super(AbstractAggregation, cls).__new__(cls.aggreg_methods_avail[cfg['aggregation_method']])
+                    return super(AbstractAggregation, cls).__new__(cls.aggreg_methods_avail[cfg["aggregation_method"]])
                 except KeyError:
-                    logging.error('No aggregation method named % supported', cfg['aggregation_method'])
+                    logging.error(
+                        "No aggregation method named % supported",
+                        cfg["aggregation_method"],
+                    )
                     sys.exit(1)
             else:
-                if isinstance(cfg['aggregation_method'], unicode):# type: ignore # pylint: disable=undefined-variable
+                if isinstance(cfg["aggregation_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractAggregation, cls).__new__(
-                            cls.aggreg_methods_avail[cfg['aggregation_method'].encode('utf-8')])
+                            cls.aggreg_methods_avail[cfg["aggregation_method"].encode("utf-8")]
+                        )
                     except KeyError:
-                        logging.error('No aggregation method named % supported', cfg['aggregation_method'])
+                        logging.error(
+                            "No aggregation method named % supported",
+                            cfg["aggregation_method"],
+                        )
                         sys.exit(1)
         else:
             return super(AbstractAggregation, cls).__new__(cls)
@@ -95,11 +103,12 @@ class AbstractAggregation():
         Describes the aggregation method
 
         """
-        print('Aggregation description')
+        print("Aggregation description")
 
     @abstractmethod
-    def cost_volume_aggregation(self, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset,
-                                **cfg: Union[str, int]) -> None:
+    def cost_volume_aggregation(
+        self, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset, **cfg: Union[str, int]
+    ) -> None:
         """
         Aggregate the cost volume for a pair of images
 

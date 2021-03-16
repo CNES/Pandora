@@ -37,9 +37,10 @@ class AbstractMultiscale:
     """
     Abstract Multiscale class
     """
+
     __metaclass__ = ABCMeta
 
-    multiscale_methods_avail : Dict = {}
+    multiscale_methods_avail: Dict = {}
     cfg = None
 
     def __new__(cls, **cfg: Union[str, int]):
@@ -50,22 +51,29 @@ class AbstractMultiscale:
         :type cfg: dictionary
         """
         if cls is AbstractMultiscale:
-            if isinstance(cfg['multiscale_method'], str):
+            if isinstance(cfg["multiscale_method"], str):
                 try:
                     return super(AbstractMultiscale, cls).__new__(
-                        cls.multiscale_methods_avail[cfg['multiscale_method']])
+                        cls.multiscale_methods_avail[cfg["multiscale_method"]]
+                    )
                 except KeyError:
-                    logging.error('No multiscale matching method named % supported', cfg['multiscale_method'])
+                    logging.error(
+                        "No multiscale matching method named % supported",
+                        cfg["multiscale_method"],
+                    )
                     raise KeyError
             else:
-                if isinstance(cfg['multiscale_method'], unicode):# type: ignore # pylint: disable=undefined-variable
+                if isinstance(cfg["multiscale_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractMultiscale, cls).__new__(
-                            cls.multiscale_methods_avail[cfg['multiscale_method'].encode('utf-8')])
+                            cls.multiscale_methods_avail[cfg["multiscale_method"].encode("utf-8")]
+                        )
                     except KeyError:
                         logging.error(
-                            'No multiscale matching method named % supported', cfg['multiscale_method'])
+                            "No multiscale matching method named % supported",
+                            cfg["multiscale_method"],
+                        )
                         raise KeyError
         else:
             return super(AbstractMultiscale, cls).__new__(cls)
@@ -100,11 +108,10 @@ class AbstractMultiscale:
         """
         Describes the multiscale method
         """
-        print('Multiscale matching description')
+        print("Multiscale matching description")
 
     @abstractmethod
-    def disparity_range(self, disp: xr.Dataset, disp_min: int, disp_max: int) -> \
-            Tuple[np.array, np.array]:
+    def disparity_range(self, disp: xr.Dataset, disp_min: int, disp_max: int) -> Tuple[np.array, np.array]:
         """
         Disparity range computation by seeking the max and min values in the window.
         Unvalid disparities are given the full disparity range
@@ -139,10 +146,10 @@ class AbstractMultiscale:
 
         :rtype: tuple (np.ndarray, np.ndarray)
         """
-        filtered_disp_map = disp['disparity_map'].data.copy()
+        filtered_disp_map = disp["disparity_map"].data.copy()
 
         # Set all invalid disparities to nan
-        for idxes, val in np.ndenumerate(disp['validity_mask'].data):
+        for idxes, val in np.ndenumerate(disp["validity_mask"].data):
             if val & cst.PANDORA_MSK_PIXEL_INVALID != 0:
                 filtered_disp_map[idxes] = np.nan
 

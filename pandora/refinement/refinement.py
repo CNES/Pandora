@@ -34,13 +34,14 @@ from numba import njit, prange, config
 import pandora.constants as cst
 
 
-class AbstractRefinement():
+class AbstractRefinement:
     """
     Abstract Refinement class
     """
+
     __metaclass__ = ABCMeta
 
-    subpixel_methods_avail : Dict = {}
+    subpixel_methods_avail: Dict = {}
     _refinement_method_name = None
     cfg = None
 
@@ -52,20 +53,24 @@ class AbstractRefinement():
         :type cfg: dictionary
         """
         if cls is AbstractRefinement:
-            if isinstance(cfg['refinement_method'], str):
+            if isinstance(cfg["refinement_method"], str):
                 try:
-                    return super(AbstractRefinement, cls).__new__(cls.subpixel_methods_avail[cfg['refinement_method']])
+                    return super(AbstractRefinement, cls).__new__(cls.subpixel_methods_avail[cfg["refinement_method"]])
                 except KeyError:
-                    logging.error('No subpixel method named % supported', cfg['refinement_method'])
+                    logging.error("No subpixel method named % supported", cfg["refinement_method"])
                     raise KeyError
             else:
-                if isinstance(cfg['refinement_method'], unicode):# type: ignore # pylint: disable=undefined-variable
+                if isinstance(cfg["refinement_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractRefinement, cls).__new__(
-                            cls.subpixel_methods_avail[cfg['refinement_method'].encode('utf-8')])
+                            cls.subpixel_methods_avail[cfg["refinement_method"].encode("utf-8")]
+                        )
                     except KeyError:
-                        logging.error('No subpixel method named % supported', cfg['refinement_method'])
+                        logging.error(
+                            "No subpixel method named % supported",
+                            cfg["refinement_method"],
+                        )
                         raise KeyError
         else:
             return super(AbstractRefinement, cls).__new__(cls)
@@ -88,22 +93,31 @@ class AbstractRefinement():
         :type disp: xarray.Dataset
         :return: None
         """
-        d_min = cv.coords['disp'].data[0]
-        d_max = cv.coords['disp'].data[-1]
-        subpixel = cv.attrs['subpixel']
-        measure = cv.attrs['type_measure']
+        d_min = cv.coords["disp"].data[0]
+        d_max = cv.coords["disp"].data[-1]
+        subpixel = cv.attrs["subpixel"]
+        measure = cv.attrs["type_measure"]
         # Set numba type of threading layer before parallel target compilation
-        config.THREADING_LAYER = 'omp'
+        config.THREADING_LAYER = "omp"
 
         # Conversion to numpy array ( .data ), because Numba does not support Xarray
-        itp_coeff, disp['disparity_map'].data, disp['validity_mask'].data = \
-            self.loop_refinement(cv['cost_volume'].data, disp['disparity_map'].data, disp['validity_mask'].data,
-                                 d_min, d_max, subpixel, measure, self.refinement_method)
+        (itp_coeff, disp["disparity_map"].data, disp["validity_mask"].data,) = self.loop_refinement(
+            cv["cost_volume"].data,
+            disp["disparity_map"].data,
+            disp["validity_mask"].data,
+            d_min,
+            d_max,
+            subpixel,
+            measure,
+            self.refinement_method,
+        )
 
-        disp.attrs['refinement'] = self._refinement_method_name
-        disp['interpolated_coeff'] = xr.DataArray(itp_coeff,
-                                                  coords=[('row', disp.coords['row']), ('col', disp.coords['col'])],
-                                                  dims=['row', 'col'])
+        disp.attrs["refinement"] = self._refinement_method_name
+        disp["interpolated_coeff"] = xr.DataArray(
+            itp_coeff,
+            coords=[("row", disp.coords["row"]), ("col", disp.coords["col"])],
+            dims=["row", "col"],
+        )
 
     def approximate_subpixel_refinement(self, cv_left: xr.Dataset, disp_right: xr.Dataset) -> xr.Dataset:
         """
@@ -130,25 +144,38 @@ class AbstractRefinement():
                 - interpolated_coeff 2D xarray.DataArray (row, col) that contains the refined cost
         :rtype: xarray.Dataset
         """
-        d_min = cv_left.coords['disp'].data[0]
-        d_max = cv_left.coords['disp'].data[-1]
-        subpixel = cv_left.attrs['subpixel']
-        measure = cv_left.attrs['type_measure']
+        d_min = cv_left.coords["disp"].data[0]
+        d_max = cv_left.coords["disp"].data[-1]
+        subpixel = cv_left.attrs["subpixel"]
+        measure = cv_left.attrs["type_measure"]
         # Set numba type of threading layer before parallel target compilation
-        config.THREADING_LAYER = 'omp'
+        config.THREADING_LAYER = "omp"
 
         # Conversion to numpy array ( .data ), because Numba does not support Xarray
-        itp_coeff, disp_right['disparity_map'].data, disp_right[
-            'validity_mask'].data = self.loop_approximate_refinement(
-            cv_left['cost_volume'].data, disp_right['disparity_map'].data, disp_right['validity_mask'].data, d_min,
+        (
+            itp_coeff,
+            disp_right["disparity_map"].data,
+            disp_right["validity_mask"].data,
+        ) = self.loop_approximate_refinement(
+            cv_left["cost_volume"].data,
+            disp_right["disparity_map"].data,
+            disp_right["validity_mask"].data,
+            d_min,
             d_max,
-            subpixel, measure, self.refinement_method)
+            subpixel,
+            measure,
+            self.refinement_method,
+        )
 
-        disp_right.attrs['refinement'] = self._refinement_method_name
-        disp_right['interpolated_coeff'] = xr.DataArray(itp_coeff,
-                                                        coords=[('row', disp_right.coords['row']),
-                                                                ('col', disp_right.coords['col'])],
-                                                        dims=['row', 'col'])
+        disp_right.attrs["refinement"] = self._refinement_method_name
+        disp_right["interpolated_coeff"] = xr.DataArray(
+            itp_coeff,
+            coords=[
+                ("row", disp_right.coords["row"]),
+                ("col", disp_right.coords["col"]),
+            ],
+            dims=["row", "col"],
+        )
         return disp_right
 
     @classmethod
@@ -178,14 +205,20 @@ class AbstractRefinement():
         Describes the subpixel method
         :return: None
         """
-        print('Subpixel method description')
+        print("Subpixel method description")
 
     @staticmethod
     @njit(parallel=True)
-    def loop_refinement(cv: np.ndarray, disp: np.ndarray, mask: np.ndarray, d_min: int, d_max: int, subpixel: int,
-                        measure: str, method: Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray, str],
-                                                       Tuple[int, int, int]]) -> Tuple[np.ndarray, np.ndarray,
-                                                                                       np.ndarray]:
+    def loop_refinement(
+        cv: np.ndarray,
+        disp: np.ndarray,
+        mask: np.ndarray,
+        d_min: int,
+        d_max: int,
+        subpixel: int,
+        measure: str,
+        method: Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray, str], Tuple[int, int, int]],
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
          Apply for each pixels the refinement method
 
@@ -207,7 +240,7 @@ class AbstractRefinement():
         :param method: function
         :return: the refine coefficient, the refine disparity map, and the validity mask
         :rtype: tuple(2D numpy array (row, col), 2D numpy array (row, col), 2D numpy array (row, col))
-         """
+        """
         n_row, n_col, _ = cv.shape
         itp_coeff = np.zeros((n_row, n_col), dtype=np.float64)
 
@@ -223,10 +256,15 @@ class AbstractRefinement():
                     if not np.isnan(cv[row, col, dsp]):
                         if (disp[row, col] != d_min) and (disp[row, col] != d_max):
 
-                            sub_disp, sub_cost, valid = method(         # type: ignore
-                                [cv[row, col, dsp - 1], cv[row, col, dsp], cv[row, col, dsp + 1]],
+                            sub_disp, sub_cost, valid = method(  # type: ignore
+                                [
+                                    cv[row, col, dsp - 1],
+                                    cv[row, col, dsp],
+                                    cv[row, col, dsp + 1],
+                                ],
                                 disp[row, col],
-                                measure)
+                                measure,
+                            )
 
                             disp[row, col] = sub_disp
                             itp_coeff[row, col] = sub_cost
@@ -257,11 +295,16 @@ class AbstractRefinement():
 
     @staticmethod
     @njit(parallel=True)
-    def loop_approximate_refinement(cv: np.ndarray, disp: np.ndarray, mask: np.ndarray, d_min: int, d_max: int,
-                                    subpixel: int, measure: str, method: Callable[[np.ndarray, np.ndarray, np.ndarray,
-                                                                                   np.ndarray, str], Tuple[
-                                                                                      int, int, int]]) -> Tuple[
-        np.ndarray, np.ndarray, np.ndarray]:
+    def loop_approximate_refinement(
+        cv: np.ndarray,
+        disp: np.ndarray,
+        mask: np.ndarray,
+        d_min: int,
+        d_max: int,
+        subpixel: int,
+        measure: str,
+        method: Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray, str], Tuple[int, int, int]],
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
          Apply for each pixels the refinement method on the right disparity map which was created with the approximate
           method : a diagonal search for the minimum on the left cost volume
@@ -284,7 +327,7 @@ class AbstractRefinement():
         :type method: function
         :return: the refine coefficient, the refine disparity map, and the validity mask
         :rtype: tuple(2D numpy array (row, col), 2D numpy array (row, col), 2D numpy array (row, col))
-         """
+        """
         n_row, n_col, _ = cv.shape
         itp_coeff = np.zeros((n_row, n_col), dtype=np.float64)
 
@@ -300,16 +343,24 @@ class AbstractRefinement():
                     diagonal = int(col + disp[row, col])
                     itp_coeff[row, col] = cv[row, diagonal, dsp]
                     if not np.isnan(cv[row, diagonal, dsp]):
-                        if (disp[row, col] != -d_min) and (disp[row, col] != -d_max) and (diagonal != 0) and (
-                                diagonal != (n_col - 1)):
+                        if (
+                            (disp[row, col] != -d_min)
+                            and (disp[row, col] != -d_max)
+                            and (diagonal != 0)
+                            and (diagonal != (n_col - 1))
+                        ):
                             # (1 * subpixel) because in fast mode, we can not have sub-pixel disparity for the right
                             # image.
                             # We therefore interpolate between pixel disparities
-                            sub_disp, cost, valid = method([cv[row, diagonal - 1, dsp + (1 * subpixel)], # type: ignore
-                                                            cv[row, diagonal, dsp],
-                                                            cv[row, diagonal + 1, dsp - (1 * subpixel)]],
-                                                           disp[row, col],
-                                                           measure)
+                            sub_disp, cost, valid = method(  # type:ignore
+                                [
+                                    cv[row, diagonal - 1, dsp + (1 * subpixel)],
+                                    cv[row, diagonal, dsp],
+                                    cv[row, diagonal + 1, dsp - (1 * subpixel)],
+                                ],
+                                disp[row, col],
+                                measure,
+                            )
 
                             disp[row, col] = sub_disp
                             itp_coeff[row, col] = cost

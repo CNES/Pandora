@@ -34,17 +34,18 @@ import xarray as xr
 from . import cost_volume_confidence
 
 
-@cost_volume_confidence.AbstractCostVolumeConfidence.register_subclass('ambiguity')
+@cost_volume_confidence.AbstractCostVolumeConfidence.register_subclass("ambiguity")
 class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
     """
     Ambiguity class allows to estimate a confidence from the cost volume
     """
+
     # Default configuration, do not change this value
-    _ETA_MIN = 0.
+    _ETA_MIN = 0.0
     _ETA_MAX = 0.7
     _ETA_STEP = 0.01
     # Percentile value to normalize ambiguity
-    _PERCENTILE = 1.
+    _PERCENTILE = 1.0
 
     def __init__(self, **cfg: str) -> None:
         """
@@ -56,8 +57,8 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         self.cfg = self.check_conf(**cfg)
         self._eta_min = self._ETA_MIN
         self._percentile = self._PERCENTILE
-        self._eta_max = float(self.cfg['eta_max'])
-        self._eta_step = float(self.cfg['eta_step'])
+        self._eta_max = float(self.cfg["eta_max"])
+        self._eta_step = float(self.cfg["eta_step"])
 
     def check_conf(self, **cfg: Union[str, float]) -> Dict[str, Union[str, float]]:
         """
@@ -68,15 +69,15 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         :return cfg: ambiguity configuration updated
         :rtype: dict
         """
-        if 'eta_max' not in cfg:
-            cfg['eta_max'] = self._ETA_MAX
-        if 'eta_step' not in cfg:
-            cfg['eta_step'] = self._ETA_STEP
+        if "eta_max" not in cfg:
+            cfg["eta_max"] = self._ETA_MAX
+        if "eta_step" not in cfg:
+            cfg["eta_step"] = self._ETA_STEP
 
         schema = {
-            'confidence_method': And(str, lambda input: 'ambiguity'),
-            'eta_max': And(float, lambda input: 0 < input < 1),
-            'eta_step': And(float, lambda input: 0 < input < 1)
+            "confidence_method": And(str, lambda input: "ambiguity"),
+            "eta_max": And(float, lambda input: 0 < input < 1),
+            "eta_step": And(float, lambda input: 0 < input < 1),
         }
 
         checker = Checker(schema)
@@ -88,10 +89,15 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         Describes the confidence method
         :return: None
         """
-        print('Ambiguity confidence method')
+        print("Ambiguity confidence method")
 
-    def confidence_prediction(self, disp: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None,
-                              cv: xr.Dataset = None) -> Tuple[xr.Dataset, xr.Dataset]:
+    def confidence_prediction(
+        self,
+        disp: xr.Dataset,
+        img_left: xr.Dataset = None,
+        img_right: xr.Dataset = None,
+        cv: xr.Dataset = None,
+    ) -> Tuple[xr.Dataset, xr.Dataset]:
         """
         Computes a confidence measure that evaluates the matching cost function at each point
 
@@ -110,14 +116,14 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
         # Computes ambiguity using numba in parallel for memory and computation time optimization
-        ambiguity = self.compute_ambiguity(cv['cost_volume'].data, self._eta_min, self._eta_max, self._eta_step)
+        ambiguity = self.compute_ambiguity(cv["cost_volume"].data, self._eta_min, self._eta_max, self._eta_step)
         # Ambiguity normalization with percentile
         ambiguity = self.normalize_with_percentile(ambiguity)
 
         # Conversion of ambiguity into a confidence measure
-        ambiguity = (1 - ambiguity)
+        ambiguity = 1 - ambiguity
 
-        disp, cv = self.allocate_confidence_map('ambiguity_confidence', ambiguity, disp, cv)
+        disp, cv = self.allocate_confidence_map("ambiguity_confidence", ambiguity, disp, cv)
 
         return disp, cv
 
@@ -138,7 +144,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         return (norm_amb - np.min(norm_amb)) / (np.max(norm_amb) - np.min(norm_amb))
 
     @staticmethod
-    @njit('f4[:, :](f4[:, :, :], f4, f4, f4)', parallel=True, cache=True)
+    @njit("f4[:, :](f4[:, :, :], f4, f4, f4)", parallel=True, cache=True)
     def compute_ambiguity(cv: np.ndarray, _eta_min: float, _eta_max: float, _eta_step: float) -> np.ndarray:
         """
         Computes ambiguity.
@@ -171,17 +177,17 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         for row in prange(n_row):  # pylint: disable=not-an-iterable
             for col in prange(n_col):  # pylint: disable=not-an-iterable
                 # Normalized minimum cost for one point
-                normalized_min_cost = ((np.nanmin(cv[row, col, :]) - min_cost) / (max_cost - min_cost))
+                normalized_min_cost = (np.nanmin(cv[row, col, :]) - min_cost) / (max_cost - min_cost)
 
                 # If all costs are at nan, set the maximum value of the ambiguity for this point
                 if np.isnan(normalized_min_cost):
-                    ambiguity[row, col] = (etas.shape[0] * nb_disps)
+                    ambiguity[row, col] = etas.shape[0] * nb_disps
                 else:
                     normalized_min_cost = np.repeat(normalized_min_cost, nb_disps * etas.shape[0])
 
                     # Normalized cost volume for one point
-                    normalized_cv = ((cv[row, col, :] - min_cost) / (max_cost - min_cost))
-                    # Mask nan to -inf to increase the value of the ambiguity if a point contains nan costs
+                    normalized_cv = (cv[row, col, :] - min_cost) / (max_cost - min_cost)
+                    #  Mask nan to -inf to increase the value of the ambiguity if a point contains nan costs
                     normalized_cv[np.isnan(normalized_cv)] = -np.inf
                     normalized_cv = np.repeat(normalized_cv, etas.shape[0])
 
@@ -190,7 +196,11 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         return ambiguity
 
     @staticmethod
-    @njit('Tuple((f4[:, :],f4[:, :, :]))(f4[:, :, :], f4, f4, f4)', parallel=True, cache=True)
+    @njit(
+        "Tuple((f4[:, :],f4[:, :, :]))(f4[:, :, :], f4, f4, f4)",
+        parallel=True,
+        cache=True,
+    )
     def compute_ambiguity_and_sampled_ambiguity(cv: np.ndarray, _eta_min: float, _eta_max: float, _eta_step: float):
         """
         Return the ambiguity and sampled ambiguity, useful for evaluating ambiguity in notebooks
@@ -224,18 +234,18 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         for row in prange(n_row):  # pylint: disable=not-an-iterable
             for col in prange(n_col):  # pylint: disable=not-an-iterable
                 # Normalized minimum cost for one point
-                normalized_min_cost = ((np.nanmin(cv[row, col, :]) - min_cost) / (max_cost - min_cost))
+                normalized_min_cost = (np.nanmin(cv[row, col, :]) - min_cost) / (max_cost - min_cost)
 
                 # If all costs are at nan, set the maximum value of the ambiguity for this point
                 if np.isnan(normalized_min_cost):
-                    ambiguity[row, col] = (etas.shape[0] * nb_disps)
+                    ambiguity[row, col] = etas.shape[0] * nb_disps
                 else:
                     normalized_min_cost = np.repeat(normalized_min_cost, nb_disps * etas.shape[0])
 
                     # Normalized cost volume for one point
-                    normalized_cv = ((cv[row, col, :] - min_cost) / (max_cost - min_cost))
+                    normalized_cv = (cv[row, col, :] - min_cost) / (max_cost - min_cost)
 
-                    # Mask nan to -inf to increase the value of the ambiguity if a point contains nan costs
+                    #  Mask nan to -inf to increase the value of the ambiguity if a point contains nan costs
                     normalized_cv[np.isnan(normalized_cv)] = -np.inf
                     normalized_cv = np.repeat(normalized_cv, etas.shape[0])
 
@@ -243,7 +253,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
                     ambiguity[row, col] += np.sum(normalized_cv <= (normalized_min_cost + two_dim_etas))
 
                     # fill sampled ambiguity
-                    costs_comparison = (normalized_cv <= (normalized_min_cost + two_dim_etas))
+                    costs_comparison = normalized_cv <= (normalized_min_cost + two_dim_etas)
                     costs_comparison = costs_comparison.reshape((nb_disps, etas.shape[0]))
                     sampled_ambiguity[row, col, :] += np.sum(costs_comparison, axis=0)
 

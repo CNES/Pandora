@@ -26,16 +26,15 @@ This module defines the output tree structure.
 import os
 
 OTD = {
-    'left_disparity.tif': '.',
-    'right_disparity.tif': '.',
-    'left_confidence_measure.tif': '.',
-    'right_confidence_measure.tif': '.',
-    'left_validity_mask.tif': '.',
-    'right_validity_mask.tif': '.',
-
+    "left_disparity.tif": ".",
+    "right_disparity.tif": ".",
+    "left_confidence_measure.tif": ".",
+    "right_confidence_measure.tif": ".",
+    "left_validity_mask.tif": ".",
+    "right_validity_mask.tif": ".",
     # Configuration
-    'config.json': './cfg',
-    'command_line.txt': './cfg'
+    "config.json": "./cfg",
+    "command_line.txt": "./cfg",
 }
 
 

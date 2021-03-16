@@ -32,10 +32,11 @@ import xarray as xr
 import numpy as np
 
 
-class AbstractCostVolumeConfidence():
+class AbstractCostVolumeConfidence:
     """
     Abstract Cost Volume Confidence class
     """
+
     __metaclass__ = ABCMeta
 
     confidence_methods_avail = {}
@@ -49,12 +50,16 @@ class AbstractCostVolumeConfidence():
         :type cfg: dictionary
         """
         if cls is AbstractCostVolumeConfidence:
-            if isinstance(cfg['confidence_method'], str):
+            if isinstance(cfg["confidence_method"], str):
                 try:
-                    return super(AbstractCostVolumeConfidence, cls).__new__(cls.confidence_methods_avail[
-                                                                      cfg['confidence_method']])
+                    return super(AbstractCostVolumeConfidence, cls).__new__(
+                        cls.confidence_methods_avail[cfg["confidence_method"]]
+                    )
                 except KeyError:
-                    logging.error('No confidence method named % supported', cfg['confidence_method'])
+                    logging.error(
+                        "No confidence method named % supported",
+                        cfg["confidence_method"],
+                    )
                     sys.exit(1)
         else:
             return super(AbstractCostVolumeConfidence, cls).__new__(cls)
@@ -87,11 +92,16 @@ class AbstractCostVolumeConfidence():
         Describes the confidence method
 
         """
-        print('Confidence method description')
+        print("Confidence method description")
 
     @abstractmethod
-    def confidence_prediction(self, disp: xr.Dataset, img_left: xr.Dataset, img_right: xr.Dataset,
-                              cv: xr.Dataset) -> Tuple[xr.Dataset, xr.Dataset]:
+    def confidence_prediction(
+        self,
+        disp: xr.Dataset,
+        img_left: xr.Dataset,
+        img_right: xr.Dataset,
+        cv: xr.Dataset,
+    ) -> Tuple[xr.Dataset, xr.Dataset]:
         """
         Computes a confidence prediction.
 
@@ -107,8 +117,12 @@ class AbstractCostVolumeConfidence():
         """
 
     @staticmethod
-    def allocate_confidence_map(name_confidence_measure: str, confidence_map: np.ndarray, disp: xr.Dataset,
-                                cv: xr.Dataset) -> Tuple[xr.Dataset, xr.Dataset]:
+    def allocate_confidence_map(
+        name_confidence_measure: str,
+        confidence_map: np.ndarray,
+        disp: xr.Dataset,
+        cv: xr.Dataset,
+    ) -> Tuple[xr.Dataset, xr.Dataset]:
         """
         Create or update the confidence measure : confidence_measure (xarray.DataArray of the cost volume and the
         disparity map) by adding a the indicator
@@ -128,57 +142,83 @@ class AbstractCostVolumeConfidence():
         """
         if cv is not None:
             # cost volume already contains a confidence map, it must be updated
-            if 'confidence_measure' in cv.data_vars:
-                nb_row, nb_col, nb_indicator = cv['confidence_measure'].shape
+            if "confidence_measure" in cv.data_vars:
+                nb_row, nb_col, nb_indicator = cv["confidence_measure"].shape
 
                 # Add a new indicator to the confidence measure DataArray
                 conf_measure = np.full((nb_row, nb_col, nb_indicator + 1), np.nan, dtype=np.float32)
                 # old confidence measures
-                conf_measure[:, :, :-1] = cv['confidence_measure'].data
-                # new confidence measure
-                conf_measure[:, :, -1] = confidence_map
-
-                indicator = np.copy(cv.coords['indicator'])
-                indicator = np.append(indicator, name_confidence_measure)
-
-                # Remove confidence_measure dataArray from the dataset to update it
-                cv = cv.drop_dims('indicator')
-                coords_conficende_measure = [cv.coords['row'], cv.coords['col'], indicator]
-                cv['confidence_measure'] = xr.DataArray(data=conf_measure, coords=coords_conficende_measure,
-                                                        dims=['row', 'col', 'indicator'])
-            # Allocate the confidence measure in the cost volume Dataset
-            else:
-                coords_conficende_measure = [cv.coords['row'], cv.coords['col'], [name_confidence_measure]]
-                cv['confidence_measure'] = xr.DataArray(data=confidence_map[:, :, np.newaxis].astype(np.float32),
-                                                        coords=coords_conficende_measure,
-                                                        dims=['row', 'col', 'indicator'])
-
-        if disp is not None:
-            # disparity already contains a confidence map, it must be updated
-            if 'confidence_measure' in disp.data_vars:
-                nb_row, nb_col, nb_indicator = disp['confidence_measure'].shape
-
-                # Add a new indicator to the confidence measure DataArray
-                conf_measure = np.full((nb_row, nb_col, nb_indicator + 1), np.nan, dtype=np.float32)
-                # old confidence measures
-                conf_measure[:, :, :-1] = disp['confidence_measure'].data
+                conf_measure[:, :, :-1] = cv["confidence_measure"].data
                 #  new confidence measure
                 conf_measure[:, :, -1] = confidence_map
 
-                indicator = np.copy(disp.coords['indicator'])
+                indicator = np.copy(cv.coords["indicator"])
                 indicator = np.append(indicator, name_confidence_measure)
 
                 # Remove confidence_measure dataArray from the dataset to update it
-                disp = disp.drop_dims('indicator')
-                coords_conficende_measure = [disp.coords['row'], disp.coords['col'], indicator]
-                disp['confidence_measure'] = xr.DataArray(data=conf_measure, coords=coords_conficende_measure,
-                                                          dims=['row', 'col', 'indicator'])
+                cv = cv.drop_dims("indicator")
+                coords_conficende_measure = [
+                    cv.coords["row"],
+                    cv.coords["col"],
+                    indicator,
+                ]
+                cv["confidence_measure"] = xr.DataArray(
+                    data=conf_measure,
+                    coords=coords_conficende_measure,
+                    dims=["row", "col", "indicator"],
+                )
+            # Allocate the confidence measure in the cost volume Dataset
+            else:
+                coords_conficende_measure = [
+                    cv.coords["row"],
+                    cv.coords["col"],
+                    [name_confidence_measure],
+                ]
+                cv["confidence_measure"] = xr.DataArray(
+                    data=confidence_map[:, :, np.newaxis].astype(np.float32),
+                    coords=coords_conficende_measure,
+                    dims=["row", "col", "indicator"],
+                )
+
+        if disp is not None:
+            # disparity already contains a confidence map, it must be updated
+            if "confidence_measure" in disp.data_vars:
+                nb_row, nb_col, nb_indicator = disp["confidence_measure"].shape
+
+                # Add a new indicator to the confidence measure DataArray
+                conf_measure = np.full((nb_row, nb_col, nb_indicator + 1), np.nan, dtype=np.float32)
+                # old confidence measures
+                conf_measure[:, :, :-1] = disp["confidence_measure"].data
+                #  new confidence measure
+                conf_measure[:, :, -1] = confidence_map
+
+                indicator = np.copy(disp.coords["indicator"])
+                indicator = np.append(indicator, name_confidence_measure)
+
+                # Remove confidence_measure dataArray from the dataset to update it
+                disp = disp.drop_dims("indicator")
+                coords_conficende_measure = [
+                    disp.coords["row"],
+                    disp.coords["col"],
+                    indicator,
+                ]
+                disp["confidence_measure"] = xr.DataArray(
+                    data=conf_measure,
+                    coords=coords_conficende_measure,
+                    dims=["row", "col", "indicator"],
+                )
             else:
                 if cv is not None:
-                    disp['confidence_measure'] = cv['confidence_measure']
+                    disp["confidence_measure"] = cv["confidence_measure"]
                 else:
-                    coords_conficende_measure = [disp.coords['row'], disp.coords['col'], [name_confidence_measure]]
-                    disp['confidence_measure'] = xr.DataArray(data=confidence_map[:, :, np.newaxis].astype(np.float32),
-                                                              coords=coords_conficende_measure,
-                                                              dims=['row', 'col', 'indicator'])
+                    coords_conficende_measure = [
+                        disp.coords["row"],
+                        disp.coords["col"],
+                        [name_confidence_measure],
+                    ]
+                    disp["confidence_measure"] = xr.DataArray(
+                        data=confidence_map[:, :, np.newaxis].astype(np.float32),
+                        coords=coords_conficende_measure,
+                        dims=["row", "col", "indicator"],
+                    )
         return disp, cv

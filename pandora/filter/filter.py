@@ -30,13 +30,14 @@ from typing import Dict
 import xarray as xr
 
 
-class AbstractFilter():
+class AbstractFilter:
     """
     Abstract Filter class
     """
+
     __metaclass__ = ABCMeta
 
-    filter_methods_avail : Dict = {}
+    filter_methods_avail: Dict = {}
     cfg = None
 
     def __new__(cls, **cfg: dict):
@@ -47,20 +48,21 @@ class AbstractFilter():
         :type cfg: dictionary
         """
         if cls is AbstractFilter:
-            if isinstance(cfg['filter_method'], str):
+            if isinstance(cfg["filter_method"], str):
                 try:
-                    return super(AbstractFilter, cls).__new__(cls.filter_methods_avail[cfg['filter_method']])
+                    return super(AbstractFilter, cls).__new__(cls.filter_methods_avail[cfg["filter_method"]])
                 except KeyError:
-                    logging.error('No filter method named % supported', cfg['filter_method'])
+                    logging.error("No filter method named % supported", cfg["filter_method"])
                     sys.exit(1)
             else:
-                if isinstance(cfg['filter_method'], unicode):# type: ignore # pylint: disable=undefined-variable
+                if isinstance(cfg["filter_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractFilter, cls).__new__(
-                            cls.filter_methods_avail[cfg['filter_method'].encode('utf-8')])
+                            cls.filter_methods_avail[cfg["filter_method"].encode("utf-8")]
+                        )
                     except KeyError:
-                        logging.error('No filter method named % supported', cfg['filter_method'])
+                        logging.error("No filter method named % supported", cfg["filter_method"])
                         sys.exit(1)
         else:
             return super(AbstractFilter, cls).__new__(cls)
@@ -93,11 +95,16 @@ class AbstractFilter():
         Describes the filtering method
 
         """
-        print('Filtering method description')
+        print("Filtering method description")
 
     @abstractmethod
-    def filter_disparity(self, disp: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None,
-                         cv: xr.Dataset = None) -> None:
+    def filter_disparity(
+        self,
+        disp: xr.Dataset,
+        img_left: xr.Dataset = None,
+        img_right: xr.Dataset = None,
+        cv: xr.Dataset = None,
+    ) -> None:
         """
         Post processing the disparity map by applying a filter on valid pixels
 

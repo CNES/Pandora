@@ -57,48 +57,56 @@ def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.Datase
      ['left_margin', 'right_margin'], corner = ['left', 'up', 'right', 'down']
     :rtype: xr.dataset
     """
-    corner = ['left', 'up', 'right', 'down']
+    corner = ["left", "up", "right", "down"]
     data = np.zeros(len(corner))
     col = np.arange(len(corner))
-    margin = xr.Dataset({'left_margin': (['col'], data)},
-                          coords={'col': col})
-    margin['right_margin'] = xr.DataArray(data,
-                          dims=['col'])
+    margin = xr.Dataset({"left_margin": (["col"], data)}, coords={"col": col})
+    margin["right_margin"] = xr.DataArray(data, dims=["col"])
 
     # Margins for the left image and for the right image
 
     # Pandora margins depends on the steps configured
-    if cfg['optimization']['optimization_method'] == 'sgm':
+    if cfg["optimization"]["optimization_method"] == "sgm":
         # SGM margin includes the census, vfit and median filter margins
         sgm_margins = 40
-        r_marg = [sgm_margins + disp_max, sgm_margins, sgm_margins - disp_min, sgm_margins]
-        s_marg = [sgm_margins - disp_min, sgm_margins, sgm_margins + disp_max, sgm_margins]
+        r_marg = [
+            sgm_margins + disp_max,
+            sgm_margins,
+            sgm_margins - disp_min,
+            sgm_margins,
+        ]
+        s_marg = [
+            sgm_margins - disp_min,
+            sgm_margins,
+            sgm_margins + disp_max,
+            sgm_margins,
+        ]
 
     else:
         r_marg = np.array([disp_max, 0, -disp_min, 0])
-        s_marg = np.array([-disp_min, 0, + disp_max, 0])
+        s_marg = np.array([-disp_min, 0, +disp_max, 0])
 
-        if cfg['matching_cost']['window_size'] != 1:
-            r_marg += int(cfg['matching_cost']['window_size'] / 2) # type:ignore
-            s_marg += int(cfg['matching_cost']['window_size'] / 2) # type:ignore
+        if cfg["matching_cost"]["window_size"] != 1:
+            r_marg += int(cfg["matching_cost"]["window_size"] / 2)  # type:ignore
+            s_marg += int(cfg["matching_cost"]["window_size"] / 2)  # type:ignore
 
-        if cfg['refinement']['refinement_method'] == 'vfit':
+        if cfg["refinement"]["refinement_method"] == "vfit":
             r_marg[0] += 1
             r_marg[2] += 1
             s_marg[0] += 1
             s_marg[2] += 1
 
-        if cfg['filter']['filter_method'] == 'median':
-            r_marg += int(cfg['filter']['filter_size'] / 2) # type:ignore
-            s_marg += int(cfg['filter']['filter_size'] / 2) # type:ignore
+        if cfg["filter"]["filter_method"] == "median":
+            r_marg += int(cfg["filter"]["filter_size"] / 2)  # type:ignore
+            s_marg += int(cfg["filter"]["filter_size"] / 2)  # type:ignore
 
     # Same margin for left and right: take the larger
     same_margin = list(map(lambda input: max(input[0], input[1]), zip(r_marg, s_marg)))
-    margin['left_margin'].data = same_margin
-    margin['right_margin'].data = same_margin
+    margin["left_margin"].data = same_margin
+    margin["right_margin"].data = same_margin
 
     # Save disp_min and disp_max
-    margin.attrs['disp_min'] = disp_min
-    margin.attrs['disp_max'] = disp_max
+    margin.attrs["disp_min"] = disp_min
+    margin.attrs["disp_max"] = disp_max
 
     return margin

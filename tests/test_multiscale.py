@@ -47,7 +47,8 @@ class TestMultiScale(unittest.TestCase):
         """
 
         multiscale_ = multiscale.AbstractMultiscale(
-            **{'multiscale_method': 'fixed_zoom_pyramid', 'num_scales': 2, 'scale_factor': 2, 'marge': 0})
+            **{"multiscale_method": "fixed_zoom_pyramid", "num_scales": 2, "scale_factor": 2, "marge": 0}
+        )
 
         # Modify num_scales and scale_factor to properly test the function without zooming
         multiscale_._scale_factor = 1  # pylint:disable=protected-access
@@ -57,49 +58,79 @@ class TestMultiScale(unittest.TestCase):
         disp_max = 0
 
         # Disparity map ground truth with the size of the input images
-        gt_disp = np.array([[-1, -2, -3, -4, -5, -6],
-                            [-7, -8, -9, np.nan, -11, -12],
-                            [-13, -14, -15, -16, -17, -18],
-                            [-19, -20, -21, -22, -23, -24],
-                            [np.nan, -26, -27, -28, -29, -30]], dtype=np.float32)
+        gt_disp = np.array(
+            [
+                [-1, -2, -3, -4, -5, -6],
+                [-7, -8, -9, np.nan, -11, -12],
+                [-13, -14, -15, -16, -17, -18],
+                [-19, -20, -21, -22, -23, -24],
+                [np.nan, -26, -27, -28, -29, -30],
+            ],
+            dtype=np.float32,
+        )
 
         # Validity mask ground truth with the size of the input images
-        gt_mask = np.array([[cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,  # info
-                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE],
-                            [0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0],
-                            [cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                             # invalid
-                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
-                            [cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                             # info
-                             cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                             cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION]],
-                           dtype=np.uint16)
+        gt_mask = np.array(
+            [
+                [
+                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,  # info
+                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                ],
+                [0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0],
+                [
+                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    # invalid
+                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                ],
+                [
+                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    # info
+                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                ],
+            ],
+            dtype=np.uint16,
+        )
 
-        disp = xr.Dataset({'disparity_map': (['row', 'col'], gt_disp),
-                           'validity_mask': (['row', 'col'], gt_mask)})
-        disp.attrs['window_size'] = 3
+        disp = xr.Dataset({"disparity_map": (["row", "col"], gt_disp), "validity_mask": (["row", "col"], gt_mask)})
+        disp.attrs["window_size"] = 3
 
         # Ground truth output max disparity range
         # Margins can not be processed by disparity range
-        gt_range_max = np.array([[0, 0, 0, 0, 0, 0],
-                                 [0, -1, -2, 0, -4, 0],
-                                 [0, -7, -8, -9, -11, 0],
-                                 [0, 0, 0, 0, 0, 0],
-                                 [0, 0, 0, 0, 0, 0]], dtype=np.float32)
+        gt_range_max = np.array(
+            [
+                [0, 0, 0, 0, 0, 0],
+                [0, -1, -2, 0, -4, 0],
+                [0, -7, -8, -9, -11, 0],
+                [0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0],
+            ],
+            dtype=np.float32,
+        )
 
         # Ground truth output max disparity range
-        gt_range_min = np.array([[-30, -30, -30, -30, -30, -30],
-                                 [-30, -15, -16, -30, -18, -30],
-                                 [-30, -15, -16, -17, -18, -30],
-                                 [-30, -30, -30, -30, -30, -30],
-                                 [-30, -30, -30, -30, -30, -30]], dtype=np.float32)
+        gt_range_min = np.array(
+            [
+                [-30, -30, -30, -30, -30, -30],
+                [-30, -15, -16, -30, -18, -30],
+                [-30, -15, -16, -17, -18, -30],
+                [-30, -30, -30, -30, -30, -30],
+                [-30, -30, -30, -30, -30, -30],
+            ],
+            dtype=np.float32,
+        )
 
         # Compute disparity ranges
         disp_range_min, disp_range_max = multiscale_.disparity_range(disp, disp_min, disp_max)
@@ -114,55 +145,81 @@ class TestMultiScale(unittest.TestCase):
 
         """
         multiscale_ = multiscale.AbstractMultiscale(
-            **{'multiscale_method': 'fixed_zoom_pyramid', 'num_scales': 2, 'scale_factor': 2, 'marge': 0})
+            **{"multiscale_method": "fixed_zoom_pyramid", "num_scales": 2, "scale_factor": 2, "marge": 0}
+        )
 
         # Modify num_scales and scale_factor to properly test the function without zooming
         multiscale_._scale_factor = 1  # pylint:disable=protected-access
         multiscale_._num_scales = 1  # pylint:disable=protected-access
 
         # Disparity map ground truth with the size of the input images
-        gt_disp = np.array([[-1, -2, -3, -4, -5, -6],
-                            [-7, -8, -9, -10, -11, -12],
-                            [-13, -14, -15, -16, np.nan, -18],
-                            [-19, -20, -21, -22, -23, -24],
-                            [-25, -26, -27, -28, -29, -30]], dtype=np.float32)
+        gt_disp = np.array(
+            [
+                [-1, -2, -3, -4, -5, -6],
+                [-7, -8, -9, -10, -11, -12],
+                [-13, -14, -15, -16, np.nan, -18],
+                [-19, -20, -21, -22, -23, -24],
+                [-25, -26, -27, -28, -29, -30],
+            ],
+            dtype=np.float32,
+        )
 
         # Validity mask ground truth with the size of the input images
-        gt_mask = np.array([[cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,  # invalid
-                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,  # info
-                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,  # info
-                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE],  # info
-                            [0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0],
-                            [cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                             # invalid
-                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER, cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER],
-                            [cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                             # info
-                             cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                             cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION]],
-                           dtype=np.uint16)
+        gt_mask = np.array(
+            [
+                [
+                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,  # invalid
+                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,  # info
+                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,  # info
+                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                ],  # info
+                [0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0],
+                [
+                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    # invalid
+                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                ],
+                [
+                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    # info
+                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                ],
+            ],
+            dtype=np.uint16,
+        )
 
-        disp = xr.Dataset({'disparity_map': (['row', 'col'], gt_disp),
-                           'validity_mask': (['row', 'col'], gt_mask)})
-        disp.attrs['window_size'] = 3
+        disp = xr.Dataset({"disparity_map": (["row", "col"], gt_disp), "validity_mask": (["row", "col"], gt_mask)})
+        disp.attrs["window_size"] = 3
 
         # Mask invalid disparities
         filtered_disp = multiscale_.mask_invalid_disparities(disp)
 
         # Ground truth filtered disparities
-        gt_filtered_disp = np.array([[np.nan, np.nan, np.nan, -4, -5, -6],
-                                     [-7, -8, -9, -10, -11, -12],
-                                     [-13, -14, -15, -16, np.nan, -18],
-                                     [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                                     [-25, -26, -27, -28, -29, -30]], dtype=np.float32)
+        gt_filtered_disp = np.array(
+            [
+                [np.nan, np.nan, np.nan, -4, -5, -6],
+                [-7, -8, -9, -10, -11, -12],
+                [-13, -14, -15, -16, np.nan, -18],
+                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                [-25, -26, -27, -28, -29, -30],
+            ],
+            dtype=np.float32,
+        )
 
         np.testing.assert_array_equal(filtered_disp, gt_filtered_disp)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     common.setup_logging()
     unittest.main()

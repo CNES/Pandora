@@ -33,7 +33,7 @@ from pandora.img_tools import compute_std_raster
 from . import cost_volume_confidence
 
 
-@cost_volume_confidence.AbstractCostVolumeConfidence.register_subclass('std_intensity')
+@cost_volume_confidence.AbstractCostVolumeConfidence.register_subclass("std_intensity")
 class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
     """
     StdIntensity class allows to estimate a confidence measure from the left image by calculating the standard
@@ -58,9 +58,7 @@ class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
         :return cfg: std_intensity configuration updated
         :rtype: dict
         """
-        schema = {
-            'confidence_method': And(str, lambda input: 'std_intensity')
-        }
+        schema = {"confidence_method": And(str, lambda input: "std_intensity")}
 
         checker = Checker(schema)
         checker.validate(cfg)
@@ -71,10 +69,15 @@ class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
         Describes the confidence method
         :return: None
         """
-        print('Intensity confidence method')
+        print("Intensity confidence method")
 
-    def confidence_prediction(self, disp: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None,
-                              cv: xr.Dataset = None) -> Tuple[xr.Dataset, xr.Dataset]:
+    def confidence_prediction(
+        self,
+        disp: xr.Dataset,
+        img_left: xr.Dataset = None,
+        img_right: xr.Dataset = None,
+        cv: xr.Dataset = None,
+    ) -> Tuple[xr.Dataset, xr.Dataset]:
         """
         Computes a confidence measure that evaluates the standard deviation of intensity of the left image
 
@@ -92,17 +95,18 @@ class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
 
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
-        nb_row, nb_col = img_left['im'].shape
+        nb_row, nb_col = img_left["im"].shape
 
-        window_size = cv.attrs['window_size']
+        window_size = cv.attrs["window_size"]
         confidence_measure = np.full((nb_row, nb_col), np.nan, dtype=np.float32)
 
         offset_row_col = int((window_size - 1) / 2)
         if offset_row_col != 0:
-            confidence_measure[offset_row_col: - offset_row_col, offset_row_col: - offset_row_col] = \
-                compute_std_raster(img_left, window_size)
+            confidence_measure[offset_row_col:-offset_row_col, offset_row_col:-offset_row_col] = compute_std_raster(
+                img_left, window_size
+            )
         else:
             confidence_measure = compute_std_raster(img_left, window_size)
 
-        disp, cv = self.allocate_confidence_map('stereo_pandora_intensityStd', confidence_measure, disp, cv)
+        disp, cv = self.allocate_confidence_map("stereo_pandora_intensityStd", confidence_measure, disp, cv)
         return disp, cv
