@@ -303,14 +303,53 @@ class TestPandora(unittest.TestCase):
         # assert equal on right confidence_measure
         np.testing.assert_array_equal(gt_right_confidence_measure, right["confidence_measure"].data)
 
-    def test_main(self):
+    def test_main_left_disparity(self):
         """
-        Test the main method ( read and write products )
+        Test the main method for the left disparity computation( read and write products )
 
         """
+        cfg = {
+            "input": copy.deepcopy(common.input_cfg_left_right_grids),
+            "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
+        }
+
         # Create temporary directory
         with TemporaryDirectory() as tmp_dir:
-            pandora.main("tests/pandora/cfg.json", tmp_dir, verbose=False)
+
+            with open(os.path.join(tmp_dir, "config.json"), "w") as file_:
+                json.dump(cfg, file_, indent=2)
+
+            # Run Pandora pipeline
+            pandora.main(tmp_dir + "/config.json", tmp_dir, verbose=False)
+
+            # Check the left disparity map
+            if self.error(rasterio_open(tmp_dir + "/left_disparity.tif").read(1), self.disp_left, 1) > 0.20:
+                raise AssertionError
+
+            # Check the crs & transform properties
+            left_im_prop = rasterio_open("tests/pandora/left.png").profile
+            left_disp_prop = rasterio_open(os.path.join(tmp_dir, "left_disparity.tif")).profile
+            assert left_im_prop["crs"] == left_disp_prop["crs"]
+            assert left_im_prop["transform"] == left_disp_prop["transform"]
+
+    def test_main_left_right_disparity(self):
+        """
+        Test the main method for the left and right disparity computation ( read and write products )
+
+        """
+        cfg = {
+            "input": copy.deepcopy(common.input_cfg_left_right_grids),
+            "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
+        }
+
+        # Create temporary directory
+        with TemporaryDirectory() as tmp_dir:
+
+            with open(os.path.join(tmp_dir, "config.json"), "w") as file_:
+                json.dump(cfg, file_, indent=2)
+
+            # Run Pandora pipeline
+            pandora.main(tmp_dir + "/config.json", tmp_dir, verbose=False)
 
             # Check the left disparity map
             if self.error(rasterio_open(tmp_dir + "/left_disparity.tif").read(1), self.disp_left, 1) > 0.20:
