@@ -49,7 +49,7 @@ REQUIREMENTS = [
 
 
 REQUIREMENTS_EXTRA = {
-    "dev": ["sphinx", "sphinx_rtd_theme", "sphinx_autoapi", "nose2", "pylint", "pre-commit", "mypy"],
+    "dev": ["sphinx", "sphinx_rtd_theme", "sphinx_autoapi", "nose2", "pylint", "pre-commit", "mypy", "black"],
     "sgm": ["pandora_plugin_libsgm==0.6.*"],
     "docs": ["sphinx", "sphinx_rtd_theme", "sphinx_autoapi"],
 }
