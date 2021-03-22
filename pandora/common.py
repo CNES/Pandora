@@ -136,12 +136,13 @@ def save_results(left: xr.Dataset, right: xr.Dataset, output: str) -> None:
         crs=left.attrs["crs"],
         transform=left.attrs["transform"],
     )
-    write_data_array(
-        left["confidence_measure"],
-        os.path.join(output, get_out_file_path("left_confidence_measure.tif")),
-        crs=left.attrs["crs"],
-        transform=left.attrs["transform"],
-    )
+    if "confidence_measure" in left:
+        write_data_array(
+            left["confidence_measure"],
+            os.path.join(output, get_out_file_path("left_confidence_measure.tif")),
+            crs=left.attrs["crs"],
+            transform=left.attrs["transform"],
+        )
     write_data_array(
         left["validity_mask"],
         os.path.join(output, get_out_file_path("left_validity_mask.tif")),
@@ -158,12 +159,13 @@ def save_results(left: xr.Dataset, right: xr.Dataset, output: str) -> None:
             crs=right.attrs["crs"],
             transform=right.attrs["transform"],
         )
-        write_data_array(
-            right["confidence_measure"],
-            os.path.join(output, get_out_file_path("right_confidence_measure.tif")),
-            crs=right.attrs["crs"],
-            transform=right.attrs["transform"],
-        )
+        if "confidence_measure" in right:
+            write_data_array(
+                right["confidence_measure"],
+                os.path.join(output, get_out_file_path("right_confidence_measure.tif")),
+                crs=right.attrs["crs"],
+                transform=right.attrs["transform"],
+            )
         write_data_array(
             right["validity_mask"],
             os.path.join(output, get_out_file_path("right_validity_mask.tif")),
