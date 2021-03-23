@@ -108,7 +108,6 @@ class Census(matching_cost.AbstractMatchingCost):
         :return: the cost volume dataset , with the data variables:
 
                 - cost_volume 3D xarray.DataArray (row, col, disp)
-                - confidence_measure 3D xarray.DataArray (row, col, indicator)
         :rtype: xarray.Dataset
         """
         # Contains the shifted right images

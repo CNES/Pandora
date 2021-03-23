@@ -110,7 +110,6 @@ class Zncc(matching_cost.AbstractMatchingCost):
         :rtype:
             xarray.Dataset, with the data variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
-                - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
         # Contains the shifted right images
         img_right_shift = shift_right_img(img_right, self._subpix)

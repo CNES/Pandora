@@ -77,7 +77,7 @@ pandora a_local_block_matching.json output_dir
 
 ## To go further
 
-To create you own stereo matching pipeline and choose among the variety of algorithms we provide, please consult [our online documentation](https://readthedocs.org/projects/pandora/badge/?version=latest).
+To create you own stereo matching pipeline and choose among the variety of algorithms we provide, please consult [our online documentation](https://pandora.readthedocs.io/index.html).
 
 You will learn:
 - which stereo matching steps you can [use and combine](https://pandora.readthedocs.io/userguide/step_by_step.html)
