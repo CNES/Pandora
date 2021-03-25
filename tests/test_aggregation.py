@@ -31,7 +31,7 @@ import xarray as xr
 
 from rasterio import Affine
 
-import common
+import tests.common as common
 import pandora.aggregation as aggregation
 import pandora.aggregation.cbca as cbca
 import pandora.matching_cost as matching_cost

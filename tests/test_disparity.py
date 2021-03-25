@@ -30,7 +30,7 @@ import numpy as np
 import xarray as xr
 from rasterio import Affine
 
-import common
+import tests.common as common
 import pandora
 import pandora.constants as cst
 import pandora.disparity as disparity

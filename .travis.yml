@@ -4,13 +4,14 @@ python:
 before_install:
 - python --version
 - pip install -U pip
-- pip install nose2
+- pip install pytest
+- pip install pytest-cov
 - pip install codecov
 install:
 - pip install .
 script:
-- export NUMBA_DISABLE_JIT="1" && nose2 --plugin nose2.plugins.junitxml --with-coverage
-  --coverage pandora --coverage-report xml -X
+- export NUMBA_DISABLE_JIT="1" && pytest -m "not notebook_tests" --junitxml=pytest-report.xml
+  --cov-config=.coveragerc --cov-report xml --cov
 after_success:
 - codecov
 - bash <(curl -s https://codecov.io/bash)
