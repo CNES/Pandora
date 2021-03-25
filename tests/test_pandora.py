@@ -34,7 +34,7 @@ import numpy as np
 import xarray as xr
 from rasterio import Affine
 
-import common
+import tests.common as common
 import pandora
 from pandora import import_plugin
 from pandora.img_tools import read_img, rasterio_open

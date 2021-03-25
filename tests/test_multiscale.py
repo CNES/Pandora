@@ -29,7 +29,7 @@ import unittest
 import numpy as np
 import xarray as xr
 
-import common
+import tests.common as common
 from pandora import multiscale
 import pandora.constants as cst
 

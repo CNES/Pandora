@@ -29,7 +29,7 @@ import copy
 import numpy as np
 import xarray as xr
 
-import common
+import tests.common as common
 import pandora
 import pandora.img_tools as img_tools
 
