@@ -43,7 +43,7 @@ def setup_logging(
     if os.path.exists(path):
         with open(path, "rt") as file_:
             config = json.load(file_)
-        logging.config.dictConfig(config)  # type:ignore
+        logging.config.dictConfig(config)
     else:
         logging.basicConfig(level=default_level)
 

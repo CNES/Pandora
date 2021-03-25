@@ -31,7 +31,7 @@ import numpy as np
 import xarray as xr
 from rasterio import Affine
 
-import common
+import tests.common as common
 import pandora.matching_cost as matching_cost
 
 
