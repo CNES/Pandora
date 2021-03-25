@@ -1,0 +1,39 @@
+{
+  "disp_param": {
+	"dmin": 0,
+	"dmax": 64
+  },
+  "ground_truth_param": {
+	"no_data":0
+  },
+  "stereo": {
+    "stereo_method": "census",
+    "window_size": 5,
+    "subpix": 1
+  },
+  "aggregation": {
+    "aggregation_method": "none"
+  },
+  "optimization": {
+    "optimization_method": "sgm",
+    "P1": 8,
+    "P2": 32,
+    "alpha": 2,
+    "beta": 0,
+    "gamma": 100,
+    "p2_method": "constant"
+  },
+  "refinement": {
+    "refinement_method": "quadratic"
+  },
+  "filter": {
+    "filter_method": "none",
+    "filter_size": 3
+  },
+  "validation": {
+    "validation_method": "cross_checking",
+    "cross_checking_threshold": 1,
+    "right_left_mode": "accurate"
+  },
+  "invalid_disparity":"np.nan"
+}

@@ -7,6 +7,7 @@
 - Implementation of the ambiguity confidence measure. [#162] 
 - Implementation of the  bilateral filter to suppress OpenCV dependency. [#148] 
 - Checker to check if an image dataset is valid. [#196]
+- Creation of Jupyter notebooks for Pandora.[#153]
 
 ### Fixed
 
