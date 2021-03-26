@@ -25,12 +25,6 @@
 - Check right disparities. [#177]
 - Disparity refinement after disparity map filtering step. [#154]
 
-## 0.5.1 (January 2021)
-
-### Fixed
-
-- Call to interpolation functions. [#175]
-
 ## 0.5.0 (January 2021)
 
 ### Added 
