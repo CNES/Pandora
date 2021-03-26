@@ -140,7 +140,6 @@ class AbstractMatchingCost:
         :return: the cost volume dataset with the data variables:
 
                 - cost_volume 3D xarray.DataArray (row, col, disp)
-                - confidence_measure 3D xarray.DataArray (row, col, indicator)
         :rtype: xarray.Dataset
         """
 
@@ -174,7 +173,7 @@ class AbstractMatchingCost:
         :type metadata: dictionary
         :param np_data: the array’s data
         :type np_data: 3D numpy array, dtype=np.float32
-        :return: the dataset cost volume with the cost_volume and the confidence measure with the data variables:
+        :return: the dataset cost volume with the cost_volume :
 
                 - cost_volume 3D xarray.DataArray (row, col, disp)
         :rtype: xarray.Dataset

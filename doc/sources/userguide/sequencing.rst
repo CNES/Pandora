@@ -266,7 +266,7 @@ Configuration to produce a disparity map, computed by SSD method with mutliscale
                 "invalid_disparity": "NaN"
             },
             "multiscale": {
-                "multiscale _method": "fixed_zoom_pyramid",
+                "multiscale_method": "fixed_zoom_pyramid",
                 "num_scales": 3
             }
         }

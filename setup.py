@@ -49,18 +49,8 @@ REQUIREMENTS = [
 
 
 REQUIREMENTS_EXTRA = {
-    "dev": [
-        "sphinx",
-        "sphinx_rtd_theme",
-        "sphinx_autoapi",
-        "pytest",
-        "pytest-cov",
-        "pylint",
-        "pre-commit",
-        "mypy",
-        "black",
-    ],
-    "sgm": ["pandora_plugin_libsgm==0.6.*"],
+    "dev": ["sphinx", "sphinx_rtd_theme", "sphinx_autoapi", "pytest", "pytest-cov", "pylint", "pre-commit", "mypy", "black"],
+    "sgm": ["pandora_plugin_libsgm==1.0.*"],
     "docs": ["sphinx", "sphinx_rtd_theme", "sphinx_autoapi"],
     "notebook": ["ipyvolume", "bokeh", "matplotlib", "graphviz", "notebook"],
 }
