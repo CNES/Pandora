@@ -45,7 +45,7 @@ author = "CNES"
 # The full version, including alpha/beta/rc tags
 # not useful at the moment :  see  https://gitlab.cnes.fr/OutilsCommuns/CorrelateurChaine3D/pandora/issues/124
 # release = '0.2.0'
-version = "0.5.0"
+version = "1.0.0"
 
 
 # -- General configuration ---------------------------------------------------
