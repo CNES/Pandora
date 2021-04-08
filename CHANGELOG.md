@@ -4,6 +4,7 @@
 
 ### Added
 
+- Binder for Pandora's notebooks. [#215] 
 - Version handling with setuptools_scm [#212]
 
 ## 1.0.0 (March 2021)
