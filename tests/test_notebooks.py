@@ -36,7 +36,6 @@ class TestPandora(unittest.TestCase):
     """
 
     @staticmethod
-    @pytest.mark.skip(reason="no way of currently testing notebooks using plugin_libsgm")
     def test_statistical_and_visual_analysis():
         """
         Test that the statistical_and_visual_analysis notebook runs without errors
