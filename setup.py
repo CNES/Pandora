@@ -47,9 +47,20 @@ REQUIREMENTS = [
     "scikit-image",
 ]
 
+SETUP_REQUIREMENTS = ["setuptools-scm"]
 
 REQUIREMENTS_EXTRA = {
-    "dev": ["sphinx", "sphinx_rtd_theme", "sphinx_autoapi", "pytest", "pytest-cov", "pylint", "pre-commit", "mypy", "black"],
+    "dev": [
+        "sphinx",
+        "sphinx_rtd_theme",
+        "sphinx_autoapi",
+        "pytest",
+        "pytest-cov",
+        "pylint",
+        "pre-commit",
+        "mypy",
+        "black",
+    ],
     "sgm": ["pandora_plugin_libsgm==1.0.*"],
     "docs": ["sphinx", "sphinx_rtd_theme", "sphinx_autoapi"],
     "notebook": ["ipyvolume", "bokeh", "matplotlib", "graphviz", "notebook"],
@@ -63,7 +74,7 @@ def readme():
 
 setup(
     name="pandora",
-    version="x.y.z",
+    use_scm_version=True,
     description="Pandora is a stereo matching framework that helps emulate state of the art algorithms",
     long_description=readme(),
     long_description_content_type="text/markdown",
@@ -73,6 +84,7 @@ setup(
     license="Apache License 2.0",
     entry_points={"console_scripts": ["pandora = pandora.Pandora:main"]},
     python_requires=">=3.6",
+    setup_requires=SETUP_REQUIREMENTS,
     install_requires=REQUIREMENTS,
     extras_require=REQUIREMENTS_EXTRA,
     packages=find_packages(),
