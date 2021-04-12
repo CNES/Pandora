@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Version handling with setuptools_scm [#212]
+
 ## 1.0.0 (March 2021)
 
 ### Added
