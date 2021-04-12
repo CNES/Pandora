@@ -9,6 +9,7 @@
   <a href="https://codecov.io/gh/CNES/Pandora"><img src="https://codecov.io/gh/CNES/Pandora/branch/master/graph/badge.svg?token=IENWO02GB3"/></a>
   <a href='https://pandora.readthedocs.io/?badge=latest'><img src='https://readthedocs.org/projects/pandora/badge/?version=latest' alt='Documentation Status' /></a>
   <a href="https://opensource.org/licenses/Apache-2.0/"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg"></a>
+  <a href="https://mybinder.org/v2/gh/CNES/Pandora/master"><img src="https://mybinder.org/badge_logo.svg"></a>
 </p>
 
 <p align="center">

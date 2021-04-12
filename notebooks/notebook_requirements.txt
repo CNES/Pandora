@@ -1,0 +1,13 @@
+numpy
+pandora-plugin-libsgm
+xarray>=0.13.*
+scipy
+rasterio
+json-checker
+numba>=0.47.*
+transitions
+scikit-image
+ipyvolume
+bokeh
+matplotlib
+graphviz
