@@ -203,6 +203,53 @@ class TestPandora(unittest.TestCase):
         if self.error(-1 * right["disparity_map"].data, self.disp_right, 1) > 0.20:
             raise AssertionError
 
+    def test_multiechelles_and_confidence(self):
+        """
+        Test the run method for 2 scales
+
+        """
+        user_cfg = {
+            "pipeline": {
+                "right_disp_map": {"method": "none"},
+                "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2},
+                "cost_volume_confidence": {"confidence_method": "ambiguity"},
+                "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
+                "refinement": {"refinement_method": "vfit"},
+                "filter": {"filter_method": "median", "filter_size": 3},
+                "multiscale": {
+                    "multiscale_method": "fixed_zoom_pyramid",
+                    "num_scales": 2,
+                    "scale_factor": 2,
+                    "marge": 1,
+                },
+            }
+        }
+        user_cfg["pipeline"]["right_disp_map"]["method"] = "accurate"
+        user_cfg["pipeline"]["cost_volume_confidence"]["confidence_method"] = "ambiguity"
+
+        pandora_machine = PandoraMachine()
+
+        # Update the user configuration with default values
+        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+
+        # Run the pandora pipeline
+        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg["pipeline"])
+
+        # Check the left disparity map
+        if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.20:
+            raise AssertionError
+
+        # Check the left validity mask cross checking ( bit 8 and 9 )
+        occlusion = np.ones((left["validity_mask"].shape[0], left["validity_mask"].shape[1]))
+        occlusion[left["validity_mask"].data >= 512] = 0
+
+        if self.error_mask(occlusion, self.occlusion) > 0.16:
+            raise AssertionError
+
+        # Check the right disparity map
+        if self.error(-1 * right["disparity_map"].data, self.disp_right, 1) > 0.20:
+            raise AssertionError
+
     @staticmethod
     def test_confidence_measure():
         """

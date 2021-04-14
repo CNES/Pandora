@@ -462,16 +462,23 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             self.disp_min, self.disp_max = multiscale_.disparity_range(
                 self.left_disparity, self.dmin_user, self.dmax_user
             )
+            # Set to None the disparity map for the next scale
+            self.left_disparity = None
+
         else:
             self.disp_min, self.disp_max = multiscale_.disparity_range(
                 self.left_disparity, self.dmin_user, self.dmax_user
             )
+            # Set to None the disparity map for the next scale
+            self.left_disparity = None
+
             # Update min and max user disparity according to the current scale
             self.dmin_user_right = self.dmin_user_right * self.scale_factor
             self.dmax_user_right = self.dmax_user_right * self.scale_factor
             self.right_disp_min, self.right_disp_max = multiscale_.disparity_range(
                 self.right_disparity, self.dmin_user_right, self.dmax_user_right
             )
+            self.right_disparity = None
 
         # Get the next scale's images
         self.left_img = self.img_left_pyramid.pop(0)
