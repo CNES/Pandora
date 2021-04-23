@@ -7,6 +7,10 @@
 - Binder for Pandora's notebooks. [#215] 
 - Version handling with setuptools_scm [#212]
 
+### Fixed
+
+- Correction on multi scale processing to allocate the confidence measure [#217]
+
 ## 1.0.0 (March 2021)
 
 ### Added
