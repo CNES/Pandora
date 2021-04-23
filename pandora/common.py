@@ -42,7 +42,7 @@ def write_data_array(
     filename: str,
     dtype: rasterio.dtypes = rasterio.dtypes.float32,
     crs: Union[rasterio.crs.CRS, None] = None,
-    transform: rasterio.Affine = rasterio.Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+    transform: Union[rasterio.Affine, None] = None,
 ) -> None:
     """
     Write a xarray.DataArray in a tiff file
@@ -128,7 +128,6 @@ def save_results(left: xr.Dataset, right: xr.Dataset, output: str) -> None:
     """
     # Create the output dir
     mkdir_p(output)
-
     # Save the left results
     write_data_array(
         left["disparity_map"],
