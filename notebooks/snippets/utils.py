@@ -6,8 +6,10 @@ from typing import Tuple
 
 import numpy as np
 import xarray as xr
+import os
 
 from pandora.constants import *
+from pandora.img_tools import rasterio_open
 
 warnings.simplefilter(action="ignore")
 from bokeh.colors import RGB
@@ -15,11 +17,11 @@ import bokeh.plotting as bpl
 from bokeh.plotting import figure
 from bokeh.layouts import row, column
 from bokeh.models import ColorBar, BasicTicker, LinearColorMapper, Legend
-from ipywidgets import interact
-from bokeh.io import push_notebook, show, output_notebook
+from bokeh.io import show, output_notebook
 import ipyvolume as ipv
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib import cm
+from matplotlib.image import imsave
 
 
 def pandora_cmap():
@@ -49,9 +51,9 @@ def plot_disparity(input_disparity_map: xr.Dataset) -> None:
 
     output_notebook()
     disparity_map = add_validity_mask_to_dataset(input_disparity_map)
-
-    min_d = np.nanmin(disparity_map["disparity_map"].data)
-    max_d = np.nanmax(disparity_map["disparity_map"].data)
+    valid_idx = np.where(disparity_map["validity_mask"].data == 0)
+    min_d = np.nanmin(disparity_map["disparity_map"].data[valid_idx])
+    max_d = np.nanmax(disparity_map["disparity_map"].data[valid_idx])
     cmap_pandora = pandora_cmap()
     mapper_avec_opti = LinearColorMapper(palette=cmap_to_palette(cmap_pandora), low=min_d, high=max_d)
 
@@ -165,6 +167,32 @@ def plot_disparity(input_disparity_map: xr.Dataset) -> None:
     show(fig)
 
 
+def adapt_occlusion_mask(mask_path: str, output_dir: str, valid_value: int = None, title: str = None) -> str:
+    """
+    Adapt occlusion mask to Pandora's standard, where 0 is valid and >1 invalid
+    :param mask_path: path to input occlusion mask
+    :type mask_path: str
+    :param output_dir: directory to save adapted mask
+    :type output_dir: str
+    :param valid_value: known mask's valid value
+    :type valid_value: int
+    :param title: title of the adapted mask image to save
+    :type title: str
+    :return: output image path
+    :rtype: str
+    """
+    mask = rasterio_open(mask_path).read(1)
+    # If no valid value was set, the lowest value of the mask is considered the valid one
+    if valid_value == None:
+        valid_value = np.nanmin(mask)
+    # Initialize and fill new mask
+    output_mask = np.zeros(mask.shape)
+    inv_idx = np.where(mask != valid_value)
+    output_mask[inv_idx] = 1
+    imsave(os.path.join(output_dir, title + ".png"), output_mask.astype(np.uint8), cmap=cm.gray)
+    return os.path.join(output_dir, title + ".png")
+
+
 def compare_2_disparities(
     input_first_disp_map: xr.Dataset, first_title: str, input_second_disp_map: xr.Dataset, second_title: str
 ) -> None:
@@ -186,8 +214,10 @@ def compare_2_disparities(
     first_disp_map = add_validity_mask_to_dataset(input_first_disp_map)
     second_disp_map = add_validity_mask_to_dataset(input_second_disp_map)
 
-    min_d = np.nanmin(first_disp_map["disparity_map"].data)
-    max_d = np.nanmax(first_disp_map["disparity_map"].data)
+    valid_idx = np.where(first_disp_map["validity_mask"].data == 0)
+    min_d = np.nanmin(first_disp_map["disparity_map"].data[valid_idx])
+    max_d = np.nanmax(first_disp_map["disparity_map"].data[valid_idx])
+
     cmap_pandora = pandora_cmap()
     mapper_avec_opti = LinearColorMapper(palette=cmap_to_palette(cmap_pandora), low=min_d, high=max_d)
 
@@ -289,8 +319,9 @@ def compare_3_disparities_and_error(
     second_disp_map = add_validity_mask_to_dataset(input_second_disp_map)
     third_disp_map = add_validity_mask_to_dataset(input_third_disp_map)
 
-    min_d = np.nanmin(first_disp_map["disparity_map"].data)
-    max_d = np.nanmax(first_disp_map["disparity_map"].data)
+    valid_idx = np.where(first_disp_map["validity_mask"].data == 0)
+    min_d = np.nanmin(first_disp_map["disparity_map"].data[valid_idx])
+    max_d = np.nanmax(first_disp_map["disparity_map"].data[valid_idx])
     cmap_pandora = pandora_cmap()
     mapper_avec_opti = LinearColorMapper(palette=cmap_to_palette(cmap_pandora), low=min_d, high=max_d)
 
@@ -413,8 +444,9 @@ def compare_disparity_and_error(
     # Disparity map
     first_disp_map = add_validity_mask_to_dataset(input_first_disp_map)
 
-    min_d = np.nanmin(first_disp_map["disparity_map"].data)
-    max_d = np.nanmax(first_disp_map["disparity_map"].data)
+    valid_idx = np.where(first_disp_map["validity_mask"].data == 0)
+    min_d = np.nanmin(first_disp_map["disparity_map"].data[valid_idx])
+    max_d = np.nanmax(first_disp_map["disparity_map"].data[valid_idx])
     cmap_pandora = pandora_cmap()
     mapper_avec_opti = LinearColorMapper(palette=cmap_to_palette(cmap_pandora), low=min_d, high=max_d)
 
