@@ -97,11 +97,20 @@ def read_img(img: str, no_data: float, mask: str = None, classif: str = None, se
         {"im": (["row", "col"], data.astype(np.float32))},
         coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
     )
+
+    transform = img_ds.profile["transform"]
+    crs = img_ds.profile["crs"]
+    # If the image has no geotransform, its transform is the identity matrix, which may not be compatible with QGIS
+    # To make it compatible, the attributes are set to None
+    if crs is None:
+        transform = None
+        crs = None
+
     # Add image conf to the image dataset
     dataset.attrs = {
         "no_data_img": no_data,
-        "crs": img_ds.profile["crs"],
-        "transform": img_ds.profile["transform"],
+        "crs": crs,
+        "transform": transform,
         "valid_pixels": 0,  # arbitrary default value
         "no_data_mask": 1,
     }  # arbitrary default value

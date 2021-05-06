@@ -25,6 +25,7 @@ This module contains functions to test all the methods in img_tools module.
 
 import unittest
 import copy
+import rasterio
 
 import numpy as np
 import xarray as xr
@@ -365,6 +366,44 @@ class TestImgTools(unittest.TestCase):
         del false_dst_no_transform.attrs["transform"]
 
         self.assertRaises(SystemExit, img_tools.check_dataset, false_dst_no_transform)
+
+    @staticmethod
+    def test_read_img_with_geotransform():
+        """
+        Test the method read_img with an image with geotransform
+
+        """
+        # Build the default configuration
+        default_cfg = pandora.check_json.default_short_configuration
+
+        # Computes the dataset image
+        dst_left = img_tools.read_img(img="tests/pandora/left.png", no_data=default_cfg["input"]["nodata_left"])
+
+        gt_crs = rasterio.crs.CRS.from_epsg(32631)
+        gt_transform = rasterio.Affine(0.5, 0.0, 573083.5, 0.0, -0.5, 4825333.5)
+
+        # Check if the CRS and Transform are correctly read
+        np.testing.assert_array_equal(gt_crs, dst_left.attrs["crs"])
+        np.testing.assert_array_equal(gt_transform, dst_left.attrs["transform"])
+
+    @staticmethod
+    def test_read_img_without_geotransform():
+        """
+        Test the method read_img with an image without geotransform
+
+        """
+        # Build the default configuration
+        default_cfg = pandora.check_json.default_short_configuration
+
+        # Computes the dataset image
+        dst_left = img_tools.read_img(img="tests/image/left_img.tif", no_data=default_cfg["input"]["nodata_left"])
+
+        gt_crs = None
+        gt_transform = None
+
+        # Check if the CRS and Transform are correctly set to None
+        np.testing.assert_array_equal(gt_crs, dst_left.attrs["crs"])
+        np.testing.assert_array_equal(gt_transform, dst_left.attrs["transform"])
 
 
 if __name__ == "__main__":
