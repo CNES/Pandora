@@ -26,10 +26,12 @@ This module contains functions to test all the methods in img_tools module.
 import unittest
 import copy
 import rasterio
+from tempfile import TemporaryDirectory
 
 import numpy as np
 import xarray as xr
 
+from skimage.io import imsave
 import tests.common as common
 import pandora
 import pandora.img_tools as img_tools
@@ -404,6 +406,39 @@ class TestImgTools(unittest.TestCase):
         # Check if the CRS and Transform are correctly set to None
         np.testing.assert_array_equal(gt_crs, dst_left.attrs["crs"])
         np.testing.assert_array_equal(gt_transform, dst_left.attrs["transform"])
+
+    @staticmethod
+    def test_inf_handling():
+        """
+        Test the read_img method when the image has input inf values
+
+        """
+        # Create temporary directory
+        with TemporaryDirectory() as tmp_dir:
+            imarray = np.array(
+                (
+                    [np.inf, 1, 2, 5],
+                    [5, 1, 2, 7],
+                    [-np.inf, 2, 0, 3],
+                    [4, np.inf, 4, -np.inf],
+                )
+            )
+            imsave(tmp_dir + "/left_img.tif", imarray)
+
+            # Computes the dataset image
+            dst_left = img_tools.read_img(img=tmp_dir + "/left_img.tif", no_data=np.inf)
+
+        # The inf values should be set as -9999
+        dst_img_correct = np.array(
+            (
+                [-9999, 1, 2, 5],
+                [5, 1, 2, 7],
+                [-9999, 2, 0, 3],
+                [4, -9999, 4, -9999],
+            )
+        )
+
+        np.testing.assert_array_equal(dst_img_correct, dst_left["im"].values)
 
 
 if __name__ == "__main__":
