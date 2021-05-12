@@ -164,6 +164,21 @@ There are some parameters depending on penalty_method choice and p2_method choic
         }
     }
 
+**Confidence**
+
+The user can activate *use_confidence* if he wants to apply the confidence as follows:
+
+SGM equation: :math:`E(D) = \sum_{p}{C(p,Dp) * Confidence(p)} + \sum_{q \in Np}{P_{1}T(|D_{p} - D_{q}|=1)} + \sum_{q \in Np}{P_{2}T(|D_{p} - D_{q}|>1)}`
+with :math:`D` the disparity image and :math:`N_{p}` the neigborhood of :math:`p`.
+
+The user must have computed ambiguity confidence previously in the pipeline. If not, default no confidence will be used.
+
+**Piecewise Optimization**
+
+The user can activate the piecewise optimization by choosing the layer *piecewise_optimization_layer* to use as segments for piecewise optimization.
+For each segment, optimization will only be applied inside this segment.
+
+
 Pandora's data
 **************
 
