@@ -8,6 +8,7 @@
 - Version handling with setuptools_scm [#212]
 - Set dataset's transform to None if it is the identity matrix. [#211]
 - Handling of np.inf values on input images. [#210]
+- Remove copy from check_dataset. [#219]
 
 ### Fixed
 

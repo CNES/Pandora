@@ -174,10 +174,9 @@ def check_dataset(dataset: xr.Dataset) -> xr.Dataset:
 
     :param dataset: dataset
     :type dataset: xr.Dataset
-    :return: full dataset
+    :return: dataset
     :rtype: xarray.DataSet
     """
-    new_dataset = copy.copy(dataset)
 
     # Check image
     if "im" not in dataset:
@@ -215,7 +214,7 @@ def check_dataset(dataset: xr.Dataset) -> xr.Dataset:
         logging.error("User must provide image transform")
         sys.exit(1)
 
-    return new_dataset
+    return dataset
 
 
 def prepare_pyramid(
