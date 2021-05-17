@@ -27,7 +27,6 @@ import logging
 import warnings
 from typing import List, Union, Tuple
 import sys
-import copy
 
 import numpy as np
 import rasterio
@@ -168,14 +167,12 @@ def read_img(img: str, no_data: float, mask: str = None, classif: str = None, se
     return dataset
 
 
-def check_dataset(dataset: xr.Dataset) -> xr.Dataset:
+def check_dataset(dataset: xr.Dataset) -> None:
     """
     Check if input dataset is correct, and return the corresponding xarray.DataSet
 
     :param dataset: dataset
     :type dataset: xr.Dataset
-    :return: dataset
-    :rtype: xarray.DataSet
     """
 
     # Check image
@@ -213,8 +210,6 @@ def check_dataset(dataset: xr.Dataset) -> xr.Dataset:
     if "transform" not in dataset.attrs:
         logging.error("User must provide image transform")
         sys.exit(1)
-
-    return dataset
 
 
 def prepare_pyramid(
