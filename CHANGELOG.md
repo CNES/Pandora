@@ -5,14 +5,15 @@
 ### Added
 
 - Binder for Pandora's notebooks. [#215] 
-- Version handling with setuptools_scm [#212]
+- Version handling with setuptools_scm. [#212]
 - Set dataset's transform to None if it is the identity matrix. [#211]
 - Handling of np.inf values on input images. [#210]
 - Remove copy from check_dataset and doesn't return dataset anymore. [#219]
 
 ### Fixed
 
-- Correction on multi scale processing to allocate the confidence measure [#217]
+- Correction on multi scale processing to allocate the confidence measure. [#217]
+- Correct non-masked nan values on validity mask. [#218]
 
 ## 1.0.0 (March 2021)
 

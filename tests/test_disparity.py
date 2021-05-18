@@ -1217,6 +1217,92 @@ class TestDisparity(unittest.TestCase):
 
         # Check if the calculated validity mask is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(dataset["validity_mask"].data, gt_mask)
+        # ---------------------- Test with posible constant duplication ----------------------
+        # Masks convention
+        # 1 = valid
+        # 2 = no_data
+
+        data = np.array(([[1, 2, 4, 6]]), dtype=np.float64)
+        left_mask = np.array([[2, 2, 2, 2]], dtype=np.uint8)
+        left = xr.Dataset(
+            {"im": (["row", "col"], data), "msk": (["row", "col"], left_mask)},
+            coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
+        )
+        left.attrs = {
+            "valid_pixels": 1,
+            "no_data_mask": 2,
+            "crs": None,
+            "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+        }
+
+        data = np.array(([[6, 1, 2, 4]]), dtype=np.float64)
+        right_mask = np.array([[2, 2, 2, 1]], dtype=np.uint8)
+
+        right = xr.Dataset(
+            {"im": (["row", "col"], data), "msk": (["row", "col"], right_mask)},
+            coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
+        )
+        right.attrs = {
+            "valid_pixels": 1,
+            "no_data_mask": 2,
+            "crs": None,
+            "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+        }
+
+        matching_cost_plugin = matching_cost.AbstractMatchingCost(
+            **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
+        )
+        cv = matching_cost_plugin.compute_cost_volume(right, left, -1, 1)
+        matching_cost_plugin.cv_masked(
+            left,
+            right,
+            cv,
+            -1,
+            1,
+        )
+
+        # Compute the disparity map and validity mask
+        disparity_ = disparity.AbstractDisparity(**{"disparity_method": "wta", "invalid_disparity": 0})
+        dataset = disparity_.to_disp(cv)
+        disparity_.validity_mask(dataset, right, left, cv)
+
+        # All right image pixels are nodata
+        gt_valid_mask = np.array(
+            [
+                [
+                    cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                    cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                    cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                    cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                ]
+            ]
+        )
+
+        # Disp -1 1 has incomplete range on the borders
+        gt_valid_mask += np.array(
+            [
+                [
+                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    0,
+                    0,
+                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                ]
+            ]
+        )
+
+        # 3 first pixels of left image are no data
+        gt_valid_mask += np.array(
+            [
+                [
+                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    0,
+                ]
+            ]
+        )
+
+        np.testing.assert_array_equal(dataset["validity_mask"].data, gt_valid_mask)
 
 
 if __name__ == "__main__":

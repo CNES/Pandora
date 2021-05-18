@@ -362,6 +362,12 @@ class AbstractDisparity:
         # outside the image )
         disp["validity_mask"].data[:, bit_1] += cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
 
+        if "msk" in img_left.data_vars:
+            self.allocate_left_mask(disp, img_left)
+
+        if "msk" in img_right.data_vars:
+            self.allocate_right_mask(disp, img_right, bit_1)
+
         # The disp_min and disp_max used to search missing disparity interval are not the local disp_min and disp_max
         # in case of a variable range of disparities. So there may be pixels that have missing disparity range (all
         # cost are np.nan), but are not detected in the code block above. To find the pixels that have a missing
@@ -369,11 +375,6 @@ class AbstractDisparity:
 
         self.mask_invalid_variable_disparity_range(disp, cv)
 
-        if "msk" in img_left.data_vars:
-            self.allocate_left_mask(disp, img_left)
-
-        if "msk" in img_right.data_vars:
-            self.allocate_right_mask(disp, img_right, bit_1)
         if offset > 0:
             self.mask_border(disp)
 
