@@ -69,7 +69,7 @@ Here are some rules to apply when developing a new functionality:
 * The usage of the `print()` function is forbidden: use the `logging` python standard module instead.
 * Each new functionality shall have a corresponding test in its module's test file. This test shall, if possible, check the function's outputs and the corresponding degraded cases.
 * All functions shall be documented (object, parameters, return values).
-* Factorize the code as much as possible. The command line tools shall only include the main workflow and rely on the cars python modules.
+* Factorize the code as much as possible. The command line tools shall only include the main workflow and rely on the pandora python modules.
 * If major modifications of the user interface or of the tool's behaviour are done, update the user documentation (and the notebooks if necessary).
 * Do not add new dependencies unless it is absolutely necessary, and only if it has a permissive license.
 * Use the type hints provided by the `typing` python module.
@@ -87,14 +87,14 @@ This command installs the pre-commit hooks in `.git/hooks/pre-commit`  from `.pr
 ```
 It is possible to test pre-commit before commiting:
 * pre-commit run --all-files                # Run all hooks on all files
-* pre-commit run --files cars/__init__.py   # Run all hooks on one file
+* pre-commit run --files pandora/__init__.py   # Run all hooks on one file
 * pre-commit run pylint                     # Run only pylint hook
 ```
 
 It is possible to run only pylint tool to check code modifications:
 ```
 * cd PANDORA_HOME
-* pylint *.py cars/*.py tests/*.py        # Run all pylint tests
+* pylint *.py pandora/*.py tests/*.py        # Run all pylint tests
 * pylint --list-msgs                      # Get pylint detailed errors informations
 ```
 
