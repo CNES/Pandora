@@ -44,17 +44,21 @@ Some are already avalaible,computed by the plugin_libsgm and divided in two cate
 Configuration and parameters
 ****************************
 
-+--------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
-| Name               | Description                                             | Type   | Default value | Available value                                                | Required                                             |
-+====================+=========================================================+========+===============+================================================================+======================================================+
-| penalty_method     | Method for penalty estimation                           | string | "sgm_penalty" | "sgm_penalty","mc_cnn_fast_penalty", "mc_cnn_accurate_penalty" | No                                                   |
-+--------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
-| p2_method          | sub-method of *sgm_penalty* for P2 penalty estimation   | String | "constant"    | "constant" , "negativeGradient", "inverseGradient"             | No. Only available if *penalty_method = sgm_penalty* |
-+--------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
-| overcounting       | overcounting correction                                 | Boolean| False         | True, False                                                    | No                                                   |
-+--------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
-| min_cost_paths     | Number of sgm paths that give the same final disparity  | Boolean| False         | True, False                                                    | No                                                   |
-+--------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
++------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
+| Name                         | Description                                             | Type   | Default value | Available value                                                | Required                                             |
++==============================+=========================================================+========+===============+================================================================+======================================================+
+| penalty_method               | Method for penalty estimation                           | string | "sgm_penalty" | "sgm_penalty","mc_cnn_fast_penalty", "mc_cnn_accurate_penalty" | No                                                   |
++------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
+| p2_method                    | sub-method of *sgm_penalty* for P2 penalty estimation   | String | "constant"    | "constant" , "negativeGradient", "inverseGradient"             | No. Only available if *penalty_method = sgm_penalty* |
++------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
+| overcounting                 | overcounting correction                                 | Boolean| False         | True, False                                                    | No                                                   |
++------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
+| min_cost_paths               | Number of sgm paths that give the same final disparity  | Boolean| False         | True, False                                                    | No                                                   |
++------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
+| use_confidence               | Apply confidence to cost volume                         | Boolean| False         | True, False                                                    | No                                                   |
++------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
+| piecewise_optimization_layer | Layer to use during piecewise optimization              | string | "None"        | "None", "classif", "segm"                                      | No                                                   |
++------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
 
 There are some parameters depending on penalty_method choice and p2_method choice.
 
@@ -159,6 +163,24 @@ There are some parameters depending on penalty_method choice and p2_method choic
             ...
         }
     }
+
+**Confidence**
+
+The user can activate *use_confidence* if he wants to apply the confidence as follows:
+
+SGM equation: :math:`E(D) = \sum_{p}{C(p,Dp) * Confidence(p)} + \sum_{q \in Np}{P_{1}T(|D_{p} - D_{q}|=1)} + \sum_{q \in Np}{P_{2}T(|D_{p} - D_{q}|>1)}`
+with :math:`D` the disparity image and :math:`N_{p}` the neigborhood of :math:`p`.
+
+The user must have computed ambiguity confidence previously in the pipeline. If not, default confidence values equal to 1 will be used, which is equivalent to not use confidence.
+
+**Piecewise Optimization**
+
+The user can activate the piecewise optimization by choosing the layer *piecewise_optimization_layer* to use as segments for piecewise optimization.
+For each segment, optimization will only be applied inside this segment.
+
+The following diagram explains the concept:
+
+    .. image:: ../../Images/piecewise_optimization_segments.png
 
 Pandora's data
 **************

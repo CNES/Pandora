@@ -9,6 +9,7 @@
 - Set dataset's transform to None if it is the identity matrix. [#211]
 - Handling of np.inf values on input images. [#210]
 - Remove copy from check_dataset and doesn't return dataset anymore. [#219]
+- Doc for confidence and piecewise optimization.
 
 ### Fixed
 
