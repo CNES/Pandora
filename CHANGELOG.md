@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.1.0 (June 2021)
+
 ### Added
 
 - Binder for Pandora's notebooks. [#215] 
