@@ -15,6 +15,7 @@
 
 - Correction on multi scale processing to allocate the confidence measure. [#217]
 - Correct non-masked nan values on validity mask. [#218]
+- Margin computation whithout optimisation step. [#220]
 
 ## 1.0.0 (March 2021)
 
