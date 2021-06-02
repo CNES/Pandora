@@ -19,7 +19,7 @@ The available methods are :
 
   , where :math:`cv(x,y,d)` is the cost value at pixel :math:`(x,y)` for disparity :math:`d` in disparity range :math:`[d_{min},d_{max}]`.
   From equation ambiguity integral measure is derived and it is defined as the area under the ambiguity curve. Then, ambiguity integral measure
-  is converted into a confidence measure :math:`Confidence Ambiguity(x,y) = - Ambiguity Integral`.
+  is converted into a confidence measure :math:`Confidence Ambiguity(x,y) = 1 - Ambiguity Integral`.
 
 
 - Std images intensity : this metric computes the standard deviation of the intensity.
@@ -31,7 +31,7 @@ Configuration and parameters
 +--------------------------+-----------------------------------------------+--------+---------------+--------------------------------+------------------------------------------+
 | Name                     | Description                                   | Type   | Default value | Available value                | Required                                 |
 +==========================+===============================================+========+===============+================================+==========================================+
-| *confidence_method* | Cost volume confidence method                 | string |               | "std_intensity" , "ambiguity"  | Yes                                      |
+| *confidence_method*      | Cost volume confidence method                 | string |               | "std_intensity" , "ambiguity"  | Yes                                      |
 +--------------------------+-----------------------------------------------+--------+---------------+--------------------------------+------------------------------------------+
 | *eta_max*                | Maximum :math:`\eta`                          | float  | 0.7           | >0                             | No. Only available if "ambiguity" method |
 +--------------------------+-----------------------------------------------+--------+---------------+--------------------------------+------------------------------------------+
@@ -53,7 +53,7 @@ Configuration and parameters
             ...
             "cost_volume_confidence":
             {
-                "cost_volume_confidence": "ambiguity",
+                "confidence_method": "ambiguity",
                 "eta_max": 0.7,
                 "eta_step": 0.01
             }

@@ -11,10 +11,11 @@ Pandora Machine defines 3 possible states:
  - cost_volume
  - disparity_map
 
-and 7 transitions, each one corresponding to a stereo step described in :ref:`step_by_step` chapter:
+and 9 transitions, each one corresponding to a stereo step described in :ref:`step_by_step` chapter:
  - matching_cost (:ref:`matching_cost`)
  - aggregation (:ref:`cost_aggregation`)
  - optimization (:ref:`optimization`)
+ - confidence (:ref:`cost_volume_confidence`)
  - disparity (:ref:`disparity`)
  - filter (:ref:`filter`)
  - refinement (:ref:`disparity_refinement`)
