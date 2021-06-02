@@ -35,6 +35,26 @@ Some are already avalaible,computed by the plugin_libsgm and divided in two cate
       P_1 &= \frac{sgm_P1}{sgm_Q2} \ , P_2 = \frac{sgm_P2}{sgm_Q2} \ if \ D1 \geq sgm_D \ , D2 \geq sgm_D \\
       P_1 &= \frac{sgm_P1}{sgm_Q1} \ , P_2 = \frac{sgm_P2}{sgm_Q1} \ otherwise
 
+**Confidence**
+
+The user can activate *use_confidence* if he wants to apply the confidence as follows:
+
+    .. math::
+      E(D) = \sum_{p}{C(p,Dp) * Confidence(p)} + \sum_{q \in Np}{P_{1}T(|D_{p} - D_{q}|=1)} + \sum_{q \in Np}{P_{2}T(|D_{p} - D_{q}|>1)}
+
+with :math:`D` the disparity image and :math:`N_{p}` the neigborhood of :math:`p`.
+
+The user must have computed ambiguity confidence previously in the pipeline. If not, default confidence values equal to 1 will be used, which is equivalent to not use confidence.
+
+**Piecewise Optimization**
+
+The user can activate the piecewise optimization by choosing the layer *piecewise_optimization_layer* to use as segments for piecewise optimization.
+For each segment, optimization will only be applied inside this segment.
+
+The following diagram explains the concept:
+
+    .. image:: ../../Images/piecewise_optimization_segments.png
+
 .. [Hirschmuller2008] H. Hirschmuller, "Stereo Processing by Semiglobal Matching and Mutual Information," in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 30, no. 2, pp. 328-341, Feb. 2008. doi: 10.1109/TPAMI.2007.1166
 .. [Banz2012] Banz, C. & Pirsch, P. & Blume, Holger. (2012). EVALUATION OF PENALTY FUNCTIONS FOR SEMI-GLOBAL MATCHING COST AGGREGATION. ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences. XXXIX-B3. 1-6. 10.5194/isprsarchives-XXXIX-B3-1-2012.
 .. [Zbontar2016] Zbontar, Jure and Yann LeCun. “Stereo Matching by Training a Convolutional Neural Network to Compare Image Patches.” ArXiv abs/1510.05970 (2016): n. pag.
@@ -164,23 +184,6 @@ There are some parameters depending on penalty_method choice and p2_method choic
         }
     }
 
-**Confidence**
-
-The user can activate *use_confidence* if he wants to apply the confidence as follows:
-
-SGM equation: :math:`E(D) = \sum_{p}{C(p,Dp) * Confidence(p)} + \sum_{q \in Np}{P_{1}T(|D_{p} - D_{q}|=1)} + \sum_{q \in Np}{P_{2}T(|D_{p} - D_{q}|>1)}`
-with :math:`D` the disparity image and :math:`N_{p}` the neigborhood of :math:`p`.
-
-The user must have computed ambiguity confidence previously in the pipeline. If not, default confidence values equal to 1 will be used, which is equivalent to not use confidence.
-
-**Piecewise Optimization**
-
-The user can activate the piecewise optimization by choosing the layer *piecewise_optimization_layer* to use as segments for piecewise optimization.
-For each segment, optimization will only be applied inside this segment.
-
-The following diagram explains the concept:
-
-    .. image:: ../../Images/piecewise_optimization_segments.png
 
 Pandora's data
 **************
