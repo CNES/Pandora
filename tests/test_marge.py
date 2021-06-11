@@ -78,7 +78,6 @@ class TestMargins(unittest.TestCase):
         # Test without SGM configuration
         cfg = {
             "matching_cost": {"matching_cost_method": "census", "window_size": 3},
-            "optimization": {"optimization_method": "none"},
             "refinement": {"refinement_method": "vfit"},
             "filter": {"filter_method": "median", "filter_size": 3},
             "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1},
@@ -92,7 +91,6 @@ class TestMargins(unittest.TestCase):
 
         cfg = {
             "matching_cost": {"matching_cost_method": "sad", "window_size": 9},
-            "optimization": {"optimization_method": "none"},
             "refinement": {"refinement_method": "vfit"},
             "filter": {"filter_method": "median", "filter_size": 3},
             "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1},
@@ -106,7 +104,6 @@ class TestMargins(unittest.TestCase):
 
         cfg = {
             "matching_cost": {"matching_cost_method": "sad", "window_size": 1},
-            "optimization": {"optimization_method": "none"},
             "refinement": {"refinement_method": "vfit"},
             "filter": {"filter_method": "median", "filter_size": 5},
             "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1},

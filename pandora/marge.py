@@ -66,21 +66,22 @@ def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.Datase
     # Margins for the left image and for the right image
 
     # Pandora margins depends on the steps configured
-    if cfg["optimization"]["optimization_method"] == "sgm":
-        # SGM margin includes the census, vfit and median filter margins
-        sgm_margins = 40
-        r_marg = [
-            sgm_margins + disp_max,
-            sgm_margins,
-            sgm_margins - disp_min,
-            sgm_margins,
-        ]
-        s_marg = [
-            sgm_margins - disp_min,
-            sgm_margins,
-            sgm_margins + disp_max,
-            sgm_margins,
-        ]
+    if "optimization" in cfg:
+        if cfg["optimization"]["optimization_method"] == "sgm":
+            # SGM margin includes the census, vfit and median filter margins
+            sgm_margins = 40
+            r_marg = [
+                sgm_margins + disp_max,
+                sgm_margins,
+                sgm_margins - disp_min,
+                sgm_margins,
+            ]
+            s_marg = [
+                sgm_margins - disp_min,
+                sgm_margins,
+                sgm_margins + disp_max,
+                sgm_margins,
+            ]
 
     else:
         r_marg = np.array([disp_max, 0, -disp_min, 0])
