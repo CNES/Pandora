@@ -62,6 +62,7 @@ REQUIREMENTS_EXTRA = {
         "black",
     ],
     "sgm": ["pandora_plugin_libsgm==1.1.*"],
+    "mccnn": ["pandora_plugin_mccnn==1.0.*"],
     "docs": ["sphinx", "sphinx_rtd_theme", "sphinx_autoapi"],
     "notebook": ["ipyvolume", "bokeh", "matplotlib", "graphviz", "notebook"],
 }

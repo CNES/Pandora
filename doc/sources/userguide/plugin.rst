@@ -11,6 +11,7 @@ The following chapters contains all official plugins of Pandora:
 .. toctree::
 
    plugins/plugin_libsgm.rst
+   plugins/plugin_mccnn.rst
 
 One can implements it own plugin, see :ref:`develop_plugin`.
 
