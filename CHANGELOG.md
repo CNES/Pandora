@@ -10,12 +10,13 @@
 - Handling of np.inf values on input images. [#210]
 - Remove copy from check_dataset and doesn't return dataset anymore. [#219]
 - Doc for confidence and piecewise optimization.
+- Do not force omp layer on numba and silence its warning.
 
 ### Fixed
 
 - Correction on multi scale processing to allocate the confidence measure. [#217]
 - Correct non-masked nan values on validity mask. [#218]
-- Margin computation whithout optimisation step. [#220]
+- Margin computation without optimisation step. [#220]
 
 ## 1.0.0 (March 2021)
 

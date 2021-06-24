@@ -24,12 +24,13 @@ This module contains classes and functions associated to the subpixel refinement
 """
 
 import logging
+import warnings
 from abc import ABCMeta, abstractmethod
 from typing import Tuple, Callable, Dict
 
 import numpy as np
 import xarray as xr
-from numba import njit, prange, config
+from numba import njit, prange
 
 import pandora.constants as cst
 
@@ -97,20 +98,21 @@ class AbstractRefinement:
         d_max = cv.coords["disp"].data[-1]
         subpixel = cv.attrs["subpixel"]
         measure = cv.attrs["type_measure"]
-        # Set numba type of threading layer before parallel target compilation
-        config.THREADING_LAYER = "omp"
 
-        # Conversion to numpy array ( .data ), because Numba does not support Xarray
-        (itp_coeff, disp["disparity_map"].data, disp["validity_mask"].data,) = self.loop_refinement(
-            cv["cost_volume"].data,
-            disp["disparity_map"].data,
-            disp["validity_mask"].data,
-            d_min,
-            d_max,
-            subpixel,
-            measure,
-            self.refinement_method,
-        )
+        # This silences numba's TBB threading layer warning
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            # Conversion to numpy array ( .data ), because Numba does not support Xarray
+            (itp_coeff, disp["disparity_map"].data, disp["validity_mask"].data,) = self.loop_refinement(
+                cv["cost_volume"].data,
+                disp["disparity_map"].data,
+                disp["validity_mask"].data,
+                d_min,
+                d_max,
+                subpixel,
+                measure,
+                self.refinement_method,
+            )
 
         disp.attrs["refinement"] = self._refinement_method_name
         disp["interpolated_coeff"] = xr.DataArray(
@@ -148,24 +150,25 @@ class AbstractRefinement:
         d_max = cv_left.coords["disp"].data[-1]
         subpixel = cv_left.attrs["subpixel"]
         measure = cv_left.attrs["type_measure"]
-        # Set numba type of threading layer before parallel target compilation
-        config.THREADING_LAYER = "omp"
 
-        # Conversion to numpy array ( .data ), because Numba does not support Xarray
-        (
-            itp_coeff,
-            disp_right["disparity_map"].data,
-            disp_right["validity_mask"].data,
-        ) = self.loop_approximate_refinement(
-            cv_left["cost_volume"].data,
-            disp_right["disparity_map"].data,
-            disp_right["validity_mask"].data,
-            d_min,
-            d_max,
-            subpixel,
-            measure,
-            self.refinement_method,
-        )
+        # This silences numba's TBB threading layer warning
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            # Conversion to numpy array ( .data ), because Numba does not support Xarray
+            (
+                itp_coeff,
+                disp_right["disparity_map"].data,
+                disp_right["validity_mask"].data,
+            ) = self.loop_approximate_refinement(
+                cv_left["cost_volume"].data,
+                disp_right["disparity_map"].data,
+                disp_right["validity_mask"].data,
+                d_min,
+                d_max,
+                subpixel,
+                measure,
+                self.refinement_method,
+            )
 
         disp_right.attrs["refinement"] = self._refinement_method_name
         disp_right["interpolated_coeff"] = xr.DataArray(

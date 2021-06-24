@@ -23,6 +23,7 @@
 This module contains functions for estimating confidence from ambiguity.
 """
 
+import warnings
 from typing import Dict, Tuple, Union
 
 import numpy as np
@@ -115,8 +116,12 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
 
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
-        # Computes ambiguity using numba in parallel for memory and computation time optimization
-        ambiguity = self.compute_ambiguity(cv["cost_volume"].data, self._eta_min, self._eta_max, self._eta_step)
+        # This silences numba's TBB threading layer warning
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            # Computes ambiguity using numba in parallel for memory and computation time optimization
+            ambiguity = self.compute_ambiguity(cv["cost_volume"].data, self._eta_min, self._eta_max, self._eta_step)
+
         # Ambiguity normalization with percentile
         ambiguity = self.normalize_with_percentile(ambiguity)
 

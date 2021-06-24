@@ -24,6 +24,7 @@
 This module contains class associated to the pandora state machine
 """
 
+import warnings
 import logging
 from typing import Dict, Union, List
 import numpy as np
@@ -44,8 +45,12 @@ from pandora import multiscale
 from pandora import optimization
 from pandora import refinement
 from pandora import matching_cost
-from pandora import validation
-from pandora import cost_volume_confidence
+
+# This silences numba's TBB threading layer warning
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore")
+    from pandora import validation
+    from pandora import cost_volume_confidence
 from .img_tools import prepare_pyramid
 
 
