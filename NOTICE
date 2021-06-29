@@ -68,9 +68,7 @@ Copyright (c) 2019-2020, Xperience AI, all rights reserved.
 Website: https://opencv.org/
 License: BSD 3 Clause.
 
-Nose2: Testing module for Python codes
-Copyright (c) 2012, Jason Pellerin
-Copyright (c) 2001-2012
-Python Software Foundation
-Website: https://github.com/nose-devs/nose2
-License: BSD 2 Clause.
+Pytest: Testing module for Python codes
+Copyright Holger Krekel and others, 2004-2021.
+Website: https://github.com/pytest-dev/pytest
+License: MIT.
