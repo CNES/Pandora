@@ -29,13 +29,14 @@ import unittest
 import pytest
 
 
-@pytest.mark.notebook_tests
 class TestPandora(unittest.TestCase):
     """
     TestPandora class allows to test the pandora notebooks
     """
 
     @staticmethod
+    @pytest.mark.notebook_with_sgm
+    @pytest.mark.notebook_tests
     def test_statistical_and_visual_analysis():
         """
         Test that the statistical_and_visual_analysis notebook runs without errors
@@ -61,6 +62,8 @@ class TestPandora(unittest.TestCase):
         assert out.returncode == 0
 
     @staticmethod
+    @pytest.mark.notebook_tests
+    @pytest.mark.notebook_pandora
     def test_usage_with_multiscale():
         """
         Test that the usage_with_multiscale notebook runs without errors
@@ -85,6 +88,8 @@ class TestPandora(unittest.TestCase):
             assert out.returncode == 0
 
     @staticmethod
+    @pytest.mark.notebook_tests
+    @pytest.mark.notebook_pandora
     def test_introduction_and_basic_usage():
         """
         Test that the introduction_and_basic_usage notebook runs without errors
