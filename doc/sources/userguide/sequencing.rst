@@ -3,7 +3,7 @@
 Sequencing
 ==========
 
-Moreover, Pandora will check if the requested steps sequencing is correct following the permitted
+Pandora will check if the requested steps sequencing is correct following the permitted
 transition defined by the Pandora Machine (`transitions <https://github.com/pytransitions/transitions>`_)
 
 Pandora Machine defines 3 possible states:
@@ -30,10 +30,10 @@ The following diagram highligts all states and possible transitions.
     .. figure:: ../Images/Machine_state_diagram.png
 
 A transition (i.e a pandora's step) can be triggered several times. You must respect the following
-naming convention: *stepname.xxx* . *xxx* can be the string you want.
-See :ref:`multiple_filters_example`
+naming convention: *stepname.xxx*  where *xxx* can be the string you want.
+See :ref:`multiple_filters_example` for an example with multiple usage of filter transition.
 
-**The most important thing to remember is to build your configuration file following the previous diagram by using transition name on pipeline section of your file**
+**The most important thing to remember is to build your configuration file following the previous diagram by using transition name on pipeline section of your file.**
 
 .. note::
     The only step of *pipeline* key configuration file that does not depend on machine state is the *right_disp_map* step (see :ref:`outputs`). This one, if needed, must be written

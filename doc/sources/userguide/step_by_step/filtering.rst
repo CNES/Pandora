@@ -8,8 +8,10 @@ Theoretical basics
 
 The filtering methods allow to homogenize the disparity maps, those available in pandora are :
 
-- median filter. The median filter is applied to the valid pixels of the disparity map, invalid pixels are ignored.
+- median filter.
 - bilateral filter.
+
+.. note::  Invalid pixels are not filtered. If a valid pixel contains an invalid pixel in its filter, the invalid pixel is ignored for the calculation
 
 
 Configuration and parameters

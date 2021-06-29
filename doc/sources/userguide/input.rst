@@ -55,11 +55,6 @@ Configuration and parameters
      - Value equal to 0 for valid pixel
      - Value not equal to 0 for invalid pixel
 
-.. note::
-
-    *left_classif*, *right_classif*, *left_segm*, *right_segm* are not yet used by any Pandora's algorithm.
-
-
 **Example**
 
 .. sourcecode:: text

@@ -11,16 +11,18 @@ The purpose of this step is to compute confidence measure on the cost volume.
 The available methods are :
 
 - Ambiguity. This metric is related to a cost curve property and aims to qualify whether a point is ambiguous or not.
-  The ambiguity is computed by the following formula :
+  From one pixel, the ambiguity is computed by the following formula :
 
     .. math::
 
        Amb(x,y,\eta) &= Card(d \in [d_min,d_max] | cv(x,y,d) < \min_{d}(cv(x,y,d)) +\eta \})
 
   , where :math:`cv(x,y,d)` is the cost value at pixel :math:`(x,y)` for disparity :math:`d` in disparity range :math:`[d_{min},d_{max}]`.
-  From equation ambiguity integral measure is derived and it is defined as the area under the ambiguity curve. Then, ambiguity integral measure
+  From the previous equation, ambiguity integral measure is derived and it is defined as the area under the ambiguity curve. Then, ambiguity integral measure
   is converted into a confidence measure :math:`Confidence Ambiguity(x,y) = 1 - Ambiguity Integral`.
 
+*Sarrazin, E., Cournet, M., Dumas, L., Defonte, V., Fardet, Q., Steux, Y., Jimenez Diaz, N., Dubois, E., Youssefi, D., Buffe, F., 2021. Ambiguity concept in stereo matching pipeline.
+ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences. (To be published)*
 
 - Std images intensity : this metric computes the standard deviation of the intensity.
 
