@@ -15,9 +15,9 @@ The disparity map of the previous pipeline is used to construct two disparity gr
 
 - If the pixel was invalid in the previous scale, consider the whole disparity range.
 
-- If the pixel was valid in the previous scale, consider the maximum and minimum disparity values of the valid pixels in the pixel window.
-
 - Add a disparity marge on the maximum and minimum resulting values to ensure the disparity range width.
+
+- If the pixel was valid in the previous scale, consider the maximum and minimum disparity values of the valid pixels in the pixel window.
 
 .. note::
   The invalid pixels of the full resolution image are interpolated using the method proposed in [Hirschmuller2007]_ before the Gaussian filtering and decimation to avoid its spreading.

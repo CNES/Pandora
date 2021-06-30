@@ -123,10 +123,7 @@ When matching is impossible, the matching cost is np.nan.
 
 This Dataset also has a :
 
-- xarray.DataArray 3D confidence_measure, which contains the standard deviation of pixel intensity indicator.
-  More specifically, this indicator represents standard deviation of pixel intensity of the left image
-  inside a window (the same as the window used for matching cost)
-  It is generated during the first step: *Matching cost computation*.
+- xarray.DataArray 3D confidence_measure, which contains quality indicators, depending on what is activated. It can be enriched by indicators calculated in the different plugins.
 - xarray.DataArray disp_indices, which contains the minimum cost indices calculated in step *Disparity computation*.
 
 
@@ -172,10 +169,7 @@ The *Disparity computation* step generates a disparity map in cost volume geomet
 a float32 type 2D xarray.DataArray, stored in a xarray.Dataset.
 This Dataset also has a :
 
-- xarray.DataArray 3D confidence_measure, which contains quality indicators. It can be enriched by indicators calculated in the different plugins.
-
-  - standard deviation of the intensities within the a window: "stereo_pandora_intensityStd"
-  - distance between left-right (or right-left) disparities: "validation_pandora_distanceOfDisp", if "cross_checking" validation is enabled
+- xarray.DataArray 3D confidence_measure, which contains quality indicators, depending on what is activated. It can be enriched by indicators calculated in the different plugins.
 - xarray.DataArray validity_mask which represents the :ref:`validity_mask`.
 - xarray.DataArray interpolated_coeff, which contains the similarity coefficients interpolated by the Disparity Refinement Method.
 

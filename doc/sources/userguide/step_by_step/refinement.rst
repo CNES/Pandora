@@ -6,7 +6,7 @@ Disparity refinement
 Theoretical basics
 ------------------
 
-The purpose of this step is to refine the disparity identified in the previous step. it consists in interpolating the
+The purpose of this step is to refine the disparity identified in the previous step. It consists in interpolating the
 coefficients of similarity.
 
 .. note::  The cost volume disparity dimension is sampled at the input images rate by default.
@@ -52,6 +52,8 @@ The available interpolation methods are :
 
 .. [Haller2010] HALLER, István, PANTILIE, C., ONIGA, F., et al. Real-time semi-global dense stereo solution with improved
        sub-pixel accuracy. In : 2010 IEEE Intelligent Vehicles Symposium. IEEE, 2010. p. 369-376.
+
+.. note:: If one of the coefficients is invalid, :math:`d`, :math:`d - 1` or :math:`d + 1`, interpolation is not performed.
 
 
 Configuration and parameters
