@@ -4,6 +4,7 @@
 
 ### Added
 
+- Memory consumption estimation. [#222]
 - Add extra requirements making mccnn plugin available.
 
 ## 1.1.0 (June 2021)

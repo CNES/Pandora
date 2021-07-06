@@ -242,6 +242,58 @@ def get_config_input(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     return cfg
 
 
+def memory_consumption_estimation(
+    user_pipeline_cfg: Dict[str, dict],
+    user_input: Union[Dict[str, dict], Tuple[str, int, int]],
+    pandora_machine: PandoraMachine,
+) -> Union[Tuple[float, float], None]:
+    """
+    Return the approximate memory consumption for a given pipeline in GiB.
+
+    :param user_pipeline_cfg: user pipeline configuration
+    :type user_pipeline_cfg: dict
+    :param user_input: user input configuration, may be given as a dict or directly as img_path, disp_min, disp_max.
+    :type user_input: dict or Tuple[str, int, int]
+    :param pandora_machine: instance of PandoraMachine
+    :type pandora_machine: PandoraMachine object
+    :return: minimum and maximum memory consumption
+    :rtype: Tuple[float, float]
+    """
+    # First, check if the configuration is valid
+    checked_cfg = check_pipeline_section(user_pipeline_cfg, pandora_machine)
+    # If the input configuration is given as a dict
+    if isinstance(user_input, dict):
+        dmin = user_input["input"]["disp_min"]
+        dmax = user_input["input"]["disp_max"]
+        img_path = user_input["input"]["img_left"]
+    else:
+        img_path, dmin, dmax = user_input
+    # Read input image
+    img = rasterio_open(img_path)
+    # Obtain cost volume size
+    cv_size = img.width * img.height * np.abs(dmax - dmin)
+    # Obtain pipeline cfg
+    pipeline_cfg = checked_cfg["pipeline"]
+
+    for function_info in MEMORY_CONSUMPTION_LIST:
+        # [ step, step"_method", subclass, m_line, n_line] being m_line and n_line the values of the line defining
+        # function's consumption as y = mx + n, where x is the size of the cost volume and y the consumption in MiB
+        if function_info[0] in pipeline_cfg:  # if step in the pipeline
+            if function_info[2] in pipeline_cfg[function_info[0]][function_info[1]]:  # if subclass in the pipeline
+                # Use m and n to compute memory consumption
+                m_line = function_info[3]
+                n_line = function_info[4]
+                # Obtain memory consumption with a variable of +-10% and convert from MiB to GiB
+                minmem = ((cv_size * m_line + n_line) * (1 - 0.1)) / 1024
+                maxmem = ((cv_size * m_line + n_line) * (1 + 0.1)) / 1024
+
+                logging.debug(
+                    "Estimated maximum memory consumption between {:.2f} GiB and {:.2f} GiB".format(minmem, maxmem)
+                )
+                return minmem, maxmem
+    return None
+
+
 def check_pipeline_section(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> Dict[str, dict]:
     """
     Check if the pipeline is correct by
@@ -447,7 +499,6 @@ input_configuration_schema_left_disparity_grids_right_grids = {
     "disp_max_right": And(str, rasterio_can_open),
 }
 
-
 default_short_configuration_input = {
     "input": {
         "nodata_left": -9999,
@@ -462,6 +513,26 @@ default_short_configuration_input = {
         "disp_max_right": None,
     }
 }
+
+# Memory consumption of the most consuming or used functions, defined as
+# [ step, step"_method", subclass, m, n] being m and n the values of the line defining function's consumption
+# as y = mx + n, where x is the size of the cost volume and y the consumption in MiB
+MEMORY_CONSUMPTION_LIST = [
+    ["matching_cost", "matching_cost_method", "mc_cnn", 1.57e-05, 265],
+    ["optimization", "optimization_method", "sgm", 1.26e-05, 237],
+    ["aggregation", "aggregation_method", "cbca", 1.65e-05, 221],
+    ["matching_cost", "matching_cost_method", "sad", 1.14e-05, 236],
+    ["matching_cost", "matching_cost_method", "ssd", 1.14e-05, 236],
+    ["disparity", "disparity_method", "wta", 8.68e-06, 243],
+    ["cost_volume_confidence", "confidence_method", "ambiguity", 7.68e-06, 273],
+    ["cost_volume_confidence", "confidence_method", "std_intensity", 7.68e-06, 273],
+    ["validation", "interpolated_disparity", "sgm", 7.88e-06, 263],
+    ["validation", "interpolated_disparity", "mc_cnn", 7.88e-06, 263],
+    ["matching_cost", "matching_cost_method", "census", 7.77e-06, 223],
+    ["filter", "filter_method", "bilateral", 7.77e-06, 259],
+    ["matching_cost", "matching_cost_method", "zncc", 7.69e-06, 254],
+]
+
 
 default_short_configuration_pipeline = {"pipeline": {"right_disp_map": {"method": "none"}}}
 
