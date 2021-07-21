@@ -30,6 +30,7 @@ For stereo reconstruction we invite you to install pandora **and** the required 
 .. code-block:: bash
 
     pip install pandora[sgm]
+    pip install pandora[mccnn]
 
 
 First step
@@ -73,7 +74,7 @@ Related
 #######
 
 * `Plugin_LibSGM <https://github.com/CNES/pandora_plugin_libsgm>`_ - Stereo Matching Algorithm plugin for Pandora
-* `Plugin_MC-CNN <https://github.com/CNES/pandora_plugin_mc-cnn>`_ - MC-CNN Neural Network plugin for Pandora
+* `Plugin_MC-CNN <https://github.com/CNES/Pandora_plugin_mccnn>`_ - MC-CNN Neural Network plugin for Pandora
 * `CARS <https://github.com/CNES/CARS>`_ - CNES 3D reconstruction software
 
 References

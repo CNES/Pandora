@@ -49,7 +49,7 @@ pip install pandora
 For stereo reconstruction we invite you to install pandora **and** the required plugins using instead the following shortcut:
 
 ```bash
-pip install pandora[sgm]
+pip install pandora[sgm, mccnn]
 ```
 
 ## First step
