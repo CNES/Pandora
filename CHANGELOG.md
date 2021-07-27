@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Corrections to bug after new xarray version. [#224]
+
 ### Added
 
 - Add extra requirements making mccnn plugin available.
