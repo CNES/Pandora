@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Correct refinement bug when using subpixel. [#223]
 - Corrections to bug after new xarray version. [#224]
 
 ### Added

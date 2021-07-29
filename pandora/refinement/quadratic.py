@@ -83,14 +83,14 @@ class Quadratic(refinement.AbstractRefinement):
         :type disp: float
         :param measure: the type of measure used to create the cost volume
         :param measure: string = min | max
-        :return: the refined disparity (disp + sub_disp), the refined cost and the state of the pixel ( Information: \
+        :return: the disparity shift, the refined cost and the state of the pixel ( Information: \
         calculations stopped at the pixel step, sub-pixel interpolation did not succeed )
         :rtype: float, float, int
         """
 
         if (np.isnan(cost[0])) or (np.isnan(cost[2])):
             # Bit 3 = 1: Information: calculations stopped at the pixel step, sub-pixel interpolation did not succeed
-            return disp, cost[1], cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
+            return 0, cost[1], cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
 
         inverse = 1
         if measure == "max":
@@ -100,7 +100,7 @@ class Quadratic(refinement.AbstractRefinement):
         # Check if cost[disp] is the minimum cost (or maximum using similarity measure) before fitting
         # If not, interpolation is not applied
         if (inverse * cost[1] > inverse * cost[0]) or (inverse * cost[1] > inverse * cost[2]):
-            return disp, cost[1], cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
+            return 0, cost[1], cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
 
         # Solve the system: col = alpha * row ** 2 + beta * row + gamma
         alpha = (cost[0] - 2 * cost[1] + cost[2]) / 2
@@ -114,4 +114,4 @@ class Quadratic(refinement.AbstractRefinement):
         # sub_cost is col
         sub_cost = (alpha * sub_disp ** 2) + (beta * sub_disp) + gamma
 
-        return disp + sub_disp, sub_cost, 0
+        return sub_disp, sub_cost, 0
