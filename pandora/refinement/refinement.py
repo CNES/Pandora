@@ -269,7 +269,7 @@ class AbstractRefinement:
                                 measure,
                             )
 
-                            disp[row, col] = sub_disp
+                            disp[row, col] = disp[row, col] + (sub_disp / subpixel)
                             itp_coeff[row, col] = sub_cost
                             mask[row, col] += valid
                         else:
@@ -291,8 +291,8 @@ class AbstractRefinement:
         :type disp: float
         :param measure: the type of measure used to create the cost volume
         :type measure: string = min | max
-        :return: the refined disparity (disp + sub_disp), the refined cost and the state of the pixel( Information: \
-        calculations stopped at the pixel step, sub-pixel interpolation did not succeed )
+        :return: the refined disparity (disp + (sub_disp/subpix)), the refined cost and the state of the pixel
+        ( Information: calculations stopped at the pixel step, sub-pixel interpolation did not succeed )
         :rtype: float, float, int
         """
 
@@ -365,7 +365,7 @@ class AbstractRefinement:
                                 measure,
                             )
 
-                            disp[row, col] = sub_disp
+                            disp[row, col] = disp[row, col] + (sub_disp / subpixel)
                             itp_coeff[row, col] = cost
                             mask[row, col] += valid
                         else:

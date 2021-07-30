@@ -83,13 +83,13 @@ class Vfit(refinement.AbstractRefinement):
         :type disp: float
         :param measure: the type of measure used to create the cost volume
         :param measure: string = min | max
-        :return: the refined disparity (disp + sub_disp), the refined cost and the state of the pixel( Information: \
+        :return: the disparity shift, the refined cost and the state of the pixel( Information: \
         calculations stopped at the pixel step, sub-pixel interpolation did not succeed )
         :rtype: float, float, int
         """
         if (np.isnan(cost[0])) or (np.isnan(cost[2])):
             # Information: calculations stopped at the pixel step, sub-pixel interpolation did not succeed
-            return disp, cost[1], cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
+            return 0, cost[1], cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
 
         inverse = 1
         if measure == "max":
@@ -99,7 +99,7 @@ class Vfit(refinement.AbstractRefinement):
         # Check if cost[disp] is the minimum cost (or maximum using similarity measure) before matching a symmetric V
         # shape, if not, interpolation is not applied
         if (inverse * cost[1] > inverse * cost[0]) or (inverse * cost[1] > inverse * cost[2]):
-            return disp, cost[1], cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
+            return 0, cost[1], cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
 
         # The problem is to approximate sub_cost function with an affine function: y = a * x + origin
         # Calculate the slope
@@ -110,7 +110,7 @@ class Vfit(refinement.AbstractRefinement):
             a = cost[0] - cost[1]
 
         if abs(a) < 1.0e-15:
-            return disp, cost[1], 0
+            return 0, cost[1], 0
 
         # Problem is resolved with tangents equality, due to the symmetric V shape of 3 points (cv0, cv2 and (x,y))
         # sub_disp is dx
@@ -119,4 +119,4 @@ class Vfit(refinement.AbstractRefinement):
         # sub_cost is y
         sub_cost = a * (sub_disp - 1) + cost[2]
 
-        return sub_disp + disp, sub_cost, 0
+        return sub_disp, sub_cost, 0
