@@ -117,7 +117,7 @@ class AbstractRefinement:
         disp.attrs["refinement"] = self._refinement_method_name
         disp["interpolated_coeff"] = xr.DataArray(
             itp_coeff,
-            coords=[("row", disp.coords["row"]), ("col", disp.coords["col"])],
+            coords=[("row", disp.coords["row"].data), ("col", disp.coords["col"].data)],
             dims=["row", "col"],
         )
 
@@ -174,8 +174,8 @@ class AbstractRefinement:
         disp_right["interpolated_coeff"] = xr.DataArray(
             itp_coeff,
             coords=[
-                ("row", disp_right.coords["row"]),
-                ("col", disp_right.coords["col"]),
+                ("row", disp_right.coords["row"].data),
+                ("col", disp_right.coords["col"].data),
             ],
             dims=["row", "col"],
         )

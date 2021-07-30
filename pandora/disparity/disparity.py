@@ -142,12 +142,12 @@ class AbstractDisparity:
         :return: the coefficient map
         :rtype: 2D DataArray (row, col)
         """
-        row = cv.coords["row"]
-        col = cv.coords["col"]
+        row = cv.coords["row"].data
+        col = cv.coords["col"].data
 
         # Create the coefficient map
         coeff_map = xr.DataArray(
-            cv["cost_volume"].sel(disp=cv["disp_indices"]).astype(np.float32),
+            cv["cost_volume"].sel(disp=cv["disp_indices"]).data.astype(np.float32),
             coords=[("row", row), ("col", col)],
         )
         coeff_map.name = "Coefficient Map"
