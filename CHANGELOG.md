@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.1.1 (July 2021)
+
 ### Fixed
 
 - Correct refinement bug when using subpixel. [#223]
