@@ -213,6 +213,98 @@ class TestRefinement(unittest.TestCase):
         # Check if the cost volume is not change
         np.testing.assert_array_equal(subpix_cv["cost_volume"].data, orig_cv["cost_volume"].data)
 
+    @staticmethod
+    def test_quadratic_with_nan_and_subpix():
+        """
+        Test the quadratic_curve method with invalid values (np.nan) and subpix 2
+
+        """
+        subpix_cv = xr.Dataset(
+            {
+                "cost_volume": (
+                    ["row", "col", "disp"],
+                    np.array(
+                        [
+                            [
+                                [39, 32.5, 28, 34.5, 41],
+                                [49, 41.5, np.nan, 34, 35.5],
+                                [42.5, 40, np.nan, 40.5, 41],
+                                [22, 30, 45, 50, 31],
+                            ]
+                        ]
+                    ),
+                )
+            },
+            coords={"row": [1], "col": [0, 1, 2, 3], "disp": [-1, -0.5, 0, 0.5, 1]},
+        )
+        subpix_cv.attrs["subpixel"] = 2
+        subpix_cv.attrs["measure"] = "sad"
+        subpix_cv.attrs["type_measure"] = "min"
+
+        subpix_disp = xr.Dataset(
+            {
+                "disparity_map": (["row", "col"], np.array([[0, 0.5, -0.5, -1]], np.float32)),
+                "validity_mask": (["row", "col"], np.array([[0, 0, 0, 0]], np.uint16)),
+            },
+            coords={"row": [1], "col": [0, 1, 2, 3]},
+        )
+
+        # Subpixel disparity map ground truth
+        gt_sub_disp = np.array(
+            [
+                [
+                    0 - (((34.5 - 32.5) / (2 * (32.5 + 34.5 - 2 * 28))) / subpix_cv.attrs["subpixel"]),
+                    0.5,
+                    -0.5,
+                    -1,
+                ]
+            ],
+            np.float32,
+        )
+
+        # Subpixel cost map ground truth
+        x_0 = -((34.5 - 32.5) / (2 * (32.5 + 34.5 - 2 * 28)))
+
+        gt_sub_cost = np.array(
+            [
+                [
+                    ((32.5 + 34.5 - 2 * 28) / 2) * x_0 * x_0 + ((34.5 - 32.5) / 2) * x_0 + 28,
+                    34,
+                    40,
+                    22,
+                ]
+            ]
+        )
+
+        # Validity mask ground truth
+        gt_mask = np.array(
+            [
+                [
+                    0,
+                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                ]
+            ],
+            dtype=np.uint16,
+        )
+
+        # -------- Compute the refinement with quadratic by calling subpixel_refinement --------
+        quadratic_refinement = refinement.AbstractRefinement(**{"refinement_method": "quadratic"})
+        orig_cv = subpix_cv.copy()
+        quadratic_refinement.subpixel_refinement(subpix_cv, subpix_disp)
+        # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(subpix_disp["disparity_map"].data, gt_sub_disp)
+
+        # Check if the calculated coefficients is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(subpix_disp["interpolated_coeff"].data, gt_sub_cost)
+
+        # Check if the calculated validity mask  is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(subpix_disp["validity_mask"].data, gt_mask)
+
+        # Check if the cost volume is not change
+        np.testing.assert_array_equal(subpix_cv["cost_volume"].data, orig_cv["cost_volume"].data)
+
     def test_vfit(self):
         """
         Test the vfit method
@@ -459,6 +551,95 @@ class TestRefinement(unittest.TestCase):
 
         # Check if the cost volume is not change
         np.testing.assert_array_equal(cv["cost_volume"].data, orig_cv["cost_volume"].data)
+
+    @staticmethod
+    def test_vfit_with_nan_and_subpix():
+        """
+        Test the vfit method with invalid values (np.nan) and subpix 2
+
+        """
+        subpix_cv = xr.Dataset(
+            {
+                "cost_volume": (
+                    ["row", "col", "disp"],
+                    np.array(
+                        [
+                            [
+                                [39, 32.5, 28, 34.5, 41],
+                                [49, 41.5, np.nan, 34, 35.5],
+                                [42.5, 40, np.nan, 40.5, 41],
+                                [22, 30, 45, 50, 31],
+                            ]
+                        ]
+                    ),
+                )
+            },
+            coords={"row": [1], "col": [0, 1, 2, 3], "disp": [-1, -0.5, 0, 0.5, 1]},
+        )
+        subpix_cv.attrs["subpixel"] = 2
+        subpix_cv.attrs["measure"] = "sad"
+        subpix_cv.attrs["type_measure"] = "min"
+
+        subpix_disp = xr.Dataset(
+            {
+                "disparity_map": (["row", "col"], np.array([[0, 0.5, -0.5, -1]], np.float32)),
+                "validity_mask": (["row", "col"], np.array([[0, 0, 0, 0]], np.uint16)),
+            },
+            coords={"row": [1], "col": [0, 1, 2, 3]},
+        )
+
+        # Subpixel disparity map ground truth
+        gt_sub_disp = np.array(
+            [
+                [
+                    0 + (((32.5 - 34.5) / (2 * (34.5 - 28))) / subpix_cv.attrs["subpixel"]),
+                    0.5,
+                    -0.5,
+                    -1,
+                ]
+            ],
+            np.float32,
+        )
+        # Subpixel cost map ground truth
+        gt_sub_cost = np.array(
+            [
+                [
+                    34.5 + (((32.5 - 34.5) / (2 * (34.5 - 28))) - 1) * (34.5 - 28),
+                    34,
+                    40,
+                    22,
+                ]
+            ]
+        )
+
+        # Validity mask ground truth
+        gt_mask = np.array(
+            [
+                [
+                    0,
+                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                ]
+            ],
+            dtype=np.uint16,
+        )
+
+        # -------- Compute the refinement with vfit by calling subpixel_refinement --------
+        vfit_refinement = refinement.AbstractRefinement(**{"refinement_method": "vfit"})
+        orig_cv = subpix_cv.copy()
+        vfit_refinement.subpixel_refinement(subpix_cv, subpix_disp)
+        # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(subpix_disp["disparity_map"].data, gt_sub_disp)
+
+        # Check if the calculated coefficients is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(subpix_disp["interpolated_coeff"].data, gt_sub_cost)
+
+        # Check if the calculated validity mask  is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(subpix_disp["validity_mask"].data, gt_mask)
+
+        # Check if the cost volume is not change
+        np.testing.assert_array_equal(subpix_cv["cost_volume"].data, orig_cv["cost_volume"].data)
 
     @staticmethod
     def test_refinement_and_filter():
