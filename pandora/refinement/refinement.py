@@ -292,7 +292,7 @@ class AbstractRefinement:
         :param measure: the type of measure used to create the cost volume
         :type measure: string = min | max
         :return: the refined disparity (disp + (sub_disp/subpix)), the refined cost and the state of the pixel
-        ( Information: calculations stopped at the pixel step, sub-pixel interpolation did not succeed )
+         ( Information: calculations stopped at the pixel step, sub-pixel interpolation did not succeed )
         :rtype: float, float, int
         """
 

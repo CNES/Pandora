@@ -41,9 +41,10 @@ Pandora requires a `config.json` to declare the pipeline and the stereo pair of 
 .. code-block:: bash
 
     pip install pandora #install pandora latest release
-    wget https://raw.githubusercontent.com/CNES/Pandora/master/data_sample.zip #download data
-    unzip data_sample.zip #uncompress data
-    pandora data_sample/config.json #run pandora
+    wget https://raw.githubusercontent.com/CNES/Pandora/master/data_samples/images/cones.zip  # input stereo pair
+    wget https://raw.githubusercontent.com/CNES/Pandora/master/data_samples/json_conf_files/a_local_block_matching.json # configuration file
+    unzip cones.zip #uncompress data
+    pandora a_local_block_matching.json output_dir #run pandora
 
 
 Customize
