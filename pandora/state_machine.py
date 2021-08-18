@@ -334,7 +334,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
     def aggregation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
-         Cost (support) aggregation
+        Cost (support) aggregation
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
@@ -350,7 +350,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
     def optimization_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
-         Cost optimization
+        Cost optimization
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
@@ -404,7 +404,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
     def refinement_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
-         Subpixel disparity refinement
+        Subpixel disparity refinement
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
@@ -421,7 +421,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
     def validation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
-         Validation of disparity map
+        Validation of disparity map
         :param cfg: pipeline configuration
         :type  cfg: dict
         :param input_step: step to trigger
