@@ -33,7 +33,7 @@ import xarray as xr
 import pandora
 import pandora.cost_volume_confidence as confidence
 from pandora.state_machine import PandoraMachine
-import pandora.matching_cost as matching_cost
+from pandora import matching_cost
 
 
 class TestConfidence(unittest.TestCase):
@@ -264,7 +264,10 @@ class TestConfidence(unittest.TestCase):
 
         """
         cv_ = np.array(
-            [[[np.nan, 1, 3], [4, 1, 1], [1.2, 1, 2]], [[5, np.nan, np.nan], [6.2, np.nan, np.nan], [0, np.nan, 0]]],
+            [
+                [[np.nan, 1, 3], [4, 1, 1], [np.nan, np.nan, np.nan]],
+                [[5, np.nan, np.nan], [6.2, np.nan, np.nan], [0, np.nan, 0]],
+            ],
             dtype=np.float32,
         )
 
@@ -275,10 +278,10 @@ class TestConfidence(unittest.TestCase):
         amb, sampled_amb = ambiguity_.compute_ambiguity_and_sampled_ambiguity(cv_, 0.0, 0.2, 0.1)
 
         # Ambiguity integral
-        gt_amb_int = np.array([[4.0, 4.0, 3.0], [6.0, 6.0, 6.0]])
+        gt_amb_int = np.array([[4.0, 4.0, 6.0], [6.0, 6.0, 6.0]])
 
         # Sampled ambiguity
-        gt_sam_amb = np.array([[[2, 2], [2, 2], [1, 2]], [[3, 3], [3, 3], [3, 3]]], dtype=np.float32)
+        gt_sam_amb = np.array([[[2, 2], [2, 2], [3, 3]], [[3, 3], [3, 3], [3, 3]]], dtype=np.float32)
 
         # Check if the calculated ambiguity is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_allclose(amb, gt_amb_int, rtol=1e-06)
