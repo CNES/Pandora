@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Correction on sampled_ambiguity when all costs are NaN. [#230]
+
 ## 1.1.1 (July 2021)
 
 ### Fixed

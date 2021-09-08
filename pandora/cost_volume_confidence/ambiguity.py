@@ -244,6 +244,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
                 # If all costs are at nan, set the maximum value of the ambiguity for this point
                 if np.isnan(normalized_min_cost):
                     ambiguity[row, col] = etas.shape[0] * nb_disps
+                    sampled_ambiguity[row, col, :] = nb_disps
                 else:
                     normalized_min_cost = np.repeat(normalized_min_cost, nb_disps * etas.shape[0])
 
@@ -260,6 +261,6 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
                     # fill sampled ambiguity
                     costs_comparison = normalized_cv <= (normalized_min_cost + two_dim_etas)
                     costs_comparison = costs_comparison.reshape((nb_disps, etas.shape[0]))
-                    sampled_ambiguity[row, col, :] += np.sum(costs_comparison, axis=0)
+                    sampled_ambiguity[row, col, :] = np.sum(costs_comparison, axis=0)
 
         return ambiguity, sampled_ambiguity
