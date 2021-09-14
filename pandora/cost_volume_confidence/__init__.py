@@ -19,9 +19,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Init file for cost volume confidence module.
+"""
 from . import ambiguity
 from .cost_volume_confidence import AbstractCostVolumeConfidence
 from . import std_intensity
-
 
 # pylint: disable=missing-module-docstring

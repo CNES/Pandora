@@ -122,8 +122,6 @@ def check_images(img_left: str, img_right: str, msk_left: str, msk_right: str) -
 def check_disparities(
     disp_min: Union[int, str, None],
     disp_max: Union[int, str, None],
-    right_disp_min: Union[str, None],
-    right_disp_max: Union[str, None],
     img_left: str,
 ) -> None:
     """
@@ -133,10 +131,6 @@ def check_disparities(
     :type disp_min: int or str or None
     :param disp_max: maximal disparity
     :type disp_max: int or str or None
-    :param right_disp_min: right minimal disparity
-    :type right_disp_min: str or None
-    :param right_disp_max: right maximal disparity
-    :type right_disp_max: str or None
     :param img_left: path to the left image
     :type img_left: str
     :return: None
@@ -156,35 +150,6 @@ def check_disparities(
         disp_min_ = rasterio_open(disp_min)
         dmin = disp_min_.read(1)
         disp_max_ = rasterio_open(disp_max)
-        dmax = disp_max_.read(1)
-
-        # check that disparity grids is a 1-channel grid
-        if (disp_min_.count != 1) or (disp_max_.count != 1):
-            logging.error("Disparity grids must be a 1-channel grid")
-            sys.exit(1)
-
-        # check that disp_min has the same size as the image
-        if (
-            (disp_min_.width != img_left_.width)
-            or (disp_min_.height != img_left_.height)
-            or (disp_max_.width != img_left_.width)
-            or (disp_max_.height != img_left_.height)
-        ):
-            logging.error("Disparity grids and image must have the same size")
-            sys.exit(1)
-
-        if (dmax < dmin).any():
-            logging.error("Disp_max must be bigger than Disp_min")
-            sys.exit(1)
-
-    # --- Check right disparities
-    if (isinstance(right_disp_min, str)) and (isinstance(right_disp_max, str)):
-        # Load an image to compare the grid size
-        img_left_ = rasterio_open(img_left)
-
-        disp_min_ = rasterio_open(right_disp_min)
-        dmin = disp_min_.read(1)
-        disp_max_ = rasterio_open(right_disp_max)
         dmax = disp_max_.read(1)
 
         # check that disparity grids is a 1-channel grid
@@ -352,10 +317,14 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
 
     # custom checking
 
-    # check left and right disparities
+    # check left disparities
     check_disparities(
         cfg["input"]["disp_min"],
         cfg["input"]["disp_max"],
+        cfg["input"]["img_left"],
+    )
+    # check right disparities
+    check_disparities(
         cfg["input"]["disp_min_right"],
         cfg["input"]["disp_max_right"],
         cfg["input"]["img_left"],
@@ -548,7 +517,7 @@ def read_config_file(config_file: str) -> Dict[str, dict]:
     :return user_cfg: configuration dictionary
     :rtype: dict
     """
-    with open(config_file, "r") as file_:
+    with open(config_file, "r") as file_:  # pylint: disable=unspecified-encoding
         user_cfg = json.load(file_)
     return user_cfg
 

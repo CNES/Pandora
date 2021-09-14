@@ -198,7 +198,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
             )
             valid = np.where(divide_standard > 0)
             zncc_[valid] /= divide_standard[valid]
-            # Else, zncc = 0
+            # Otherwise, zncc = 0
             zncc_[np.where(divide_standard <= 0)] = 0
 
             # Places the result in the cost_volume

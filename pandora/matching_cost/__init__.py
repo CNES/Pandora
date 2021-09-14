@@ -19,6 +19,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Init file for matching cost module.
+"""
 from . import census
 from . import sad_ssd
 from . import zncc
