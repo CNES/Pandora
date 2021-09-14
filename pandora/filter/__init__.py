@@ -19,6 +19,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Init file for filter module.
+"""
 from . import bilateral
 from . import median
 from .filter import AbstractFilter

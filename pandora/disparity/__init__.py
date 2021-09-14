@@ -19,6 +19,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Init file for disparity module.
+"""
 from .disparity import AbstractDisparity
 
 # pylint: disable=missing-module-docstring

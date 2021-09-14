@@ -19,5 +19,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Init file for multiscale module.
+"""
 from . import fixed_zoom_pyramid
 from .multiscale import AbstractMultiscale

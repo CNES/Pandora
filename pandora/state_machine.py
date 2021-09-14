@@ -771,7 +771,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         validation_ = validation.AbstractValidation(**cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = validation_.cfg
         if "interpolated_disparity" in validation_.cfg:
-            interpolate_ = validation.AbstractInterpolation(**cfg[input_step])  # type: ignore # pylint: disable=unused-variable
+            interpolate_ = validation.AbstractInterpolation(  # type:ignore # pylint:disable=unused-variable
+                **cfg[input_step]
+            )
 
         if validation_.cfg["validation_method"] == "cross_checking" and self.right_disp_map != "accurate":
             raise MachineError(

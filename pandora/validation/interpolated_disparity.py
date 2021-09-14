@@ -65,7 +65,9 @@ class AbstractInterpolation:
                     )
                     raise KeyError
             else:
-                if isinstance(cfg["interpolated_disparity"], unicode):  # type: ignore # pylint: disable=undefined-variable
+                if isinstance(
+                    cfg["interpolated_disparity"], unicode  # type: ignore # pylint: disable=undefined-variable
+                ):
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractInterpolation, cls).__new__(

@@ -19,6 +19,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Init file for optimization module.
+"""
 from .optimization import AbstractOptimization
 
 # pylint: disable=missing-module-docstring
