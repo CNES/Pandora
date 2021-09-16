@@ -1,6 +1,10 @@
 name: Pandora CI
 
-on: [push]
+on:
+  push:
+  schedule:
+   - cron:  0 2 * * *
+
 
 jobs:
   build:
