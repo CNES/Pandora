@@ -20,7 +20,7 @@ to the input images. It can be useful for :ref:`disparity_refinement`
 .. note::  The cost volume disparity dimension is sampled at the input images rate by default.
            Thus disparities tested are integers. However, to prevent from aliasing effects when
            refining the disparity map, one can use the *subpix* parameter.
-           This will add subpixel disparities into the cost volume by oversampling the disparity dimension by a factor 2 or 4.
+           This will add subpixel disparities into the cost volume by oversampling the disparity dimension by an even factor.
 
 
 Pandora can take into account a mask and a nodata value for each image. The masks and nodata are used during

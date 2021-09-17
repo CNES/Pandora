@@ -71,7 +71,7 @@ class Census(matching_cost.AbstractMatchingCost):
         schema = {
             "matching_cost_method": And(str, lambda input: "census"),
             "window_size": And(int, lambda input: input in (3, 5)),
-            "subpix": And(int, lambda input: input in (1, 2, 4)),
+            "subpix": And(int, lambda input: input > 0 and ((input % 2) == 0) or input == 1),
         }
 
         checker = Checker(schema)

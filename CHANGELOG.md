@@ -4,6 +4,7 @@
 
 ###Added
 - Add a risk measure. [#228]
+- Subpixel processing with any even value. [#225]
 
 ### Fixed
 
