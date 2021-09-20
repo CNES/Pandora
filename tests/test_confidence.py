@@ -27,13 +27,13 @@ This module contains functions to test the confidence module.
 import unittest
 
 import numpy as np
-from rasterio import Affine
 import xarray as xr
+from rasterio import Affine
 
 import pandora
 import pandora.cost_volume_confidence as confidence
-from pandora.state_machine import PandoraMachine
 from pandora import matching_cost
+from pandora.state_machine import PandoraMachine
 
 
 class TestConfidence(unittest.TestCase):
@@ -193,7 +193,7 @@ class TestConfidence(unittest.TestCase):
         # Create a stereo object
         left_data = np.array(
             ([1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 2, 1], [1, 1, 1, 4, 3, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1]),
-            dtype=np.float64,
+            dtype=np.float32,
         )
         left = xr.Dataset(
             {"im": (["row", "col"], left_data)},
@@ -286,6 +286,178 @@ class TestConfidence(unittest.TestCase):
         # Check if the calculated ambiguity is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_allclose(amb, gt_amb_int, rtol=1e-06)
         np.testing.assert_allclose(sampled_amb, gt_sam_amb, rtol=1e-06)
+
+    @staticmethod
+    def test_compute_risk():
+        """
+        Test the compute_risk method
+
+        """
+        risk_ = confidence.AbstractCostVolumeConfidence(
+            **{"confidence_method": "risk", "eta_max": 0.5, "eta_step": 0.3}
+        )
+        cv_ = np.array(
+            [
+                [
+                    [39, 28, 28, 34.5],
+                    [49, 34, 41.5, 34],
+                    [np.nan, np.nan, np.nan, np.nan],
+                ]
+            ],
+            dtype=np.float32,
+        )
+
+        sampled_ambiguity = np.array([[[2.0, 2.0], [2.0, 2.0], [4.0, 4.0]]], dtype=np.float32)
+        max_cost = 49
+        min_cost = 28
+        normalized_min_cost = [  # pylint:disable=unused-variable
+            (28 - min_cost) / (max_cost - min_cost),
+            (34 - min_cost) / (max_cost - min_cost),
+            np.nan,
+        ]
+        normalized_cv = [  # pylint:disable=unused-variable
+            [
+                (39 - min_cost) / (max_cost - min_cost),
+                (28.01 - min_cost) / (max_cost - min_cost),
+                (28 - min_cost) / (max_cost - min_cost),
+                (34.5 - min_cost) / (max_cost - min_cost),
+            ],
+            [
+                (49 - min_cost) / (max_cost - min_cost),
+                (41.5 - min_cost) / (max_cost - min_cost),
+                (34.1 - min_cost) / (max_cost - min_cost),
+                (34 - min_cost) / (max_cost - min_cost),
+            ],
+            [np.nan, np.nan, np.nan, np.nan],
+        ]
+
+        # invalidate similarity values outside of [min;min+eta[
+        masked_normalized_cv = [  # pylint:disable=unused-variable
+            [np.nan, (28.01 - min_cost) / (max_cost - min_cost), (28 - min_cost) / (max_cost - min_cost), np.nan],
+            [np.nan, (28.01 - min_cost) / (max_cost - min_cost), (28 - min_cost) / (max_cost - min_cost), np.nan],
+            [np.nan, (34.1 - min_cost) / (max_cost - min_cost), np.nan, (34 - min_cost) / (max_cost - min_cost)],
+            [np.nan, (34.1 - min_cost) / (max_cost - min_cost), np.nan, (34 - min_cost) / (max_cost - min_cost)],
+            [np.nan, np.nan, np.nan, np.nan],
+        ]
+
+        disparities = [  # pylint:disable=unused-variable
+            [np.nan, 1, 2, np.nan],
+            [np.nan, 1, 2, np.nan],
+            [np.nan, 1, np.nan, 3],
+            [np.nan, 1, np.nan, 3],
+            [np.nan, np.nan, np.nan, np.nan],
+            [np.nan, np.nan, np.nan, np.nan],
+        ]
+        # Risk mas is defined as risk(p,k) = mean(max(di) - min(di)) for di in [cmin(p);cmin(p)+kŋ[
+        gt_risk_max = [[((2 - 1) + (2 - 1)) / 2, ((3 - 1) + (3 - 1)) / 2, np.nan]]
+        # Risk min is defined as mean( (1+risk(p,k)) - amb(p,k) )
+        gt_risk_min = [
+            [
+                (((1 + 1) - sampled_ambiguity[0][0][0]) + ((1 + 1) - sampled_ambiguity[0][0][1])) / 2,
+                (((1 + 2) - sampled_ambiguity[0][1][0]) + ((1 + 2) - sampled_ambiguity[0][1][1])) / 2,
+                np.nan,
+            ]
+        ]
+
+        # Compute risk
+        risk_max, risk_min = risk_.compute_risk(cv_, sampled_ambiguity, 0.0, 0.5, 0.3)
+
+        # Check if the calculated risks are equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_allclose(gt_risk_max, risk_max, rtol=1e-06)
+        np.testing.assert_allclose(gt_risk_min, risk_min, rtol=1e-06)
+
+    @staticmethod
+    def test_compute_risk_and_sampled_risk():
+        """
+        Test the compute_risk_and_sampled_risk method
+
+        """
+        risk_ = confidence.AbstractCostVolumeConfidence(
+            **{"confidence_method": "risk", "eta_max": 0.5, "eta_step": 0.3}
+        )
+        cv_ = np.array(
+            [
+                [
+                    [39, 28, 28, 34.5],
+                    [49, 34, 41.5, 34],
+                    [np.nan, np.nan, np.nan, np.nan],
+                ]
+            ],
+            dtype=np.float32,
+        )
+
+        sampled_ambiguity = np.array([[[2.0, 2.0], [2.0, 2.0], [4.0, 4.0]]], dtype=np.float32)
+        max_cost = 49
+        min_cost = 28
+        normalized_min_cost = [  # pylint:disable=unused-variable
+            (28 - min_cost) / (max_cost - min_cost),
+            (34 - min_cost) / (max_cost - min_cost),
+            np.nan,
+        ]
+        normalized_cv = [  # pylint:disable=unused-variable
+            [
+                (39 - min_cost) / (max_cost - min_cost),
+                (28.01 - min_cost) / (max_cost - min_cost),
+                (28 - min_cost) / (max_cost - min_cost),
+                (34.5 - min_cost) / (max_cost - min_cost),
+            ],
+            [
+                (49 - min_cost) / (max_cost - min_cost),
+                (41.5 - min_cost) / (max_cost - min_cost),
+                (34.1 - min_cost) / (max_cost - min_cost),
+                (34 - min_cost) / (max_cost - min_cost),
+            ],
+            [np.nan, np.nan, np.nan, np.nan],
+        ]
+
+        # invalidate similarity values outside of [min;min+eta[
+        masked_normalized_cv = [  # pylint:disable=unused-variable
+            [np.nan, (28.01 - min_cost) / (max_cost - min_cost), (28 - min_cost) / (max_cost - min_cost), np.nan],
+            [np.nan, (28.01 - min_cost) / (max_cost - min_cost), (28 - min_cost) / (max_cost - min_cost), np.nan],
+            [np.nan, (34.1 - min_cost) / (max_cost - min_cost), np.nan, (34 - min_cost) / (max_cost - min_cost)],
+            [np.nan, (34.1 - min_cost) / (max_cost - min_cost), np.nan, (34 - min_cost) / (max_cost - min_cost)],
+            [np.nan, np.nan, np.nan, np.nan],
+        ]
+
+        disparities = [  # pylint:disable=unused-variable
+            [np.nan, 1, 2, np.nan],
+            [np.nan, 1, 2, np.nan],
+            [np.nan, 1, np.nan, 3],
+            [np.nan, 1, np.nan, 3],
+            [np.nan, np.nan, np.nan, np.nan],
+            [np.nan, np.nan, np.nan, np.nan],
+        ]
+        # Risk max is defined as risk(p,k) = mean(max(di) - min(di)) for di in [cmin(p);cmin(p)+kŋ[
+        gt_risk_max = [[((2 - 1) + (2 - 1)) / 2, ((3 - 1) + (3 - 1)) / 2, np.nan]]
+        # Risk min is defined as mean( (1+risk(p,k)) - amb(p,k) )
+        gt_risk_min = [
+            [
+                (((1 + 1) - sampled_ambiguity[0][0][0]) + ((1 + 1) - sampled_ambiguity[0][0][1])) / 2,
+                (((1 + 2) - sampled_ambiguity[0][1][0]) + ((1 + 2) - sampled_ambiguity[0][1][1])) / 2,
+                np.nan,
+            ]
+        ]
+
+        gt_sampled_risk_max = [[[(2 - 1), (2 - 1)], [(3 - 1), (3 - 1)], [np.nan, np.nan]]]
+        gt_sampled_risk_min = [
+            [
+                [(1 + 1) - sampled_ambiguity[0][0][0], (1 + 1) - sampled_ambiguity[0][0][1]],
+                [(1 + 2) - sampled_ambiguity[0][1][0], (1 + 2) - sampled_ambiguity[0][1][1]],
+                [np.nan, np.nan],
+            ]
+        ]
+
+        # Compute risk
+        risk_max, risk_min, sampled_risk_max, sampled_risk_min = risk_.compute_risk_and_sampled_risk(
+            cv_, sampled_ambiguity, 0.0, 0.5, 0.3
+        )
+
+        # Check if the calculated risks are equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_allclose(gt_risk_max, risk_max, rtol=1e-06)
+        np.testing.assert_allclose(gt_risk_min, risk_min, rtol=1e-06)
+        # Check if the calculated sampled risks are equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_allclose(gt_sampled_risk_max, sampled_risk_max, rtol=1e-06)
+        np.testing.assert_allclose(gt_sampled_risk_min, sampled_risk_min, rtol=1e-06)
 
 
 if __name__ == "__main__":

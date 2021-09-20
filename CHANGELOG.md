@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+###Added
+- Add a risk measure. [#228]
+
 ### Fixed
 
 - Correction on sampled_ambiguity when all costs are NaN. [#230]

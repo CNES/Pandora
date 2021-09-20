@@ -25,5 +25,6 @@ Init file for cost volume confidence module.
 from . import ambiguity
 from .cost_volume_confidence import AbstractCostVolumeConfidence
 from . import std_intensity
+from . import risk
 
 # pylint: disable=missing-module-docstring
