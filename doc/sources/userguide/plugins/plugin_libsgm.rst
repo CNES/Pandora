@@ -51,11 +51,11 @@ The user must have computed ambiguity confidence previously in the pipeline. If 
 The user can activate the piecewise optimization by choosing the layer *piecewise_optimization_layer* to use as segments for piecewise optimization.
 For each segment, optimization will only be applied inside this segment.
 
-The user can use the `classif` or `segm` layer respectively corresponding to the `left_classif` and `left_segm` (right_classif` and `right_segm` for right image) specified in the input configuration.
+The user can use the `classif` or `segm` layer respectively corresponding to the `left_classif` and `left_segm` (`right_classif` and `right_segm` for right image) specified in the input configuration.
 
 The input segmentation or classification .tif file must be the same format as the input image, with the same dimensions. Moreover, this option requires :
     - All pixels inside a segment must have the same value (int or float).
-    - The value of a segment must be different to the values of its neighbours.
+    - The value of a class or a segment must be different to the values of surrounding classes or segments.
     - The data must be dense : for example if the user wants to perform a piecewise optimization with only one small segment, the data must be composed of two different values.
 
 
