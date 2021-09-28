@@ -72,7 +72,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
         schema = {
             "matching_cost_method": And(str, lambda input: "zncc"),
             "window_size": And(int, lambda input: input > 0 and (input % 2) != 0),
-            "subpix": And(int, lambda input: input in (1, 2, 4)),
+            "subpix": And(int, lambda input: input > 0 and ((input % 2) == 0) or input == 1),
         }
 
         checker = Checker(schema)

@@ -418,7 +418,7 @@ def shift_right_img(img_right: xr.Dataset, subpix: int) -> List[xr.Dataset]:
 
         - im : 2D (row, col) xarray.DataArray
     :type img_right: xarray.Dataset
-    :param subpix: subpixel precision = (1 or 2 or 4)
+    :param subpix: subpixel precision = (1 or pair number)
     :type subpix: int
     :return: an array that contains the shifted right images
     :rtype: array of xarray.Dataset
@@ -426,48 +426,18 @@ def shift_right_img(img_right: xr.Dataset, subpix: int) -> List[xr.Dataset]:
     img_right_shift = [img_right]
     ny_, nx_ = img_right["im"].shape
 
-    # zoom factor = (number of columns with zoom / number of original columns)
-    if subpix == 2:
-        # Shift the right image for subpixel precision 0.5
-        data = zoom(img_right["im"].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 2::4]
-        col = np.arange(img_right.coords["col"][0] + 0.5, img_right.coords["col"][-1], step=1)
-        img_right_shift.append(
-            xr.Dataset(
-                {"im": (["row", "col"], data)},
-                coords={"row": np.arange(ny_), "col": col},
+    if subpix > 1:
+        for ind in np.arange(1, subpix):
+            shift = 1 / subpix
+            # For each index, shift the right image for subpixel precision 1/subpix*index
+            data = zoom(img_right["im"].data, (1, (nx_ * subpix - (subpix - 1)) / float(nx_)), order=1)[:, ind::subpix]
+            col = np.arange(img_right.coords["col"][0] + shift * ind, img_right.coords["col"][-1], step=1)
+            img_right_shift.append(
+                xr.Dataset(
+                    {"im": (["row", "col"], data)},
+                    coords={"row": np.arange(ny_), "col": col},
+                )
             )
-        )
-
-    if subpix == 4:
-        # Shift the right image for subpixel precision 0.25
-        data = zoom(img_right["im"].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 1::4]
-        col = np.arange(img_right.coords["col"][0] + 0.25, img_right.coords["col"][-1], step=1)
-        img_right_shift.append(
-            xr.Dataset(
-                {"im": (["row", "col"], data)},
-                coords={"row": np.arange(ny_), "col": col},
-            )
-        )
-
-        # Shift the right image for subpixel precision 0.5
-        data = zoom(img_right["im"].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 2::4]
-        col = np.arange(img_right.coords["col"][0] + 0.5, img_right.coords["col"][-1], step=1)
-        img_right_shift.append(
-            xr.Dataset(
-                {"im": (["row", "col"], data)},
-                coords={"row": np.arange(ny_), "col": col},
-            )
-        )
-
-        # Shift the right image for subpixel precision 0.75
-        data = zoom(img_right["im"].data, (1, (nx_ * 4 - 3) / float(nx_)), order=1)[:, 3::4]
-        col = np.arange(img_right.coords["col"][0] + 0.75, img_right.coords["col"][-1], step=1)
-        img_right_shift.append(
-            xr.Dataset(
-                {"im": (["row", "col"], data)},
-                coords={"row": np.arange(ny_), "col": col},
-            )
-        )
     return img_right_shift
 
 
