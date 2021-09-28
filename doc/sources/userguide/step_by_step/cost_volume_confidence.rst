@@ -24,22 +24,45 @@ The available methods are :
 *Sarrazin, E., Cournet, M., Dumas, L., Defonte, V., Fardet, Q., Steux, Y., Jimenez Diaz, N., Dubois, E., Youssefi, D., Buffe, F., 2021. Ambiguity concept in stereo matching pipeline.
 ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences. (To be published)*
 
+
+- Risk. This metric consists in evaluating a risk interval associated with the correlation measure, and ultimately the selected disparity, for each point on the disparity map :
+
+    .. math::
+
+        Risk(x,y,\eta) &= max(d) - min(d) \text{ for d "within" } [c_{min}(x,y) ; c_{min}(x,y)+k\eta[
+
+    .. math::
+
+        Risk_{min}(x,y) &= \text{mean}_\eta( (1+Risk(x,y,\eta)) - Amb(x,y,\eta))
+
+    .. math::
+
+        Risk_{max}(x,y) &= \text{mean}_\eta( Risk(x,y,\eta))
+
+
+    , where :math:`c_{min}` is the minimum cost value of :math:`cv(x,y)` at pixel :math:`(x,y)`.
+    Disparities for every similarity value outside of :math:`[c_{min}(x,y) ; c_{min}(x,y)+k\eta[[min;min+eta[` are discarded for the risk computation.
+
+    From the previous equations, :math:`risk_{min}(x,y)` measure is defined as the mean of :math:`(1+Risk(x,y,\eta)) - Amb(x,y,\eta)` values over :math:`\eta`, whilst :math:`risk_{max}(x,y)` measure is defined as the mean of :math:`Risk(x,y,k)` over :math:`\eta`.
+
+
 - Std images intensity : this metric computes the standard deviation of the intensity.
+
+
 
 
 Configuration and parameters
 ----------------------------
 
-+--------------------------+-----------------------------------------------+--------+---------------+--------------------------------+------------------------------------------+
-| Name                     | Description                                   | Type   | Default value | Available value                | Required                                 |
-+==========================+===============================================+========+===============+================================+==========================================+
-| *confidence_method*      | Cost volume confidence method                 | string |               | "std_intensity" , "ambiguity"  | Yes                                      |
-+--------------------------+-----------------------------------------------+--------+---------------+--------------------------------+------------------------------------------+
-| *eta_max*                | Maximum :math:`\eta`                          | float  | 0.7           | >0                             | No. Only available if "ambiguity" method |
-+--------------------------+-----------------------------------------------+--------+---------------+--------------------------------+------------------------------------------+
-| *eta_step*               | :math:`\eta` step                             | float  | 0.01          | >0                             | No. Only available if "ambiguity" method |
-+--------------------------+-----------------------------------------------+--------+---------------+--------------------------------+------------------------------------------+
-
++---------------------------+-----------------------------------------------+--------+---------------+----------------------------------------+----------------------------------------------------+
+| Name                      | Description                                   | Type   | Default value | Available value                        | Required                                           |
++===========================+===============================================+========+===============+========================================+====================================================+
+| *confidence_method*       | Cost volume confidence method                 | string |               | "std_intensity" , "ambiguity", "risk"  | Yes                                                |
++---------------------------+-----------------------------------------------+--------+---------------+----------------------------------------+----------------------------------------------------+
+| *eta_max*                 | Maximum :math:`\eta`                          | float  | 0.7           | >0                                     | No. Only available if "ambiguity" or "risk" method |
++---------------------------+-----------------------------------------------+--------+---------------+----------------------------------------+----------------------------------------------------+
+| *eta_step*                | :math:`\eta` step                             | float  | 0.01          | >0                                     | No. Only available if "ambiguity" or "risk" method |
++---------------------------+-----------------------------------------------+--------+---------------+----------------------------------------+----------------------------------------------------+
 
 **Example**
 
