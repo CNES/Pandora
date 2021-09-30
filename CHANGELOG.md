@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+##Unreleased
+
+## 1.2.0 (September 2021)
 
 ###Added
 - Add a risk measure. [#228]
