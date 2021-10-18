@@ -91,11 +91,12 @@ def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.Datase
             r_marg += int(cfg["matching_cost"]["window_size"] / 2)  # type:ignore
             s_marg += int(cfg["matching_cost"]["window_size"] / 2)  # type:ignore
 
-        if cfg["refinement"]["refinement_method"] == "vfit":
-            r_marg[0] += 1
-            r_marg[2] += 1
-            s_marg[0] += 1
-            s_marg[2] += 1
+        if "refinement" in cfg:
+            if cfg["refinement"]["refinement_method"] == "vfit":
+                r_marg[0] += 1
+                r_marg[2] += 1
+                s_marg[0] += 1
+                s_marg[2] += 1
 
         if "filter" in cfg:
             if cfg["filter"]["filter_method"] == "median":
