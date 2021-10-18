@@ -97,9 +97,10 @@ def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.Datase
             s_marg[0] += 1
             s_marg[2] += 1
 
-        if cfg["filter"]["filter_method"] == "median":
-            r_marg += int(cfg["filter"]["filter_size"] / 2)  # type:ignore
-            s_marg += int(cfg["filter"]["filter_size"] / 2)  # type:ignore
+        if "filter" in cfg:
+            if cfg["filter"]["filter_method"] == "median":
+                r_marg += int(cfg["filter"]["filter_size"] / 2)  # type:ignore
+                s_marg += int(cfg["filter"]["filter_size"] / 2)  # type:ignore
 
     # Same margin for left and right: take the larger
     same_margin = list(map(lambda input: max(input[0], input[1]), zip(r_marg, s_marg)))
