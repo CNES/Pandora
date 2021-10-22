@@ -17,16 +17,11 @@ The following interactive diagram highlights all stereo steps avalaible in Pando
     :align: center
     :target: input.html
 
-.. image:: ../Images/arrow.png
+.. image:: ../Images/white_box.png
     :align: center
 
-.. image:: ../Images/white_box.png
-    :align: left
-    :target: step_by_step/aggregation.html
-
-.. image:: ../Images/white_box.png
-    :align: right
-    :target: step_by_step/optimization.html
+.. image:: ../Images/arrow.png
+    :align: center
 
 .. image:: ../Images/main_diagram_step_matching_cost.png
     :align: center
