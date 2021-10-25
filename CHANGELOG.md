@@ -2,9 +2,13 @@
 
 ##Unreleased
 
+###Added
+
+- Add band names on confidence measure output. [#234]
+
+
 ## 1.2.0 (September 2021)
 
-###Added
 - Add a risk measure. [#228]
 - Subpixel processing with any even value. [#225]
 

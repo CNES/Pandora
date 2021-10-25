@@ -50,12 +50,13 @@ Saved images
 - *left_validity_mask.tif*, *right_validity_mask.tif* : the :ref:`validity_mask` in left image geometry, and
   right. Note that bits 4, 5, 8 and 9 can only be calculated if a validation step is set.
 
-- *left_confidence_measure.tif*, *right_confidence_measure.tif* : multi-band image, each band represents a confidence measurement in the following order, depending on what is activated.
+- *left_confidence_measure.tif*, *right_confidence_measure.tif* : multi-band image, each band represents a confidence measurement, depending on what is activated.
 
-    - Standard deviation of pixel intensity inside matching cost window. see :ref:`cost_volume_confidence`.
-    - Ambiguity measurement, see :ref:`cost_volume_confidence`.
-    - Number of SGM paths that give the same final disparity if SGM and it option activated, see :ref:`plugin_libsgm`.
-    - Left-right distance following cross checking method, see :ref:`validation`.
+    - Standard deviation of pixel intensity inside matching cost window. see :ref:`cost_volume_confidence`. This band is named *stereo_pandora_intensityStd*.
+    - Ambiguity measurement, see :ref:`cost_volume_confidence`. This band is named *ambiguity_confidence*.
+    - Mininum and maximum risk measurement, see :ref:`cost_volume_confidence`. Those bands are named *risk_min_confidence* and *risk_max_confidence*.
+    - Number of SGM paths that give the same final disparity if SGM and its option activated, see :ref:`plugin_libsgm`. This band is named *optimization_pluginlibSGM_nbOfDisp*.
+    - Left-right distance following cross checking method, see :ref:`validation`. This band is named *validation_pandora_distanceOfDisp*.
 
 .. note::
     Right products are only available if a *right_disp_map* parameter is activated and not equal to none.

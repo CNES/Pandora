@@ -41,6 +41,7 @@ def write_data_array(
     data_array: xr.DataArray,
     filename: str,
     dtype: rasterio.dtypes = rasterio.dtypes.float32,
+    band_names: List[str] = None,
     crs: Union[rasterio.crs.CRS, None] = None,
     transform: Union[rasterio.Affine, None] = None,
 ) -> None:
@@ -53,6 +54,8 @@ def write_data_array(
     :type filename: string
     :param dtype: band types
     :type dtype: rasterio.dtypes
+    :param band_names: band names
+    :type dtype: List[str] or None
     :param crs: coordinate reference support
     :type dtype: rasterio.crs.CRS
     :param transform: geospatial transform matrix
@@ -88,6 +91,8 @@ def write_data_array(
         ) as source_ds:
             for dsp in range(1, depth + 1):
                 source_ds.write(data_array.data[:, :, dsp - 1], dsp)
+            if band_names is not None:
+                source_ds.descriptions = band_names
 
 
 def mkdir_p(path: str) -> None:
@@ -141,6 +146,7 @@ def save_results(left: xr.Dataset, right: xr.Dataset, output: str) -> None:
             os.path.join(output, get_out_file_path("left_confidence_measure.tif")),
             crs=left.attrs["crs"],
             transform=left.attrs["transform"],
+            band_names=left["confidence_measure"]["indicator"].data,
         )
     write_data_array(
         left["validity_mask"],
@@ -207,7 +213,9 @@ def save_config(output: str, user_cfg: Dict) -> None:
     mkdir_p(os.path.join(output, get_out_dir("config.json")))
 
     # Save user configuration in json file
-    with open(os.path.join(output, get_out_file_path("config.json")), "w") as file_:
+    with open(  # pylint:disable=unspecified-encoding
+        os.path.join(output, get_out_file_path("config.json")), "w"
+    ) as file_:
         json.dump(user_cfg, file_, indent=2)
 
 
