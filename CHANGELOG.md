@@ -1,12 +1,10 @@
 # Changelog
 
-## 1.2.0 (October 2021) 
+##Unreleased
 
 ### Fixed
+- Functions get_margins works now with missing parameters (refinement, filter) [#235]
 
-- Functions get_margins works with missing parameters (refinement, filter) [#235]
-
-##Unreleased
 
 ###Added
 
