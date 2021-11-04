@@ -25,7 +25,7 @@ and setup elements to configure and identify the software.
 """
 
 from codecs import open as copen
-from setuptools import setup, find_packages
+from setuptools import setup
 
 CMDCLASS = {}
 
@@ -36,37 +36,6 @@ try:
 except ImportError:
     print("WARNING: sphinx not available. Doc cannot be built")
 
-REQUIREMENTS = [
-    "numpy",
-    "xarray>=0.13.*",
-    "scipy",
-    "rasterio",
-    "json-checker",
-    "numba>=0.47.*",
-    "transitions",
-    "scikit-image",
-]
-
-SETUP_REQUIREMENTS = ["setuptools-scm"]
-
-REQUIREMENTS_EXTRA = {
-    "dev": [
-        "sphinx",
-        "sphinx_rtd_theme",
-        "sphinx_autoapi",
-        "pytest",
-        "pytest-cov",
-        "pylint",
-        "pre-commit",
-        "mypy",
-        "black",
-    ],
-    "sgm": ["pandora_plugin_libsgm==1.1.*"],
-    "mccnn": ["pandora_plugin_mccnn==1.0.*"],
-    "docs": ["sphinx", "sphinx_rtd_theme", "sphinx_autoapi"],
-    "notebook": ["ipyvolume", "bokeh", "matplotlib", "graphviz", "notebook"],
-}
-
 
 def readme():
     with copen("README.md", "r", "utf-8") as fstream:
@@ -74,22 +43,8 @@ def readme():
 
 
 setup(
-    name="pandora",
     use_scm_version=True,
-    description="Pandora is a stereo matching framework that helps emulate state of the art algorithms",
     long_description=readme(),
-    long_description_content_type="text/markdown",
-    url="https://github.com/CNES/Pandora",
-    author="CNES",
-    author_email="myriam.cournet@cnes.fr",
-    license="Apache License 2.0",
-    entry_points={"console_scripts": ["pandora = pandora.Pandora:main"]},
-    python_requires=">=3.6",
-    setup_requires=SETUP_REQUIREMENTS,
-    install_requires=REQUIREMENTS,
-    extras_require=REQUIREMENTS_EXTRA,
-    packages=find_packages(),
-    cmdclass=CMDCLASS,
     command_options={
         "build_sphinx": {
             "build_dir": ("setup.py", "doc/build/"),
