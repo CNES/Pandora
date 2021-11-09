@@ -2,6 +2,10 @@
 
 ##Unreleased
 
+### Fixed
+- Functions get_margins works now with missing parameters (refinement, filter) [#235]
+
+
 ###Added
 
 - Add band names on confidence measure output. [#234]
