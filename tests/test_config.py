@@ -29,7 +29,7 @@ import json_checker
 from transitions import MachineError
 
 import numpy as np
-import tests.common as common
+from tests import common
 import pandora.check_json as JSON_checker
 from pandora.state_machine import PandoraMachine
 
@@ -256,6 +256,112 @@ class TestConfig(unittest.TestCase):
         }
         # Json checker must raise an error
         self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
+
+    @staticmethod
+    def test_update_conf():
+        """
+        Test the method update_conf
+        """
+
+        # Test configuration with nodata_left and nodata_right as NaN
+        user_cfg = {
+            "input": {
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
+                "disp_min": -4,
+                "disp_max": 0,
+                "nodata_left": "NaN",
+                "nodata_right": "NaN",
+            }
+        }
+
+        cfg_return = JSON_checker.update_conf(JSON_checker.default_short_configuration_input, user_cfg)
+
+        if (not np.isnan(cfg_return["input"]["nodata_left"])) or (not np.isnan(cfg_return["input"]["nodata_right"])):
+            raise AssertionError
+
+        # Test configuration with nodata_left and nodata_right as inf
+        user_cfg = {
+            "input": {
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
+                "disp_min": -4,
+                "disp_max": 0,
+                "nodata_left": "inf",
+                "nodata_right": "inf",
+            }
+        }
+
+        cfg_return = JSON_checker.update_conf(JSON_checker.default_short_configuration_input, user_cfg)
+
+        if not cfg_return["input"]["nodata_left"] == np.inf or not cfg_return["input"]["nodata_right"] == np.inf:
+            raise AssertionError
+
+        # Test configuration with nodata_left and nodata_right as -inf
+        user_cfg = {
+            "input": {
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
+                "disp_min": -4,
+                "disp_max": 0,
+                "nodata_left": "-inf",
+                "nodata_right": "-inf",
+            }
+        }
+
+        cfg_return = JSON_checker.update_conf(JSON_checker.default_short_configuration_input, user_cfg)
+
+        if not cfg_return["input"]["nodata_left"] == -np.inf or not cfg_return["input"]["nodata_right"] == -np.inf:
+            raise AssertionError
+
+        # Test configuration with nodata_left and nodata_right as int
+        user_cfg = {
+            "input": {
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
+                "disp_min": -4,
+                "disp_max": 0,
+                "nodata_left": 3,
+                "nodata_right": -7,
+            }
+        }
+
+        cfg_return = JSON_checker.update_conf(JSON_checker.default_short_configuration_input, user_cfg)
+
+        if not cfg_return["input"]["nodata_left"] == 3 or not cfg_return["input"]["nodata_right"] == -7:
+            raise AssertionError
+
+        # Test configuration with nodata_left as NaN and nodata_right not defined
+        user_cfg = {
+            "input": {
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
+                "disp_min": -4,
+                "disp_max": 0,
+                "nodata_left": "NaN",
+            }
+        }
+
+        cfg_return = JSON_checker.update_conf(JSON_checker.default_short_configuration_input, user_cfg)
+
+        if not np.isnan(cfg_return["input"]["nodata_left"]) or not cfg_return["input"]["nodata_right"] == -9999:
+            raise AssertionError
+
+        # Test configuration with nodata_left not defined and nodata_right as NaN
+        user_cfg = {
+            "input": {
+                "img_left": "tests/pandora/left.png",
+                "img_right": "tests/pandora/right.png",
+                "disp_min": -4,
+                "disp_max": 0,
+                "nodata_right": "NaN",
+            }
+        }
+
+        cfg_return = JSON_checker.update_conf(JSON_checker.default_short_configuration_input, user_cfg)
+
+        if not (cfg_return["input"]["nodata_left"] == -9999) or not np.isnan(cfg_return["input"]["nodata_right"]):
+            raise AssertionError
 
     def test_check_conf(self):
         """
