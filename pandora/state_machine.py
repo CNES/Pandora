@@ -642,10 +642,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                 self.trigger(input_step.split(".")[0], cfg, input_step)
             else:
                 self.trigger(input_step, cfg, input_step)
-        except (MachineError, KeyError):
-            print(
-                "\n A problem occurs during Pandora running " + input_step + ". Be sure of your sequencement step  \n"
-            )
+        except (MachineError, KeyError, AttributeError):
+            logging.error("A problem occurs during Pandora running %s  step. Be sure of your sequencement", input_step)
             raise
 
     def run_exit(self) -> None:
@@ -839,11 +837,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                 else:
                     self.trigger(input_step, cfg, input_step)
 
-            except (MachineError, KeyError):
-                print(
-                    "\n Problem during Pandora checking configuration steps sequencing. "
-                    "Check your configuration file. \n"
-                )
+            except (MachineError, KeyError, AttributeError):
+                logging.error("A problem occurs during Pandora checking. Be sure of your sequencement", input_step)
                 raise
 
         # Remove transitions
