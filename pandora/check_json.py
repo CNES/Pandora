@@ -253,7 +253,8 @@ def memory_consumption_estimation(
                 maxmem = ((cv_size * m_line + n_line) * (1 + 0.1)) / 1024
 
                 logging.debug(
-                    "Estimated maximum memory consumption between {:.2f} GiB and {:.2f} GiB".format(minmem, maxmem)
+                    "Estimated maximum memory consumption between "  # pylint:disable=consider-using-f-string
+                    "{:.2f} GiB and {:.2f} GiB".format(minmem, maxmem)
                 )
                 return minmem, maxmem
     return None
@@ -540,5 +541,9 @@ def update_conf(def_cfg: Dict[str, dict], user_cfg: Dict[str, dict]) -> Dict[str
         else:
             if value == "NaN":
                 value = np.nan
+            elif value == "inf":
+                value = np.inf
+            elif value == "-inf":
+                value = -np.inf
             config[key] = value
     return config
