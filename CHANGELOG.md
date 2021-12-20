@@ -1,15 +1,21 @@
 # Changelog
 
-##Unreleased
+## Unreleased
+
+## 1.2.1 (December 2021)
 
 ### Fixed
 - Functions get_margins works now with missing parameters (refinement, filter) [#235]
+- Enable inf value as a nodata. [#238]
+- Modify exception handling with machine state. [#239]
 
-
-###Added
+### Added
 
 - Add band names on confidence measure output. [#234]
 
+### Changed
+
+- Update python packaging. [#197]
 
 ## 1.2.0 (September 2021)
 
