@@ -1,3 +1,4 @@
+# type:ignore
 #!/usr/bin/env python
 # coding: utf8
 #
@@ -26,6 +27,10 @@ This module contains common functions present in Pandora's tests.
 import os
 import logging
 import json
+from typing import Tuple
+import numpy as np
+import xarray as xr
+from rasterio import Affine
 
 
 def setup_logging(
@@ -46,6 +51,45 @@ def setup_logging(
         logging.config.dictConfig(config)
     else:
         logging.basicConfig(level=default_level)
+
+
+def matching_cost_tests_setup() -> Tuple[xr.Dataset, xr.Dataset]:
+    """
+    Setup the matching_cost_tests data
+
+    :return: left, right datasets
+    :rtype: Tuple[xr.Dataset]
+    """
+    # Create a stereo object
+    data = np.array(
+        ([1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 2, 1], [1, 1, 1, 4, 3, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1]),
+        dtype=np.float64,
+    )
+    left = xr.Dataset(
+        {"im": (["row", "col"], data)}, coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
+    )
+    left.attrs = {
+        "valid_pixels": 0,
+        "no_data_mask": 1,
+        "crs": None,
+        "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+    }
+
+    data = np.array(
+        ([1, 1, 1, 2, 2, 2], [1, 1, 1, 4, 2, 4], [1, 1, 1, 4, 4, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1]),
+        dtype=np.float64,
+    )
+    right = xr.Dataset(
+        {"im": (["row", "col"], data)}, coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
+    )
+    right.attrs = {
+        "valid_pixels": 0,
+        "no_data_mask": 1,
+        "crs": None,
+        "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+    }
+
+    return left, right
 
 
 basic_pipeline_cfg = {
@@ -96,4 +140,12 @@ input_cfg_left_right_grids = {
     "disp_max": "tests/pandora/disp_max_grid.tif",
     "disp_min_right": "tests/pandora/right_disp_min_grid.tif",
     "disp_max_right": "tests/pandora/right_disp_max_grid.tif",
+}
+
+# Image common attributes for matching_cost_tests
+img_attrs = {
+    "valid_pixels": 0,
+    "no_data_mask": 1,
+    "crs": None,
+    "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
 }
