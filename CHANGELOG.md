@@ -15,6 +15,7 @@
 
 ### Changed
 
+- Force python version >= 3.7. [#241]
 - Update python packaging. [#197]
 
 ## 1.2.0 (September 2021)
