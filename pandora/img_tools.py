@@ -247,6 +247,7 @@ def prepare_pyramid(
             order=1,
             mode="reflect",
             cval=0,
+            channel_axis=None,
         )
     )
     images_right = list(
@@ -258,6 +259,7 @@ def prepare_pyramid(
             order=1,
             mode="reflect",
             cval=0,
+            channel_axis=None,
         )
     )
     # Create mask pyramids
@@ -659,7 +661,7 @@ def compute_std_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
     mean_power_two = compute_mean_raster(raster_power_two, win_size)
 
     # Compute sqrt( E[row^2] - E[row]^2 )
-    var = mean_power_two - mean_ ** 2
+    var = mean_power_two - mean_**2
     # Avoid very small values
     var[np.where(var < (10 ** (-15) * abs(mean_power_two)))] = 0
     return np.sqrt(var)
