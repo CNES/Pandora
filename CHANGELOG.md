@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added 
+- Add indicator to distinguish different cost volume confidence maps. [#243]
+
 ## 1.2.1 (December 2021)
 
 ### Fixed
