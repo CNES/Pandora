@@ -47,6 +47,11 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
     _ETA_STEP = 0.01
     # Percentile value to normalize ambiguity
     _PERCENTILE = 1.0
+    # Method name
+    _method_max = "risk_max_confidence"
+    _method_min = "risk_min_confidence"
+    # Indicator
+    _indicator = ""
 
     def __init__(self, **cfg: str) -> None:
         """
@@ -60,6 +65,8 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         self._percentile = self._PERCENTILE
         self._eta_step = float(self.cfg["eta_step"])
         self._eta_max = float(self.cfg["eta_max"])
+        self._indicator_max = self._method_max + self.cfg["indicator"]
+        self._indicator_min = self._method_min + self.cfg["indicator"]
 
     def check_conf(self, **cfg: Union[str, float]) -> Dict[str, Union[str, float]]:
         """
@@ -74,11 +81,14 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
             cfg["eta_max"] = self._ETA_MAX
         if "eta_step" not in cfg:
             cfg["eta_step"] = self._ETA_STEP
+        if "indicator" not in cfg:
+            cfg["indicator"] = self._indicator
 
         schema = {
             "confidence_method": And(str, lambda input: "risk"),
             "eta_max": And(float, lambda input: 0 < input < 1),
             "eta_step": And(float, lambda input: 0 < input < 1),
+            "indicator": str,
         }
 
         checker = Checker(schema)
@@ -129,8 +139,8 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
                 cv["cost_volume"].data, sampled_ambiguity, self._eta_min, self._eta_max, self._eta_step
             )
 
-        disp, cv = self.allocate_confidence_map("risk_max_confidence", risk_max, disp, cv)
-        disp, cv = self.allocate_confidence_map("risk_min_confidence", risk_min, disp, cv)
+        disp, cv = self.allocate_confidence_map(self._indicator_max, risk_max, disp, cv)
+        disp, cv = self.allocate_confidence_map(self._indicator_min, risk_min, disp, cv)
 
         return disp, cv
 

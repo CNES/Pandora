@@ -47,6 +47,10 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
     _ETA_STEP = 0.01
     # Percentile value to normalize ambiguity
     _PERCENTILE = 1.0
+    # Method name
+    _method = "ambiguity_confidence"
+    # Indicator
+    _indicator = ""
 
     def __init__(self, **cfg: str) -> None:
         """
@@ -60,6 +64,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         self._percentile = self._PERCENTILE
         self._eta_max = float(self.cfg["eta_max"])
         self._eta_step = float(self.cfg["eta_step"])
+        self._indicator = self._method + self.cfg["indicator"]
 
     def check_conf(self, **cfg: Union[str, float]) -> Dict[str, Union[str, float]]:
         """
@@ -74,11 +79,14 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
             cfg["eta_max"] = self._ETA_MAX
         if "eta_step" not in cfg:
             cfg["eta_step"] = self._ETA_STEP
+        if "indicator" not in cfg:
+            cfg["indicator"] = self._indicator
 
         schema = {
             "confidence_method": And(str, lambda input: "ambiguity"),
             "eta_max": And(float, lambda input: 0 < input < 1),
             "eta_step": And(float, lambda input: 0 < input < 1),
+            "indicator": str,
         }
 
         checker = Checker(schema)
@@ -128,7 +136,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         # Conversion of ambiguity into a confidence measure
         ambiguity = 1 - ambiguity
 
-        disp, cv = self.allocate_confidence_map("ambiguity_confidence", ambiguity, disp, cv)
+        disp, cv = self.allocate_confidence_map(self._indicator, ambiguity, disp, cv)
 
         return disp, cv
 

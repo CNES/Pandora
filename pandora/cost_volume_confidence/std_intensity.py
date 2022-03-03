@@ -40,6 +40,11 @@ class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
      deviation of the intensity
     """
 
+    # Method name
+    _method = "stereo_pandora_intensityStd"
+    # Indicator
+    _indicator = ""
+
     def __init__(self, **cfg: str) -> None:
         """
         :param cfg: optional configuration, {'confidence_method': 'std_intensity'}
@@ -47,9 +52,10 @@ class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
         :return: None
         """
         self.cfg = self.check_conf(**cfg)
+        # Indicator
+        self._indicator = self._method + self.cfg["indicator"]
 
-    @staticmethod
-    def check_conf(**cfg: str) -> Dict[str, str]:
+    def check_conf(self, **cfg: str) -> Dict[str, str]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
@@ -58,7 +64,10 @@ class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
         :return cfg: std_intensity configuration updated
         :rtype: dict
         """
-        schema = {"confidence_method": And(str, lambda input: "std_intensity")}
+        if "indicator" not in cfg:
+            cfg["indicator"] = self._indicator
+
+        schema = {"confidence_method": And(str, lambda input: "std_intensity"), "indicator": str}
 
         checker = Checker(schema)
         checker.validate(cfg)
@@ -108,5 +117,5 @@ class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
         else:
             confidence_measure = compute_std_raster(img_left, window_size)
 
-        disp, cv = self.allocate_confidence_map("stereo_pandora_intensityStd", confidence_measure, disp, cv)
+        disp, cv = self.allocate_confidence_map(self._indicator, confidence_measure, disp, cv)
         return disp, cv

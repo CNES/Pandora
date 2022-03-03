@@ -139,7 +139,7 @@ class TestConfidence(unittest.TestCase):
         # Run the pandora pipeline
         left, _ = pandora.run(pandora_machine, left_im, right_im, -1, 1, cfg["pipeline"])
 
-        assert np.sum(left.coords["indicator"].data != ["stereo_pandora_intensityStd", "ambiguity_confidence"]) == 0
+        assert np.sum(left.coords["indicator"].data != ["stereo_pandora_intensityStd", "ambiguity_confidence.2"]) == 0
 
         # ----- Check ambiguity results ------
 

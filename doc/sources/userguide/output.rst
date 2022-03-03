@@ -59,6 +59,25 @@ Saved images
     - Left-right distance following cross checking method, see :ref:`validation`. This band is named *validation_pandora_distanceOfDisp*.
 
 .. note::
+    If more than one cost_volume_confidence is set on the pipeline (like for example `cost_volume_confidence` and `cost_volume_confidence.after`), then the corresponding band name will include the step indicator suffix (like `.after` in the example). For instance, with the following pipeline :
+
+    .. sourcecode:: text
+
+        "cost_volume_confidence":
+            {
+              "confidence_method": "ambiguity",
+              "eta_max": 0.7,
+              "eta_step": 0.01
+            }
+            ,
+        "cost_volume_confidence.after":
+            {
+              "confidence_method": "std_intensity"
+            }
+
+    The confidence bands will be named: *ambiguity_confidence* and *stereo_pandora_intensityStd.after*.
+
+.. note::
     Right products are only available if a *right_disp_map* parameter is activated and not equal to none.
     Must be the first key of *pipeline*.
 

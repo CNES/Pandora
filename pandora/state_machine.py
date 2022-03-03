@@ -501,6 +501,11 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
+        # In case multiple confidence maps are computed, add its
+        # name to the indicator to distinguish the different maps
+        cfg[input_step]["indicator"] = ""
+        if len(input_step.split(".")) == 2:
+            cfg[input_step]["indicator"] = "." + input_step.split(".")[1]
         confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg[input_step])  # type: ignore
 
         logging.info("Confidence prediction...")

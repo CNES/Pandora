@@ -476,6 +476,7 @@ class TestConfig(unittest.TestCase):
             },
             "pipeline": common.validation_pipeline_cfg,
         }
+        cfg_gt["pipeline"]["cost_volume_confidence"]["indicator"] = ""
 
         assert cfg_return == cfg_gt
 
