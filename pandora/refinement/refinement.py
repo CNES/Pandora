@@ -279,9 +279,10 @@ class AbstractRefinement:
 
         return itp_coeff, disp, mask
 
+    @staticmethod
     @abstractmethod
     @njit(cache=True)
-    def refinement_method(self, cost: np.ndarray, disp: float, measure: str) -> Tuple[float, float, int]:
+    def refinement_method(cost: np.ndarray, disp: float, measure: str) -> Tuple[float, float, int]:
         """
         Return the subpixel disparity and cost
 
