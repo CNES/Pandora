@@ -18,10 +18,11 @@ from bokeh.plotting import figure
 from bokeh.layouts import row, column
 from bokeh.models import ColorBar, BasicTicker, LinearColorMapper, Legend
 from bokeh.io import show, output_notebook
-import ipyvolume as ipv
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib import cm
 from matplotlib.image import imsave
+import plotly.graph_objects as go
+import plotly.express as px
 
 
 def pandora_cmap():
@@ -602,11 +603,11 @@ def plot_1_cost_volume(cv: xr.Dataset, left_disp_map: xr.Dataset, title: str) ->
     :return: none
     """
     print(title)
-    get_3D_cost_volume(cv, left_disp_map)
-    ipv.show()
+    fig = get_3D_cost_volume(cv, left_disp_map)
+    fig.show()
 
 
-def get_3D_cost_volume(cv: xr.Dataset, left_disp_map: xr.Dataset) -> None:
+def get_3D_cost_volume(cv: xr.Dataset, left_disp_map: xr.Dataset) -> go.Figure:
     """
     Plot 3d cost volume
 
@@ -624,18 +625,20 @@ def get_3D_cost_volume(cv: xr.Dataset, left_disp_map: xr.Dataset) -> None:
     Y = np.float32(Y)
     Z = left_disp_map["disparity_map"].data
 
-    color_disp = np.ravel(Z)
-    color_disp = color_disp - np.nanmin(color_disp)
-    color_disp = color_disp * 1.0 / np.nanmax(color_disp)
-    color_disp = np.repeat(color_disp[:, np.newaxis], 3, axis=1)
+    color_disp = [
+        [0, "rgb(255, 79, 100)"],
+        [0.25, "rgb(240, 50,73)"],
+        [0.5, "rgb(240, 240,240)"],
+        [0.75, "rgb(208,232,160)"],
+        [1.0, "rgb(57, 163, 80)"],
+    ]
+    df = {"cols": np.flipud(np.ravel(X)), "rows": np.ravel(Y), "disps": np.ravel(Z)}
 
-    fig = ipv.figure()
-    scatter = ipv.scatter(np.ravel(X), np.ravel(Y), np.ravel(Z), marker="point_2d", size=10, color=color_disp)
-    ipv.ylim(nb_rows, 0)
-    ipv.style.box_off()
-    ipv.style.use("minimal")
+    fig = px.scatter_3d(df, x="cols", y="rows", z="disps", color="disps", color_continuous_scale=color_disp)
 
-    return ipv.gcc()
+    fig.update_traces(marker=dict(size=0.5), selector=dict(mode='markers'))
+
+    return fig
 
 
 def add_mask(all_validity_mask: np.array, msk_type: int) -> np.array:
