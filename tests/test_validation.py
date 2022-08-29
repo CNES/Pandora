@@ -29,9 +29,9 @@ import unittest
 import numpy as np
 import xarray as xr
 
-import tests.common as common
+from tests import common
 import pandora.constants as cst
-import pandora.validation as validation
+from pandora import validation
 
 
 class TestValidation(unittest.TestCase):

@@ -28,7 +28,7 @@ import unittest
 import numpy as np
 
 from pandora import matching_cost
-import tests.common as common
+from tests import common
 
 
 class TestMatchingCost(unittest.TestCase):

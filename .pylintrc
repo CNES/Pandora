@@ -361,6 +361,11 @@ missing-member-max-choices=1
 # List of decorators that change the signature of a decorated function.
 signature-mutators=
 
+#  I1101: Module 'rasterio.crs' has no 'CRS' member, but source is unavailable. Consider adding this module
+# to extension-pkg-allow-list if you want to perform analysis based on run-time introspection of living objects. (
+# c-extension-no-member)
+extension-pkg-allow-list=rasterio.crs
+
 
 [BASIC]
 

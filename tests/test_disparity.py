@@ -30,11 +30,11 @@ import numpy as np
 import xarray as xr
 from rasterio import Affine
 
-import tests.common as common
+from tests import common
 import pandora
 import pandora.constants as cst
-import pandora.disparity as disparity
-import pandora.matching_cost as matching_cost
+from pandora import disparity
+from pandora import matching_cost
 from pandora.img_tools import read_img
 from pandora.state_machine import PandoraMachine
 

@@ -46,7 +46,7 @@ def setup_logging(
     :type default_level: logging level
     """
     if os.path.exists(path):
-        with open(path, "rt") as file_:
+        with open(path, "rt", encoding="utf-8") as file_:
             config = json.load(file_)
         logging.config.dictConfig(config)
     else:

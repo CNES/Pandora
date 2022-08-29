@@ -28,7 +28,7 @@ import unittest
 
 import numpy as np
 
-import tests.common as common
+from tests import common
 import pandora.marge
 
 
