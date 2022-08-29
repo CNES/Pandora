@@ -42,11 +42,11 @@ def run(
     pandora_machine: PandoraMachine,
     img_left: xr.Dataset,
     img_right: xr.Dataset,
-    disp_min: Union[np.array, int],
-    disp_max: Union[np.array, int],
+    disp_min: Union[np.ndarray, int],
+    disp_max: Union[np.ndarray, int],
     cfg: Dict[str, dict],
-    disp_min_right: Union[None, np.array] = None,
-    disp_max_right: Union[None, np.array] = None,
+    disp_min_right: Union[None, np.ndarray] = None,
+    disp_max_right: Union[None, np.ndarray] = None,
 ) -> Tuple[xr.Dataset, xr.Dataset]:
     """
     Run the pandora pipeline
@@ -64,15 +64,15 @@ def run(
             - msk (optional): 2D (row, col) xarray.DataArray
     :type img_right: xarray.Dataset
     :param disp_min: minimal disparity
-    :type disp_min: int or np.array
+    :type disp_min: int or np.ndarray
     :param disp_max: maximal disparity
-    :type disp_max: int or np.array
+    :type disp_max: int or np.ndarray
     :param cfg: pipeline configuration
     :type cfg: Dict[str, dict]
     :param disp_min_right: minimal disparity of the right image
-    :type disp_min_right: np.array or None
+    :type disp_min_right: np.ndarray or None
     :param disp_max_right: maximal disparity of the right image
-    :type disp_max_right: np.array or None
+    :type disp_max_right: np.ndarray or None
     :return: Two xarray.Dataset :
 
 

@@ -180,7 +180,7 @@ def save_results(left: xr.Dataset, right: xr.Dataset, output: str) -> None:
         )
 
 
-def sliding_window(base_array: np.array, shape: Tuple[int, int]) -> np.array:
+def sliding_window(base_array: np.ndarray, shape: Tuple[int, int]) -> np.ndarray:
     """
     Create a sliding window of using as_strided function : this function create a new a view (by manipulating
     data pointer) of the data array with a different shape. The new view pointing to the same memory block as

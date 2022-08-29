@@ -186,10 +186,10 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         self,
         img_left_pyramid: List[xr.Dataset] = None,
         img_right_pyramid: List[xr.Dataset] = None,
-        disp_min: Union[np.array, int] = None,
-        disp_max: Union[np.array, int] = None,
-        right_disp_min: Union[np.array, None] = None,
-        right_disp_max: Union[np.array, None] = None,
+        disp_min: Union[np.ndarray, int] = None,
+        disp_max: Union[np.ndarray, int] = None,
+        right_disp_min: Union[np.ndarray, None] = None,
+        right_disp_max: Union[np.ndarray, None] = None,
     ) -> None:
 
         """
@@ -206,13 +206,13 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                 - msk (optional): 2D (row, col) xarray.DataArray
         :type img_right_pyramid: xarray.Dataset
         :param disp_min: minimal disparity
-        :type disp_min: int or np.array
+        :type disp_min: int or np.ndarray
         :param disp_max: maximal disparity
-        :type disp_max: int or np.array
+        :type disp_max: int or np.ndarray
         :param right_disp_min: minimal disparity of the right image
-        :type right_disp_min: None or np.array
+        :type right_disp_min: None or np.ndarray
         :param right_disp_max: maximal disparity of the right image
-        :type right_disp_max: None or np.array
+        :type right_disp_max: None or np.ndarray
         :return: None
         """
         # Left image scale pyramid
@@ -224,21 +224,21 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # Right image
         self.right_img: xr.Dataset = None
         # Minimum disparity
-        self.disp_min: Union[np.array, int] = disp_min
+        self.disp_min: Union[np.ndarray, int] = disp_min
         # Maximum disparity
-        self.disp_max: Union[np.array, int] = disp_max
+        self.disp_max: Union[np.ndarray, int] = disp_max
         # Maximum disparity for the right image
-        self.right_disp_min: Union[np.array, None] = right_disp_min
+        self.right_disp_min: Union[np.ndarray, None] = right_disp_min
         # Minimum disparity for the right image
-        self.right_disp_max: Union[np.array, None] = right_disp_max
+        self.right_disp_max: Union[np.ndarray, None] = right_disp_max
         # User minimum disparity
-        self.dmin_user: Union[np.array, int] = None
+        self.dmin_user: Union[np.ndarray, int] = None
         # User maximum disparity
-        self.dmax_user: Union[np.array, int] = None
+        self.dmax_user: Union[np.ndarray, int] = None
         # User minimum disparity right
-        self.dmin_user_right: Union[np.array, None] = None
+        self.dmin_user_right: Union[np.ndarray, None] = None
         # User maximum disparity right
-        self.dmax_user_right: Union[np.array, None] = None
+        self.dmax_user_right: Union[np.ndarray, None] = None
 
         # Scale factor
         self.scale_factor: int = None
@@ -465,14 +465,14 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # Compute disparity range for the next scale level
         if self.right_disp_map != "accurate":
             self.disp_min, self.disp_max = multiscale_.disparity_range(
-                self.left_disparity, self.dmin_user, self.dmax_user
+                self.left_disparity, int(self.dmin_user), int(self.dmax_user)
             )
             # Set to None the disparity map for the next scale
             self.left_disparity = None
 
         else:
             self.disp_min, self.disp_max = multiscale_.disparity_range(
-                self.left_disparity, self.dmin_user, self.dmax_user
+                self.left_disparity, int(self.dmin_user), int(self.dmax_user)
             )
             # Set to None the disparity map for the next scale
             self.left_disparity = None
@@ -481,7 +481,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             self.dmin_user_right = self.dmin_user_right * self.scale_factor
             self.dmax_user_right = self.dmax_user_right * self.scale_factor
             self.right_disp_min, self.right_disp_max = multiscale_.disparity_range(
-                self.right_disparity, self.dmin_user_right, self.dmax_user_right
+                self.right_disparity, int(self.dmin_user_right), int(self.dmax_user_right)
             )
             self.right_disparity = None
 
@@ -527,12 +527,12 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         cfg: Dict[str, dict],
         left_img: xr.Dataset,
         right_img: xr.Dataset,
-        disp_min: Union[np.array, int],
-        disp_max: Union[np.array, int],
+        disp_min: Union[np.ndarray, int],
+        disp_max: Union[np.ndarray, int],
         scale_factor: Union[None, int] = None,
         num_scales: Union[None, int] = None,
-        right_disp_min: Union[None, np.array] = None,
-        right_disp_max: Union[None, np.array] = None,
+        right_disp_min: Union[None, np.ndarray] = None,
+        right_disp_max: Union[None, np.ndarray] = None,
     ) -> None:
         """
         Prepare the machine before running
@@ -550,17 +550,17 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                 - msk (optional): 2D (row, col) xarray.DataArray
         :type right_img: xarray.Dataset
         :param disp_min: minimal disparity
-        :type disp_min: int or np.array
+        :type disp_min: int or np.ndarray
         :param disp_max: maximal disparity
-        :type disp_max: int or np.array
+        :type disp_max: int or np.ndarray
         :param scale_factor: scale factor for multiscale
         :type scale_factor: int or None
         :param num_scales: scales number for multiscale
         :type num_scales: int or None
         :param disp_min_right: minimal disparity of the right image
-        :type disp_min_right: np.array or None
+        :type disp_min_right: np.ndarray or None
         :param disp_max_right: maximal disparity of the right image
-        :type disp_max_right: np.array or None
+        :type disp_max_right: np.ndarray or None
         :return: None
         """
         # Mono-resolution processing by default if num_scales or scale_factor are not specified
@@ -587,7 +587,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             # User disparity
             self.dmin_user = self.disp_min
             self.dmax_user = self.disp_max
-            # If multiscale disparities can only be int, and right disparity can only be np.array, so right disparity
+            # If multiscale disparities can only be int, and right disparity can only be np.ndarray, so right disparity
             # can not be defined in the input conf
             # Right disparities
             self.right_disp_min = -self.disp_max

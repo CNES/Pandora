@@ -289,7 +289,7 @@ def compare_3_disparities_and_error(
     second_title: str,
     input_third_disp_map: xr.Dataset,
     third_title: str,
-    error_map: np.array,
+    error_map: np.ndarray,
     error_title: str,
 ) -> None:
     """
@@ -307,7 +307,7 @@ def compare_3_disparities_and_error(
     :param third_title: disparity map title
     :type third_title: str
     :param error_map: error map
-    :type error_map: np.array
+    :type error_map: np.ndarray
     :param error_title: error title
     :type error_title: str
     :return: none
@@ -424,7 +424,7 @@ def compare_3_disparities_and_error(
 
 
 def compare_disparity_and_error(
-    input_first_disp_map: xr.Dataset, first_title: str, error_map: np.array, error_title: str
+    input_first_disp_map: xr.Dataset, first_title: str, error_map: np.ndarray, error_title: str
 ) -> None:
     """
     Show disparity map and error
@@ -433,7 +433,7 @@ def compare_disparity_and_error(
     :param title: disparity map title
     :type title: str
     :param error_map: error map
-    :type error_map: np.array
+    :type error_map: np.ndarray
     :param error_title: error title
     :type error_title: str
     :return: none
@@ -572,7 +572,7 @@ def show_input_images(img_left: xr.Dataset, img_right: xr.Dataset) -> None:
 
 def get_error(
     left_disp_map: xr.Dataset, ground_truth: xr.Dataset, threshold: int = 1
-) -> Tuple[np.array, np.array, np.array, np.array, np.array]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Return error map
 
@@ -583,7 +583,7 @@ def get_error(
     :param threshold: error threshold
     :type threshold: int
     :return: error_map, total_bad_percentage, mean_error, std_error, invalid_percentage
-    :rtype: Tuple[np.array,np.array,np.array,np.array,np.array]
+    :rtype: Tuple[np.ndarray,np.ndarray,np.ndarray,np.ndarray,np.ndarray]
     """
     total_bad_percentage, mean_error, std_error, invalid_percentage, error_map = compare_to_gt(
         left_disp_map, ground_truth, threshold, None
@@ -638,14 +638,14 @@ def get_3D_cost_volume(cv: xr.Dataset, left_disp_map: xr.Dataset) -> None:
     return ipv.gcc()
 
 
-def add_mask(all_validity_mask: np.array, msk_type: int) -> np.array:
+def add_mask(all_validity_mask: np.ndarray, msk_type: int) -> np.ndarray:
     """
     Create mask for a given bit
 
     :param all_validity_mask: mask for all bits
-    :type all_validity_mask: np.array
+    :type all_validity_mask: np.ndarray
     :return: msk
-    :rtype: np.array
+    :rtype: np.ndarray
     """
     # Mask initialization to 0 (all valid)
     msk = np.full(all_validity_mask.shape, 0)
@@ -726,7 +726,7 @@ def add_validity_mask_to_dataset(input_disp_map: xr.Dataset) -> xr.Dataset:
 
 def compare_to_gt(
     disp_map: xr.Dataset, ground_truth: xr.Dataset, error_threshold: int, no_data_gt_value: float = None
-) -> Tuple[float, float, float, float, np.array]:
+) -> Tuple[float, float, float, float, np.ndarray]:
     """
     Compute difference between a disparity map (estimated by a stereo tool) and ground_truth.
     Point p is considered as an error if disp_map(p)-ground_truth(p) > threshold
