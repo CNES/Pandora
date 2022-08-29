@@ -557,10 +557,10 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type scale_factor: int or None
         :param num_scales: scales number for multiscale
         :type num_scales: int or None
-        :param disp_min_right: minimal disparity of the right image
-        :type disp_min_right: np.ndarray or None
-        :param disp_max_right: maximal disparity of the right image
-        :type disp_max_right: np.ndarray or None
+        :param right_disp_min: minimal disparity of the right image
+        :type right_disp_min: np.ndarray or None
+        :param right_disp_max: maximal disparity of the right image
+        :type right_disp_max: np.ndarray or None
         :return: None
         """
         # Mono-resolution processing by default if num_scales or scale_factor are not specified
