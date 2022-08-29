@@ -424,8 +424,8 @@ class TestMatchingCost(unittest.TestCase):
             img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
         )
         # Check if the calculated maximal cost is equal to the ground truth
-        np.testing.assert_array_equal(sad_cmax_w3.attrs["cmax"], int(abs(4 - 1) * (3 ** 2)))
-        assert np.nanmax(sad_cmax_w3["cost_volume"].data) <= int(abs(4 - 1) * (3 ** 2))
+        np.testing.assert_array_equal(sad_cmax_w3.attrs["cmax"], int(abs(4 - 1) * (3**2)))
+        assert np.nanmax(sad_cmax_w3["cost_volume"].data) <= int(abs(4 - 1) * (3**2))
 
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 5, "subpix": 1}
@@ -434,8 +434,8 @@ class TestMatchingCost(unittest.TestCase):
             img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
         )
         # Check if the calculated maximal cost is equal to the ground truth
-        np.testing.assert_array_equal(sad_cmax_w5.attrs["cmax"], int(abs(4 - 1) * (5 ** 2)))
-        assert np.nanmax(sad_cmax_w3["cost_volume"].data) <= int(abs(4 - 1) * (5 ** 2))
+        np.testing.assert_array_equal(sad_cmax_w5.attrs["cmax"], int(abs(4 - 1) * (5**2)))
+        assert np.nanmax(sad_cmax_w3["cost_volume"].data) <= int(abs(4 - 1) * (5**2))
 
         # Test cmax for the ssd mesure
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
@@ -445,8 +445,8 @@ class TestMatchingCost(unittest.TestCase):
             img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
         )
         # Check if the calculated maximal cost is equal to the ground truth
-        np.testing.assert_array_equal(ssd_cmax_w3.attrs["cmax"], int(abs(4 - 1) ** 2 * (3 ** 2)))
-        assert np.nanmax(sad_cmax_w3["cost_volume"].data) <= int(abs(4 - 1) ** 2 * (3 ** 2))
+        np.testing.assert_array_equal(ssd_cmax_w3.attrs["cmax"], int(abs(4 - 1) ** 2 * (3**2)))
+        assert np.nanmax(sad_cmax_w3["cost_volume"].data) <= int(abs(4 - 1) ** 2 * (3**2))
 
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "ssd", "window_size": 5, "subpix": 1}
@@ -455,8 +455,8 @@ class TestMatchingCost(unittest.TestCase):
             img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
         )
         # Check if the calculated maximal cost is equal to the ground truth
-        np.testing.assert_array_equal(ssd_cmax_w5.attrs["cmax"], int(abs(4 - 1) ** 2 * (5 ** 2)))
-        assert np.nanmax(sad_cmax_w3["cost_volume"].data) <= int(abs(4 - 1) ** 2 * (5 ** 2))
+        np.testing.assert_array_equal(ssd_cmax_w5.attrs["cmax"], int(abs(4 - 1) ** 2 * (5**2)))
+        assert np.nanmax(sad_cmax_w3["cost_volume"].data) <= int(abs(4 - 1) ** 2 * (5**2))
 
         # Test cmax for the zncc mesure
         matching_cost_matcher = matching_cost.AbstractMatchingCost(

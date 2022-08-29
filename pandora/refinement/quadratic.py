@@ -112,6 +112,6 @@ class Quadratic(refinement.AbstractRefinement):
         sub_disp = min(1.0, max(-1.0, -beta / (2 * alpha)))
 
         # sub_cost is col
-        sub_cost = (alpha * sub_disp ** 2) + (beta * sub_disp) + gamma
+        sub_cost = (alpha * sub_disp**2) + (beta * sub_disp) + gamma
 
         return sub_disp, sub_cost, 0

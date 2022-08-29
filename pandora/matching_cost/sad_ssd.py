@@ -126,10 +126,10 @@ class SadSsd(matching_cost.AbstractMatchingCost):
 
         if self._method == "sad":
             # Maximal cost of the cost volume with sad measure
-            cmax = int(max(abs(max_left - min_right), abs(max_right - min_left)) * (self._window_size ** 2))
+            cmax = int(max(abs(max_left - min_right), abs(max_right - min_left)) * (self._window_size**2))
         if self._method == "ssd":
             # Maximal cost of the cost volume with ssd measure
-            cmax = int(max(abs(max_left - min_right) ** 2, abs(max_right - min_left) ** 2) * (self._window_size ** 2))
+            cmax = int(max(abs(max_left - min_right) ** 2, abs(max_right - min_left) ** 2) * (self._window_size**2))
         offset_row_col = int((self._window_size - 1) / 2)
         metadata = {
             "measure": self._method,

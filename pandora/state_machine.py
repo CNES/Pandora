@@ -582,8 +582,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             self.current_scale = num_scales - 1
             # If multiscale, disparities can only be int.
             # Downscale disparities since the pyramid is processed from coarse to original size
-            self.disp_min = int(disp_min / (scale_factor ** self.num_scales))
-            self.disp_max = int(disp_max / (scale_factor ** self.num_scales))
+            self.disp_min = int(disp_min / (scale_factor**self.num_scales))
+            self.disp_max = int(disp_max / (scale_factor**self.num_scales))
             # User disparity
             self.dmin_user = self.disp_min
             self.dmax_user = self.disp_max
