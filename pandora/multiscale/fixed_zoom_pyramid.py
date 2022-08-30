@@ -29,7 +29,7 @@ from typing import Dict, Union, Tuple
 import numpy as np
 import xarray as xr
 from json_checker import Checker, And
-from scipy.ndimage.interpolation import zoom
+from scipy.ndimage import zoom
 
 from . import multiscale
 from ..common import sliding_window
