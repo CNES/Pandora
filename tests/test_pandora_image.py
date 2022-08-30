@@ -442,5 +442,5 @@ class TestImgTools(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    common.setup_logging()
+    common.setup_logging()  # type: ignore
     unittest.main()

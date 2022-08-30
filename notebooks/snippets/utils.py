@@ -588,7 +588,7 @@ def get_error(
     total_bad_percentage, mean_error, std_error, invalid_percentage, error_map = compare_to_gt(
         left_disp_map, ground_truth, threshold, None
     )
-    return error_map, total_bad_percentage, mean_error, std_error, invalid_percentage
+    return error_map, total_bad_percentage, mean_error, std_error, invalid_percentage  # type:ignore
 
 
 def plot_1_cost_volume(cv: xr.Dataset, left_disp_map: xr.Dataset, title: str) -> None:

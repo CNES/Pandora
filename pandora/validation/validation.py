@@ -281,7 +281,6 @@ class CrossChecking(AbstractValidation):
             # Exclude invalid pixel :
             valid_pixel = np.where((dataset_left["validity_mask"].data[row, :] & cst.PANDORA_MSK_PIXEL_INVALID) == 0)
 
-
             col_left = np.arange(nb_col, dtype=np.int64)
             col_left = col_left[valid_pixel]
 

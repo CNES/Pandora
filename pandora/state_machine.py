@@ -590,8 +590,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             # If multiscale disparities can only be int, and right disparity can only be np.ndarray, so right disparity
             # can not be defined in the input conf
             # Right disparities
-            self.right_disp_min = -self.disp_max
-            self.right_disp_max = -self.disp_min
+            self.right_disp_min = -self.disp_max  # type: ignore
+            self.right_disp_max = -self.disp_min  # type: ignore
             # Right user disparity
             self.dmin_user_right = self.right_disp_min
             self.dmax_user_right = self.right_disp_max
@@ -610,8 +610,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                 self.right_disp_min = right_disp_min
                 self.right_disp_max = right_disp_max
             else:
-                self.right_disp_min = -self.disp_max
-                self.right_disp_max = -self.disp_min
+                self.right_disp_min = -self.disp_max  # type: ignore
+                self.right_disp_max = -self.disp_min  # type: ignore
 
         # Initiate output disparity datasets
         self.left_disparity = xr.Dataset()

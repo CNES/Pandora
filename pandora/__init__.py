@@ -204,8 +204,8 @@ def main(cfg_path: str, output: str, verbose: bool) -> None:
         disp_min,
         disp_max,
         cfg["pipeline"],
-        disp_min_right,
-        disp_max_right,
+        disp_min_right,  # type: ignore
+        disp_max_right,  # type: ignore
     )
 
     # Save the left and right DataArray in tiff files
