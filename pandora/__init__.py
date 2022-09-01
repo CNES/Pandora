@@ -178,6 +178,7 @@ def main(cfg_path: str, output: str, verbose: bool) -> None:
     img_left = read_img(
         cfg["input"]["img_left"],
         no_data=cfg["input"]["nodata_left"],
+        band_list=cfg["input"]["band_left_list"],
         mask=cfg["input"]["left_mask"],
         classif=cfg["input"]["left_classif"],
         segm=cfg["input"]["left_segm"],
@@ -185,6 +186,7 @@ def main(cfg_path: str, output: str, verbose: bool) -> None:
     img_right = read_img(
         cfg["input"]["img_right"],
         no_data=cfg["input"]["nodata_right"],
+        band_list=cfg["input"]["band_right_list"],
         mask=cfg["input"]["right_mask"],
         classif=cfg["input"]["right_classif"],
         segm=cfg["input"]["right_segm"],

@@ -27,7 +27,7 @@ from typing import Dict, Union, Tuple, List
 
 import numpy as np
 import xarray as xr
-from json_checker import Checker, And
+from json_checker import Checker, And, Or
 
 from pandora.img_tools import shift_right_img, census_transform
 from pandora.matching_cost import matching_cost
@@ -42,6 +42,7 @@ class Census(matching_cost.AbstractMatchingCost):
     # Default configuration, do not change these values
     _WINDOW_SIZE = 5
     _SUBPIX = 1
+    _BAND = None
 
     def __init__(self, **cfg: Dict[str, Union[str, int]]) -> None:
         """
@@ -52,6 +53,7 @@ class Census(matching_cost.AbstractMatchingCost):
         self.cfg = self.check_conf(**cfg)
         self._window_size = self.cfg["window_size"]
         self._subpix = self.cfg["subpix"]
+        self._band = self.cfg["band"]
 
     def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
         """
@@ -67,11 +69,14 @@ class Census(matching_cost.AbstractMatchingCost):
             cfg["window_size"] = self._WINDOW_SIZE  # type: ignore
         if "subpix" not in cfg:
             cfg["subpix"] = self._SUBPIX  # type: ignore
+        if "band" not in cfg:
+            cfg["band"] = self._BAND  # type: ignore
 
         schema = {
             "matching_cost_method": And(str, lambda input: "census"),
             "window_size": And(int, lambda input: input in (3, 5)),
             "subpix": And(int, lambda input: input > 0 and ((input % 2) == 0) or input == 1),
+            "band": Or(And(str, lambda input: len(input) == 1), lambda input: input == None)
         }
 
         checker = Checker(schema)
@@ -111,7 +116,7 @@ class Census(matching_cost.AbstractMatchingCost):
         :rtype: xarray.Dataset
         """
         # Contains the shifted right images
-        img_right_shift = shift_right_img(img_right, self._subpix)
+        img_right_shift = shift_right_img(img_right, self._subpix, self._band)
 
         # Maximal cost of the cost volume with census measure
         cmax = int(self._window_size**2)
@@ -123,12 +128,13 @@ class Census(matching_cost.AbstractMatchingCost):
             "window_size": self._window_size,
             "type_measure": "min",
             "cmax": cmax,
+            "band_correl": self._band,
         }
 
         # Apply census transformation
-        left = census_transform(img_left, self._window_size)
+        left = census_transform(img_left, self._window_size, self._band)
         for i, img in enumerate(img_right_shift):
-            img_right_shift[i] = census_transform(img, self._window_size)
+            img_right_shift[i] = census_transform(img, self._window_size, self._band)
 
         # Disparity range # pylint: disable=undefined-variable
         if self._subpix == 1:

@@ -46,6 +46,7 @@ class AbstractMatchingCost:
     _subpix = None
     _window_size = None
     cfg = None
+    _band = None
 
     def __new__(cls, **cfg: Union[str, int]):
         """
@@ -231,8 +232,9 @@ class AbstractMatchingCost:
         :return: the range of the left and right image over which the similarity measure will be applied
         :rtype: tuple
         """
-        _, nx_left = img_left["im"].shape
-        _, nx_right = img_right["im"].shape
+
+        nx_left = img_left["im"].shape[1]
+        nx_right = img_right["im"].shape[1]
 
         # range in the left image
         point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))
@@ -326,9 +328,15 @@ class AbstractMatchingCost:
             # All pixels are valid
             dilatate_right_mask = np.zeros(img_left["im"].shape)
 
-        ny_, nx_ = img_left["im"].shape
-        row = np.arange(0, ny_)
-        col = np.arange(0, nx_)
+        if len(img_left["im"].shape) > 2:
+            ny_, nx_, nb_ = img_left["im"].shape
+            row = np.arange(0, ny_)
+            col = np.arange(0, nx_)
+            band = np.arange(0, nb_)
+        else:
+            ny_, nx_ = img_left["im"].shape
+            row = np.arange(0, ny_)
+            col = np.arange(0, nx_)
 
         # Shift the right mask, for sub-pixel precision. If an no_data or invalid pixel was used to create the
         # sub-pixel point, then the sub-pixel point is invalidated / no_data.
@@ -336,7 +344,10 @@ class AbstractMatchingCost:
         if subp != 1:
             # Since the interpolation of the right image is of order 1, the shifted right mask corresponds
             # to an aggregation of two columns of the dilated right mask
-            str_row, str_col = dilatate_right_mask.strides
+            if len(img_left["im"].shape) > 2:
+                str_row, str_col, _ = dilatate_right_mask.strides
+            else:
+                str_row, str_col = dilatate_right_mask.strides
             shape_windows = (
                 dilatate_right_mask.shape[0],
                 dilatate_right_mask.shape[1] - 1,
@@ -345,16 +356,30 @@ class AbstractMatchingCost:
             strides_windows = (str_row, str_col, str_col)
             aggregation_window = np.lib.stride_tricks.as_strided(dilatate_right_mask, shape_windows, strides_windows)
             dilatate_right_mask_shift = np.sum(aggregation_window, 2)
-
-            # Whatever the sub-pixel precision, only one sub-pixel mask is created,
-            # since 0.5 shifted mask == 0.25 shifted mask
+            if len(img_left["im"].shape) > 2:
+                dilatate_right_mask_shift = np.stack((dilatate_right_mask_shift, dilatate_right_mask_shift, dilatate_right_mask_shift), axis=-1)
+                # Whatever the sub-pixel precision, only one sub-pixel mask is created,
+                # since 0.5 shifted mask == 0.25 shifted mask
             col_shift = np.arange(0 + 0.5, nx_ - 1, step=1)
-            dilatate_right_mask_shift = xr.DataArray(
-                dilatate_right_mask_shift, coords=[row, col_shift], dims=["row", "col"]
-            )
+            if len(img_left["im"].shape) > 2:
+                dilatate_right_mask_shift = xr.DataArray(
+                    dilatate_right_mask_shift, coords=[row, col_shift, band], dims=["row", "col", "band"]
+                )
+            else:
+                dilatate_right_mask_shift = xr.DataArray(
+                    dilatate_right_mask_shift, coords=[row, col_shift], dims=["row", "col"]
+                )
 
-        dilatate_left_mask_xr = xr.DataArray(dilatate_left_mask, coords=[row, col], dims=["row", "col"])
-        dilatate_right_mask_xr = xr.DataArray(dilatate_right_mask, coords=[row, col], dims=["row", "col"])
+        if len(img_left["im"].shape) > 2:
+            dilatate_left_mask_xr = xr.DataArray(dilatate_left_mask, coords=[row, col, band],
+                                                 dims=["row", "col", "band"])
+            dilatate_right_mask_xr = xr.DataArray(dilatate_right_mask, coords=[row, col, band],
+                                                  dims=["row", "col", "band"])
+        else:
+            dilatate_left_mask_xr = xr.DataArray(dilatate_left_mask, coords=[row, col],
+                                                 dims=["row", "col"])
+            dilatate_right_mask_xr = xr.DataArray(dilatate_right_mask, coords=[row, col],
+                                                  dims=["row", "col"])
 
         return dilatate_left_mask_xr, [dilatate_right_mask_xr, dilatate_right_mask_shift]
 
@@ -426,13 +451,15 @@ class AbstractMatchingCost:
         :return: None
         """
         ny_, nx_, nd_ = cost_volume["cost_volume"].shape  # pylint: disable=unused-variable
+        if self._band is not None:
+            band_index = img_right.attrs["band_list"].index(self._band)
 
         dmin, dmax = self.dmin_dmax(disp_min, disp_max)  # pylint: disable=unused-variable
 
         # ----- Masking invalid pixels -----
 
         # Contains the shifted right images
-        img_right_shift = shift_right_img(img_right, self._subpix)
+        img_right_shift = shift_right_img(img_right, self._subpix, self._band)
 
         # Computes the validity mask of the cost volume : invalid pixels or no_data are masked with the value nan.
         # Valid pixels are = 0
@@ -450,10 +477,19 @@ class AbstractMatchingCost:
             i_mask_right = min(1, i_right)
             dsp = int((disp - dmin) * self._subpix)
 
-            # Invalid costs in the cost volume
-            cost_volume["cost_volume"].data[:, p_mask[0] : p_mask[1], dsp] += (
-                mask_right[i_mask_right].data[:, q_mask[0] : q_mask[1]] + mask_left.data[:, p_mask[0] : p_mask[1]]
-            )
+            if self._band is not None:
+                # Invalid costs in the cost volume
+                cost_volume["cost_volume"].data[:, p_mask[0]: p_mask[1], dsp] += (
+                        mask_right[i_mask_right].data[:, q_mask[0]: q_mask[1], band_index] + mask_left.data[:,
+                                                                                             p_mask[0]: p_mask[1],
+                                                                                             band_index]
+                )
+            else:
+                # Invalid costs in the cost volume
+                cost_volume["cost_volume"].data[:, p_mask[0]: p_mask[1], dsp] += (
+                        mask_right[i_mask_right].data[:, q_mask[0]: q_mask[1]] + mask_left.data[:,
+                                                                                             p_mask[0]: p_mask[1]]
+                )
 
         # ----- Masking disparity range -----
 

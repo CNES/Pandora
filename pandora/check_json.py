@@ -88,15 +88,8 @@ def check_images(img_left: str, img_right: str, msk_left: str, msk_right: str) -
     :type msk_right: string
     :return: None
     """
-    # verify that the images have 1 channel
     left_ = rasterio_open(img_left)
-    if left_.count != 1:
-        logging.error("The input images must be 1-channel grayscale images")
-        sys.exit(1)
     right_ = rasterio_open(img_right)
-    if right_.count != 1:
-        logging.error("The input images must be 1-channel grayscale images")
-        sys.exit(1)
 
     # verify that the images have the same size
     if (left_.width != right_.width) or (left_.height != right_.height):
@@ -116,6 +109,53 @@ def check_images(img_left: str, img_right: str, msk_left: str, msk_right: str) -
         # verify that the image and mask have the same size
         if (right_.width != msk_.width) or (right_.height != msk_.height):
             logging.error("Image and masks must have the same size")
+            sys.exit(1)
+
+
+def check_band(img_left: str, band_left_list: list, img_right: str, band_right_list: list) -> None:
+    """
+    Check band
+
+    :param img_left: path to the left image
+    :type img_left: string
+    :param band_left_list: User's value for selected band
+    :type band_left_list: list
+    :param img_right: path to the left image
+    :type img_right: string
+    :param band_right_list: User's value for selected band
+    :type band_right_list: list
+    :return: None
+    """
+
+    # open images
+    left_ = rasterio_open(img_left)
+    right_ = rasterio_open(img_right)
+
+    # check that the images have the correct band number
+    if band_left_list is not None:
+        if not left_.count == len(band_left_list):
+            logging.error("Left image has {} band, expected {}".format(left_.count, len(band_left_list)))
+            sys.exit(1)
+            # check left band values in list
+        if not all(isinstance(band, str) for band in band_left_list):
+            logging.error("Band value must be str")
+            sys.exit(1)
+    else:
+        if not left_.count == 1:
+            logging.error("Left image has {} band, expected {}".format(left_.count, 1))
+            sys.exit(1)
+
+    if band_right_list is not None:
+        if not right_.count == len(band_right_list):
+            logging.error("Right image has {} band, expected {}".format(right_.count, len(band_right_list)))
+            sys.exit(1)
+        # check right band values in list
+        if not all(isinstance(band, str) for band in band_right_list):
+            logging.error("Band value must be str")
+            sys.exit(1)
+    else:
+        if not right_.count == 1:
+            logging.error("Right image has {} band, expected {}".format(right_.count, 1))
             sys.exit(1)
 
 
@@ -338,6 +378,13 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
         cfg["input"]["img_left"],
     )
 
+    check_band(
+        cfg["input"]["img_left"],
+        cfg["input"]["band_left_list"],
+        cfg["input"]["img_right"],
+        cfg["input"]["band_right_list"],
+    )
+
     check_images(
         cfg["input"]["img_left"],
         cfg["input"]["img_right"],
@@ -460,7 +507,9 @@ def read_multiscale_params(cfg: Dict[str, dict]) -> Tuple[int, int]:
 
 input_configuration_schema = {
     "img_left": And(str, rasterio_can_open_mandatory),
+    "band_left_list": Or(list, lambda x: x is None),
     "img_right": And(str, rasterio_can_open_mandatory),
+    "band_right_list": Or(list, lambda x: x is None),
     "nodata_left": Or(int, lambda input: np.isnan(input)),
     "nodata_right": Or(int, lambda input: np.isnan(input)),
     "left_mask": And(Or(str, lambda input: input is None), rasterio_can_open),
@@ -498,7 +547,9 @@ input_configuration_schema_left_disparity_grids_right_grids = {
 default_short_configuration_input = {
     "input": {
         "nodata_left": -9999,
+        "band_left_list": None,
         "nodata_right": -9999,
+        "band_right_list": None,
         "left_mask": None,
         "right_mask": None,
         "left_classif": None,
