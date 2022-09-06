@@ -35,7 +35,7 @@ try:
     import graphviz  # pylint: disable=unused-import
     from transitions.extensions import GraphMachine as Machine
 except ImportError:
-    from transitions import Machine
+    from transitions import Machine  # type: ignore
 from transitions import MachineError
 
 from pandora import aggregation
