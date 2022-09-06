@@ -30,7 +30,7 @@ from typing import Tuple, List, Union, Dict
 
 import numpy as np
 import xarray as xr
-from scipy.ndimage.morphology import binary_dilation
+from scipy.ndimage import binary_dilation
 
 from pandora.img_tools import shift_right_img
 

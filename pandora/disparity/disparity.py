@@ -30,7 +30,7 @@ from typing import Dict, Union, Tuple
 import numpy as np
 import xarray as xr
 from json_checker import Checker, And, Or
-from scipy.ndimage.morphology import binary_dilation
+from scipy.ndimage import binary_dilation
 
 import pandora.constants as cst
 from pandora.img_tools import compute_std_raster
