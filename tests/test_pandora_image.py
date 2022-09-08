@@ -25,16 +25,16 @@ This module contains functions to test all the methods in img_tools module.
 
 import unittest
 import copy
-import rasterio
 from tempfile import TemporaryDirectory
+import rasterio
 
 import numpy as np
 import xarray as xr
 
 from skimage.io import imsave
-import tests.common as common
+from tests import common
 import pandora
-import pandora.img_tools as img_tools
+from pandora import img_tools
 
 
 class TestImgTools(unittest.TestCase):
