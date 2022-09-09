@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code
 # type:ignore
 #!/usr/bin/env python
 # coding: utf8
