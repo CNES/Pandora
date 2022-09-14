@@ -64,7 +64,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         self._percentile = self._PERCENTILE
         self._eta_max = float(self.cfg["eta_max"])
         self._eta_step = float(self.cfg["eta_step"])
-        self._indicator = self._method + self.cfg["indicator"]
+        self._indicator = self._method + str(self.cfg["indicator"])
 
     def check_conf(self, **cfg: Union[str, float]) -> Dict[str, Union[str, float]]:
         """

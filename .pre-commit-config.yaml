@@ -28,6 +28,6 @@ repos:
       pass_filenames: False
       stages: [push]
   - repo: https://github.com/kynan/nbstripout
-    rev: master
+    rev: 0.6.0
     hooks:
       - id: nbstripout

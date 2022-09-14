@@ -30,12 +30,12 @@ import numpy as np
 import xarray as xr
 from rasterio import Affine
 
-import tests.common as common
+from tests import common
 import pandora.constants as cst
-import pandora.refinement as refinement
-import pandora.matching_cost as matching_cost
+from pandora import refinement
+from pandora import matching_cost
 import pandora.filter as flt
-import pandora.disparity as disparity
+from pandora import disparity
 
 
 class TestRefinement(unittest.TestCase):
