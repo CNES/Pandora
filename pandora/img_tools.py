@@ -31,7 +31,7 @@ import sys
 import numpy as np
 import rasterio
 import xarray as xr
-from scipy.ndimage.interpolation import zoom
+from scipy.ndimage import zoom
 from skimage.transform.pyramids import pyramid_gaussian
 from numba import njit
 
