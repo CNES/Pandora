@@ -1,6 +1,12 @@
+# Python
 __pycache__/
 .coverage
 coverage.xml
 nosetests.xml
 pylint-report.txt
 doc/build/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+output/
