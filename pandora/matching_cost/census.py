@@ -114,7 +114,7 @@ class Census(matching_cost.AbstractMatchingCost):
         img_right_shift = shift_right_img(img_right, self._subpix)
 
         # Maximal cost of the cost volume with census measure
-        cmax = int(self._window_size ** 2)
+        cmax = int(self._window_size**2)
         offset_row_col = int((self._window_size - 1) / 2)
         metadata = {
             "measure": "census",
@@ -134,7 +134,7 @@ class Census(matching_cost.AbstractMatchingCost):
         if self._subpix == 1:
             disparity_range = np.arange(disp_min, disp_max + 1)
         else:
-            disparity_range = np.arange(disp_min, disp_max, step=1 / float(self._subpix))
+            disparity_range = np.arange(disp_min, disp_max, step=1 / float(self._subpix))  # type: ignore
             disparity_range = np.append(disparity_range, [disp_max])
 
         # Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management

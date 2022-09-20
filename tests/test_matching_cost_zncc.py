@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code
 # type:ignore
 #!/usr/bin/env python
 # coding: utf8
@@ -29,7 +30,7 @@ import numpy as np
 import xarray as xr
 
 from pandora import matching_cost
-import tests.common as common
+from tests import common
 
 
 class TestMatchingCost(unittest.TestCase):

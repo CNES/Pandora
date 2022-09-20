@@ -29,7 +29,7 @@ from typing import Dict, Union, Tuple
 import numpy as np
 import xarray as xr
 from json_checker import Checker, And
-from scipy.ndimage.interpolation import zoom
+from scipy.ndimage import zoom
 
 from . import multiscale
 from ..common import sliding_window
@@ -89,7 +89,7 @@ class FixedZoomPyramid(multiscale.AbstractMultiscale):
         """
         print("FixedZoomPyramid method")
 
-    def disparity_range(self, disp: xr.Dataset, disp_min: int, disp_max: int) -> Tuple[np.array, np.array]:
+    def disparity_range(self, disp: xr.Dataset, disp_min: int, disp_max: int) -> Tuple[np.ndarray, np.ndarray]:
         """
         Disparity range computation by seeking the max and min values in the window.
         Invalid disparities are given the full disparity range

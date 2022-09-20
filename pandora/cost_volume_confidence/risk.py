@@ -65,8 +65,8 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         self._percentile = self._PERCENTILE
         self._eta_step = float(self.cfg["eta_step"])
         self._eta_max = float(self.cfg["eta_max"])
-        self._indicator_max = self._method_max + self.cfg["indicator"]
-        self._indicator_min = self._method_min + self.cfg["indicator"]
+        self._indicator_max = self._method_max + str(self.cfg["indicator"])
+        self._indicator_min = self._method_min + str(self.cfg["indicator"])
 
     def check_conf(self, **cfg: Union[str, float]) -> Dict[str, Union[str, float]]:
         """

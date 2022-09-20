@@ -264,9 +264,9 @@ class AbstractRefinement:
                                     cv[row, col, dsp - 1],
                                     cv[row, col, dsp],
                                     cv[row, col, dsp + 1],
-                                ],
+                                ],  # type: ignore
                                 disp[row, col],
-                                measure,
+                                measure,  # type: ignore
                             )
 
                             disp[row, col] = disp[row, col] + (sub_disp / subpixel)
@@ -361,9 +361,9 @@ class AbstractRefinement:
                                     cv[row, diagonal - 1, dsp + (1 * subpixel)],
                                     cv[row, diagonal, dsp],
                                     cv[row, diagonal + 1, dsp - (1 * subpixel)],
-                                ],
+                                ],  # type: ignore
                                 disp[row, col],
-                                measure,
+                                measure,  # type: ignore
                             )
 
                             disp[row, col] = disp[row, col] + (sub_disp / subpixel)

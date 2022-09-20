@@ -30,7 +30,7 @@ from typing import Tuple, List, Union, Dict
 
 import numpy as np
 import xarray as xr
-from scipy.ndimage.morphology import binary_dilation
+from scipy.ndimage import binary_dilation
 
 from pandora.img_tools import shift_right_img
 
@@ -182,14 +182,14 @@ class AbstractMatchingCost:
         c_col = img_left["im"].coords["col"]
 
         # First pixel in the image that is fully computable (aggregation windows are complete)
-        row = np.arange(c_row[0], c_row[-1] + 1)
-        col = np.arange(c_col[0], c_col[-1] + 1)
+        row = np.arange(c_row[0], c_row[-1] + 1)  # type: np.ndarray
+        col = np.arange(c_col[0], c_col[-1] + 1)  # type: np.ndarray
 
         # Compute the disparity range
         if subpix == 1:
             disparity_range = np.arange(disp_min, disp_max + 1)
         else:
-            disparity_range = np.arange(disp_min, disp_max, step=1 / float(subpix))
+            disparity_range = np.arange(disp_min, disp_max, step=1 / float(subpix), dtype=np.float64)
             disparity_range = np.append(disparity_range, [disp_max])
 
         # Create the cost volume
@@ -353,10 +353,10 @@ class AbstractMatchingCost:
                 dilatate_right_mask_shift, coords=[row, col_shift], dims=["row", "col"]
             )
 
-        dilatate_left_mask = xr.DataArray(dilatate_left_mask, coords=[row, col], dims=["row", "col"])
-        dilatate_right_mask = xr.DataArray(dilatate_right_mask, coords=[row, col], dims=["row", "col"])
+        dilatate_left_mask_xr = xr.DataArray(dilatate_left_mask, coords=[row, col], dims=["row", "col"])
+        dilatate_right_mask_xr = xr.DataArray(dilatate_right_mask, coords=[row, col], dims=["row", "col"])
 
-        return dilatate_left_mask, [dilatate_right_mask, dilatate_right_mask_shift]
+        return dilatate_left_mask_xr, [dilatate_right_mask_xr, dilatate_right_mask_shift]
 
     @staticmethod
     def dmin_dmax(disp_min: Union[int, np.ndarray], disp_max: Union[int, np.ndarray]) -> Tuple[int, int]:

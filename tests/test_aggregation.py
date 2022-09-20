@@ -31,10 +31,10 @@ import xarray as xr
 
 from rasterio import Affine
 
-import tests.common as common
-import pandora.aggregation as aggregation
-import pandora.aggregation.cbca as cbca
-import pandora.matching_cost as matching_cost
+from tests import common
+from pandora import aggregation
+from pandora.aggregation import cbca
+from pandora import matching_cost
 
 
 class TestAggregation(unittest.TestCase):

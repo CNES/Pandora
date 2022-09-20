@@ -126,10 +126,10 @@ class SadSsd(matching_cost.AbstractMatchingCost):
 
         if self._method == "sad":
             # Maximal cost of the cost volume with sad measure
-            cmax = int(max(abs(max_left - min_right), abs(max_right - min_left)) * (self._window_size ** 2))
+            cmax = int(max(abs(max_left - min_right), abs(max_right - min_left)) * (self._window_size**2))
         if self._method == "ssd":
             # Maximal cost of the cost volume with ssd measure
-            cmax = int(max(abs(max_left - min_right) ** 2, abs(max_right - min_left) ** 2) * (self._window_size ** 2))
+            cmax = int(max(abs(max_left - min_right) ** 2, abs(max_right - min_left) ** 2) * (self._window_size**2))
         offset_row_col = int((self._window_size - 1) / 2)
         metadata = {
             "measure": self._method,
@@ -144,7 +144,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         if self._subpix == 1:
             disparity_range = np.arange(disp_min, disp_max + 1)
         else:
-            disparity_range = np.arange(disp_min, disp_max, step=1 / float(self._subpix))
+            disparity_range = np.arange(disp_min, disp_max, step=1 / float(self._subpix), dtype=np.float64)
             disparity_range = np.append(disparity_range, [disp_max])
 
         # Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
@@ -216,7 +216,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
 
         # Pixel wise aggregation modifies border values so it is important to reconvert to nan values
         if offset_row_col != 0:
-            cv = self.pixel_wise_aggregation(cv_enlarge.data)
+            cv = self.pixel_wise_aggregation(cv_enlarge.data)  # type: ignore
             cv = np.swapaxes(cv, 0, 2)
             cv[:offset_row_col, :, :] = np.nan
             cv[
@@ -226,13 +226,15 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             cv[:, :offset_row_col, :] = np.nan
             cv[:, -offset_row_col:, :] = np.nan
         else:
-            cv = self.pixel_wise_aggregation(cv.data)
+            cv = self.pixel_wise_aggregation(cv.data)  # type: ignore
             cv = np.swapaxes(cv, 0, 2)
 
         # Create the xarray.DataSet that will contain the cv of dimensions (row, col, disp)
-        cv = self.allocate_costvolume(img_left, self._subpix, disp_min, disp_max, self._window_size, metadata, cv)
+        cv = self.allocate_costvolume(
+            img_left, self._subpix, disp_min, disp_max, self._window_size, metadata, cv
+        )  # type: ignore
 
-        return cv
+        return cv  # type: ignore
 
     @staticmethod
     def ad_cost(

@@ -111,7 +111,7 @@ class AbstractMultiscale:
         print("Multiscale matching description")
 
     @abstractmethod
-    def disparity_range(self, disp: xr.Dataset, disp_min: int, disp_max: int) -> Tuple[np.array, np.array]:
+    def disparity_range(self, disp: xr.Dataset, disp_min: int, disp_max: int) -> Tuple[np.ndarray, np.ndarray]:
         """
         Disparity range computation by seeking the max and min values in the window.
         Unvalid disparities are given the full disparity range

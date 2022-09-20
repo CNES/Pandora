@@ -34,7 +34,7 @@ import numpy as np
 import xarray as xr
 from rasterio import Affine
 
-import tests.common as common
+from tests import common
 import pandora
 from pandora import import_plugin
 from pandora.img_tools import read_img, rasterio_open
@@ -363,7 +363,7 @@ class TestPandora(unittest.TestCase):
         # Create temporary directory
         with TemporaryDirectory() as tmp_dir:
 
-            with open(os.path.join(tmp_dir, "config.json"), "w") as file_:
+            with open(os.path.join(tmp_dir, "config.json"), "w", encoding="utf-8") as file_:
                 json.dump(cfg, file_, indent=2)
 
             # Run Pandora pipeline
@@ -392,7 +392,7 @@ class TestPandora(unittest.TestCase):
         # Create temporary directory
         with TemporaryDirectory() as tmp_dir:
 
-            with open(os.path.join(tmp_dir, "config.json"), "w") as file_:
+            with open(os.path.join(tmp_dir, "config.json"), "w", encoding="utf-8") as file_:
                 json.dump(cfg, file_, indent=2)
 
             # Run Pandora pipeline
@@ -471,7 +471,7 @@ class TestPandora(unittest.TestCase):
         # Create temporary directory
         with TemporaryDirectory() as tmp_dir:
 
-            with open(os.path.join(tmp_dir, "config.json"), "w") as file_:
+            with open(os.path.join(tmp_dir, "config.json"), "w", encoding="utf-8") as file_:
                 json.dump(cfg, file_, indent=2)
 
             # Run Pandora pipeline

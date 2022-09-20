@@ -31,7 +31,7 @@ import sys
 import numpy as np
 import rasterio
 import xarray as xr
-from scipy.ndimage.interpolation import zoom
+from scipy.ndimage import zoom
 from skimage.transform.pyramids import pyramid_gaussian
 from numba import njit
 
@@ -433,7 +433,9 @@ def shift_right_img(img_right: xr.Dataset, subpix: int) -> List[xr.Dataset]:
             shift = 1 / subpix
             # For each index, shift the right image for subpixel precision 1/subpix*index
             data = zoom(img_right["im"].data, (1, (nx_ * subpix - (subpix - 1)) / float(nx_)), order=1)[:, ind::subpix]
-            col = np.arange(img_right.coords["col"][0] + shift * ind, img_right.coords["col"][-1], step=1)
+            col = np.arange(
+                img_right.coords["col"][0] + shift * ind, img_right.coords["col"][-1], step=1
+            )  # type: np.ndarray
             img_right_shift.append(
                 xr.Dataset(
                     {"im": (["row", "col"], data)},
@@ -600,7 +602,7 @@ def find_valid_neighbors(dirs: np.ndarray, disp: np.ndarray, valid: np.ndarray, 
     return valid_neighbors
 
 
-def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np.ndarray:
+def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np.float64:
     """
     Compute the mean within a window centered at position row,col
 

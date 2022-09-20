@@ -84,8 +84,8 @@ def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.Datase
             ]
 
     else:
-        r_marg = np.array([disp_max, 0, -disp_min, 0])
-        s_marg = np.array([-disp_min, 0, +disp_max, 0])
+        r_marg = np.array([disp_max, 0, -disp_min, 0])  # type:ignore
+        s_marg = np.array([-disp_min, 0, +disp_max, 0])  # type:ignore
 
         if cfg["matching_cost"]["window_size"] != 1:
             r_marg += int(cfg["matching_cost"]["window_size"] / 2)  # type:ignore
