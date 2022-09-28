@@ -21,8 +21,8 @@ from bokeh.io import show, output_notebook
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib import cm
 from matplotlib.image import imsave
-import plotly.graph_objects as go
-import plotly.express as px
+import plotly.graph_objects as go  # type: ignore
+import plotly.express as px  # type: ignore
 
 
 def pandora_cmap():
