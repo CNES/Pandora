@@ -636,7 +636,7 @@ def get_3D_cost_volume(cv: xr.Dataset, left_disp_map: xr.Dataset) -> go.Figure:
 
     fig = px.scatter_3d(df, x="cols", y="rows", z="disps", color="disps", color_continuous_scale=color_disp)
 
-    fig.update_traces(marker=dict(size=0.5), selector=dict(mode='markers'))
+    fig.update_traces(marker=dict(size=0.5), selector=dict(mode="markers"))
 
     return fig
 
