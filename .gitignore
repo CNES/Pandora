@@ -4,9 +4,15 @@ __pycache__/
 coverage.xml
 nosetests.xml
 pylint-report.txt
-doc/build/
 *.egg-info/
 
 # Jupyter
 .ipynb_checkpoints/
 output/
+
+# Virtualenv
+/venv/
+
+#doc sphinx
+doc/build/
+doc/sources/api_reference/

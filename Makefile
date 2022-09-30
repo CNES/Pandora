@@ -29,6 +29,22 @@ CHECK_DOCKER = $(shell docker -v)
 # PANDORA version from setup.py
 PANDORA_VERSION = $(shell python3 setup.py --version)
 PANDORA_VERSION_MIN =$(shell echo ${PANDORA_VERSION} | cut -d . -f 1,2,3)
+
+PYTHON_VERSION_MIN = 3.7
+
+PYTHON=$(shell command -v python3)
+
+PYTHON_VERSION_CUR=$(shell $(PYTHON) -c 'import sys; print("%d.%d"% sys.version_info[0:2])')
+PYTHON_VERSION_OK=$(shell $(PYTHON) -c 'import sys; cur_ver = sys.version_info[0:2]; min_ver = tuple(map(int, "$(PYTHON_VERSION_MIN)".split("."))); print(int(cur_ver >= min_ver))')
+
+ifeq (, $(PYTHON))
+    $(error "PYTHON=$(PYTHON) not found in $(PATH)")
+endif
+
+ifeq ($(PYTHON_VERSION_OK), 0)
+    $(error "Requires python version >= $(PYTHON_VERSION_MIN). Current version is $(PYTHON_VERSION_CUR)")
+endif
+
 ################ MAKE targets by sections ######################
 
 .PHONY: help
@@ -109,10 +125,17 @@ test-notebook-hpc: install-notebook
 ### Format with isort and black
 
 .PHONY: format
-format: install-dev  ## run black formatting (depends install)
+format: install-dev format/nbstripout format/black  ## run black and nbstripout formatting (depends install-dev)
+
+.PHONY: format/black
+format/black: install-dev  ## run black formatting (depends install-dev)
 	@echo "+ $@"
-	@${PANDORA_VENV}/bin/pre-commit run black --all-files
-	@${PANDORA_VENV}/bin/pre-commit run nbstripout --all-files
+	@${PANDORA_VENV}/bin/black --line-length=120 pandora tests ./*.py notebooks/snippets/*.py 
+
+.PHONY: format/nbstripout
+format/nbstripout: install-dev  ## run nbstripout formatting (depends install-dev)
+	@echo "+ $@"
+	@${PANDORA_VENV}/bin/nbstripout notebooks/*.ipynb notebooks/advanced_examples/*.ipynb
 
 ### Check code quality and linting : isort, black, flake8, pylint
 
@@ -143,7 +166,8 @@ precommit: install-dev## apply precommit to all files
 
 .PHONY: doc
 doc: install-dev ## build sphinx documentation
-	@${PANDORA_VENV}/bin/pre-commit run sphinx-checking --hook-stage push
+	@${PANDORA_VENV}/bin/sphinx-build -M clean doc/sources/ doc/build
+	@${PANDORA_VENV}/bin/sphinx-build doc/sources/ doc/build
 
 ## Notebook section
 .PHONY: notebook
