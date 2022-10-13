@@ -257,6 +257,100 @@ class TestConfig(unittest.TestCase):
         # Json checker must raise an error
         self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
 
+    def test_multiband_inputs(self):
+        """
+        Test the method check_input_section with multiband files
+        """
+
+        # Test configuration with band initialisation for gray-level image
+        cfg = {
+            "input": {
+                "img_left": "tests/pandora/left.png",
+                "band_left": ["r", "g", "b"],
+                "img_right": "tests/pandora/right.png",
+                "disp_min": -60,
+                "disp_max": 0,
+            }
+        }
+        # Json checker must raise an error
+        self.assertRaises(SystemExit, JSON_checker.check_input_section, cfg)
+
+        # Test configuration with wrong band initialisation for rgb image
+        cfg = {
+            "input": {
+                "img_left": "tests/pandora/left_rgb.png",
+                "band_left": ["r", "g", "b"],
+                "img_right": "tests/pandora/right_rgb.png",
+                "band_right": ["r", "g"],
+                "disp_min": -60,
+                "disp_max": 0,
+            }
+        }
+        # Json checker must raise an error
+        self.assertRaises(SystemExit, JSON_checker.check_input_section, cfg)
+
+        # Test configuration with no band initialisation for rgb image
+        cfg = {
+            "input": {
+                "img_left": "tests/pandora/left_rgb.png",
+                "img_right": "tests/pandora/right_rgb.png",
+                "disp_min": -60,
+                "disp_max": 0,
+            }
+        }
+        # Json checker must raise an error
+        self.assertRaises(SystemExit, JSON_checker.check_input_section, cfg)
+
+        # Test configuration for gray-level image
+        cfg = {"input": copy.deepcopy(common.input_cfg_left_grids)}
+        cfg_return = JSON_checker.check_input_section(cfg)
+        if (
+                (cfg_return["input"]["band_left"] is not None)
+                and (cfg_return["input"]["band_right"] is not None)
+        ):
+            raise AssertionError
+
+    def test_multiband_pipeline(self):
+        """
+        Test the method check_conf for multiband images
+        """
+        pandora_machine = PandoraMachine()
+        cfg = {
+            "input": copy.deepcopy(common.input_multiband_cfg),
+            "pipeline": {
+                "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2},
+                "disparity": {"disparity_method": "wta"},
+            },
+        }
+
+        cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
+        print(cfg_return)
+        cfg_gt = {
+            "input": {
+                "nodata_left": -9999,
+                "band_left": ["r", "g", "b"],
+                "nodata_right": -9999,
+                "band_right": ["r", "g", "b"],
+                "left_mask": None,
+                "right_mask": None,
+                "left_classif": None,
+                "left_segm": None,
+                "right_classif": None,
+                "right_segm": None,
+                "disp_min_right": None,
+                "disp_max_right": None,
+                "img_left": "tests/pandora/left_rgb.png",
+                "img_right": "tests/pandora/right_rgb.png",
+                "disp_min": -60,
+                "disp_max": 0,
+            },
+            "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
+        }
+
+        del cfg_gt["pipeline"]["refinement"]
+        del cfg_gt["pipeline"]["filter"]
+        assert cfg_return == cfg_gt
+
     @staticmethod
     def test_update_conf():
         """
@@ -383,7 +477,9 @@ class TestConfig(unittest.TestCase):
         cfg_gt = {
             "input": {
                 "nodata_left": -9999,
+                "band_left": None,
                 "nodata_right": -9999,
+                "band_right": None,
                 "left_mask": None,
                 "right_mask": None,
                 "left_classif": None,
@@ -399,6 +495,7 @@ class TestConfig(unittest.TestCase):
             },
             "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
         }
+
         del cfg_gt["pipeline"]["refinement"]
         del cfg_gt["pipeline"]["filter"]
         assert cfg_return == cfg_gt
@@ -419,7 +516,9 @@ class TestConfig(unittest.TestCase):
                 "nodata_left": -9999,
                 "nodata_right": -9999,
                 "left_mask": None,
+                "band_left": None,
                 "right_mask": None,
+                "band_right": None,
                 "left_classif": None,
                 "left_segm": None,
                 "right_classif": None,
@@ -462,7 +561,9 @@ class TestConfig(unittest.TestCase):
                 "nodata_left": -9999,
                 "nodata_right": -9999,
                 "left_mask": None,
+                "band_left": None,
                 "right_mask": None,
+                "band_right": None,
                 "left_classif": None,
                 "right_classif": None,
                 "left_segm": None,
@@ -504,7 +605,9 @@ class TestConfig(unittest.TestCase):
                 "nodata_left": -9999,
                 "nodata_right": -9999,
                 "img_left": "tests/pandora/left.png",
+                "band_left": None,
                 "img_right": "tests/pandora/right.png",
+                "band_right": None,
                 "left_mask": None,
                 "right_mask": None,
                 "left_classif": None,

@@ -94,7 +94,7 @@ def matching_cost_tests_setup() -> Tuple[xr.Dataset, xr.Dataset]:
 
 basic_pipeline_cfg = {
     "right_disp_map": {"method": "none"},
-    "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2},
+    "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": None},
     "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
     "refinement": {"refinement_method": "vfit"},
     "filter": {"filter_method": "median", "filter_size": 3},
@@ -102,7 +102,7 @@ basic_pipeline_cfg = {
 
 validation_pipeline_cfg = {
     "right_disp_map": {"method": "accurate"},
-    "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2},
+    "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": None},
     "cost_volume_confidence": {"confidence_method": "std_intensity"},
     "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
     "refinement": {"refinement_method": "vfit"},
@@ -112,7 +112,7 @@ validation_pipeline_cfg = {
 
 multiscale_pipeline_cfg = {
     "right_disp_map": {"method": "none"},
-    "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2},
+    "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": None},
     "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
     "refinement": {"refinement_method": "vfit"},
     "filter": {"filter_method": "median", "filter_size": 3},
@@ -122,6 +122,15 @@ multiscale_pipeline_cfg = {
 input_cfg_basic = {
     "img_left": "tests/pandora/left.png",
     "img_right": "tests/pandora/right.png",
+    "disp_min": -60,
+    "disp_max": 0,
+}
+
+input_multiband_cfg = {
+    "img_left": "tests/pandora/left_rgb.png",
+    "band_left": ["r", "g", "b"],
+    "img_right": "tests/pandora/right_rgb.png",
+    "band_right": ["r", "g", "b"],
     "disp_min": -60,
     "disp_max": 0,
 }
