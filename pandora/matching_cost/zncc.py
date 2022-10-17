@@ -22,8 +22,7 @@
 """
 This module contains functions associated to ZNCC method used in the cost volume measure step.
 """
-import logging
-import sys
+
 from typing import Dict, Union
 
 import numpy as np
@@ -78,7 +77,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
             "matching_cost_method": And(str, lambda input: "zncc"),
             "window_size": And(int, lambda input: input > 0 and (input % 2) != 0),
             "subpix": And(int, lambda input: input > 0 and ((input % 2) == 0) or input == 1),
-            "band": Or(And(str, lambda input: len(input) == 1), lambda input: input == None)
+            "band": Or(str, lambda input: input is None),
         }
 
         checker = Checker(schema)
@@ -117,11 +116,8 @@ class Zncc(matching_cost.AbstractMatchingCost):
             xarray.Dataset, with the data variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
         """
-
-        if (len(img_right["im"].shape) > 2) and (self._band is None):
-            logging.error("With {} bands image, band parameter in matching cost must be instantiate".format(
-                img_right["im"].shape[2]))
-            sys.exit(1)
+        # check band parameter
+        self.check_band_input_mc(img_left, img_right)
 
         # Contains the shifted right images
         img_right_shift = shift_right_img(img_right, self._subpix, self._band)
@@ -152,7 +148,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
             "window_size": self._window_size,
             "type_measure": "max",
             "cmax": cmax,
-            "band_correl": self._band
+            "band_correl": self._band,
         }
 
         # Disparity range
@@ -192,8 +188,8 @@ class Zncc(matching_cost.AbstractMatchingCost):
                 if len(img_right_shift[i_right]["im"].shape) > 2:
                     # Compute the normalized summation of the product of intensities
                     zncc_ = (
-                            img_left["im"].data[:, point_p[0]: point_p[1], band_index]
-                            * img_right_shift[i_right]["im"].data[:, point_q[0]: point_q[1], band_index]
+                        img_left["im"].data[:, point_p[0] : point_p[1], band_index]
+                        * img_right_shift[i_right]["im"].data[:, point_q[0] : point_q[1], band_index]
                     )
                 else:
                     # Compute the normalized summation of the product of intensities
@@ -204,8 +200,8 @@ class Zncc(matching_cost.AbstractMatchingCost):
             else:
                 # Compute the normalized summation of the product of intensities
                 zncc_ = (
-                        img_left["im"].data[:, point_p[0]: point_p[1]]
-                        * img_right_shift[i_right]["im"].data[:, point_q[0]: point_q[1]]
+                    img_left["im"].data[:, point_p[0] : point_p[1]]
+                    * img_right_shift[i_right]["im"].data[:, point_q[0] : point_q[1]]
                 )
 
             zncc_ = xr.Dataset(

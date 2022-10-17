@@ -104,15 +104,15 @@ def read_img(
         no_data = -9999
 
     if band_list is None:
-        im = {"im": (["row", "col"], data.astype(np.float32))}
+        image = {"im": (["row", "col"], data.astype(np.float32))}
         coords = {"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
     # if image is 3 dimensions we create a dataset with [row col band] dims for dataArray
     else:
-        im = {"im": (["row", "col", "band"], data.astype(np.float32))}
+        image = {"im": (["row", "col", "band"], data.astype(np.float32))}
         coords = {"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1]), "band": np.arange(data.shape[2])}
 
     dataset = xr.Dataset(
-        im,
+        image,
         coords=coords,
     )
 
@@ -131,9 +131,9 @@ def read_img(
         "transform": transform,
         "valid_pixels": 0,  # arbitrary default value
         "no_data_mask": 1,
+        "band_list": band_list,
     }  # arbitrary default value
-    if band_list is not None:
-        dataset.attrs["band_list"] = band_list
+
 
     if classif is not None:
         input_classif = rasterio_open(classif).read(1)
@@ -708,7 +708,7 @@ def compute_std_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.n
 
     # Computes E[row^2]
     raster_power_two = xr.Dataset(
-        {"im": (["row", "col"], selected_band ** 2)},
+        {"im": (["row", "col"], selected_band**2)},
         coords={
             "row": np.arange(img["im"].shape[0]),
             "col": np.arange(img["im"].shape[1]),

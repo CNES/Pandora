@@ -79,7 +79,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             "matching_cost_method": And(str, lambda input: common.is_method(input, ["ssd", "sad"])),
             "window_size": And(int, lambda input: input > 0 and (input % 2) != 0),
             "subpix": And(int, lambda input: input > 0 and ((input % 2) == 0) or input == 1),
-            "band": Or(And(str, lambda input: len(input) == 1), lambda input: input == None)
+            "band": Or(str, lambda input: input is None),
         }
 
         checker = Checker(schema)
@@ -118,6 +118,9 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             xarray.Dataset, with the data variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
         """
+        # check band parameter
+        self.check_band_input_mc(img_left, img_right)
+
         # Contains the shifted right images
         img_right_shift = shift_right_img(img_right, self._subpix, self._band)
         if self._band is not None:
@@ -150,7 +153,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             "window_size": self._window_size,
             "type_measure": "min",
             "cmax": cmax,
-            "band_correl": self._band
+            "band_correl": self._band,
         }
 
         # Disparity range # pylint: disable=undefined-variable
@@ -250,11 +253,11 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         return cv  # type: ignore
 
     def ad_cost(
-            self,
-            point_p: Tuple[int, int],
-            point_q: Tuple[int, int],
-            img_left: xr.Dataset,
-            img_right: xr.Dataset,
+        self,
+        point_p: Tuple[int, int],
+        point_q: Tuple[int, int],
+        img_left: xr.Dataset,
+        img_right: xr.Dataset,
     ) -> np.ndarray:
         """
         Computes the absolute difference
@@ -280,14 +283,19 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             band_index = img_left.attrs["band_list"].index(self._band)
             # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
             if len(img_right["im"].data.shape) > 2:
-                cost = abs(img_left["im"].data[:, point_p[0]:point_p[1], band_index] - img_right["im"].data[:,
-                                                                                       point_q[0] : point_q[1], band_index])
+                cost = abs(
+                    img_left["im"].data[:, point_p[0] : point_p[1], band_index]
+                    - img_right["im"].data[:, point_q[0] : point_q[1], band_index]
+                )
             else:
-                cost = abs(img_left["im"].data[:, point_p[0]:point_p[1], band_index] - img_right["im"].data[:,
-                                                                                point_q[0]: point_q[1]])
+                cost = abs(
+                    img_left["im"].data[:, point_p[0] : point_p[1], band_index]
+                    - img_right["im"].data[:, point_q[0] : point_q[1]]
+                )
         else:
-            cost = abs(img_left["im"].data[:, point_p[0]:point_p[1]] - img_right["im"].data[:,
-                                                                                point_q[0]: point_q[1]])
+            cost = abs(
+                img_left["im"].data[:, point_p[0] : point_p[1]] - img_right["im"].data[:, point_q[0] : point_q[1]]
+            )
         return cost
 
     def sd_cost(self, point_p: Tuple, point_q: Tuple, img_left: xr.Dataset, img_right: xr.Dataset) -> np.ndarray:
@@ -316,12 +324,19 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             band_index = img_left.attrs["band_list"].index(self._band)
             # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
             if len(img_right["im"].data.shape) > 2:
-                cost = (img_left["im"].data[:, point_p[0] : point_p[1], band_index] - img_right["im"].data[:, point_q[0] : point_q[1], band_index]) ** 2
+                cost = (
+                    img_left["im"].data[:, point_p[0] : point_p[1], band_index]
+                    - img_right["im"].data[:, point_q[0] : point_q[1], band_index]
+                ) ** 2
             else:
-                cost = (img_left["im"].data[:, point_p[0] : point_p[1], band_index] - img_right["im"].data[:, point_q[0] : point_q[1]]) ** 2
+                cost = (
+                    img_left["im"].data[:, point_p[0] : point_p[1], band_index]
+                    - img_right["im"].data[:, point_q[0] : point_q[1]]
+                ) ** 2
         else:
-            cost = (img_left["im"].data[:, point_p[0]: point_p[1]] - img_right["im"].data[:,
-                                                                          point_q[0]: point_q[1]]) ** 2
+            cost = (
+                img_left["im"].data[:, point_p[0] : point_p[1]] - img_right["im"].data[:, point_q[0] : point_q[1]]
+            ) ** 2
 
         return cost
 

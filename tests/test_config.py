@@ -304,10 +304,7 @@ class TestConfig(unittest.TestCase):
         # Test configuration for gray-level image
         cfg = {"input": copy.deepcopy(common.input_cfg_left_grids)}
         cfg_return = JSON_checker.check_input_section(cfg)
-        if (
-                (cfg_return["input"]["band_left"] is not None)
-                and (cfg_return["input"]["band_right"] is not None)
-        ):
+        if (cfg_return["input"]["band_left"] is not None) and (cfg_return["input"]["band_right"] is not None):
             raise AssertionError
 
     def test_multiband_pipeline(self):

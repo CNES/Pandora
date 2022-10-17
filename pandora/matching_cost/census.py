@@ -70,13 +70,13 @@ class Census(matching_cost.AbstractMatchingCost):
         if "subpix" not in cfg:
             cfg["subpix"] = self._SUBPIX  # type: ignore
         if "band" not in cfg:
-            cfg["band"] = self._BAND  # type: ignore
+            cfg["band"] = self._BAND
 
         schema = {
             "matching_cost_method": And(str, lambda input: "census"),
             "window_size": And(int, lambda input: input in (3, 5)),
             "subpix": And(int, lambda input: input > 0 and ((input % 2) == 0) or input == 1),
-            "band": Or(And(str, lambda input: len(input) == 1), lambda input: input == None)
+            "band": Or(str, lambda input: input is None),
         }
 
         checker = Checker(schema)
@@ -115,6 +115,9 @@ class Census(matching_cost.AbstractMatchingCost):
                 - cost_volume 3D xarray.DataArray (row, col, disp)
         :rtype: xarray.Dataset
         """
+        # check band parameter
+        self.check_band_input_mc(img_left, img_right)
+
         # Contains the shifted right images
         img_right_shift = shift_right_img(img_right, self._subpix, self._band)
 
