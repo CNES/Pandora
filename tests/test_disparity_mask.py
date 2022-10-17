@@ -1,4 +1,5 @@
 # pylint: disable=duplicate-code
+# pylint:disable=too-many-lines
 # type:ignore
 #!/usr/bin/env python
 # coding: utf8

@@ -370,7 +370,7 @@ class TestConfig(unittest.TestCase):
         left_img = read_img(cfg["input"]["img_left"], no_data=-999, band_list=["r", "g", "b"])
         right_img = read_img(cfg["input"]["img_right"], no_data=-999, band_list=["r", "g", "b"])
 
-        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg["pipeline"]["matching_cost"])  # type: ignore
+        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg["pipeline"]["matching_cost"])
 
         with pytest.raises(SystemExit):
             matching_cost_.check_band_input_mc(left_img, right_img)
@@ -386,7 +386,7 @@ class TestConfig(unittest.TestCase):
         left_img = read_img(cfg["input"]["img_left"], no_data=-999, band_list=["r", "g", "b"])
         right_img = read_img(cfg["input"]["img_right"], no_data=-999, band_list=["r", "g", "b"])
 
-        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg["pipeline"]["matching_cost"])  # type: ignore
+        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg["pipeline"]["matching_cost"])
 
         with pytest.raises(SystemExit):
             matching_cost_.check_band_input_mc(left_img, right_img)
