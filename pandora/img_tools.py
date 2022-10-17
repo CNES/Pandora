@@ -68,7 +68,7 @@ def read_img(
     :type no_data: no_data value in the image
     :type no_data: float
     :param band_list: User's value for selected band
-    :type band_list: int
+    :type band_list: list
     :param mask: Path to the mask (optional): 0 value for valid pixels, !=0 value for invalid pixels
     :type mask: string
     :param classif: Path to the classif (optional)

@@ -44,22 +44,18 @@ the matching cost computation  :
 Configuration and parameters
 ----------------------------
 
-+------------------------+------------------------------------+--------+---------------+----------------------------------------+----------+
-| Name                   | Description                        | Type   | Default value | Available value                        | Required |
-+========================+====================================+========+===============+========================================+==========+
-| *matching_cost_method* | Similarity measure                 | string |               | "ssd" , "sad", "census, "zncc",        | Yes      |
-|                        |                                    |        |               | "mc_cnn" if plugin_libsgm is installed |          |
-+------------------------+------------------------------------+--------+---------------+----------------------------------------+----------+
-| *window_size*          | Window size for similarity measure | int    | 5             | Must be >0                             | No       |
-|                        |                                    |        |               |                                        |          |
-|                        |                                    |        |               | For "census" : {3,5}                   |          |
-+------------------------+------------------------------------+--------+---------------+----------------------------------------+----------+
-| *subpix*               | Cost volume upsampling factor      | int    | 1             | {1,2,4}                                | No       |
-+------------------------+------------------------------------+--------+---------------+----------------------------------------+----------+
+.. csv-table::
+
+    **Name**,**Description**,**Type**,**Default value**,**Available value**,**Required**
+    *matching_cost_method*,Similarity measure,string,,ssd sad census zncc  or mc_cnn if plugin_libsgm is installed,Yes
+    *window_size*,Window size for similarity measure,int,5,Must be >0 and For "census" : {3 5},No
+    *subpix*,Cost volume upsampling factor,int,1, {1 2 4},No
+    *band*, Band value on which to calculate the correlation, str, None, band in *band_left_list* and *band_right_list* input parameter,No
 
 - For *mc_cnn* similarity measure see :ref:`plugin_mccnn_conf` of :ref:`plugin_mccnn` for sub-parameters and configuration example.
+- NB: Parameter *band* must be one of the band presents in *band_left_list* and *band_right_list* inputs parameters
 
-**Example**
+**Example for mono band images**
 
 .. sourcecode:: text
 
@@ -74,6 +70,29 @@ Configuration and parameters
             "matching_cost":
             {
                 "matching_cost_method": "ssd",
+                "window_size": 7,
+                "subpix": 4
+            }
+            ...
+        }
+    }
+
+**Example for multiband images**
+
+.. sourcecode:: text
+
+    {
+        "input" :
+        {
+            ...
+        },
+        "pipeline" :
+        {
+            ...
+            "matching_cost":
+            {
+                "matching_cost_method": "ssd",
+                "band":"r",
                 "window_size": 7,
                 "subpix": 4
             }
