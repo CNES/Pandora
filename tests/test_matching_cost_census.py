@@ -60,12 +60,14 @@ class TestMatchingCost(unittest.TestCase):
         )
         left.attrs["crs"] = None
         left.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+        left.attrs["band_list"] = None
         data = np.array(([5, 1, 2, 3], [1, 2, 1, 0], [2, 2, 0, 1], [1, 1, 1, 1]), dtype=np.float64)
         right = xr.Dataset(
             {"im": (["row", "col"], data)}, coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
         )
         right.attrs["crs"] = None
         right.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+        right.attrs["band_list"] = None
         # census ground truth for the images left, right, window size = 3 and disp = -1
         census_ground_truth_d1 = np.array(
             (

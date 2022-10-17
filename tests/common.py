@@ -73,6 +73,7 @@ def matching_cost_tests_setup() -> Tuple[xr.Dataset, xr.Dataset]:
         "no_data_mask": 1,
         "crs": None,
         "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+        "band_list": None,
     }
 
     data = np.array(
@@ -87,6 +88,7 @@ def matching_cost_tests_setup() -> Tuple[xr.Dataset, xr.Dataset]:
         "no_data_mask": 1,
         "crs": None,
         "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+        "band_list": None,
     }
 
     return left, right
@@ -128,9 +130,9 @@ input_cfg_basic = {
 
 input_multiband_cfg = {
     "img_left": "tests/pandora/left_rgb.png",
-    "band_left": ["r", "g", "b"],
+    "band_left_list": ["r", "g", "b"],
     "img_right": "tests/pandora/right_rgb.png",
-    "band_right": ["r", "g", "b"],
+    "band_right_list": ["r", "g", "b"],
     "disp_min": -60,
     "disp_max": 0,
 }
@@ -157,4 +159,5 @@ img_attrs = {
     "no_data_mask": 1,
     "crs": None,
     "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+    "band_list": None,
 }

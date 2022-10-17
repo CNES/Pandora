@@ -135,6 +135,7 @@ def check_band(img_left: str, band_left_list: list, img_right: str, band_right_l
     if band_left_list is not None:
         if not left_.count == len(band_left_list):
             logging.error("Left image has %d band %d expected", left_.count, len(band_left_list))
+            sys.exit(1)
             # check left band values in list
         if not all(isinstance(band, str) for band in band_left_list):
             logging.error("Band value must be str")

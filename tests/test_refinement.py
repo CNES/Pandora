@@ -665,6 +665,7 @@ class TestRefinement(unittest.TestCase):
         )
         img_left.attrs["crs"] = None
         img_left.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+        img_left.attrs["band_list"] = None
 
         data_right = np.array(
             [
@@ -683,6 +684,7 @@ class TestRefinement(unittest.TestCase):
         )
         img_right.attrs["crs"] = None
         img_right.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+        img_right.attrs["band_list"] = None
 
         # Computes cost volume
         matching_cost_matcher = matching_cost.AbstractMatchingCost(

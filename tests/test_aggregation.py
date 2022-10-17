@@ -57,6 +57,7 @@ class TestAggregation(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            "band_list": None,
         }
 
         data = np.array(([[1, 5, 1, 15, 7], [2, 10, 9, 11, 9], [3, 1, 18, 4, 5]]), dtype=np.float32)
@@ -68,6 +69,7 @@ class TestAggregation(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            "band_list": None,
         }
 
         # Create the matching cost for the images self.left and self.right, with disp = [-1, 0, 1] and SAD measuress
@@ -307,6 +309,7 @@ class TestAggregation(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            "band_list": None,
         }
 
         data = np.array(([[1, 5, 1, 15, 7], [2, 10, 9, 11, 9], [3, 1, 18, 4, 5], [1, 5, 1, 15, 7]]), dtype=np.float32)
@@ -320,6 +323,7 @@ class TestAggregation(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            "band_list": None,
         }
 
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
@@ -369,6 +373,7 @@ class TestAggregation(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            "band_list": None,
         }
 
         data = np.array(([[1, 5, 1, 15, 7], [2, 10, 9, 11, 9], [3, 1, 18, 4, 5], [1, 5, 1, 15, 7]]), dtype=np.float32)
@@ -380,6 +385,7 @@ class TestAggregation(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            "band_list": None,
         }
 
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
@@ -448,6 +454,7 @@ class TestAggregation(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            "band_list": None,
         }
 
         data = np.array(([[1, 5, 1, 15, 7], [2, 10, 9, 11, 9], [3, 1, 18, 4, 5]]), dtype=np.float32)
@@ -460,6 +467,7 @@ class TestAggregation(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            "band_list": None,
         }
 
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
@@ -522,6 +530,7 @@ class TestAggregation(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            "band_list": None,
         }
 
         data = np.array(([[1, 5, 1, 15, 7], [2, 10, 9, 11, 9], [3, 1, 18, 4, 5]]), dtype=np.float32)
@@ -535,6 +544,7 @@ class TestAggregation(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            "band_list": None,
         }
 
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
@@ -602,6 +612,7 @@ class TestAggregation(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            "band_list": None,
         }
 
         data = np.array(([[1, 5, 1, 15, 7], [2, 10, 9, 11, 9], [3, 1, 18, 4, 5]]), dtype=np.float32)
@@ -613,6 +624,7 @@ class TestAggregation(unittest.TestCase):
         right.attrs["no_data"] = 1
         right.attrs["crs"] = None
         right.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+        right.attrs["band_list"] = None
 
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 2}
@@ -655,6 +667,7 @@ class TestAggregation(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            "band_list": None,
         }
 
         data = np.array(([[1, 5, 1, 15, 7], [2, 10, 9, 11, 9], [3, 1, 18, 4, 5]]), dtype=np.float32)
@@ -669,6 +682,7 @@ class TestAggregation(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            "band_list": None,
         }
 
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
@@ -716,6 +730,7 @@ class TestAggregation(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            "band_list": None,
         }
 
         data = np.array(([[1, 5, 1, 15, 7], [2, 10, 9, 11, 9], [3, 1, 18, 4, 5], [1, 5, 1, 15, 7]]), dtype=np.float32)
@@ -727,6 +742,7 @@ class TestAggregation(unittest.TestCase):
         right.attrs["no_data"] = 1
         right.attrs["crs"] = None
         right.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+        right.attrs["band_list"] = None
 
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}

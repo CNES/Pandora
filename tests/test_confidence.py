@@ -102,6 +102,7 @@ class TestConfidence(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            "band_list": None,
         }
 
         right_im = np.array([[1, 2, 1, 2], [2, 3, 5, 3], [0, 2, 4, 2], [5, 3, 1, 4]], dtype=np.float32)
@@ -119,6 +120,7 @@ class TestConfidence(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            "band_list": None,
         }
 
         user_cfg = {
@@ -209,6 +211,7 @@ class TestConfidence(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            "band_list": None,
         }
 
         right_data = np.array(
@@ -226,6 +229,7 @@ class TestConfidence(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            "band_list": None,
         }
 
         # load plugins

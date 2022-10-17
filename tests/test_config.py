@@ -26,12 +26,15 @@ This module contains functions to test the configuration
 import unittest
 import copy
 import json_checker
+import pytest
 from transitions import MachineError
 
 import numpy as np
 from tests import common
 import pandora.check_json as JSON_checker
 from pandora.state_machine import PandoraMachine
+from pandora.matching_cost import matching_cost
+from pandora.img_tools import read_img
 
 
 class TestConfig(unittest.TestCase):
@@ -266,7 +269,7 @@ class TestConfig(unittest.TestCase):
         cfg = {
             "input": {
                 "img_left": "tests/pandora/left.png",
-                "band_left": ["r", "g", "b"],
+                "band_left_list": ["r", "g", "b"],
                 "img_right": "tests/pandora/right.png",
                 "disp_min": -60,
                 "disp_max": 0,
@@ -279,9 +282,9 @@ class TestConfig(unittest.TestCase):
         cfg = {
             "input": {
                 "img_left": "tests/pandora/left_rgb.png",
-                "band_left": ["r", "g", "b"],
+                "band_left_list": ["r", "g", "b"],
                 "img_right": "tests/pandora/right_rgb.png",
-                "band_right": ["r", "g"],
+                "band_right_list": ["r", "g"],
                 "disp_min": -60,
                 "disp_max": 0,
             }
@@ -304,7 +307,7 @@ class TestConfig(unittest.TestCase):
         # Test configuration for gray-level image
         cfg = {"input": copy.deepcopy(common.input_cfg_left_grids)}
         cfg_return = JSON_checker.check_input_section(cfg)
-        if (cfg_return["input"]["band_left"] is not None) and (cfg_return["input"]["band_right"] is not None):
+        if (cfg_return["input"]["band_left_list"] is not None) and (cfg_return["input"]["band_right_list"] is not None):
             raise AssertionError
 
     def test_multiband_pipeline(self):
@@ -315,19 +318,19 @@ class TestConfig(unittest.TestCase):
         cfg = {
             "input": copy.deepcopy(common.input_multiband_cfg),
             "pipeline": {
-                "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2},
+                "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": "r"},
                 "disparity": {"disparity_method": "wta"},
             },
         }
 
         cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
-        print(cfg_return)
+
         cfg_gt = {
             "input": {
                 "nodata_left": -9999,
-                "band_left": ["r", "g", "b"],
+                "band_left_list": ["r", "g", "b"],
                 "nodata_right": -9999,
-                "band_right": ["r", "g", "b"],
+                "band_right_list": ["r", "g", "b"],
                 "left_mask": None,
                 "right_mask": None,
                 "left_classif": None,
@@ -343,10 +346,50 @@ class TestConfig(unittest.TestCase):
             },
             "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
         }
+        # correct band for correlation
+        cfg_gt["pipeline"]["matching_cost"]["band"] = "r"
 
         del cfg_gt["pipeline"]["refinement"]
         del cfg_gt["pipeline"]["filter"]
+
         assert cfg_return == cfg_gt
+
+    def test_failed_multiband_pipeline(self):
+        """
+        Test the method check_conf for multiband images with errors
+        """
+
+        # config with wrong band parameters
+        cfg = {
+            "input": copy.deepcopy(common.input_multiband_cfg),
+            "pipeline": {
+                "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": "n"},
+                "disparity": {"disparity_method": "wta"},
+            },
+        }
+        left_img = read_img(cfg["input"]["img_left"], no_data=-999, band_list=["r", "g", "b"])
+        right_img = read_img(cfg["input"]["img_right"], no_data=-999, band_list=["r", "g", "b"])
+
+        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg["pipeline"]["matching_cost"])  # type: ignore
+
+        with pytest.raises(SystemExit):
+            matching_cost_.check_band_input_mc(left_img, right_img)
+
+        # config with missing band parameters
+        cfg = {
+            "input": copy.deepcopy(common.input_multiband_cfg),
+            "pipeline": {
+                "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2},
+                "disparity": {"disparity_method": "wta"},
+            },
+        }
+        left_img = read_img(cfg["input"]["img_left"], no_data=-999, band_list=["r", "g", "b"])
+        right_img = read_img(cfg["input"]["img_right"], no_data=-999, band_list=["r", "g", "b"])
+
+        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg["pipeline"]["matching_cost"])  # type: ignore
+
+        with pytest.raises(SystemExit):
+            matching_cost_.check_band_input_mc(left_img, right_img)
 
     @staticmethod
     def test_update_conf():
@@ -474,9 +517,9 @@ class TestConfig(unittest.TestCase):
         cfg_gt = {
             "input": {
                 "nodata_left": -9999,
-                "band_left": None,
+                "band_left_list": None,
                 "nodata_right": -9999,
-                "band_right": None,
+                "band_right_list": None,
                 "left_mask": None,
                 "right_mask": None,
                 "left_classif": None,
@@ -513,9 +556,9 @@ class TestConfig(unittest.TestCase):
                 "nodata_left": -9999,
                 "nodata_right": -9999,
                 "left_mask": None,
-                "band_left": None,
+                "band_left_list": None,
                 "right_mask": None,
-                "band_right": None,
+                "band_right_list": None,
                 "left_classif": None,
                 "left_segm": None,
                 "right_classif": None,
@@ -558,9 +601,9 @@ class TestConfig(unittest.TestCase):
                 "nodata_left": -9999,
                 "nodata_right": -9999,
                 "left_mask": None,
-                "band_left": None,
+                "band_left_list": None,
                 "right_mask": None,
-                "band_right": None,
+                "band_right_list": None,
                 "left_classif": None,
                 "right_classif": None,
                 "left_segm": None,
@@ -602,9 +645,9 @@ class TestConfig(unittest.TestCase):
                 "nodata_left": -9999,
                 "nodata_right": -9999,
                 "img_left": "tests/pandora/left.png",
-                "band_left": None,
+                "band_left_list": None,
                 "img_right": "tests/pandora/right.png",
-                "band_right": None,
+                "band_right_list": None,
                 "left_mask": None,
                 "right_mask": None,
                 "left_classif": None,
