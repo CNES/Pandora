@@ -58,7 +58,7 @@ def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.Da
 
 
 def read_img(
-        img: str, no_data: float, band_list: list = None, mask: str = None, classif: str = None, segm: str = None
+    img: str, no_data: float, band_list: list = None, mask: str = None, classif: str = None, segm: str = None
 ) -> xr.Dataset:
     """
     Read image and mask, and return the corresponding xarray.DataSet
@@ -133,7 +133,6 @@ def read_img(
         "no_data_mask": 1,
         "band_list": band_list,
     }  # arbitrary default value
-
 
     if classif is not None:
         input_classif = rasterio_open(classif).read(1)

@@ -484,6 +484,33 @@ class TestPandora(unittest.TestCase):
             if self.error(-1 * rasterio_open(tmp_dir + "/right_disparity.tif").read(1), self.disp_right, 1) > 0.20:
                 raise AssertionError
 
+    def test_main_with_rgb_image(self):
+        """
+        Test the basic pipeline with an rgb data input
+        """
+
+        user_cfg = {
+            "input": copy.deepcopy(common.input_multiband_cfg),
+            "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
+        }
+        # working on green band
+        user_cfg["pipeline"]["matching_cost"]["band"] = "g"
+        print(user_cfg["input"]["img_left"])
+
+        left_rgb = read_img(user_cfg["input"]["img_left"], band_list=["r", "g", "b"], no_data=np.nan, mask=None)
+        right_rgb = read_img(user_cfg["input"]["img_right"], band_list=["r", "g", "b"], no_data=np.nan, mask=None)
+
+        pandora_machine = PandoraMachine()
+        # Update the user configuration with default values
+        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+
+        # Run the pandora pipeline
+        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg["pipeline"])
+
+        # Check the left disparity map
+        if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.25:
+            raise AssertionError
+
 
 if __name__ == "__main__":
     common.setup_logging()

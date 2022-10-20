@@ -55,10 +55,40 @@ class TestImgTools(unittest.TestCase):
             {"im": (["row", "col"], data)}, coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
         )
 
+        # Initialize multiband data
+        data = np.zeros((5, 6, 2))
+        data[:, :, 0] = np.array(
+            (
+                [1, 1, 1, 1, 1, 1],
+                [1, 1, 1, 1, 2, 1],
+                [1, 1, 1, 4, 3, 1],
+                [1, 1, 1, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1],
+            ),
+            dtype=np.float64,
+        )
+
+        data[:, :, 1] = np.array(
+            (
+                [1, 1, 1, 1, 1, 1],
+                [1, 2, 1, 1, 1, 1],
+                [4, 3, 1, 1, 1, 1],
+                [5, 1, 1, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1],
+            ),
+            dtype=np.float64,
+        )
+
+        self.img_multiband = xr.Dataset(
+            {"im": (["row", "col", "band"], data)},
+            coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1]), "band": np.arange(data.shape[2])},
+        )
+
+        self.img_multiband.attrs["band_list"] = ["r", "g"]
+
     def test_census_transform(self):
         """
         Test the census transform method
-
         """
         # Census transform ground truth for the image self.img with window size 3
         census_ground_truth = np.array(
@@ -70,6 +100,30 @@ class TestImgTools(unittest.TestCase):
         )
         # Computes the census transform for the image self.img with window size 3
         census_transform = img_tools.census_transform(self.img, 3)
+        # Check if the census_transform is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(census_transform["im"].data, census_ground_truth)
+
+        # Census transform ground truth for the image self.img with window size 5
+        census_ground_truth = np.array(([[0b0000000001000110000000000, 0b0]]))
+        # Computes the census transform for the image self.img with window size 5
+        census_transform = img_tools.census_transform(self.img, 5)
+        # Check if the census_transform is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(census_transform["im"].data, census_ground_truth)
+
+    def test_census_transform_multiband(self):
+        """
+        Test the census transform method for multiband image
+        """
+        # Census transform ground truth for the image self.img with window size 3
+        census_ground_truth = np.array(
+            (
+                [0b000000000, 0b000000001, 0b000001011, 0b000000110],
+                [0b000000000, 0b000001000, 0b000000000, 0b000100000],
+                [0b000000000, 0b001000000, 0b011000000, 0b110000000],
+            )
+        )
+        # Computes the census transform for the image self.img with window size 3 and first band
+        census_transform = img_tools.census_transform(self.img_multiband, 3, "r")
         # Check if the census_transform is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(census_transform["im"].data, census_ground_truth)
 
@@ -102,6 +156,31 @@ class TestImgTools(unittest.TestCase):
         mean_ground_truth = np.array(([[31 / 25.0, 31 / 25.0]]))
         # Computes the mean raster for the image self.img with window size 5
         mean_r = img_tools.compute_mean_raster(self.img, 5)
+        # Check if the calculated mean is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(mean_r, mean_ground_truth)
+
+    def test_compute_mean_raster_multiband_image(self):
+        """
+        Test the method compute_mean_raster
+
+        """
+        # Mean raster ground truth for the image self.img with window size 3
+        mean_ground_truth = np.array(
+            (
+                [1.0, 12 / 9.0, 15 / 9.0, 15 / 9.0],
+                [1.0, 12 / 9.0, 15 / 9.0, 15 / 9.0],
+                [1.0, 12 / 9.0, 14.0 / 9, 14.0 / 9],
+            )
+        )
+        # Computes the mean raster for the image self.img with window size 3 and first band
+        mean_r = img_tools.compute_mean_raster(self.img_multiband, 3, "r")
+        # Check if the calculated mean is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(mean_r, mean_ground_truth)
+
+        # Mean raster ground truth for the image self.img with window size 5
+        mean_ground_truth = np.array(([[31 / 25.0, 31 / 25.0]]))
+        # Computes the mean raster for the image self.img with window size 5 and first band
+        mean_r = img_tools.compute_mean_raster(self.img_multiband, 5, "r")
         # Check if the calculated mean is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(mean_r, mean_ground_truth)
 
@@ -165,6 +244,48 @@ class TestImgTools(unittest.TestCase):
         std_ground_truth = np.array(([[np.std(self.img["im"][:, :5]), np.std(self.img["im"][:, 1:])]]))
         # Computes the standard deviation raster for the image self.img with window size 5
         std_r = img_tools.compute_std_raster(self.img, 5)
+        # Check if the calculated standard deviation is equal ( to desired tolerance 1e-07 ) to the ground truth
+        np.testing.assert_allclose(std_r, std_ground_truth, rtol=1e-07)
+
+    def test_compute_std_raster_multiband(self):
+        """
+        Test the method compute_std_raster
+
+        """
+        # standard deviation raster ground truth for the image self.img with window size 3
+        std_ground_truth = np.array(
+            (
+                [
+                    0.0,
+                    np.std(self.img_multiband["im"][:3, 1:4, 0]),
+                    np.std(self.img_multiband["im"][:3, 2:5, 0]),
+                    np.std(self.img_multiband["im"][:3, 3:, 0]),
+                ],
+                [
+                    0.0,
+                    np.std(self.img_multiband["im"][1:4, 1:4, 0]),
+                    np.std(self.img_multiband["im"][1:4, 2:5, 0]),
+                    np.std(self.img_multiband["im"][1:4, 3:, 0]),
+                ],
+                [
+                    0.0,
+                    np.std(self.img_multiband["im"][2:5, 1:4, 0]),
+                    np.std(self.img_multiband["im"][2:5, 2:5, 0]),
+                    np.std(self.img_multiband["im"][2:5, 3:, 0]),
+                ],
+            )
+        )
+        # Computes the standard deviation raster for the image self.img with window size 3
+        std_r = img_tools.compute_std_raster(self.img_multiband, 3, "r")
+        # Check if the calculated standard deviation is equal ( to desired tolerance 1e-07 ) to the ground truth
+        np.testing.assert_allclose(std_r, std_ground_truth, rtol=1e-07)
+
+        # standard deviation raster ground truth for the image self.img with window size 5
+        std_ground_truth = np.array(
+            ([[np.std(self.img_multiband["im"][:, :5, 0]), np.std(self.img_multiband["im"][:, 1:, 0])]])
+        )
+        # Computes the standard deviation raster for the image self.img with window size 5
+        std_r = img_tools.compute_std_raster(self.img_multiband, 5, "r")
         # Check if the calculated standard deviation is equal ( to desired tolerance 1e-07 ) to the ground truth
         np.testing.assert_allclose(std_r, std_ground_truth, rtol=1e-07)
 
@@ -439,6 +560,28 @@ class TestImgTools(unittest.TestCase):
         )
 
         np.testing.assert_array_equal(dst_img_correct, dst_left["im"].values)
+
+    def test_shift_right_img(self):
+        """
+        Test shift_right_img_function
+        """
+        gt = np.array([0.25, 1.25, 2.25, 3.25, 4.25])
+
+        shifted_img = img_tools.shift_right_img(self.img, 4)
+
+        # check if col coordinates has been shifted
+        np.testing.assert_array_equal(gt, shifted_img[1].col)
+
+    def test_shift_right_img_multiband(self):
+        """
+        Test shift_right_img_function for multiband image
+        """
+        gt = np.array([0.25, 1.25, 2.25, 3.25, 4.25])
+
+        shifted_img = img_tools.shift_right_img(self.img_multiband, 4, "r")
+
+        # check if columns coordinates has been shifted
+        np.testing.assert_array_equal(gt, shifted_img[1].col)
 
 
 if __name__ == "__main__":

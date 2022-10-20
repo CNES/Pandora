@@ -94,6 +94,89 @@ def matching_cost_tests_setup() -> Tuple[xr.Dataset, xr.Dataset]:
     return left, right
 
 
+def matching_cost_tests_multiband_setup() -> Tuple[xr.Dataset, xr.Dataset]:
+    """
+    Setup the matching_cost_tests data
+
+    :return: left, right datasets
+    :rtype: Tuple[xr.Dataset]
+    """
+    # Create a multiband stereo object
+    # Initialize multiband data
+    data = np.zeros((5, 6, 2))
+    data[:, :, 0] = np.array(
+        (
+            [1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 2, 1],
+            [1, 1, 1, 4, 3, 1],
+            [1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1],
+        ),
+        dtype=np.float64,
+    )
+
+    data[:, :, 1] = np.array(
+        (
+            [1, 1, 1, 1, 1, 1],
+            [1, 2, 1, 1, 1, 1],
+            [4, 3, 1, 1, 1, 1],
+            [5, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1],
+        ),
+        dtype=np.float64,
+    )
+
+    left = xr.Dataset(
+        {"im": (["row", "col", "band"], data)},
+        coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1]), "band": np.arange(data.shape[2])},
+    )
+
+    left.attrs = {
+        "valid_pixels": 0,
+        "no_data_mask": 1,
+        "crs": None,
+        "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+        "band_list": ["r", "g"],
+    }
+    # initialize right data
+    data = np.zeros((5, 6, 2))
+    data[:, :, 0] = np.array(
+        (
+            [1, 1, 1, 2, 2, 2],
+            [1, 1, 1, 4, 2, 4],
+            [1, 1, 1, 4, 4, 1],
+            [1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1],
+        ),
+        dtype=np.float64,
+    )
+
+    data[:, :, 1] = np.array(
+        (
+            [1, 1, 1, 1, 1, 1],
+            [2, 2, 2, 1, 1, 1],
+            [4, 2, 4, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1],
+        ),
+        dtype=np.float64,
+    )
+
+    right = xr.Dataset(
+        {"im": (["row", "col", "band"], data)},
+        coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1]), "band": np.arange(data.shape[2])},
+    )
+    right.attrs = {
+        "valid_pixels": 0,
+        "no_data_mask": 1,
+        "crs": None,
+        "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+        "band_list": ["r", "g"],
+    }
+
+    return left, right
+
+
 basic_pipeline_cfg = {
     "right_disp_map": {"method": "none"},
     "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": None},
