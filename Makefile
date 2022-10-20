@@ -62,110 +62,98 @@ check: ## check if cmake is installed
 .PHONY: venv
 venv: check ## create virtualenv in PANDORA_VENV directory if not exists
 	@test -d ${PANDORA_VENV} || python3 -m venv ${PANDORA_VENV}
-	@${PANDORA_VENV}/bin/python -m pip install --upgrade pip setuptools # no check to upgrade each time
+	@${PANDORA_VENV}/bin/python -m pip install --upgrade pip # no check to upgrade each time
 	@touch ${PANDORA_VENV}/bin/activate
 
 .PHONY: install
-install: venv  ## install pandora (not editable)
-	@test -f ${PANDORA_VENV}/bin/pandora || ${PANDORA_VENV}/bin/pip install .
-	@echo "PANDORA ${PANDORA_VERSION} installed in virtualenv ${PANDORA_VENV}"
-	@echo "PANDORA venv usage : source ${PANDORA_VENV}/bin/activate; pandora -h"
-
-.PHONY: install-with-plugin
-install-with-plugin: venv  ## install pandora (not editable) with plugins for stereo reconstruction (sgm, mccnn)
-	@test -f ${PANDORA_VENV}/bin/pandora || ${PANDORA_VENV}/bin/pip install .[sgm,mccnn]
-	@echo "PANDORA ${PANDORA_VERSION} installed in virtualenv ${PANDORA_VENV}"
-	@echo "PANDORA venv usage : source ${PANDORA_VENV}/bin/activate; pandora -h"
-
-.PHONY: install-dev
-install-dev: venv ## install pandora in dev editable mode (pip install -e .)
-	@test -f ${PANDORA_VENV}/bin/pandora || ${PANDORA_VENV}/bin/pip install -e .[dev,docs,notebook,sgm,mccnn]
+install: venv ## install pandora (pip editable mode) without plugin
+	@test -f ${PANDORA_VENV}/bin/pandora || ${PANDORA_VENV}/bin/pip install -e .[dev,docs,notebook]
+	@${PANDORA_VENV}/bin/python -m pip install nbstripout
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${PANDORA_VENV}/bin/pre-commit install
 	@echo "PANDORA ${PANDORA_VERSION} installed in dev mode in virtualenv ${PANDORA_VENV}"
 	@echo "PANDORA venv usage : source ${PANDORA_VENV}/bin/activate; pandora -h"
 
-.PHONY: install-notebook
-install-notebook: venv
-	@test -f ${PANDORA_VENV}/bin/pandora || ${PANDORA_VENV}/bin/pip install -e .[notebook]
+.PHONY: install-with-plugin
+install-with-plugin: venv  ## install pandora with plugins for stereo reconstruction (sgm, mccnn)
+	@test -f ${PANDORA_VENV}/bin/pandora || ${PANDORA_VENV}/bin/pip install -e .[dev,docs,notebook,sgm,mccnn]
+	@${PANDORA_VENV}/bin/python -m pip install nbstripout
+	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
+	@test -f .git/hooks/pre-commit || ${PANDORA_VENV}/bin/pre-commit install
+	@echo "PANDORA ${PANDORA_VERSION} installed in virtualenv ${PANDORA_VENV}"
 	@echo "PANDORA venv usage : source ${PANDORA_VENV}/bin/activate; pandora -h"
-
-## Install section for ci
-
-.PHONY: install-ci
-install-ci:
-	@python -m pip install --upgrade pip
-	@pip install .[dev]
-
-.PHONY: distribute
-distribute:
-	@python -m build --sdist
 
 ## Test section
 
 .PHONY: test
-test: install-dev ## run all tests + coverage html
+test: install ## run all tests + coverage html
 	@${PANDORA_VENV}/bin/pytest -m "not notebook_tests" --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
 
 .PHONY: test-notebook
-test-notebook: install-dev ## run notebook tests only
-	@${PANDORA_VENV}/bin/pytest -m "notebook_tests" --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
+test-notebook: install ## run notebook tests only
+	@${PANDORA_VENV}/bin/pytest -m "notebook_tests"
 
-.PHONY: test-ci
-test-ci:
-	@export NUMBA_DISABLE_JIT=1
-	@pytest -m "not notebook_tests" --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
+## Install section for Github CI
 
-.PHONY: test-notebook-hpc
-test-notebook-hpc: install-notebook
-	@pytest -m notebook_pandora
+.PHONY: install-github-ci
+install-github-ci:
+	@python -m pip install --upgrade pip
+	@pip install .[dev]
+
+.PHONY: distribute-github-ci
+distribute-github-ci:
+	@python -m build --sdist
+
+.PHONY: test-github-ci
+test-github-ci:
+	@export NUMBA_DISABLE_JIT=1 && pytest -m "not notebook_tests" --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
 
 ## Code quality, linting section
 
 ### Format with isort and black
 
 .PHONY: format
-format: install-dev format/nbstripout format/black  ## run black and nbstripout formatting (depends install-dev)
+format: install format/nbstripout format/black  ## run black and nbstripout formatting (depends install)
 
 .PHONY: format/black
-format/black: install-dev  ## run black formatting (depends install-dev)
+format/black: install  ## run black formatting (depends install)
 	@echo "+ $@"
-	@${PANDORA_VENV}/bin/black --line-length=120 pandora tests ./*.py notebooks/snippets/*.py 
+	@${PANDORA_VENV}/bin/black --line-length=120 pandora tests ./*.py notebooks/snippets/*.py
 
 .PHONY: format/nbstripout
-format/nbstripout: install-dev  ## run nbstripout formatting (depends install-dev)
+format/nbstripout: install  ## run nbstripout formatting (depends install)
 	@echo "+ $@"
 	@${PANDORA_VENV}/bin/nbstripout notebooks/*.ipynb notebooks/advanced_examples/*.ipynb
 
 ### Check code quality and linting : isort, black, flake8, pylint
 
 .PHONY: lint
-lint: install-dev lint/black lint/mypy lint/pylint lint/nbstripout## check code quality and linting
+lint: install lint/black lint/mypy lint/pylint lint/nbstripout## check code quality and linting
 
 .PHONY: lint/black
 lint/black: ## check global style with black
 	@echo "+ $@"
-	@${PANDORA_VENV}/bin/pre-commit run black --all-files
+	@${PANDORA_VENV}/bin/black --check --line-length=120 pandora tests ./*.py notebooks/snippets/*.py
 
 .PHONY: lint/mypy
 lint/mypy: ## check linting with mypy
 	@echo "+ $@"
-	@${PANDORA_VENV}/bin/pre-commit run mypy --all-files
+	@source ${PANDORA_VENV}/bin/activate && ${PANDORA_VENV}/bin/pre-commit run mypy --all-files
 
 .PHONY: lint/pylint
 lint/pylint: ## check linting with pylint
 	@echo "+ $@"
-	@${PANDORA_VENV}/bin/pre-commit run pylint --all-files
+	@set -o pipefail; ${PANDORA_VENV}/bin/pylint pandora tests --rcfile=.pylintrc --output-format=parseable --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" # | tee pylint-report.txt # pipefail to propagate pylint exit code in bash
 
 .PHONY: precommit
-precommit: install-dev## apply precommit to all files
+precommit: install## apply precommit to all files
 	@echo "+ $@"
 	@${PANDORA_VENV}/bin/pre-commit run --all-files
 
 ## Documentation section
 
 .PHONY: doc
-doc: install-dev ## build sphinx documentation
+doc: install ## build sphinx documentation
 	@${PANDORA_VENV}/bin/sphinx-build -M clean doc/sources/ doc/build
 	@${PANDORA_VENV}/bin/sphinx-build doc/sources/ doc/build
 
@@ -177,12 +165,6 @@ notebook: install ## install Jupyter notebook kernel with venv and pandora insta
 	@echo "Use jupyter kernelspec list to know where is the kernel"
 	@echo " --> After PANDORA virtualenv activation, please use following command to launch local jupyter notebook to open PANDORA Notebooks:"
 	@echo "jupyter notebook"
-
-
-# Dev section
-
-.PHONY: dev
-dev: install-dev docs notebook ## Install PANDORA in dev mode : install-dev, notebook and docs
 
 ## Docker section
 
