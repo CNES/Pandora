@@ -21,8 +21,8 @@ from bokeh.io import show, output_notebook
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib import cm
 from matplotlib.image import imsave
-import plotly.graph_objects as go
-import plotly.express as px
+import plotly.graph_objects as go  # type: ignore
+import plotly.express as px  # type: ignore
 
 
 def pandora_cmap():
@@ -636,7 +636,7 @@ def get_3D_cost_volume(cv: xr.Dataset, left_disp_map: xr.Dataset) -> go.Figure:
 
     fig = px.scatter_3d(df, x="cols", y="rows", z="disps", color="disps", color_continuous_scale=color_disp)
 
-    fig.update_traces(marker=dict(size=0.5), selector=dict(mode='markers'))
+    fig.update_traces(marker=dict(size=0.5), selector=dict(mode="markers"))
 
     return fig
 
