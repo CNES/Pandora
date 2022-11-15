@@ -1,11 +1,20 @@
 # Python
 __pycache__/
+*.pyc
 .coverage
 coverage.xml
+
+#Python package
+*.egg-info/
+.eggs/
+
+# Documentation build and API
+doc/build/
+doc/sources/api_reference/
+
+# Python test reports
 nosetests.xml
 pylint-report.txt
-doc/build/
-*.egg-info/
 
 # Jupyter
 .ipynb_checkpoints/
