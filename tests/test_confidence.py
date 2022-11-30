@@ -139,7 +139,10 @@ class TestConfidence(unittest.TestCase):
         # Run the pandora pipeline
         left, _ = pandora.run(pandora_machine, left_im, right_im, -1, 1, cfg["pipeline"])
 
-        assert np.sum(left.coords["indicator"].data != ["stereo_pandora_intensityStd", "ambiguity_confidence.2"]) == 0
+        assert (
+            np.sum(left.coords["indicator"].data != ["confidence_from_intensityStd", "confidence_from_ambiguity.2"])
+            == 0
+        )
 
         # ----- Check ambiguity results ------
 
@@ -254,7 +257,7 @@ class TestConfidence(unittest.TestCase):
         _, cv_with_intensity = std_intensity.confidence_prediction(None, left, right, cv)
 
         # Check if the calculated confidence_measure is equal to the ground truth (same shape and all elements equals)
-        assert np.sum(cv_with_intensity.coords["indicator"].data != ["stereo_pandora_intensityStd"]) == 0
+        assert np.sum(cv_with_intensity.coords["indicator"].data != ["confidence_from_intensityStd"]) == 0
         np.testing.assert_array_equal(cv_with_intensity["confidence_measure"].data, std_bright_ground_truth)
 
     @staticmethod
