@@ -41,7 +41,7 @@ class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
     """
 
     # Method name
-    _method = "stereo_pandora_intensityStd"
+    _method = "confidence_from_intensityStd"
     # Indicator
     _indicator = ""
 

@@ -48,7 +48,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
     # Percentile value to normalize ambiguity
     _PERCENTILE = 1.0
     # Method name
-    _method = "ambiguity_confidence"
+    _method = "confidence_from_ambiguity"
     # Indicator
     _indicator = ""
 
