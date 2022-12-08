@@ -22,7 +22,7 @@
 """
 This module contains functions associated to the cost volume measure step.
 """
-
+# pylint:disable=too-many-branches
 import sys
 import logging
 from abc import ABCMeta, abstractmethod
@@ -362,7 +362,10 @@ class AbstractMatchingCost:
             band = np.arange(0, nb_)
             # Since the interpolation of the right image is of order 1, the shifted right mask corresponds
             # to an aggregation of two columns of the dilated right mask
-            str_row, str_col, _ = dilatate_right_mask.strides
+            if len(dilatate_right_mask.strides) > 2:
+                str_row, str_col, _ = dilatate_right_mask.strides
+            else:
+                str_row, str_col = dilatate_right_mask.strides
         else:
             ny_, nx_ = img_left["im"].shape
             row = np.arange(0, ny_)
@@ -401,7 +404,7 @@ class AbstractMatchingCost:
                     dilatate_right_mask_shift, coords=[row, col_shift], dims=["row", "col"]
                 )
 
-        if len(img_left["im"].shape) > 2:
+        if len(img_left["im"].shape) > 2 and len(dilatate_right_mask.strides) > 2:
             dilatate_left_mask_xr = xr.DataArray(
                 dilatate_left_mask, coords=[row, col, band], dims=["row", "col", "band"]
             )
@@ -508,12 +511,20 @@ class AbstractMatchingCost:
             i_mask_right = min(1, i_right)
             dsp = int((disp - dmin) * self._subpix)
 
-            if self._band is not None:
-                # Invalid costs in the cost volume
-                cost_volume["cost_volume"].data[:, p_mask[0] : p_mask[1], dsp] += (
-                    mask_right[i_mask_right].data[:, q_mask[0] : q_mask[1], band_index]
-                    + mask_left.data[:, p_mask[0] : p_mask[1], band_index]
-                )
+            if (self._band is not None) and (len(mask_right[i_mask_right].data.shape) > 2):
+                if len(mask_left.data.shape) > 2:
+                    # Invalid costs in the cost volume
+                    cost_volume["cost_volume"].data[:, p_mask[0] : p_mask[1], dsp] += (
+                        mask_right[i_mask_right].data[:, q_mask[0] : q_mask[1], band_index]
+                        + mask_left.data[:, p_mask[0] : p_mask[1], band_index]
+                    )
+                else:
+                    # Invalid costs in the cost volume
+                    cost_volume["cost_volume"].data[:, p_mask[0] : p_mask[1], dsp] += (
+                        mask_right[i_mask_right].data[:, q_mask[0] : q_mask[1], band_index]
+                        + mask_left.data[:, p_mask[0] : p_mask[1]]
+                    )
+
             else:
                 # Invalid costs in the cost volume
                 cost_volume["cost_volume"].data[:, p_mask[0] : p_mask[1], dsp] += (

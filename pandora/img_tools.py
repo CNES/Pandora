@@ -109,7 +109,7 @@ def read_img(
     # if image is 3 dimensions we create a dataset with [row col band] dims for dataArray
     else:
         image = {"im": (["row", "col", "band"], data.astype(np.float32))}
-        coords = {"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1]), "band": np.arange(data.shape[2])}
+        coords = {"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1]), "band": band_list}
 
     dataset = xr.Dataset(
         image,
@@ -180,7 +180,7 @@ def read_img(
     # Masks no_data pixels
     # If a pixel is invalid due to the input mask, and it is also no_data, then the value of this pixel in the
     # generated mask will be = no_data
-    dataset["msk"].data[no_data_pixels] = int(dataset.attrs["no_data_mask"])
+    dataset["msk"].data[(no_data_pixels[0], no_data_pixels[1])] = int(dataset.attrs["no_data_mask"])
 
     return dataset
 
