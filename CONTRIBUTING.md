@@ -78,7 +78,7 @@ Here are some rules to apply when developing a new functionality:
 
 # Pre-commit validation
 
-Pre-commit hooks (black, pylint, mypy, sphinx-checking, nbstripout) for code analysis can be installed:
+Pre-commit hooks (black, pylint, mypy, sphinx-checking, jupyter-nb-clear-output) for code analysis can be installed:
 ```
 pre-commit install
 ```

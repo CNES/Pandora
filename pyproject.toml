@@ -1,6 +1,16 @@
 [build-system]
 requires = [
-    "setuptools>=42",
-    "wheel"
+    "setuptools>=45",
+    "wheel",
+    "setuptools_scm[toml]>=6.2"
 ]
+# use build-backend legacy with setup.cfg, setup.py
 build-backend = "setuptools.build_meta"
+
+# enable setuptools_scm version
+[tool.setuptools_scm]
+
+[tool.black]
+# https://github.com/psf/black
+line-length = 120
+exclude = "(.eggs|.git|.mypy_cache|.nox|.tox|_build|build|dist|venv)"

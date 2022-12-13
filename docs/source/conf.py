@@ -39,7 +39,7 @@ sys.path.insert(0, os.path.abspath("../pandora"))
 # -- Project information -----------------------------------------------------
 
 project = "Pandora"
-copyright = "2020, CNES"
+copyright = "2022, CNES"
 author = "CNES"
 
 # The full version, including alpha/beta/rc tags
@@ -62,6 +62,7 @@ extensions = [
     "autoapi.extension",
 ]
 
+# Autoapi configuration
 autoapi_dirs = ["../../pandora"]
 autoapi_root = "api_reference"
 autoapi_keep_files = True
@@ -73,6 +74,10 @@ autoapi_options = [
     "show-module-summary",
     "special-members",
 ]
+# Ignore some files so as "sphinx-build" to work with autoapi on several configs
+# TODO: remove when debugged.
+autoapi_ignore = ["*marge*", "*img_tools*", "*matching_cost.py*", "*common.py*"]
+
 # Add any paths that contain templates here, relative to this directory.cd
 templates_path = ["_templates"]
 

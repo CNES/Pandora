@@ -1,18 +1,97 @@
-# Python
-__pycache__/
-.coverage
-coverage.xml
-nosetests.xml
-pylint-report.txt
-*.egg-info/
+# Compiled python files
+*.py[cod]
+*$py.class
+*.pyc
 
-# Jupyter
-.ipynb_checkpoints/
-output/
+# C extensions
+*.so
+
+# Cache python
+__pycache__/
+
+# Python egg metadata, regenerated from source files by setuptools
+/*.egg-info
+/.eggs/
+develop-eggs/
+wheels/
+.installed.cfg
+*.egg
+
+# Setuptools build and distribution directories
+/dist/
+/build/
+sdist/
 
 # Virtualenv
 /venv/
 
-#doc sphinx
-doc/build/
-doc/sources/api_reference/
+# Tox
+.tox
+
+# Pytest
+.pytest_cache/
+pytest-report.xml
+nosetests.xml
+
+# Python coverage output
+.coverage
+.coverage.*
+coverage.xml
+/htmlcov/
+
+# pylint report
+pylint-report.txt
+
+# Debug file logging
+debug.log
+
+# Documentation build and API
+docs/build/
+docs/_build/
+docs/source/api_reference/
+docs/source/apidoc/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+#  Code quality
+pylint-report.xml
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Jupyter Notebook
+.ipynb_checkpoints
+output
+
+# pyenv
+.python-version
+
+# dotenv
+.env
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+
+# IDE settings
+.vscode/
+.idea/
+
+# Swap file
+*.swp

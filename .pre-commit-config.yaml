@@ -3,31 +3,38 @@ repos:
     hooks:
     - id: black
       name: black
-      entry: black --line-length=120
+      entry: black
       language: system
       files: \.py$
       stages: [commit]
       types: [python]
+
     - id: pylint
       name: PyLint
-      entry: python -m pylint --rcfile=.pylintrc
+      entry: pylint --rcfile=.pylintrc
       language: system
       files: \.py$
+      types: [python]
       stages: [commit]
+
     - id: mypy
       name: mypy
       entry: mypy
       language: system
       files: \.py$
       stages: [ commit ]
+
+    - id: jupyter-nb-clear-output
+      name: jupyter-nb-clear-output
+      files: \.ipynb$
+      stages: [commit]
+      language: system
+      entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace
+
     - id: sphinx-checking
       name: Checking Sphinx building
-      entry: python setup.py build_sphinx
+      entry: sphinx-build -M html docs/source/ docs/build -W --keep-going
       language: system
-      files: ^(doc/.*|pandora/.*)$
+      files: ^(docs/.*|pandora/.*)$
       pass_filenames: False
       stages: [push]
-  - repo: https://github.com/kynan/nbstripout
-    rev: 0.6.0
-    hooks:
-      - id: nbstripout

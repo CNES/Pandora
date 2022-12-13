@@ -6,6 +6,7 @@
 #
 # Some Makefile global variables can be set in make command line:
 # PANDORA_VENV: Change directory of installed venv (default local "venv" dir)
+#
 
 ############### GLOBAL VARIABLES ######################
 
@@ -19,38 +20,35 @@ ifndef PANDORA_VENV
 	PANDORA_VENV = "venv"
 endif
 
-# Check CMAKE variables before venv creation
+# Check CMAKE variable before venv creation (only for install target)
 CHECK_CMAKE = $(shell command -v cmake 2> /dev/null)
 
-
-# Check Docker
+# Check Docker variable (only for docker target)
 CHECK_DOCKER = $(shell docker -v)
 
-# PANDORA version from setup.py
-PANDORA_VERSION = $(shell python3 setup.py --version)
-PANDORA_VERSION_MIN =$(shell echo ${PANDORA_VERSION} | cut -d . -f 1,2,3)
-
-PYTHON_VERSION_MIN = 3.7
-
+# Check python3 globally
 PYTHON=$(shell command -v python3)
-
-PYTHON_VERSION_CUR=$(shell $(PYTHON) -c 'import sys; print("%d.%d"% sys.version_info[0:2])')
-PYTHON_VERSION_OK=$(shell $(PYTHON) -c 'import sys; cur_ver = sys.version_info[0:2]; min_ver = tuple(map(int, "$(PYTHON_VERSION_MIN)".split("."))); print(int(cur_ver >= min_ver))')
-
 ifeq (, $(PYTHON))
     $(error "PYTHON=$(PYTHON) not found in $(PATH)")
 endif
 
+# Check Python version supported globally
+PYTHON_VERSION_MIN = 3.7
+PYTHON_VERSION_CUR=$(shell $(PYTHON) -c 'import sys; print("%d.%d"% sys.version_info[0:2])')
+PYTHON_VERSION_OK=$(shell $(PYTHON) -c 'import sys; cur_ver = sys.version_info[0:2]; min_ver = tuple(map(int, "$(PYTHON_VERSION_MIN)".split("."))); print(int(cur_ver >= min_ver))')
 ifeq ($(PYTHON_VERSION_OK), 0)
     $(error "Requires python version >= $(PYTHON_VERSION_MIN). Current version is $(PYTHON_VERSION_CUR)")
 endif
+
+# Get PANDORA version from setup.py
+PANDORA_VERSION = $(shell python3 setup.py --version)
+PANDORA_VERSION_MIN =$(shell echo ${PANDORA_VERSION} | cut -d . -f 1,2,3)
 
 ################ MAKE targets by sections ######################
 
 .PHONY: help
 help: ## this help
 	@echo "      PANDORA MAKE HELP"
-	@echo "  build, check or test !"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'| sort
 
 ## Install section
@@ -62,83 +60,53 @@ check: ## check if cmake is installed
 .PHONY: venv
 venv: check ## create virtualenv in PANDORA_VENV directory if not exists
 	@test -d ${PANDORA_VENV} || python3 -m venv ${PANDORA_VENV}
-	@${PANDORA_VENV}/bin/python -m pip install --upgrade pip # no check to upgrade each time
+	@${PANDORA_VENV}/bin/python -m pip install --upgrade pip setuptools wheel # no check to upgrade each time
 	@touch ${PANDORA_VENV}/bin/activate
 
 .PHONY: install
-install: venv ## install pandora (pip editable mode) without plugin
+install: venv ## install pandora (pip editable mode) without plugins
 	@test -f ${PANDORA_VENV}/bin/pandora || ${PANDORA_VENV}/bin/pip install -e .[dev,docs,notebook]
-	@${PANDORA_VENV}/bin/python -m pip install nbstripout
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${PANDORA_VENV}/bin/pre-commit install
 	@echo "PANDORA ${PANDORA_VERSION} installed in dev mode in virtualenv ${PANDORA_VENV}"
 	@echo "PANDORA venv usage : source ${PANDORA_VENV}/bin/activate; pandora -h"
 
-.PHONY: install-with-plugin
-install-with-plugin: venv  ## install pandora with plugins for stereo reconstruction (sgm, mccnn)
-	@test -f ${PANDORA_VENV}/bin/pandora || ${PANDORA_VENV}/bin/pip install -e .[dev,docs,notebook,sgm,mccnn]
-	@${PANDORA_VENV}/bin/python -m pip install nbstripout
-	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
-	@test -f .git/hooks/pre-commit || ${PANDORA_VENV}/bin/pre-commit install
-	@echo "PANDORA ${PANDORA_VERSION} installed in virtualenv ${PANDORA_VENV}"
-	@echo "PANDORA venv usage : source ${PANDORA_VENV}/bin/activate; pandora -h"
-
 ## Test section
 
 .PHONY: test
-test: install ## run all tests + coverage html
+test: install ## run all tests (except notebooks) + coverage
 	@${PANDORA_VENV}/bin/pytest -m "not notebook_tests" --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
 
 .PHONY: test-notebook
 test-notebook: install ## run notebook tests only
 	@${PANDORA_VENV}/bin/pytest -m "notebook_tests"
 
-## Install section for Github CI
-
-.PHONY: install-github-ci
-install-github-ci:
-	@python -m pip install --upgrade pip
-	@pip install .[dev]
-
-.PHONY: distribute-github-ci
-distribute-github-ci:
-	@python -m build --sdist
-
-.PHONY: test-github-ci
-test-github-ci:
-	@export NUMBA_DISABLE_JIT=1 && pytest -m "not notebook_tests" --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
-
 ## Code quality, linting section
 
-### Format with isort and black
+### Format with black
 
 .PHONY: format
-format: install format/nbstripout format/black  ## run black and nbstripout formatting (depends install)
+format: install format/black  ## run black formatting (depends install)
 
 .PHONY: format/black
 format/black: install  ## run black formatting (depends install)
 	@echo "+ $@"
-	@${PANDORA_VENV}/bin/black --line-length=120 pandora tests ./*.py notebooks/snippets/*.py
+	@${PANDORA_VENV}/bin/black pandora tests ./*.py notebooks/snippets/*.py
 
-.PHONY: format/nbstripout
-format/nbstripout: install  ## run nbstripout formatting (depends install)
-	@echo "+ $@"
-	@${PANDORA_VENV}/bin/nbstripout notebooks/*.ipynb notebooks/advanced_examples/*.ipynb
-
-### Check code quality and linting : isort, black, flake8, pylint
+### Check code quality and linting : black, mypy, pylint
 
 .PHONY: lint
-lint: install lint/black lint/mypy lint/pylint lint/nbstripout## check code quality and linting
+lint: install lint/black lint/mypy lint/pylint ## check code quality and linting
 
 .PHONY: lint/black
 lint/black: ## check global style with black
 	@echo "+ $@"
-	@${PANDORA_VENV}/bin/black --check --line-length=120 pandora tests ./*.py notebooks/snippets/*.py
+	@${PANDORA_VENV}/bin/black --check pandora tests ./*.py notebooks/snippets/*.py
 
 .PHONY: lint/mypy
 lint/mypy: ## check linting with mypy
 	@echo "+ $@"
-	@source ${PANDORA_VENV}/bin/activate && ${PANDORA_VENV}/bin/pre-commit run mypy --all-files
+	${PANDORA_VENV}/bin/mypy pandora tests
 
 .PHONY: lint/pylint
 lint/pylint: ## check linting with pylint
@@ -152,10 +120,10 @@ precommit: install## apply precommit to all files
 
 ## Documentation section
 
-.PHONY: doc
-doc: install ## build sphinx documentation
-	@${PANDORA_VENV}/bin/sphinx-build -M clean doc/sources/ doc/build
-	@${PANDORA_VENV}/bin/sphinx-build doc/sources/ doc/build
+.PHONY: docs
+docs: install ## build sphinx documentation
+	@${PANDORA_VENV}/bin/sphinx-build -M clean docs/source/ docs/build
+	@${PANDORA_VENV}/bin/sphinx-build -M html docs/source/ docs/build -W --keep-going
 
 ## Notebook section
 .PHONY: notebook
@@ -178,8 +146,15 @@ docker: ## Check and build docker image (cnes/pandora)
 	@docker build -t cnes/pandora:${PANDORA_VERSION_MIN} . -f Dockerfile
 
 ## Clean section
+
+.PHONY: clean-notebook-output ## Clean Jupyter notebooks outputs
+clean-notebook-output:
+	@echo "Clean Jupyter notebooks"
+	jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace notebooks/*.ipynb notebooks/advanced_examples/*.ipynb
+
+
 .PHONY: clean
-clean: clean-venv clean-build clean-precommit clean-pyc clean-test clean-doc clean-notebook ## remove all build, test, coverage and Python artifacts
+clean: clean-venv clean-build clean-precommit clean-pyc clean-test clean-doc clean-notebook clean-mypy ## remove all build, test, coverage and Python artifacts
 
 .PHONY: clean-venv
 clean-venv:
@@ -222,13 +197,18 @@ clean-test:
 .PHONY: clean-doc
 clean-doc:
 	@echo "+ $@"
-	@rm -rf doc/build/
-	@rm -rf doc/sources/api_reference/
+	@rm -rf docs/build/
+	@rm -rf docs/source/api_reference/
 
 .PHONY: clean-notebook
 clean-notebook:
 	@echo "+ $@"
 	@find . -type d -name ".ipynb_checkpoints" -exec rm -fr {} +
+
+.PHONY: clean-mypy
+clean-mypy:
+	@echo "+ $@"
+	@rm -rf .mypy_cache/
 
 .PHONY: clean-docker
 clean-docker: ## clean docker image

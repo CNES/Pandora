@@ -48,8 +48,8 @@ grants of rights over all contributions to allow them to distribute under the
 chosen license (Apache License Version 2.0)
 
 To accept your contribution, we need you to complete, sign and email to *cars@cnes.fr* an
-`Individual Contributor LicensingAgreement <https://github.com/CNES/Pandora/blob/master/doc/sources/CLA/ICLA_PANDORA.doc>`_ (ICLA) form and a
-`Corporate Contributor Licensing Agreement <https://github.com/CNES/Pandora/blob/master/doc/sources/CLA/CCLA_PANDORA.doc>`_ (CCLA) form if you are
+`Individual Contributor LicensingAgreement <https://github.com/CNES/Pandora/blob/master/docs/source/CLA/ICLA_PANDORA.doc>`_ (ICLA) form and a
+`Corporate Contributor Licensing Agreement <https://github.com/CNES/Pandora/blob/master/docs/source/CLA/CCLA_PANDORA.doc>`_ (CCLA) form if you are
 contributing on behalf of your company or another entity which retains copyright
 for your contribution.
 
