@@ -18,7 +18,7 @@ Si la Merge Request est en cours de développement, merci d'ajouter le mot clé 
 
 Si la Merge Request est prête, merci de valider les étapes suivantes:
 - [ ] mise à jour de la documentation
-  - ajout de paramètres dans https://gitlab.cnes.fr/OutilsCommuns/CorrelateurChaine3D/pandora/-/blob/master/doc/sources/userguide/usage.rst
+  - ajout de paramètres dans https://gitlab.cnes.fr/OutilsCommuns/CorrelateurChaine3D/pandora/-/blob/master/docs/source/userguide/usage.rst
   - suppression des warnings éventuels lors de la génération de la doc
   - vérification visuelle des parties ajoutées dans la doc (cf. #138)
 - [ ]  mise à jour du changelog

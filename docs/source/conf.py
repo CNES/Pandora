@@ -36,10 +36,13 @@ import sys
 
 sys.path.insert(0, os.path.abspath("../pandora"))
 
+# Extend Recursion limit for RecursionError in big files (bug astroid)
+sys.setrecursionlimit(8 * sys.getrecursionlimit())
+
 # -- Project information -----------------------------------------------------
 
 project = "Pandora"
-copyright = "2020, CNES"
+copyright = "2022, CNES"
 author = "CNES"
 
 # The full version, including alpha/beta/rc tags
@@ -62,6 +65,7 @@ extensions = [
     "autoapi.extension",
 ]
 
+# Autoapi configuration
 autoapi_dirs = ["../../pandora"]
 autoapi_root = "api_reference"
 autoapi_keep_files = True
@@ -73,6 +77,8 @@ autoapi_options = [
     "show-module-summary",
     "special-members",
 ]
+
+
 # Add any paths that contain templates here, relative to this directory.cd
 templates_path = ["_templates"]
 

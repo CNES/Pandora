@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2022 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -22,34 +22,19 @@
 """
 This module contains the required libraries and softwares allowing to execute the software,
 and setup elements to configure and identify the software.
+setup.py kept for different version compatibility
+All packaging in setup.cfg
 """
 
-from codecs import open as copen
 from setuptools import setup
 
-CMDCLASS = {}
-
 try:
-    from sphinx.setup_command import BuildDoc
-
-    CMDCLASS["build_sphinx"] = BuildDoc
-except ImportError:
-    print("WARNING: sphinx not available. Doc cannot be built")
-
-
-def readme():
-    with copen("README.md", "r", "utf-8") as fstream:
-        return fstream.read()
-
-
-setup(
-    use_scm_version=True,
-    long_description=readme(),
-    command_options={
-        "build_sphinx": {
-            "build_dir": ("setup.py", "doc/build/"),
-            "source_dir": ("setup.py", "doc/sources/"),
-            "warning_is_error": ("setup.py", True),
-        }
-    },
-)
+    setup()
+except Exception:
+    print(
+        "\n\nAn error occurred while building the project, "
+        "please ensure you have the most updated version of pip, setuptools, "
+        "setuptools_scm and wheel with:\n"
+        "   pip install -U pip setuptools setuptools_scm wheel\n\n"
+    )
+    raise

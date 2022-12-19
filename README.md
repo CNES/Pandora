@@ -1,5 +1,5 @@
 <h1 align="center">
-  <a href="https://pandora.readthedocs.io/?badge=latest"><img src="https://raw.githubusercontent.com/CNES/Pandora/master/doc/sources/Images/logo/logo_typo_large.png?inline=false" alt="Pandora Stereo Framework" width="432"></a>
+  <a href="https://pandora.readthedocs.io/?badge=latest"><img src="https://raw.githubusercontent.com/CNES/Pandora/master/docs/source/Images/logo/logo_typo_large.png?inline=false" alt="Pandora Stereo Framework" width="432"></a>
 </h1>
 
 <h4 align="center">A stereo matching framework that will help you design your stereo matching pipeline with state of the art performances.</h4>
@@ -27,16 +27,16 @@
 
 From stereo rectified images to disparity map  |  Pandora is working with cost volumes
 :-------------------------:|:-------------------------:
-![](https://raw.githubusercontent.com/CNES/Pandora/master/doc/sources/Images/schema_readme.png?inline=false)  |  ![](https://raw.githubusercontent.com/CNES/Pandora/master/doc/sources/Images/disparity3D_with_projected_dispartiry_color.gif)
+![](https://raw.githubusercontent.com/CNES/Pandora/master/docs/source/Images/schema_readme.png?inline=false)  |  ![](https://raw.githubusercontent.com/CNES/Pandora/master/docs/source/Images/disparity3D_with_projected_dispartiry_color.gif)
 
 
-Pandora aims at shortening the path between a stereo-matching prototype and its industrialized version.  
-By providing a modular pipeline inspired from the (Scharstein et al., 2002) taxonomy, it allows one to emulate, analyse and hopefully improve state of the art stereo algorithms with a few lines of code. 
+Pandora aims at shortening the path between a stereo-matching prototype and its industrialized version.
+By providing a modular pipeline inspired from the (Scharstein et al., 2002) taxonomy, it allows one to emulate, analyse and hopefully improve state of the art stereo algorithms with a few lines of code.
 
-We (CNES) have actually been using Pandora to create the stereo matching pipeline for the CNES & Airbus <a href="https://co3d.cnes.fr/en/co3d-0"><img src="https://raw.githubusercontent.com/CNES/Pandora/master/doc/sources/Images/logo_co3D_cnes.jpg" width="32" height="32"/></a> off board processing chain.  
+We (CNES) have actually been using Pandora to create the stereo matching pipeline for the CNES & Airbus <a href="https://co3d.cnes.fr/en/co3d-0"><img src="https://raw.githubusercontent.com/CNES/Pandora/master/docs/source/Images/logo_co3D_cnes.jpg" width="32" height="32"/></a> off board processing chain.
 Leaning on Pandora's versatility and a fast-paced constantly evolving field we are still calling this framework a work in progress !
 
-<img src="https://raw.githubusercontent.com/CNES/Pandora/master/doc/sources/Images/pandora_first_step_terminal.gif" width="500"/>
+<img src="https://raw.githubusercontent.com/CNES/Pandora/master/docs/source/Images/pandora_first_step_terminal.gif" width="500"/>
 
 ## Install
 
@@ -54,9 +54,9 @@ pip install pandora[sgm, mccnn]
 
 ## First step
 
-Pandora requires a `config.json` to declare the pipeline and the stereo pair of images to process. 
-Download our data sample to start right away ! 
-- [cones stereo pair](https://raw.githubusercontent.com/CNES/Pandora/master/data_samples/images/cones.zip) 
+Pandora requires a `config.json` to declare the pipeline and the stereo pair of images to process.
+Download our data sample to start right away !
+- [cones stereo pair](https://raw.githubusercontent.com/CNES/Pandora/master/data_samples/images/cones.zip)
 - [a configuration file](https://raw.githubusercontent.com/CNES/Pandora/master/data_samples/json_conf_files/a_local_block_matching.json)
 
 ```bash

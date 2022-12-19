@@ -4,6 +4,7 @@
 
 ### Added 
 - Add indicator to distinguish different cost volume confidence maps. [#243]
+- Add Makefile [#248]
 
 ## 1.2.1 (December 2021)
 

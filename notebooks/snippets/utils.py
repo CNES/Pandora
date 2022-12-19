@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # pylint: skip-file
 
 import copy
@@ -16,7 +17,7 @@ from bokeh.colors import RGB
 import bokeh.plotting as bpl
 from bokeh.plotting import figure
 from bokeh.layouts import row, column
-from bokeh.models import ColorBar, BasicTicker, LinearColorMapper, Legend
+from bokeh.models import ColorBar, BasicTicker, LinearColorMapper, Legend  # type: ignore
 from bokeh.io import show, output_notebook
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib import cm
@@ -278,7 +279,7 @@ def compare_2_disparities(
     second_fig.add_layout(legend, "below")
     second_fig.add_layout(color_bar, "right")
 
-    layout = column(row(first_fig, second_fig))
+    layout = column(row(first_fig, second_fig))  # type: ignore
 
     show(layout)
 
@@ -419,7 +420,7 @@ def compare_3_disparities_and_error(
     error_fig.image(image=[np.flip(error_map, 0)], x=1, y=0, dw=dw, dh=dh, color_mapper=mapper_avec_opti)
     error_fig.add_layout(color_bar, "right")
 
-    layout = column(row(first_fig, second_fig), row(third_fig, error_fig))
+    layout = column(row(first_fig, second_fig), row(third_fig, error_fig))  # type: ignore
 
     show(layout)
 
@@ -508,7 +509,7 @@ def compare_disparity_and_error(
     error_fig.add_layout(legend, "below")
     error_fig.add_layout(color_bar, "right")
 
-    layout = column(row(first_fig, error_fig))
+    layout = column(row(first_fig, error_fig))  # type: ignore
     show(layout)
 
 
@@ -567,7 +568,7 @@ def show_input_images(img_left: xr.Dataset, img_right: xr.Dataset) -> None:
         title="Anaglyph", width=width, height=height, x_range=left_fig.x_range, y_range=left_fig.y_range
     )
     anaglyph_fig.image_rgba(image=[np.flip(img, 0)], x=1, y=0, dw=dw, dh=dh)
-    layout = column(row(left_fig, right_fig, anaglyph_fig))
+    layout = column(row(left_fig, right_fig, anaglyph_fig))  # type: ignore
     show(layout)
 
 
