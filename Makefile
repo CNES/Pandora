@@ -79,7 +79,7 @@ test: install ## run all tests (except notebooks) + coverage
 
 .PHONY: test-notebook
 test-notebook: install ## run notebook tests only
-	@${PANDORA_VENV}/bin/pytest -m "notebook_tests"
+	@${PANDORA_VENV}/bin/pytest -m "notebook_pandora"
 
 ## Code quality, linting section
 
