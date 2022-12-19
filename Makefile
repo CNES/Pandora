@@ -74,7 +74,7 @@ install: venv ## install pandora (pip editable mode) without plugins
 ## Test section
 
 .PHONY: test
-test: install ## run all tests (except notebooks) + coverage
+test: install ## run all tests (except notebooks) + coverage (source venv before)
 	@${PANDORA_VENV}/bin/pytest -m "not notebook_tests" --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
 
 .PHONY: test-notebook
@@ -89,14 +89,14 @@ test-notebook: install ## run notebook tests only
 format: install format/black  ## run black formatting (depends install)
 
 .PHONY: format/black
-format/black: install  ## run black formatting (depends install)
+format/black: install  ## run black formatting (depends install) (source venv before)
 	@echo "+ $@"
 	@${PANDORA_VENV}/bin/black pandora tests ./*.py notebooks/snippets/*.py
 
 ### Check code quality and linting : black, mypy, pylint
 
 .PHONY: lint
-lint: install lint/black lint/mypy lint/pylint ## check code quality and linting
+lint: install lint/black lint/mypy lint/pylint ## check code quality and linting (source venv before)
 
 .PHONY: lint/black
 lint/black: ## check global style with black
@@ -116,13 +116,13 @@ lint/pylint: ## check linting with pylint
 ## Documentation section
 
 .PHONY: docs
-docs: install ## build sphinx documentation
+docs: install ## build sphinx documentation (source venv before)
 	@${PANDORA_VENV}/bin/sphinx-build -M clean docs/source/ docs/build
 	@${PANDORA_VENV}/bin/sphinx-build -M html docs/source/ docs/build -W --keep-going
 
 ## Notebook section
 .PHONY: notebook
-notebook: install ## install Jupyter notebook kernel with venv and pandora install
+notebook: install ## install Jupyter notebook kernel with venv and pandora install (source venv before)
 	@echo "Install Jupyter Kernel in virtualenv dir"
 	@${PANDORA_VENV}/bin/python -m ipykernel install --sys-prefix --name=pandora-${PANDORA_VERSION_MIN} --display-name=pandora-${PANDORA_VERSION_MIN}
 	@echo "Use jupyter kernelspec list to know where is the kernel"
