@@ -113,11 +113,6 @@ lint/pylint: ## check linting with pylint
 	@echo "+ $@"
 	@set -o pipefail; ${PANDORA_VENV}/bin/pylint pandora tests --rcfile=.pylintrc --output-format=parseable --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" # | tee pylint-report.txt # pipefail to propagate pylint exit code in bash
 
-.PHONY: precommit
-precommit: install## apply precommit to all files
-	@echo "+ $@"
-	@${PANDORA_VENV}/bin/pre-commit run --all-files
-
 ## Documentation section
 
 .PHONY: docs

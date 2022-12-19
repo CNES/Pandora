@@ -36,6 +36,9 @@ import sys
 
 sys.path.insert(0, os.path.abspath("../pandora"))
 
+# Extend Recursion limit for RecursionError in big files (bug astroid)
+sys.setrecursionlimit(8 * sys.getrecursionlimit())
+
 # -- Project information -----------------------------------------------------
 
 project = "Pandora"
@@ -74,9 +77,7 @@ autoapi_options = [
     "show-module-summary",
     "special-members",
 ]
-# Ignore some files so as "sphinx-build" to work with autoapi on several configs
-# TODO: remove when debugged.
-autoapi_ignore = ["*marge*", "*img_tools*", "*matching_cost.py*", "*common.py*"]
+
 
 # Add any paths that contain templates here, relative to this directory.cd
 templates_path = ["_templates"]
