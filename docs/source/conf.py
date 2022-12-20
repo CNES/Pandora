@@ -65,6 +65,9 @@ extensions = [
     "autoapi.extension",
 ]
 
+# imgmath configuration
+imgmath_embed = True
+
 # Autoapi configuration
 autoapi_dirs = ["../../pandora"]
 autoapi_root = "api_reference"
