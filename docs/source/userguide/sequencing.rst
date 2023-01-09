@@ -6,6 +6,9 @@ Sequencing
 Pandora will check if the requested steps sequencing is correct following the permitted
 transition defined by the Pandora Machine (`transitions <https://github.com/pytransitions/transitions>`_)
 
+The Pandora Machine is implemented using the GraphMachine from the transitions.extensions package if the Graphviz module
+is available. Otherwise, the Pandora Machine is implemented using the Machine from the transitions package.
+
 Pandora Machine defines 3 possible states:
  - begin
  - cost_volume
@@ -38,6 +41,20 @@ See :ref:`multiple_filters_example` for an example with multiple usage of filter
 .. note::
     The only step of *pipeline* key configuration file that does not depend on machine state is the *right_disp_map* step (see :ref:`outputs`). This one, if needed, must be written
     at the top of *pipeline* section as shown in :ref:`right_map_example`.
+
+**Checking configuration with the state machine:**
+
+To ensure that the user configuration will work, we have chosen to activate twice the state machine.
+
+First, we check the pipeline and build the complete configuration by adding the default parameters
+if they have not been specified in the input configuration.
+
+Between these two stages we use the `remove_transition` function in order to clean the state machine.
+
+.. note::
+    The transition version 0.9.0 contains a function that checks whether a future transition is available
+    in the current state.
+    That's why we had to rename triggers from the _transitions_check argument.
 
 If you want to understand in more details how Pandora machine works, please consult our `Pandora machine state tutorial notebook <https://github.com/CNES/Pandora/tree/master/notebooks/...>`_.
 
