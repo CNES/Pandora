@@ -160,7 +160,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
 
         # Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
         cv = np.zeros(
-            (len(disparity_range), img_left["im"].shape[1], img_right["im"].shape[0]),
+            (len(disparity_range), img_left.dims["col"], img_left.dims["row"]),
             dtype=np.float32,
         )
         cv += np.nan
@@ -188,13 +188,13 @@ class Zncc(matching_cost.AbstractMatchingCost):
                 if len(img_right_shift[i_right]["im"].shape) > 2:
                     # Compute the normalized summation of the product of intensities
                     zncc_ = (
-                        img_left["im"].data[:, point_p[0] : point_p[1], band_index]
-                        * img_right_shift[i_right]["im"].data[:, point_q[0] : point_q[1], band_index]
+                        img_left["im"].data[band_index, :, point_p[0] : point_p[1]]
+                        * img_right_shift[i_right]["im"].data[band_index, :, point_q[0] : point_q[1]]
                     )
                 else:
                     # Compute the normalized summation of the product of intensities
                     zncc_ = (
-                        img_left["im"].data[:, point_p[0] : point_p[1], band_index]
+                        img_left["im"].data[band_index, :, point_p[0] : point_p[1]]
                         * img_right_shift[i_right]["im"].data[:, point_q[0] : point_q[1]]
                     )
             else:

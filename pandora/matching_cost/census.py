@@ -148,7 +148,7 @@ class Census(matching_cost.AbstractMatchingCost):
 
         # Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
         cv = np.zeros(
-            (len(disparity_range), img_left["im"].shape[1], img_left["im"].shape[0]),
+            (len(disparity_range), img_left.dims["col"], img_left.dims["row"]),
             dtype=np.float32,
         )
         cv += np.nan

@@ -86,8 +86,6 @@ def read_img(
     data = img_ds.read(1)
     if band_list is not None:
         data = img_ds.read()
-        # change shape order from [band row col] to [row col band]
-        data = np.rollaxis(data, axis=0, start=3)
 
     if np.isnan(no_data):
         no_data_pixels = np.where(np.isnan(data))
@@ -108,8 +106,8 @@ def read_img(
         coords = {"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
     # if image is 3 dimensions we create a dataset with [row col band] dims for dataArray
     else:
-        image = {"im": (["row", "col", "band"], data.astype(np.float32))}
-        coords = {"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1]), "band": band_list}
+        image = {"im": (["band", "row", "col"], data.astype(np.float32))}
+        coords = {"band": band_list, "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])}
 
     dataset = xr.Dataset(
         image,
@@ -160,8 +158,13 @@ def read_img(
     # dataset.attrs['valid_pixels'] : a valid pixel
     # dataset.attrs['no_data_mask'] : a no_data_pixel
     # other value : an invalid_pixel
+    if len(data.shape) > 2:
+        _, ny_, nx_ = data.shape
+    else:
+        ny_, nx_ = data.shape
+
     dataset["msk"] = xr.DataArray(
-        np.full((data.shape[0], data.shape[1]), dataset.attrs["valid_pixels"]).astype(np.int16),
+        np.full((ny_,nx_), dataset.attrs["valid_pixels"]).astype(np.int16),
         dims=["row", "col"],
     )
 
@@ -307,7 +310,7 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
         img, msk = interpolate_nodata_sgm(dataset["im"].data, dataset["msk"].data)
     else:
         msk = np.full(
-            (dataset["im"].data.shape[0], dataset["im"].data.shape[1]),
+            (dataset.dims["row"], dataset.dims["col"]),
             int(dataset.attrs["valid_pixels"]),
         )
         img = dataset["im"].data
@@ -336,8 +339,6 @@ def interpolate_nodata_sgm(img: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarr
     # Output disparity map and validity mask
     out_img = np.copy(img)
     out_val = np.copy(valid)
-
-    ncol, nrow = img.shape
 
     # 8 directions : [row, y]
     dirs = np.array([[0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0], [1, 1]])
@@ -446,15 +447,14 @@ def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None) -> Lis
     :rtype: array of xarray.Dataset
     """
     img_right_shift = [img_right]
+    ny_, nx_ = img_right.dims["row"], img_right.dims["col"]
 
     if band is None:
-        ny_, nx_ = img_right["im"].shape
         selected_band = img_right["im"].data
     else:
         # if image has more than one band we only shift the one specified in matching_cost
-        ny_, nx_, _ = img_right["im"].shape
         band_index = img_right.attrs["band_list"].index(band)
-        selected_band = img_right["im"].data[:, :, band_index]
+        selected_band = img_right["im"].data[band_index, :, :]
 
     if subpix > 1:
         for ind in np.arange(1, subpix):
@@ -488,7 +488,7 @@ def check_inside_image(img: xr.Dataset, row: int, col: int) -> bool:
     :return: a boolean
     :rtype: boolean
     """
-    nx_, ny_ = img["im"].shape
+    ny_, nx_ = img.dims["row"], img.dims["col"]
     return 0 <= row < nx_ and 0 <= col < ny_
 
 
@@ -506,13 +506,13 @@ def census_transform(image: xr.Dataset, window_size: int, band: str = None) -> x
     uint32
     :rtype: xarray.Dataset
     """
-    # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
+
+    ny_, nx_ = image.dims["row"], image.dims["col"]
+
     if len(image["im"].shape) > 2:
-        ny_, nx_, _ = image["im"].shape
         band_index = image.attrs["band_list"].index(band)
-        selected_band = image["im"].data[:, :, band_index]
+        selected_band = image["im"].data[band_index, :, :]
     else:
-        ny_, nx_ = image["im"].shape
         selected_band = image["im"].data
 
     border = int((window_size - 1) / 2)
@@ -570,8 +570,8 @@ def compute_mean_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.
     :rtype: numpy array
     """
     # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
+    ny_, nx_ = img.dims["row"], img.dims["col"]
     if len(img["im"].shape) > 2:
-        ny_, nx_, _ = img["im"].shape
         band_index = img.attrs["band_list"].index(band)
         # Example with win_size = 3 and the input :
         #           10 | 5  | 3
@@ -579,9 +579,8 @@ def compute_mean_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.
         #            5 | 3  | 1
 
         # Compute the cumulative sum of the elements along the column axis
-        r_mean = np.r_[np.zeros((1, nx_)), img["im"].data[:, :, band_index]]
+        r_mean = np.r_[np.zeros((1, nx_)), img["im"].data[band_index, :, :]]
     else:
-        ny_, nx_ = img["im"].shape
         r_mean = np.r_[np.zeros((1, nx_)), img["im"].data]
     # r_mean :   0 | 0  | 0
     #           10 | 5  | 3
@@ -701,7 +700,7 @@ def compute_std_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.n
     # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
     if len(img["im"].shape) > 2:
         band_index = img.attrs["band_list"].index(band)
-        selected_band = img["im"].data[:, :, band_index]
+        selected_band = img["im"].data[band_index, :, :]
     else:
         selected_band = img["im"].data
 
@@ -709,8 +708,8 @@ def compute_std_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.n
     raster_power_two = xr.Dataset(
         {"im": (["row", "col"], selected_band**2)},
         coords={
-            "row": np.arange(img["im"].shape[0]),
-            "col": np.arange(img["im"].shape[1]),
+            "row": np.arange(selected_band.shape[0]),
+            "col": np.arange(selected_band.shape[1]),
         },
     )
     mean_power_two = compute_mean_raster(raster_power_two, win_size)

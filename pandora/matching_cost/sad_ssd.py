@@ -171,8 +171,8 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             cv_enlarge = np.zeros(
                 (
                     len(disparity_range),
-                    img_left["im"].shape[1] + 2 * offset_row_col,
-                    img_left["im"].shape[0] + 2 * offset_row_col,
+                    img_left.dims["col"] + 2 * offset_row_col,
+                    img_left.dims["row"] + 2 * offset_row_col,
                 ),
                 dtype=np.float32,
             )
@@ -180,11 +180,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             cv = cv_enlarge[:, offset_row_col:-offset_row_col, offset_row_col:-offset_row_col]
         else:
             cv = np.zeros(
-                (
-                    len(disparity_range),
-                    img_left["im"].shape[1],
-                    img_left["im"].shape[0],
-                ),
+                (len(disparity_range), img_left.dims["col"], img_left.dims["row"]),
                 dtype=np.float32,
             )
             cv += np.nan
@@ -284,12 +280,16 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
             if len(img_right["im"].data.shape) > 2:
                 cost = abs(
-                    img_left["im"].data[:, point_p[0] : point_p[1], band_index]
-                    - img_right["im"].data[:, point_q[0] : point_q[1], band_index]
+                    img_left["im"].data[
+                        band_index,
+                        :,
+                        point_p[0] : point_p[1],
+                    ]
+                    - img_right["im"].data[band_index, :, point_q[0] : point_q[1]]
                 )
             else:
                 cost = abs(
-                    img_left["im"].data[:, point_p[0] : point_p[1], band_index]
+                    img_left["im"].data[band_index, :, point_p[0] : point_p[1]]
                     - img_right["im"].data[:, point_q[0] : point_q[1]]
                 )
         else:
@@ -325,12 +325,16 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
             if len(img_right["im"].data.shape) > 2:
                 cost = (
-                    img_left["im"].data[:, point_p[0] : point_p[1], band_index]
-                    - img_right["im"].data[:, point_q[0] : point_q[1], band_index]
+                    img_left["im"].data[
+                        band_index,
+                        :,
+                        point_p[0] : point_p[1],
+                    ]
+                    - img_right["im"].data[band_index, :, point_q[0] : point_q[1]]
                 ) ** 2
             else:
                 cost = (
-                    img_left["im"].data[:, point_p[0] : point_p[1], band_index]
+                    img_left["im"].data[band_index, :, point_p[0] : point_p[1]]
                     - img_right["im"].data[:, point_q[0] : point_q[1]]
                 ) ** 2
         else:
