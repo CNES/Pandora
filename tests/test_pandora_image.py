@@ -55,36 +55,7 @@ class TestImgTools(unittest.TestCase):
             {"im": (["row", "col"], data)}, coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
         )
 
-        # Initialize multiband data
-        data = np.zeros((5, 6, 2))
-        data[:, :, 0] = np.array(
-            (
-                [1, 1, 1, 1, 1, 1],
-                [1, 1, 1, 1, 2, 1],
-                [1, 1, 1, 4, 3, 1],
-                [1, 1, 1, 1, 1, 1],
-                [1, 1, 1, 1, 1, 1],
-            ),
-            dtype=np.float64,
-        )
-
-        data[:, :, 1] = np.array(
-            (
-                [1, 1, 1, 1, 1, 1],
-                [1, 2, 1, 1, 1, 1],
-                [4, 3, 1, 1, 1, 1],
-                [5, 1, 1, 1, 1, 1],
-                [1, 1, 1, 1, 1, 1],
-            ),
-            dtype=np.float64,
-        )
-
-        self.img_multiband = xr.Dataset(
-            {"im": (["row", "col", "band"], data)},
-            coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1]), "band": np.arange(data.shape[2])},
-        )
-
-        self.img_multiband.attrs["band_list"] = ["r", "g"]
+        self.img_multiband, _ = common.matching_cost_tests_multiband_setup()
 
     def test_census_transform(self):
         """
@@ -257,21 +228,21 @@ class TestImgTools(unittest.TestCase):
             (
                 [
                     0.0,
-                    np.std(self.img_multiband["im"][:3, 1:4, 0]),
-                    np.std(self.img_multiband["im"][:3, 2:5, 0]),
-                    np.std(self.img_multiband["im"][:3, 3:, 0]),
+                    np.std(self.img_multiband["im"][0, :3, 1:4]),
+                    np.std(self.img_multiband["im"][0, :3, 2:5]),
+                    np.std(self.img_multiband["im"][0, :3, 3:]),
                 ],
                 [
                     0.0,
-                    np.std(self.img_multiband["im"][1:4, 1:4, 0]),
-                    np.std(self.img_multiband["im"][1:4, 2:5, 0]),
-                    np.std(self.img_multiband["im"][1:4, 3:, 0]),
+                    np.std(self.img_multiband["im"][0, 1:4, 1:4]),
+                    np.std(self.img_multiband["im"][0, 1:4, 2:5]),
+                    np.std(self.img_multiband["im"][0, 1:4, 3:]),
                 ],
                 [
                     0.0,
-                    np.std(self.img_multiband["im"][2:5, 1:4, 0]),
-                    np.std(self.img_multiband["im"][2:5, 2:5, 0]),
-                    np.std(self.img_multiband["im"][2:5, 3:, 0]),
+                    np.std(self.img_multiband["im"][0, 2:5, 1:4]),
+                    np.std(self.img_multiband["im"][0, 2:5, 2:5]),
+                    np.std(self.img_multiband["im"][0, 2:5, 3:]),
                 ],
             )
         )
@@ -282,7 +253,7 @@ class TestImgTools(unittest.TestCase):
 
         # standard deviation raster ground truth for the image self.img with window size 5
         std_ground_truth = np.array(
-            ([[np.std(self.img_multiband["im"][:, :5, 0]), np.std(self.img_multiband["im"][:, 1:, 0])]])
+            ([[np.std(self.img_multiband["im"][0, :, :5]), np.std(self.img_multiband["im"][0, :, 1:])]])
         )
         # Computes the standard deviation raster for the image self.img with window size 5
         std_r = img_tools.compute_std_raster(self.img_multiband, 5, "r")

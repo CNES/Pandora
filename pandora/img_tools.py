@@ -107,7 +107,7 @@ def read_img(
     # if image is 3 dimensions we create a dataset with [row col band] dims for dataArray
     else:
         image = {"im": (["band", "row", "col"], data.astype(np.float32))}
-        coords = {"band": band_list, "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])}
+        coords = {"band": band_list, "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])}  # type: ignore
 
     dataset = xr.Dataset(
         image,

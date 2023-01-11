@@ -908,8 +908,8 @@ class TestMatchingCost(unittest.TestCase):
         """
 
         # Initialize multiband data
-        data = np.zeros((4, 4, 2))
-        data[:, :, 0] = np.array(
+        data = np.zeros((2, 4, 4))
+        data[0, :, :] = np.array(
             (
                 [1, 1, 1, 3],
                 [1, 3, 2, 5],
@@ -919,7 +919,7 @@ class TestMatchingCost(unittest.TestCase):
             dtype=np.float64,
         )
 
-        data[:, :, 1] = np.array(
+        data[1, :, :] = np.array(
             (
                 [2, 3, 4, 6],
                 [8, 7, 0, 4],
@@ -930,16 +930,16 @@ class TestMatchingCost(unittest.TestCase):
         )
 
         left = xr.Dataset(
-            {"im": (["row", "col", "band"], data)},
-            coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1]), "band": np.arange(data.shape[2])},
+            {"im": (["band", "row", "col"], data)},
+            coords={"band": np.arange(data.shape[0]), "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])},
         )
 
         left.attrs = common.img_attrs
         left.attrs["band_list"] = ["r", "g"]
 
         # Initialize multiband data
-        data = np.zeros((4, 4, 2))
-        data[:, :, 0] = np.array(
+        data = np.zeros((2, 4, 4))
+        data[0, :, :] = np.array(
             (
                 [5, 1, 2, 3],
                 [1, 3, 0, 2],
@@ -949,7 +949,7 @@ class TestMatchingCost(unittest.TestCase):
             dtype=np.float64,
         )
 
-        data[:, :, 1] = np.array(
+        data[1, :, :] = np.array(
             (
                 [6, 5, 2, 7],
                 [8, 7, 6, 5],
@@ -960,8 +960,8 @@ class TestMatchingCost(unittest.TestCase):
         )
 
         right = xr.Dataset(
-            {"im": (["row", "col", "band"], data)},
-            coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1]), "band": np.arange(data.shape[2])},
+            {"im": (["band", "row", "col"], data)},
+            coords={"band": np.arange(data.shape[0]), "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])},
         )
 
         right.attrs = common.img_attrs

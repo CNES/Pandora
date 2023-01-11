@@ -103,8 +103,8 @@ def matching_cost_tests_multiband_setup() -> Tuple[xr.Dataset, xr.Dataset]:
     """
     # Create a multiband stereo object
     # Initialize multiband data
-    data = np.zeros((5, 6, 2))
-    data[:, :, 0] = np.array(
+    data = np.zeros((2, 5, 6))
+    data[0, :, :] = np.array(
         (
             [1, 1, 1, 1, 1, 1],
             [1, 1, 1, 1, 2, 1],
@@ -115,7 +115,7 @@ def matching_cost_tests_multiband_setup() -> Tuple[xr.Dataset, xr.Dataset]:
         dtype=np.float64,
     )
 
-    data[:, :, 1] = np.array(
+    data[1, :, :] = np.array(
         (
             [1, 1, 1, 1, 1, 1],
             [1, 2, 1, 1, 1, 1],
@@ -127,8 +127,8 @@ def matching_cost_tests_multiband_setup() -> Tuple[xr.Dataset, xr.Dataset]:
     )
 
     left = xr.Dataset(
-        {"im": (["row", "col", "band"], data)},
-        coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1]), "band": np.arange(data.shape[2])},
+        {"im": (["band", "row", "col"], data)},
+        coords={"band": np.arange(data.shape[0]), "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])},
     )
 
     left.attrs = {
@@ -139,8 +139,8 @@ def matching_cost_tests_multiband_setup() -> Tuple[xr.Dataset, xr.Dataset]:
         "band_list": ["r", "g"],
     }
     # initialize right data
-    data = np.zeros((5, 6, 2))
-    data[:, :, 0] = np.array(
+    data = np.zeros((2, 5, 6))
+    data[0, :, :] = np.array(
         (
             [1, 1, 1, 2, 2, 2],
             [1, 1, 1, 4, 2, 4],
@@ -151,7 +151,7 @@ def matching_cost_tests_multiband_setup() -> Tuple[xr.Dataset, xr.Dataset]:
         dtype=np.float64,
     )
 
-    data[:, :, 1] = np.array(
+    data[1, :, :] = np.array(
         (
             [1, 1, 1, 1, 1, 1],
             [2, 2, 2, 1, 1, 1],
@@ -163,8 +163,8 @@ def matching_cost_tests_multiband_setup() -> Tuple[xr.Dataset, xr.Dataset]:
     )
 
     right = xr.Dataset(
-        {"im": (["row", "col", "band"], data)},
-        coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1]), "band": np.arange(data.shape[2])},
+        {"im": (["band", "row", "col"], data)},
+        coords={"band": np.arange(data.shape[0]), "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])},
     )
     right.attrs = {
         "valid_pixels": 0,
