@@ -40,25 +40,18 @@ class SadSsd(matching_cost.AbstractMatchingCost):
     SadSsd class allows to compute the cost volume
     """
 
-    # Default configuration, do not change these values
-    _WINDOW_SIZE = 5
-    _SUBPIX = 1
-    _BAND = None
-
     def __init__(self, **cfg: Union[str, int]) -> None:
         """
         :param cfg: optional configuration,  {'matching_cost_method': value, 'window_size': value, 'subpix': value}
         :type cfg: dict
         :return: None
         """
-        self.cfg = self.check_conf(**cfg)
-        self._method = str(self.cfg["matching_cost_method"])
-        self._window_size = self.cfg["window_size"]
-        self._subpix = self.cfg["subpix"]
-        self._pixel_wise_methods = {"sad": self.ad_cost, "ssd": self.sd_cost}
-        self._band = self.cfg["band"]
 
-    def check_conf(self, **cfg: Union[str, int]) -> Dict[str, Union[str, int]]:
+        super().instantiate_class(**cfg)
+        self._method = str(self.cfg["matching_cost_method"])
+        self._pixel_wise_methods = {"sad": self.ad_cost, "ssd": self.sd_cost}
+
+    def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
@@ -67,13 +60,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         :return cfg: matching cost configuration updated
         :rtype: dict
         """
-        # Give the default value if the required element is not in the conf
-        if "window_size" not in cfg:
-            cfg["window_size"] = self._WINDOW_SIZE
-        if "subpix" not in cfg:
-            cfg["subpix"] = self._SUBPIX
-        if "band" not in cfg:
-            cfg["band"] = self._BAND
+        cfg = super().check_conf(**cfg)
 
         schema = {
             "matching_cost_method": And(str, lambda input: common.is_method(input, ["ssd", "sad"])),
@@ -122,7 +109,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         self.check_band_input_mc(img_left, img_right)
 
         # Contains the shifted right images
-        img_right_shift = shift_right_img(img_right, self._subpix, self._band)
+        img_right_shift = shift_right_img(img_right, self._subpix, self._band)  # type: ignore
         if self._band is not None:
             band_index = img_right.attrs["band_list"].index(self._band)
             selected_band_right = img_right["im"].data[:, :, band_index]
@@ -141,11 +128,16 @@ class SadSsd(matching_cost.AbstractMatchingCost):
 
         if self._method == "sad":
             # Maximal cost of the cost volume with sad measure
-            cmax = int(max(abs(max_left - min_right), abs(max_right - min_left)) * (self._window_size**2))
+            cmax = int(
+                max(abs(max_left - min_right), abs(max_right - min_left)) * (self._window_size**2)  # type: ignore
+            )
         if self._method == "ssd":
             # Maximal cost of the cost volume with ssd measure
-            cmax = int(max(abs(max_left - min_right) ** 2, abs(max_right - min_left) ** 2) * (self._window_size**2))
-        offset_row_col = int((self._window_size - 1) / 2)
+            cmax = int(
+                max(abs(max_left - min_right) ** 2, abs(max_right - min_left) ** 2)
+                * (self._window_size**2)  # type: ignore
+            )
+        offset_row_col = int((self._window_size - 1) / 2)  # type: ignore
         metadata = {
             "measure": self._method,
             "subpixel": self._subpix,
@@ -364,12 +356,12 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             self._window_size,
             self._window_size,
             nb_disp,
-            nx_ - (self._window_size - 1),
-            ny_ - (self._window_size - 1),
+            nx_ - (self._window_size - 1),  # type: ignore
+            ny_ - (self._window_size - 1),  # type: ignore
         )
         strides_windows = (str_row, str_col, str_disp, str_col, str_row)
         aggregation_window = np.lib.stride_tricks.as_strided(
-            cost_volume, shape_windows, strides_windows, writeable=False
+            cost_volume, shape_windows, strides_windows, writeable=False  # type: ignore
         )
         cost_volume = np.sum(aggregation_window, (0, 1))
         return cost_volume

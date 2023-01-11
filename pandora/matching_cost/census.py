@@ -39,21 +39,14 @@ class Census(matching_cost.AbstractMatchingCost):
     Census class allows to compute the cost volume
     """
 
-    # Default configuration, do not change these values
-    _WINDOW_SIZE = 5
-    _SUBPIX = 1
-    _BAND = None
-
     def __init__(self, **cfg: Dict[str, Union[str, int]]) -> None:
         """
         :param cfg: optional configuration,  {'window_size': value, 'subpix': value}
         :type cfg: dict
         :return: None
         """
-        self.cfg = self.check_conf(**cfg)
-        self._window_size = self.cfg["window_size"]
-        self._subpix = self.cfg["subpix"]
-        self._band = self.cfg["band"]
+
+        super().instantiate_class(**cfg)  # type: ignore
 
     def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
         """
@@ -64,13 +57,7 @@ class Census(matching_cost.AbstractMatchingCost):
         :return cfg: matching cost configuration updated
         :rtype: dict
         """
-        # Give the default value if the required element is not in the conf
-        if "window_size" not in cfg:
-            cfg["window_size"] = self._WINDOW_SIZE  # type: ignore
-        if "subpix" not in cfg:
-            cfg["subpix"] = self._SUBPIX  # type: ignore
-        if "band" not in cfg:
-            cfg["band"] = self._BAND
+        cfg = super().check_conf(**cfg)
 
         schema = {
             "matching_cost_method": And(str, lambda input: "census"),
@@ -81,7 +68,7 @@ class Census(matching_cost.AbstractMatchingCost):
 
         checker = Checker(schema)
         checker.validate(cfg)
-        return cfg  # type: ignore
+        return cfg
 
     def desc(self) -> None:
         """
@@ -119,11 +106,11 @@ class Census(matching_cost.AbstractMatchingCost):
         self.check_band_input_mc(img_left, img_right)
 
         # Contains the shifted right images
-        img_right_shift = shift_right_img(img_right, self._subpix, self._band)
+        img_right_shift = shift_right_img(img_right, self._subpix, self._band)  # type: ignore
 
         # Maximal cost of the cost volume with census measure
-        cmax = int(self._window_size**2)
-        offset_row_col = int((self._window_size - 1) / 2)
+        cmax = int(self._window_size**2)  # type: ignore
+        offset_row_col = int((self._window_size - 1) / 2)  # type: ignore
         metadata = {
             "measure": "census",
             "subpixel": self._subpix,
@@ -135,9 +122,9 @@ class Census(matching_cost.AbstractMatchingCost):
         }
 
         # Apply census transformation
-        left = census_transform(img_left, self._window_size, self._band)
+        left = census_transform(img_left, self._window_size, self._band)  # type: ignore
         for i, img in enumerate(img_right_shift):
-            img_right_shift[i] = census_transform(img, self._window_size, self._band)
+            img_right_shift[i] = census_transform(img, self._window_size, self._band)  # type: ignore
 
         # Disparity range # pylint: disable=undefined-variable
         if self._subpix == 1:
@@ -146,18 +133,7 @@ class Census(matching_cost.AbstractMatchingCost):
             disparity_range = np.arange(disp_min, disp_max, step=1 / float(self._subpix))  # type: ignore
             disparity_range = np.append(disparity_range, [disp_max])
 
-        # Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
-        cv = np.zeros(
-            (len(disparity_range), img_left.dims["col"], img_left.dims["row"]),
-            dtype=np.float32,
-        )
-        cv += np.nan
-
-        # If offset, do not consider border position for cost computation
-        if offset_row_col != 0:
-            cv_crop = cv[:, offset_row_col:-offset_row_col, offset_row_col:-offset_row_col]
-        else:
-            cv_crop = cv
+        cv, cv_crop = self.allocate_numpy_cost_volume(img_left, disparity_range, offset_row_col)
 
         # Giving the 2 images, the matching cost will be calculated as :
         #                 1, 1, 1                2, 5, 6
@@ -201,10 +177,10 @@ class Census(matching_cost.AbstractMatchingCost):
         # Create the xarray.DataSet that will contain the cv of dimensions (row, col, disp)
         cv = self.allocate_costvolume(
             img_left,
-            self._subpix,
+            self._subpix,  # type: ignore
             disp_min,
             disp_max,
-            self._window_size,
+            self._window_size,  # type: ignore
             metadata,
             np.swapaxes(cv, 0, 2),
         )

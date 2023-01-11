@@ -49,6 +49,11 @@ class AbstractMatchingCost:
     cfg = None
     _band = None
 
+    # Default configuration, do not change these values
+    _WINDOW_SIZE = 5
+    _SUBPIX = 1
+    _BAND = None
+
     def __new__(cls, **cfg: Union[str, int]):
         """
         Return the plugin associated with the matching_cost_method given in the configuration
@@ -117,6 +122,37 @@ class AbstractMatchingCost:
         :return: None
         """
         print("Matching cost description")
+
+    def instantiate_class(self, **cfg: Union[str, int]) -> None:
+        """
+        :param cfg: optional configuration,  {'window_size': value, 'subpix': value}
+        :type cfg: dictionary
+        :return: None
+        """
+        self.cfg = self.check_conf(**cfg)  # type: ignore
+        self._window_size = self.cfg["window_size"]
+        self._subpix = self.cfg["subpix"]
+        self._band = self.cfg["band"]
+
+    def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
+        """
+        Add default values to the dictionary if there are missing elements and check if the dictionary is correct
+
+        :param cfg: matching cost configuration
+        :type cfg: dict
+        :return cfg: matching cost configuration updated
+        :rtype: dict
+        """
+
+        # Give the default value if the required element is not in the conf
+        if "window_size" not in cfg:
+            cfg["window_size"] = self._WINDOW_SIZE  # type: ignore
+        if "subpix" not in cfg:
+            cfg["subpix"] = self._SUBPIX  # type: ignore
+        if "band" not in cfg:
+            cfg["band"] = self._BAND
+
+        return cfg  # type: ignore
 
     def check_band_input_mc(self, img_left: xr.Dataset, img_right: xr.Dataset) -> None:
         """
@@ -463,11 +499,13 @@ class AbstractMatchingCost:
         # ----- Masking invalid pixels -----
 
         # Contains the shifted right images
-        img_right_shift = shift_right_img(img_right, self._subpix, self._band)
+        img_right_shift = shift_right_img(img_right, self._subpix, self._band)  # type: ignore
 
         # Computes the validity mask of the cost volume : invalid pixels or no_data are masked with the value nan.
         # Valid pixels are = 0
-        mask_left, mask_right = self.masks_dilatation(img_left, img_right, self._window_size, self._subpix)
+        mask_left, mask_right = self.masks_dilatation(
+            img_left, img_right, self._window_size, self._subpix  # type: ignore
+        )
 
         for disp in cost_volume.coords["disp"].data:
             i_right = int((disp % 1) * self._subpix)
@@ -507,3 +545,40 @@ class AbstractMatchingCost:
                     )
                 )
                 cost_volume["cost_volume"].data[masking[0], masking[1], dsp] = np.nan
+
+    @staticmethod
+    def allocate_numpy_cost_volume(
+        img_left: xr.Dataset, disparity_range: np.ndarray, offset_row_col: int
+    ) -> Tuple[xr.Dataset, xr.Dataset]:
+        """
+        Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
+
+        :param img_left: left Dataset image containing :
+
+                - im : 2D (row, col) xarray.DataArray
+                - msk : 2D (row, col) xarray.DataArray
+        :type img_left: xarray.Dataset
+        :param disparity_range: disparity range
+        :type disparity_range: np.ndarray
+        :param offset_row_col: offset in row and col
+        :type offset_row_col: int
+        :return: the cost volume dataset , with the data variables:
+
+                - cost_volume 3D xarray.DataArray (row, col, disp)
+                - a cropped cost volume dataset
+        :rtype: Tuple[xarray.Dataset, xarray.Dataset]
+        """
+
+        cv = np.zeros(
+            (len(disparity_range), img_left.dims["col"], img_left.dims["row"]),
+            dtype=np.float32,
+        )
+        cv += np.nan
+
+        # If offset, do not consider border position for cost computation
+        if offset_row_col != 0:
+            cv_crop = cv[:, offset_row_col:-offset_row_col, offset_row_col:-offset_row_col]
+        else:
+            cv_crop = cv
+
+        return cv, cv_crop  # type: ignore

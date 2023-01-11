@@ -104,10 +104,12 @@ def read_img(
     if band_list is None:
         image = {"im": (["row", "col"], data.astype(np.float32))}
         coords = {"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
+        ny_, nx_ = data.shape
     # if image is 3 dimensions we create a dataset with [row col band] dims for dataArray
     else:
         image = {"im": (["band", "row", "col"], data.astype(np.float32))}
         coords = {"band": band_list, "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])}  # type: ignore
+        _, ny_, nx_ = data.shape
 
     dataset = xr.Dataset(
         image,
@@ -158,13 +160,9 @@ def read_img(
     # dataset.attrs['valid_pixels'] : a valid pixel
     # dataset.attrs['no_data_mask'] : a no_data_pixel
     # other value : an invalid_pixel
-    if len(data.shape) > 2:
-        _, ny_, nx_ = data.shape
-    else:
-        ny_, nx_ = data.shape
 
     dataset["msk"] = xr.DataArray(
-        np.full((ny_,nx_), dataset.attrs["valid_pixels"]).astype(np.int16),
+        np.full((ny_, nx_), dataset.attrs["valid_pixels"]).astype(np.int16),
         dims=["row", "col"],
     )
 

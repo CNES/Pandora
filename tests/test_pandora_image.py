@@ -55,7 +55,7 @@ class TestImgTools(unittest.TestCase):
             {"im": (["row", "col"], data)}, coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
         )
 
-        self.img_multiband, _ = common.matching_cost_tests_multiband_setup()
+        self.img_multiband, _ = common.matching_cost_tests_multiband_setup()  # type: ignore
 
     def test_census_transform(self):
         """
