@@ -150,26 +150,6 @@ There are some parameters depending on penalty_method choice and p2_method choic
 | V    | Penalty parameter | int or float | 1.5           |                 | No       |
 +------+-------------------+--------------+---------------+-----------------+----------+
 
-.. note:: P1, P2, Q1, Q2, D, V represent sgm_P1, sgm_P2, sgm_Q1, smg_Q2, sgm_D, sgm_V respectively
-
-- *penalty_method = mc_cnn_accurate_penalty*
-
-+------+-------------------+--------------+---------------+-----------------+----------+
-| Name | Description       | Type         | Default value | Available value | Required |
-+======+===================+==============+===============+=================+==========+
-| P1   | Penalty parameter | int or float | 1.3           | >0              | No       |
-+------+-------------------+--------------+---------------+-----------------+----------+
-| P2   | Penalty parameter | int or float | 18.1          | P2 > P1         | No       |
-+------+-------------------+--------------+---------------+-----------------+----------+
-| Q1   | Penalty parameter | int or float | 4.5           |                 | No       |
-+------+-------------------+--------------+---------------+-----------------+----------+
-| Q2   | Penalty parameter | int or float | 9             |                 | No       |
-+------+-------------------+--------------+---------------+-----------------+----------+
-| D    | Penalty parameter | int or float | 0.13          |                 | No       |
-+------+-------------------+--------------+---------------+-----------------+----------+
-| V    | Penalty parameter | int or float | 2.75          |                 | No       |
-+------+-------------------+--------------+---------------+-----------------+----------+
-
 
 **Example**
 
