@@ -52,7 +52,7 @@ Saved images
 
 - *left_confidence_measure.tif*, *right_confidence_measure.tif* : multi-band image, each band represents a confidence measurement, depending on what is activated.
 
-    - Standard deviation of pixel intensity inside matching cost window. see :ref:`cost_volume_confidence`. This band is named *confidence_from_intensityStd*.
+    - Standard deviation of pixel intensity inside matching cost window. see :ref:`cost_volume_confidence`. This band is named *confidence_from_intensity_std*.
     - Ambiguity measurement, see :ref:`cost_volume_confidence`. This band is named *confidence_from_ambiguity*.
     - Mininum and maximum risk measurement, see :ref:`cost_volume_confidence`. Those bands are named *confidence_from_risk_min* and *confidence_from_risk_max*.
     - Number of SGM paths that give the same final disparity if SGM and its option activated, see :ref:`plugin_libsgm`. This band is named *optimization_pluginlibSGM_nbOfDisp*.
@@ -75,7 +75,7 @@ Saved images
               "confidence_method": "std_intensity"
             }
 
-    The confidence bands will be named: *confidence_from_ambiguity* and *confidence_from_intensityStd.after*.
+    The confidence bands will be named: *confidence_from_ambiguity* and *confidence_from_intensity_std.after*.
 
 .. note::
     Right products are only available if a *right_disp_map* parameter is activated and not equal to none.
