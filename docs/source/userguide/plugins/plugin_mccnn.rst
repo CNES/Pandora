@@ -10,19 +10,19 @@ Theoretical basics
 
 
 As a reminder, mc-cnn is a neural network which computes a similarity measure on pair of small image patches. This similarity measure is computed between each possible patch to initialize the cost volume.
-There are two architectures: mc-cnn fast and mc-cnn accurate, figures  below detail the networks. Both networks  have the same input and output, the mc-cnn fast network is faster than the mc-cnn accurate network.
-The fast architecture uses a fixed similarity measure (dot product) while the accurate architecture attempts to learn a similarity measure.
+There are two architectures: mc-cnn fast and mc-cnn accurate, figures  below detail the networks.
 
 
    .. figure:: ../../Images/mc_cnn_architectures.svg
 
       Left : mc-cnn fast architecture. Right : mc-cnn fast architecture
 
+Only the mc-cnn fast architecture is available in this plugin because processing time of mc-cnn accurate is too long for practical use (about 80 times longer than mc-cnn fast). Moreover, the improvement on the results of mc-cnn accurate is usually small.
 
-Pretrained weights for mc-cnn fast and mc-cnn accurate neural networks are available in the `Plugin_mccnn repository <https://github.com/CNES/Pandora_plugin_mccnn>`_ :
+Pretrained weights for mc-cnn fast network are available in the `Plugin_mccnn repository <https://github.com/CNES/Pandora_plugin_mccnn>`_ :
 
--  mc_cnn_fast_mb_weights.pt and mc_cnn_accurate_mb_weights.pt are the weights of the pretrained networks on the Middlebury dataset [Middlebury]_
--  mc_cnn_fast_data_fusion_contest.pt and mc_cnn_accurate_data_fusion_contest.pt are the weights of the pretrained networks on the Data Fusion Contest dataset [DFC]_
+-  mc_cnn_fast_mb_weights.pt are the weights of the pretrained networks on the Middlebury dataset [Middlebury]_
+-  mc_cnn_fast_data_fusion_contest.pt are the weights of the pretrained networks on the Data Fusion Contest dataset [DFC]_
 
 
 .. [MCCNN] Zbontar, Jure and Yann LeCun. “Stereo Matching by Training a Convolutional Neural Network to Compare Image Patches.” ArXiv abs/1510.05970 (2016): n. pag.
@@ -38,8 +38,6 @@ Configuration and parameters
 | Name                   | Description                        | Type   | Default value | Available value                | Required |
 +========================+====================================+========+===============+================================+==========+
 | *matching_cost_method* | Similarity measure                 | string |               | "mc_cnn"                       | Yes      |
-+------------------------+------------------------------------+--------+---------------+--------------------------------+----------+
-| *mc_cnn_arch*          | mc-cnn architecture                | string |               | "fast", "accurate"             | Yes      |
 +------------------------+------------------------------------+--------+---------------+--------------------------------+----------+
 | *model_path*           | Path to the pretrained network     | string |               |                                | Yes      |
 +------------------------+------------------------------------+--------+---------------+--------------------------------+----------+
@@ -68,7 +66,6 @@ Configuration and parameters
             "matching_cost":
             {
                 "matching_cost_method": "mc_cnn",
-                "mc_cnn_arch": "fast"
                 "model_path": "plugin_mc-cnn/weights/mc_cnn_fast_mb_weights.pt"
                 "window_size": 11,
                 "subpix": 1
