@@ -22,12 +22,9 @@ Some are already avalaible,computed by the plugin_libsgm and divided in two cate
         - The negative gradient: :math:`P_{2} = - \alpha \mid I(p)-I(p-r) \mid + \gamma \ ` with I for intensity on left image
         - The inverse gradient :math:`P_{2} = \frac{\alpha}{\mid I(p)-I(p-r) \mid + \beta} + \gamma \ ` with I for intensity on left image
 
-2. Method defined by [Zbontar2016]_,depending on intensity gradient of left and right images which is identified by:
+2. Method defined by [Zbontar2016]_, depending on intensity gradient of left and right images which is identified by *penalty_method=mc_cnn_fast_penalty*
 
-    - *penalty_method=mc_cnn_fast_penalty*, recommended when *mc_cnn_fast* matching cost method used.
-    - *penalty_method=mc_cnn_accurate_penalty*,  recommended when *mc_cnn_fast* matching cost method used.
-
-    For both of them, same equation but different default values for parameters as :math:`sgm_P1`, :math:`sgm_P2` ...
+    Same equation but different default values for parameters as :math:`sgm_P1`, :math:`sgm_P2` ...
 
     .. math::
       D1 &= \mid I_{l}(p-d)-I_{l}(p-d-r) \mid \ , D2 = \mid I_{r}(p-d)-I_{r}(p-d-r) \mid \\
@@ -75,7 +72,7 @@ Configuration and parameters
 +------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
 | Name                         | Description                                             | Type   | Default value | Available value                                                | Required                                             |
 +==============================+=========================================================+========+===============+================================================================+======================================================+
-| penalty_method               | Method for penalty estimation                           | string | "sgm_penalty" | "sgm_penalty","mc_cnn_fast_penalty"                            | No                                                   |
+| penalty_method               | Method for penalty estimation                           | string | "sgm_penalty" | "sgm_penalty", "mc_cnn_fast_penalty"                            | No                                                   |
 +------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
 | p2_method                    | sub-method of *sgm_penalty* for P2 penalty estimation   | String | "constant"    | "constant" , "negativeGradient", "inverseGradient"             | No. Only available if *penalty_method = sgm_penalty* |
 +------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
