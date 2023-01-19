@@ -576,6 +576,45 @@ class TestConfig(unittest.TestCase):
         )
         np.testing.assert_allclose((min_mem_consump, max_mem_consump), consumption_vt, rtol=1e-02)
 
+    @staticmethod
+    def test_memory_consumption_estimation_with_already_check_pipeline():
+        """
+        Test the method test_memory_consumption_estimation with an already checked input pipeline configuration.
+        """
+
+        # Most consuming function is to_disp
+        cv_size = 450 * 375 * 61
+        m_line = 8.68e-06
+        n_line = 243
+        # Compute memory consumption in GiB with a marge of +-10%
+        consumption_vt = (
+            ((cv_size * m_line + n_line) * (1 - 0.1)) / 1024,
+            ((cv_size * m_line + n_line) * (1 + 0.1)) / 1024,
+        )
+
+        # Run memory_consumption_estimation giving the input parameters directly
+        img_left_path = "tests/pandora/left.png"
+        disp_min = -60
+        disp_max = 0
+        pandora_machine = PandoraMachine()
+        pipeline_cfg = {"pipeline": copy.deepcopy(common.basic_pipeline_cfg)}
+
+        # check pipeline before memory_consumption_estimation
+        pipeline_cfg = JSON_checker.check_pipeline_section(pipeline_cfg, pandora_machine)
+
+        min_mem_consump, max_mem_consump = JSON_checker.memory_consumption_estimation(
+            pipeline_cfg, (img_left_path, disp_min, disp_max), pandora_machine, True
+        )
+        np.testing.assert_allclose((min_mem_consump, max_mem_consump), consumption_vt, rtol=1e-02)
+
+        # Run memory_consumption_estimation giving the input parameters in a dict
+        pandora_machine = PandoraMachine()
+        input_cfg = {"input": copy.deepcopy(common.input_cfg_basic)}
+        min_mem_consump, max_mem_consump = JSON_checker.memory_consumption_estimation(
+            pipeline_cfg, input_cfg, pandora_machine, True
+        )
+        np.testing.assert_allclose((min_mem_consump, max_mem_consump), consumption_vt, rtol=1e-02)
+
 
 if __name__ == "__main__":
     common.setup_logging()

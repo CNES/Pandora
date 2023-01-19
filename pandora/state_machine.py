@@ -34,8 +34,12 @@ from json_checker import Checker, And
 try:
     import graphviz  # pylint: disable=unused-import
     from transitions.extensions import GraphMachine as Machine
+
+    FLAG_GRAPHVIZ = True
 except ImportError:
     from transitions import Machine  # type: ignore
+
+    FLAG_GRAPHVIZ = False
 from transitions import MachineError
 
 from pandora import aggregation
@@ -124,44 +128,44 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
     _transitions_check = [
         {
-            "trigger": "matching_cost",
+            "trigger": "check_matching_cost",
             "source": "begin",
             "dest": "cost_volume",
             "before": "right_disp_map_check_conf",
             "after": "matching_cost_check_conf",
         },
         {
-            "trigger": "aggregation",
+            "trigger": "check_aggregation",
             "source": "cost_volume",
             "dest": "cost_volume",
             "after": "aggregation_check_conf",
         },
         {
-            "trigger": "optimization",
+            "trigger": "check_optimization",
             "source": "cost_volume",
             "dest": "cost_volume",
             "after": "optimization_check_conf",
         },
         {
-            "trigger": "disparity",
+            "trigger": "check_disparity",
             "source": "cost_volume",
             "dest": "disp_map",
             "after": "disparity_check_conf",
         },
         {
-            "trigger": "filter",
+            "trigger": "check_filter",
             "source": "disp_map",
             "dest": "disp_map",
             "after": "filter_check_conf",
         },
         {
-            "trigger": "refinement",
+            "trigger": "check_refinement",
             "source": "disp_map",
             "dest": "disp_map",
             "after": "refinement_check_conf",
         },
         {
-            "trigger": "validation",
+            "trigger": "check_validation",
             "source": "disp_map",
             "dest": "disp_map",
             "after": "validation_check_conf",
@@ -169,13 +173,13 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # For the check conf we define the destination of multiscale state as disp_map instead of begin
         # given the conditional change of state
         {
-            "trigger": "multiscale",
+            "trigger": "check_multiscale",
             "source": "disp_map",
             "dest": "disp_map",
             "after": "multiscale_check_conf",
         },
         {
-            "trigger": "cost_volume_confidence",
+            "trigger": "check_cost_volume_confidence",
             "source": "cost_volume",
             "dest": "cost_volume",
             "after": "cost_volume_confidence_check_conf",
@@ -264,14 +268,25 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # Define avalaible states
         states_ = ["begin", "cost_volume", "disp_map"]
 
-        # Initialize a machine without any transition
-        Machine.__init__(
-            self,
-            states=states_,
-            initial="begin",
-            transitions=None,
-            auto_transitions=False,
-        )
+        if FLAG_GRAPHVIZ:
+            # Initialize a machine without any transition
+            Machine.__init__(
+                self,
+                states=states_,
+                initial="begin",
+                transitions=None,
+                auto_transitions=False,
+                use_pygraphviz=False,
+            )
+        else:
+            # Initialize a machine without any transition
+            Machine.__init__(
+                self,
+                states=states_,
+                initial="begin",
+                transitions=None,
+                auto_transitions=False,
+            )
 
         logging.getLogger("transitions").setLevel(logging.WARNING)
 
@@ -837,10 +852,13 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                 # filter
                 # trigger and give the configuration of filter.1
 
+                # change input name to avoid may_[step] repetition in transitions packages
+                check_input = "check_" + input_step
+
                 if len(input_step.split(".")) != 1:
-                    self.trigger(input_step.split(".")[0], cfg, input_step)
+                    self.trigger(check_input.split(".")[0], cfg, input_step)
                 else:
-                    self.trigger(input_step, cfg, input_step)
+                    self.trigger(check_input, cfg, input_step)
 
             except (MachineError, KeyError, AttributeError):
                 logging.error("A problem occurs during Pandora checking. Be sure of your sequencement")

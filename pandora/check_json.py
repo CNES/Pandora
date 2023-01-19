@@ -211,6 +211,7 @@ def memory_consumption_estimation(
     user_pipeline_cfg: Dict[str, dict],
     user_input: Union[Dict[str, dict], Tuple[str, int, int]],
     pandora_machine: PandoraMachine,
+    checked_cfg_flag: bool = False,
 ) -> Union[Tuple[float, float], None]:
     """
     Return the approximate memory consumption for a given pipeline in GiB.
@@ -221,11 +222,11 @@ def memory_consumption_estimation(
     :type user_input: dict or Tuple[str, int, int]
     :param pandora_machine: instance of PandoraMachine
     :type pandora_machine: PandoraMachine object
+    :param checked_cfg_flag: Flag for checking pipeline
+    :type checked_cfg_flag: bool
     :return: minimum and maximum memory consumption
     :rtype: Tuple[float, float]
     """
-    # First, check if the configuration is valid
-    checked_cfg = check_pipeline_section(user_pipeline_cfg, pandora_machine)
     # If the input configuration is given as a dict
     if isinstance(user_input, dict):
         dmin = user_input["input"]["disp_min"]
@@ -237,8 +238,14 @@ def memory_consumption_estimation(
     img = rasterio_open(img_path)
     # Obtain cost volume size
     cv_size = img.width * img.height * np.abs(dmax - dmin)
-    # Obtain pipeline cfg
-    pipeline_cfg = checked_cfg["pipeline"]
+    if checked_cfg_flag:
+        # Obtain pipeline cfg
+        pipeline_cfg = user_pipeline_cfg["pipeline"]
+    else:
+        # First, check if the configuration is valid
+        checked_cfg = check_pipeline_section(user_pipeline_cfg, pandora_machine)
+        # Obtain pipeline cfg
+        pipeline_cfg = checked_cfg["pipeline"]
 
     for function_info in MEMORY_CONSUMPTION_LIST:
         # [ step, step"_method", subclass, m_line, n_line] being m_line and n_line the values of the line defining
