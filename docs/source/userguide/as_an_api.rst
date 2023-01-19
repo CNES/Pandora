@@ -138,7 +138,7 @@ Example of a cost volume
       * row           (row) int64 2 3 4 5 6 7 8 9 ... 991 992 993 994 995 996 997
       * col           (col) int64 2 3 4 5 6 7 8 9 ... 991 992 993 994 995 996 997
       * disp          (disp) int64 -30 -29 -28 -27 -26 -25 -24 ... 28 29 30 31 32 33
-      * indicator     (indicator) object 'confidence_from_intensityStd'
+      * indicator     (indicator) object 'confidence_from_intensity_std'
     Data variables:
         cost_volume   (row, col, disp) float32 nan nan nan nan ... nan nan nan nan
         confidence_measure   (row, col, indicator) float32 nan nan nan nan ... nan nan nan nan
@@ -181,7 +181,7 @@ This Dataset also has a :
     Coordinates:
       * row                 (row) int64 0 1 2 3 4 5 6 ... 994 995 996 997 998 999
       * col                 (col) int64 0 1 2 3 4 5 6 ... 994 995 996 997 998 999
-      * indicator           (indicator) object 'confidence_from_intensityStd' 'validation_pandora_distanceOfDisp'
+      * indicator           (indicator) object 'confidence_from_intensity_std' 'validation_pandora_distance_of_disp'
     Data variables:
         disparity_map       (row, col) float32 0.0 0.0 0.0 0.0 ... 0.0 0.0 0.0 0.0
         validity_mask       (row, col) uint16 1 1 1 1 1 1 1 1 1 ... 1 1 1 1 1 1 1 1
