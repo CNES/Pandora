@@ -15,7 +15,7 @@ There are two architectures: mc-cnn fast and mc-cnn accurate, figures  below det
 
    .. figure:: ../../Images/mc_cnn_architectures.svg
 
-      Left : mc-cnn fast architecture. Right : mc-cnn fast architecture
+      Left : mc-cnn fast architecture. Right : mc-cnn accurate architecture
 
 Compared to MC-CNN article, only the mc-cnn fast architecture is available in this plugin because processing time of mc-cnn accurate is too long for practical use (about 80 times longer than mc-cnn fast). Moreover, the improvement on the results of mc-cnn accurate is usually small.
 
