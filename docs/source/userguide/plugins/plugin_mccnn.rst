@@ -17,7 +17,7 @@ There are two architectures: mc-cnn fast and mc-cnn accurate, figures  below det
 
       Left : mc-cnn fast architecture. Right : mc-cnn fast architecture
 
-Only the mc-cnn fast architecture is available in this plugin because processing time of mc-cnn accurate is too long for practical use (about 80 times longer than mc-cnn fast). Moreover, the improvement on the results of mc-cnn accurate is usually small.
+Compared to MC-CNN article, only the mc-cnn fast architecture is available in this plugin because processing time of mc-cnn accurate is too long for practical use (about 80 times longer than mc-cnn fast). Moreover, the improvement on the results of mc-cnn accurate is usually small.
 
 Pretrained weights for mc-cnn fast network are available in the `Plugin_mccnn repository <https://github.com/CNES/Pandora_plugin_mccnn>`_ :
 
