@@ -10,16 +10,19 @@ Theoretical basics
 
 
 As a reminder, mc-cnn is a neural network which computes a similarity measure on pair of small image patches. This similarity measure is computed between each possible patch to initialize the cost volume.
-There are two architectures: mc-cnn fast and mc-cnn accurate, figures  below detail the networks.
+Two different architectures of mc-cnn exist : mc-cnn fast and mc-cnn accurate. 
+
+Only the mc-cnn fast architecture is available in this plugin because processing time of mc-cnn accurate is too long for 
+practical use (about 80 times longer than mc-cnn fast). Moreover, the improvement on the results of mc-cnn accurate is usually small. 
+
+Figure below details the architecture of mc-cnn fast.
 
 
-   .. figure:: ../../Images/mc_cnn_architectures.svg
+.. figure:: ../../Images/mc_cnn_fast_architecture.png
 
-      Left : mc-cnn fast architecture. Right : mc-cnn accurate architecture
+|
 
-Compared to MC-CNN article, only the mc-cnn fast architecture is available in this plugin because processing time of mc-cnn accurate is too long for practical use (about 80 times longer than mc-cnn fast). Moreover, the improvement on the results of mc-cnn accurate is usually small.
-
-Pretrained weights for mc-cnn fast network are available in the `Plugin_mccnn repository <https://github.com/CNES/Pandora_plugin_mccnn>`_ :
+Pretrained weights for mc-cnn fast network are available in the MC-CNN repository https://gitlab.cnes.fr/3d/PandoraBox/mc-cnn :
 
 -  mc_cnn_fast_mb_weights.pt are the weights of the pretrained networks on the Middlebury dataset [Middlebury]_
 -  mc_cnn_fast_data_fusion_contest.pt are the weights of the pretrained networks on the Data Fusion Contest dataset [DFC]_
