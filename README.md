@@ -81,10 +81,10 @@ pandora a_local_block_matching.json output_dir
 To create you own stereo matching pipeline and choose among the variety of algorithms we provide, please consult [our online documentation](https://pandora.readthedocs.io/index.html).
 
 You will learn:
-- which stereo matching steps you can [use and combine](https://pandora.readthedocs.io/userguide/step_by_step.html)
-- how to quickly set up a [Pandora pipeline](https://pandora.readthedocs.io/userguide/sequencing.html)
-- how to add your own private algorithms to [customize your Pandora Framework](https://pandora.readthedocs.io/developer_guide/your_plugin.html)
-- how to use [Pandora API](https://pandora.readthedocs.io/userguide/as_an_api.html) (see [CARS](https://github.com/CNES/CARS) for real life exemple)
+- which stereo matching steps you can [use and combine](https://pandora.readthedocs.io/en/stable/userguide/step_by_step.html)
+- how to quickly set up a [Pandora pipeline](https://pandora.readthedocs.io/en/stable/userguide/sequencing.html)
+- how to add your own private algorithms to [customize your Pandora Framework](https://pandora.readthedocs.io/en/stable/developer_guide/your_plugin.html)
+- how to use [Pandora API](https://pandora.readthedocs.io/en/stable/userguide/as_an_api.html) (see [CARS](https://github.com/CNES/CARS) for real life example)
 
 ## Credits
 
