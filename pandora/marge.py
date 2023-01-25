@@ -53,7 +53,7 @@ def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.Datase
 
     # Pandora margins depends on the steps configured
     if "optimization" in cfg:
-        if cfg["optimization"]["optimization_method"] == "sgm":
+        if cfg["optimization"]["optimization_method"] in ["sgm", "3sgm"]:
             # SGM margin includes the census, vfit and median filter margins
             sgm_margins = 40
             r_marg = [
