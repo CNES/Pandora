@@ -13,8 +13,7 @@
     "matching_cost" : {
       "matching_cost_method": "mc_cnn",
       "window_size": 11,
-      "subpix": 1,
-      "model_path": "plugin_mc-cnn/weights/mc_cnn_fast_mb_weights.pt"
+      "subpix": 1
     },
     "optimization" : {
       "optimization_method": "sgm",
