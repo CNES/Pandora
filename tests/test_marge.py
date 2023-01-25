@@ -44,9 +44,9 @@ class TestMargins(unittest.TestCase):
         """
 
     @staticmethod
-    def test_get_margins():
+    def test_get_margins_sgm():
         """
-        Test get_margins function
+        Test get_margins function with sgm configuration
         """
         # Test with SGM configuration
         cfg_sgm = {
@@ -75,6 +75,43 @@ class TestMargins(unittest.TestCase):
         assert res.attrs["disp_min"] == -13
         assert res.attrs["disp_max"] == -2
 
+    @staticmethod
+    def test_get_margins_3sgm():
+        """
+        Test get_margins function with 3sgm configuration
+        """
+        # Test with 3SGM configuration
+        cfg_3sgm = {
+            "matching_cost": {"matching_cost_method": "census", "window_size": 5},
+            "optimization": {"optimization_method": "3sgm"},
+            "refinement": {"refinement_method": "vfit"},
+            "filter": {"filter_method": "median", "filter_size": 3},
+            "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1},
+        }
+
+        res = pandora.marge.get_margins(-13, 14, cfg_3sgm)
+        np.testing.assert_array_equal(res["left_margin"].values, np.array([54, 40, 54, 40]))
+        np.testing.assert_array_equal(res["right_margin"].values, np.array([54, 40, 54, 40]))
+        assert res.attrs["disp_min"] == -13
+        assert res.attrs["disp_max"] == 14
+
+        res = pandora.marge.get_margins(3, 14, cfg_3sgm)
+        np.testing.assert_array_equal(res["left_margin"].values, np.array([54, 40, 54, 40]))
+        np.testing.assert_array_equal(res["right_margin"].values, np.array([54, 40, 54, 40]))
+        assert res.attrs["disp_min"] == 3
+        assert res.attrs["disp_max"] == 14
+
+        res = pandora.marge.get_margins(-13, -2, cfg_3sgm)
+        np.testing.assert_allclose(res["left_margin"].values, np.array([53, 40, 53, 40]))
+        np.testing.assert_allclose(res["right_margin"].values, np.array([53, 40, 53, 40]))
+        assert res.attrs["disp_min"] == -13
+        assert res.attrs["disp_max"] == -2
+
+    @staticmethod
+    def test_get_margins():
+        """
+        Test get_margins function
+        """
         # Test without SGM configuration
         cfg = {
             "matching_cost": {"matching_cost_method": "census", "window_size": 3},
