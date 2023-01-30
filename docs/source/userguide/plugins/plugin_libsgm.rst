@@ -45,7 +45,7 @@ The user must have computed ambiguity confidence previously in the pipeline. If 
 
 **Piecewise Optimization**
 
-The user can activate the piecewise optimization by choosing the layer *piecewise_optimization_layer* to use as segments for piecewise optimization.
+Method defined by [Dumas2022]_. The user can activate the piecewise optimization by choosing the layer *piecewise_optimization_layer* to use as segments for piecewise optimization.
 For each segment, optimization will only be applied inside this segment.
 
 The user can use the `classif` or `segm` layer respectively corresponding to the `left_classif` and `left_segm` (`right_classif` and `right_segm` for right image) specified in the input configuration.
@@ -55,7 +55,6 @@ The input segmentation or classification .tif file must be the same format as th
     - The value of a class or a segment must be different to the values of surrounding classes or segments.
     - The data must be dense : for example if the user wants to perform a piecewise optimization with only one small segment, the data must be composed of two different values.
 
-
 The following diagram explains the concept:
 
     .. image:: ../../Images/piecewise_optimization_segments.png
@@ -63,11 +62,24 @@ The following diagram explains the concept:
 .. [Hirschmuller2008] H. Hirschmuller, "Stereo Processing by Semiglobal Matching and Mutual Information," in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 30, no. 2, pp. 328-341, Feb. 2008. doi: 10.1109/TPAMI.2007.1166
 .. [Banz2012] Banz, C. & Pirsch, P. & Blume, Holger. (2012). EVALUATION OF PENALTY FUNCTIONS FOR SEMI-GLOBAL MATCHING COST AGGREGATION. ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences. XXXIX-B3. 1-6. 10.5194/isprsarchives-XXXIX-B3-1-2012.
 .. [Zbontar2016] Zbontar, Jure and Yann LeCun. “Stereo Matching by Training a Convolutional Neural Network to Compare Image Patches.” ArXiv abs/1510.05970 (2016): n. pag.
+.. [Dumas2022] Dumas, L., Defonte, V., Steux, Y., and Sarrazin, E.: IMPROVING PAIRWISE DSM WITH 3SGM: A SEMANTIC SEGMENTATION FOR SGM USING AN AUTOMATICALLY REFINED NEURAL NETWORK, ISPRS Ann. Photogramm. Remote Sens. Spatial Inf. Sci., V-2-2022, 167–175, https://doi.org/10.5194/isprs-annals-V-2-2022-167-2022, 2022.
 
 .. _plugin_libsgm_conf:
 
 Configuration and parameters
 ****************************
+
+There are some parameters depending on sgm but not penalties
+
+.. csv-table::
+
+    **Name**,**Description**,**Type**,**Default value**,**Available value**,**Required**
+    *overcounting*,overcounting correction,Boolean,False,True False,No
+    *min_cost_paths*,Number of sgm paths that give the same final disparity,Boolean,False,True False,No
+    *use_confidence*, Apply confidence to cost volume, Boolean, False, True False, No
+    *geometric_prior*, Layer to use during piecewise optimization, dict, "internal", \"internal" "classif" or "segm", No
+    *penalty*, a dictionary containing all parameters related to penalties, dict, {"penalty_method": "sgm_penalty" "P1": 4 "P2": 20}, *cf. following tables*,No
+
 
 +------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
 | Name                         | Description                                             | Type   | Default value | Available value                                                | Required                                             |
@@ -75,14 +87,6 @@ Configuration and parameters
 | penalty_method               | Method for penalty estimation                           | string | "sgm_penalty" | "sgm_penalty", "mc_cnn_fast_penalty"                           | No                                                   |
 +------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
 | p2_method                    | sub-method of *sgm_penalty* for P2 penalty estimation   | String | "constant"    | "constant" , "negativeGradient", "inverseGradient"             | No. Only available if *penalty_method = sgm_penalty* |
-+------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
-| overcounting                 | overcounting correction                                 | Boolean| False         | True, False                                                    | No                                                   |
-+------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
-| min_cost_paths               | Number of sgm paths that give the same final disparity  | Boolean| False         | True, False                                                    | No                                                   |
-+------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
-| use_confidence               | Apply confidence to cost volume                         | Boolean| False         | True, False                                                    | No                                                   |
-+------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
-| piecewise_optimization_layer | Layer to use during piecewise optimization              | string | "None"        | "None", "classif", "segm"                                      | No                                                   |
 +------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
 
 There are some parameters depending on penalty_method choice and p2_method choice.
@@ -161,9 +165,11 @@ There are some parameters depending on penalty_method choice and p2_method choic
             ...
             "optimization": {
                 "optimization_method": "sgm",
-                "penalty_method": "sgm_penalty",
-                "P1": 4,
-                "P2": 20
+                "penalty": {
+                    "penalty_method": "sgm_penalty",
+                    "P1": 4,
+                    "P2": 20
+                }
             }
             ...
         }

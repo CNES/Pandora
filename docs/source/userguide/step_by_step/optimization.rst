@@ -17,17 +17,13 @@ The methods available in Pandora are
 
 - Semi-Global Matching [Hirschmuller2007]_, made available by :ref:`plugin_libsgm`.
 
-
-
-
 Configuration and parameters
 ----------------------------
 
-+-----------------------+----------------------+--------+---------------+-------------------------------------+----------+
-| Name                  | Description          | Type   | Default value | Available value                     | Required |
-+=======================+======================+========+===============+=====================================+==========+
-| *optimization_method* | Optimization method  | string |               | "sgm" if plugin_libsgm is installed | Yes      |
-+-----------------------+----------------------+--------+---------------+-------------------------------------+----------+
+.. csv-table::
+
+    **Name**,**Description**,**Type**,**Default value**,**Available value**,**Required**
+    *optimization_method*,Optimization method,string,,\"sgm" or "3sgm" if plugin_libsgm is installed,Yes
 
 Optimization method:
 
