@@ -2,13 +2,28 @@
 
 ## Unreleased
 
+## 1.3.0 (January 2023)
+
 ### Added 
+
 - Add indicator to distinguish different cost volume confidence maps. [#243]
-- Add Makefile [#248]
+- Add Makefile. [#248]
+- Add confidence method naming according to the selected confidence method. [#268] 
+- Add compatibility to plugin_libsgm's 3SGM method. [#255]
+
+### Changed 
+
+- Remove dependance to ipyvolume. [#250]
+- Adapt confidence method naming to snake case style. [#278]
+
+### Fixed
+
+- Remove warnings from transition. [#252]
 
 ## 1.2.1 (December 2021)
 
 ### Fixed
+
 - Functions get_margins works now with missing parameters (refinement, filter) [#235]
 - Enable inf value as a nodata. [#238]
 - Modify exception handling with machine state. [#239]
