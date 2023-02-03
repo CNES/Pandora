@@ -362,7 +362,6 @@ class TestPandora(unittest.TestCase):
 
         # Create temporary directory
         with TemporaryDirectory() as tmp_dir:
-
             with open(os.path.join(tmp_dir, "config.json"), "w", encoding="utf-8") as file_:
                 json.dump(cfg, file_, indent=2)
 
@@ -391,7 +390,6 @@ class TestPandora(unittest.TestCase):
 
         # Create temporary directory
         with TemporaryDirectory() as tmp_dir:
-
             with open(os.path.join(tmp_dir, "config.json"), "w", encoding="utf-8") as file_:
                 json.dump(cfg, file_, indent=2)
 
@@ -470,7 +468,6 @@ class TestPandora(unittest.TestCase):
 
         # Create temporary directory
         with TemporaryDirectory() as tmp_dir:
-
             with open(os.path.join(tmp_dir, "config.json"), "w", encoding="utf-8") as file_:
                 json.dump(cfg, file_, indent=2)
 

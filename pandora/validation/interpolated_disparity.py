@@ -518,7 +518,6 @@ class SgmInterpolation(AbstractInterpolation):
             for row in range(nrow):
                 # Mismatched
                 if valid[col, row] & cst.PANDORA_MSK_PIXEL_MISMATCH != 0:
-
                     # Mismatched pixel areas that are direct neighbors of occluded pixels are treated as occlusions
                     if (
                         np.sum(
