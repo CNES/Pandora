@@ -512,11 +512,3 @@ max-statements=100
 
 # Minimum number of public methods for a class (see R0903).
 min-public-methods=2
-
-
-[EXCEPTIONS]
-
-# Exceptions that will emit a warning when being caught. Defaults to
-# "BaseException, Exception".
-overgeneral-exceptions=BaseException,
-                       Exception

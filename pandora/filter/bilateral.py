@@ -145,7 +145,7 @@ class BilateralFilter(filter.AbstractFilter):
         ny_, nx_ = data.shape
 
         # Window width is obtained from the spatial sigma
-        win_width = min(min(ny_, nx_), int(3 * sigma_space + 1))
+        win_width = min(ny_, nx_, int(3 * sigma_space + 1))
         offset = int(win_width / 2)
         # Obtain all filter windows
         filter_windows = sliding_window(data, (win_width, win_width))
