@@ -61,7 +61,7 @@ class AbstractDisparity:
                     logging.error("No disparity method named % supported", cfg["disparity_method"])
                     raise KeyError
             else:
-                if isinstance(cfg["disparity_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
+                if isinstance(cfg["disparity_method"], unicode):  # type:ignore # pylint:disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractDisparity, cls).__new__(
@@ -240,11 +240,11 @@ class AbstractDisparity:
 
             # The disparity interval is missing in the left image
             if x_d[valid].size == 0:
-                disp_map["disparity_map"].loc[dict(col=col)] = invalid_value
+                disp_map["disparity_map"].loc[{"col": col}] = invalid_value
 
                 # Invalid pixel : the disparity interval is missing in the right image
                 disp_map["validity_mask"].loc[
-                    dict(col=col)
+                    {"col": col}
                 ] += cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
             else:
                 # Diagonal search for the minimum or maximum
@@ -271,10 +271,10 @@ class AbstractDisparity:
                 if x_d[valid].size != disp_range.size:
                     #  Information: the disparity interval is incomplete (border reached in the right image)
                     disp_map["validity_mask"].loc[
-                        dict(col=col)
+                        {"col": col}
                     ] += cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
 
-                disp_map["disparity_map"].loc[dict(col=col)] = -1 * np.flip(disp_range[valid])[min_.data]  # type:ignore
+                disp_map["disparity_map"].loc[{"col": col}] = -1 * np.flip(disp_range[valid])[min_.data]  # type:ignore
 
         cv["cost_volume"].data[indices_nan] = np.nan
         invalid_mc = np.min(indices_nan, axis=2)

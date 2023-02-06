@@ -473,7 +473,6 @@ def cross_support(image: np.ndarray, len_arms: int, intensity: float) -> np.ndar
 
     for col in range(n_col_):
         for row in range(n_row_):
-
             # If the pixel is valid (np.isfinite = True) compute the cross support
             # Else (np.isfinite = False) the pixel is not valid (no data or invalid) and the cross support value is 0
             # for the 4 arms (default value of the variable cross).

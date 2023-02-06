@@ -40,9 +40,6 @@ ifeq ($(PYTHON_VERSION_OK), 0)
     $(error "Requires python version >= $(PYTHON_VERSION_MIN). Current version is $(PYTHON_VERSION_CUR)")
 endif
 
-# Get PANDORA version from setup.py
-PANDORA_VERSION = $(shell python3 setup.py --version)
-PANDORA_VERSION_MIN =$(shell echo ${PANDORA_VERSION} | cut -d . -f 1,2,3)
 
 ################ MAKE targets by sections ######################
 
@@ -68,7 +65,7 @@ install: venv ## install pandora (pip editable mode) without plugins
 	@test -f ${PANDORA_VENV}/bin/pandora || ${PANDORA_VENV}/bin/pip install -e .[dev,docs,notebook]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${PANDORA_VENV}/bin/pre-commit install
-	@echo "PANDORA ${PANDORA_VERSION} installed in dev mode in virtualenv ${PANDORA_VENV}"
+	@echo "PANDORA installed in dev mode in virtualenv ${PANDORA_VENV}"
 	@echo "PANDORA venv usage : source ${PANDORA_VENV}/bin/activate; pandora -h"
 
 ## Test section
@@ -106,7 +103,7 @@ lint/black: ## check global style with black
 .PHONY: lint/mypy
 lint/mypy: ## check linting with mypy
 	@echo "+ $@"
-	${PANDORA_VENV}/bin/mypy pandora tests
+	@${PANDORA_VENV}/bin/mypy pandora tests
 
 .PHONY: lint/pylint
 lint/pylint: ## check linting with pylint
@@ -124,7 +121,7 @@ docs: install ## build sphinx documentation (source venv before)
 .PHONY: notebook
 notebook: install ## install Jupyter notebook kernel with venv and pandora install (source venv before)
 	@echo "Install Jupyter Kernel in virtualenv dir"
-	@${PANDORA_VENV}/bin/python -m ipykernel install --sys-prefix --name=pandora-${PANDORA_VERSION_MIN} --display-name=pandora-${PANDORA_VERSION_MIN}
+	@${PANDORA_VENV}/bin/python -m ipykernel install --sys-prefix --name=pandora-dev --display-name=pandora-dev
 	@echo "Use jupyter kernelspec list to know where is the kernel"
 	@echo " --> After PANDORA virtualenv activation, please use following command to launch local jupyter notebook to open PANDORA Notebooks:"
 	@echo "jupyter notebook"
@@ -137,8 +134,8 @@ docker: ## Check and build docker image (cnes/pandora)
 	@echo "Check Dockerfiles with hadolint"
 	@docker pull hadolint/hadolint
 	@docker run --rm -i hadolint/hadolint < Dockerfile
-	@echo "Build Docker main image PANDORA ${PANDORA_VERSION_MIN}"
-	@docker build -t cnes/pandora:${PANDORA_VERSION_MIN} . -f Dockerfile
+	@echo "Build Docker main image PANDORA "
+	@docker build -t cnes/pandora:dev . -f Dockerfile
 
 ## Clean section
 
@@ -208,5 +205,5 @@ clean-mypy:
 .PHONY: clean-docker
 clean-docker: ## clean docker image
 	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
-	@echo "Clean Docker image cnes/pandora ${PANDORA_VERSION_MIN}"
-	@docker image rm cnes/pandora:${PANDORA_VERSION_MIN}
+	@echo "Clean Docker image cnes/pandora dev"
+	@docker image rm cnes/pandora:dev

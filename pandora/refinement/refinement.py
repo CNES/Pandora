@@ -103,7 +103,11 @@ class AbstractRefinement:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             # Conversion to numpy array ( .data ), because Numba does not support Xarray
-            (itp_coeff, disp["disparity_map"].data, disp["validity_mask"].data,) = self.loop_refinement(
+            (
+                itp_coeff,
+                disp["disparity_map"].data,
+                disp["validity_mask"].data,
+            ) = self.loop_refinement(
                 cv["cost_volume"].data,
                 disp["disparity_map"].data,
                 disp["validity_mask"].data,
@@ -258,7 +262,6 @@ class AbstractRefinement:
                     itp_coeff[row, col] = cv[row, col, dsp]
                     if not np.isnan(cv[row, col, dsp]):
                         if (disp[row, col] != d_min) and (disp[row, col] != d_max):
-
                             sub_disp, sub_cost, valid = method(  # type: ignore
                                 [
                                     cv[row, col, dsp - 1],

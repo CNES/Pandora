@@ -195,7 +195,6 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         right_disp_min: Union[np.ndarray, None] = None,
         right_disp_max: Union[np.ndarray, None] = None,
     ) -> None:
-
         """
         Initialize Pandora Machine
 

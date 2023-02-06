@@ -27,7 +27,6 @@ import plotly.express as px  # type: ignore
 
 
 def pandora_cmap():
-
     colors = ["crimson", "lightpink", "white", "yellowgreen"]
     nodes = [0.0, 0.4, 0.5, 1.0]
     cmap_shift = LinearSegmentedColormap.from_list("mycmap", list(zip(nodes, colors)))
@@ -36,7 +35,6 @@ def pandora_cmap():
 
 
 def cmap_to_palette(cmap):
-
     cmap_rgb = (255 * cmap(range(256))).astype("int")
     palette = [RGB(*tuple(rgb)).to_hex() for rgb in cmap_rgb]
 
