@@ -61,8 +61,8 @@ class AbstractDisparity:
                     logging.error("No disparity method named % supported", cfg["disparity_method"])
                     raise KeyError
             else:
-                if isinstance(cfg["disparity_method"], str):
-                    # creating a plugin from registered short name given as str
+                if isinstance(cfg["disparity_method"], unicode):  # type:ignore # pylint:disable=undefined-variable
+                    # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractDisparity, cls).__new__(
                             cls.disparity_methods_avail[cfg["disparity_method"].encode("utf-8")]
