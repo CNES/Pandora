@@ -113,8 +113,8 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         if self._band is not None:
             band_index_left = img_left.attrs["band_list"].index(self._band)
             band_index_right = img_right.attrs["band_list"].index(self._band)
-            selected_band_right = img_right["im"].data[:, :, band_index_right]
-            selected_band_left = img_left["im"].data[:, :, band_index_left]
+            selected_band_right = img_right["im"].data[band_index_right, :, :]
+            selected_band_left = img_left["im"].data[band_index_left, :, :]
         else:
             selected_band_right = img_right["im"].data
             selected_band_left = img_left["im"].data

@@ -116,7 +116,6 @@ class TestMatchingCostSSD(unittest.TestCase):
                 [0, 0, 0, 0, 0, 0],
             )
         )
-
         # Computes the sd cost for the whole images
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "ssd", "window_size": 1, "subpix": 1, "band": "r"}
@@ -141,6 +140,9 @@ class TestMatchingCostSSD(unittest.TestCase):
             )
         )
 
+        # Compute gt cmax:
+        window_size = 5
+        ssd_cmax_ground_truth = np.nanmax(sd_ground_truth) * window_size**2
         # Computes the sd cost for the whole images
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "ssd", "window_size": 5, "subpix": 1, "band": "r"}
@@ -152,6 +154,9 @@ class TestMatchingCostSSD(unittest.TestCase):
 
         # Check if the calculated sd cost is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(ssd["cost_volume"].sel(disp=0), ssd_ground_truth)
+
+        # Check if the calculated max cost is equal to the ground truth
+        np.testing.assert_array_equal(ssd.attrs["cmax"], ssd_cmax_ground_truth)
 
     @staticmethod
     def test_check_band_ssd():

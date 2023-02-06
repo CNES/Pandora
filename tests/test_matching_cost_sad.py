@@ -141,7 +141,6 @@ class TestMatchingCostSAD(unittest.TestCase):
                 ]
             )
         )
-
         # Computes the ad cost for the whole images
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 5, "subpix": 1, "band": "r"}
@@ -151,8 +150,14 @@ class TestMatchingCostSAD(unittest.TestCase):
         )
         matching_cost_matcher.cv_masked(self.left_multiband, self.right_multiband, sad, -1, 1)
 
+        # Compute gt cmax:
+        window_size = 5
+        sad_cmax_ground_truth = np.max(ad_ground_truth) * window_size**2
         # Check if the calculated ad cost is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(sad["cost_volume"].sel(disp=0), sad_ground_truth)
+
+        # Check if the calculated max cost is equal to the ground truth
+        np.testing.assert_array_equal(sad.attrs["cmax"], sad_cmax_ground_truth)
 
     @staticmethod
     def test_cost_volume():
