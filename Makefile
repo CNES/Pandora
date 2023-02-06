@@ -103,7 +103,7 @@ lint/black: ## check global style with black
 .PHONY: lint/mypy
 lint/mypy: ## check linting with mypy
 	@echo "+ $@"
-	${PANDORA_VENV}/bin/mypy pandora tests
+	@${PANDORA_VENV}/bin/mypy pandora tests
 
 .PHONY: lint/pylint
 lint/pylint: ## check linting with pylint
