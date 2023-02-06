@@ -200,12 +200,12 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         :param img_left_pyramid: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :type img_left_pyramid: xarray.Dataset
         :param img_right_pyramid: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :type img_right_pyramid: xarray.Dataset
         :param disp_min: minimal disparity
@@ -555,12 +555,12 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type cfg: dict
         :param left_img: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :type left_img: xarray.Dataset
         :param right_img: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :type right_img: xarray.Dataset
         :param disp_min: minimal disparity

@@ -161,12 +161,12 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset  containing :
 
-                - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :return: None
@@ -189,12 +189,12 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset  containing :
 
-                - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param disp_min: minimum disparity
@@ -222,7 +222,7 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param subpix: subpixel precision = (1 or 2 or 4)
@@ -282,12 +282,12 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param disp: current disparity
@@ -328,12 +328,12 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param window_size: window size of the measure
@@ -473,12 +473,12 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param cost_volume: the cost_volume DataSet with the data variables:
@@ -556,7 +556,7 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param disparity_range: disparity range
