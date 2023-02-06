@@ -22,7 +22,7 @@
 # limitations under the License.
 #
 """
-This module contains functions to test the cost volume measure step.
+This module contains functions to test the SAD matching cost step.
 """
 import unittest
 import pytest
@@ -35,10 +35,10 @@ from pandora import matching_cost
 from tests import common
 
 
-class TestMatchingCost(unittest.TestCase):
+class TestMatchingCostSAD(unittest.TestCase):
     """
-    TestMatchingCost class allows to test all the methods in the class MatchingCost,
-    and the plugins pixel_wise, zncc
+    TestMatchingCost class allows to test all the methods in the
+    matching_cost SAD class
     """
 
     def setUp(self):

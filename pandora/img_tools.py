@@ -77,7 +77,7 @@ def read_img(
     :type segm: string
     :return: xarray.DataSet containing the variables :
 
-            - im : 2D (row, col) xarray.DataArray float32
+            - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray float32
             - msk : 2D (row, col) xarray.DataArray int16, with the convention defined in the configuration file
     :rtype: xarray.DataSet
     """
@@ -239,11 +239,11 @@ def prepare_pyramid(
 
     :param img_left: left Dataset image containing :
 
-            - im : 2D (row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
     :type img_left: xarray.Dataset
     :param img_right: right Dataset containing :
 
-            - im : 2D (row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
     :type img_right: xarray.Dataset
     :param num_scales: number of scales
     :type num_scales: int
@@ -300,7 +300,7 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
     :param dataset: Dataset image
     :type dataset: xarray.Dataset containing :
 
-        - im : 2D (row, col) xarray.DataArray
+        - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
     :return: a Tuple that contains the filled image and mask
     :rtype: Tuple of np.ndarray
     """
@@ -388,11 +388,11 @@ def convert_pyramid_to_dataset(
 
     :param img_left: left Dataset image containing :
 
-        - im : 2D (row, col) xarray.DataArray
+        - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
     :type img_left: xarray.Dataset
     :param img_right: right Dataset image containing :
 
-        - im : 2D (row, col) xarray.DataArray
+        - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
     :type img_right: xarray.Dataset
     :param num_scales: number of scales
     :type num_scales: int
@@ -435,7 +435,7 @@ def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None) -> Lis
 
     :param img_right: right Dataset image containing :
 
-        - im : 2D (row, col) xarray.DataArray
+        - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
     :type img_right: xarray.Dataset
     :param subpix: subpixel precision = (1 or pair number)
     :type subpix: int
@@ -451,8 +451,8 @@ def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None) -> Lis
         selected_band = img_right["im"].data
     else:
         # if image has more than one band we only shift the one specified in matching_cost
-        band_index = img_right.attrs["band_list"].index(band)
-        selected_band = img_right["im"].data[band_index, :, :]
+        band_index_right = img_right.attrs["band_list"].index(band)
+        selected_band = img_right["im"].data[band_index_right, :, :]
 
     if subpix > 1:
         for ind in np.arange(1, subpix):
@@ -477,7 +477,7 @@ def check_inside_image(img: xr.Dataset, row: int, col: int) -> bool:
 
     :param img: Dataset image containing :
 
-            - im : 2D (row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
     :type img: xarray.Dataset
     :param row: row coordinates
     :type row: int
@@ -499,7 +499,7 @@ def census_transform(image: xr.Dataset, window_size: int, band: str = None) -> x
     :param window_size: Census window size
     :type window_size: int
     :param band: User's value for selected band
-    :type band: int
+    :type band: str
     :return: Dataset census transformed uint32 containing the transformed image im: 2D (row, col) xarray.DataArray \
     uint32
     :rtype: xarray.Dataset
@@ -558,12 +558,12 @@ def compute_mean_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.
 
     :param img: Dataset image containing :
 
-            - im : 2D (row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
     :type img: xarray.Dataset
     :param win_size: window size
     :type win_size: int
     :param band: User's value for selected band
-    :type band: int
+    :type band: str
     :return: mean raster
     :rtype: numpy array
     """
@@ -650,7 +650,7 @@ def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np
 
     :param img: Dataset image containing :
 
-            - im : 2D (row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
     :type img: xarray.Dataset
     :param row: row coordinates
     :type row: int
@@ -684,12 +684,12 @@ def compute_std_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.n
 
     :param img: Dataset image containing :
 
-            - im : 2D (row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
     :type img: xarray.Dataset
     :param win_size: window size
     :type win_size: int
     :param band: User's value for selected band
-    :type band: int
+    :type band: str
     :return: std raster
     :rtype: numpy array
     """

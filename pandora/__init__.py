@@ -55,12 +55,12 @@ def run(
     :type pandora_machine: PandoraMachine
     :param img_left: left Dataset image containing :
 
-            - im : 2D (row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
             - msk (optional): 2D (row, col) xarray.DataArray
     :type img_left: xarray.Dataset
     :param img_right: right Dataset image containing :
 
-            - im : 2D (row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
             - msk (optional): 2D (row, col) xarray.DataArray
     :type img_right: xarray.Dataset
     :param disp_min: minimal disparity

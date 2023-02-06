@@ -495,7 +495,6 @@ class TestPandora(unittest.TestCase):
         }
         # working on green band
         user_cfg["pipeline"]["matching_cost"]["band"] = "g"
-        print(user_cfg["input"]["img_left"])
 
         left_rgb = read_img(user_cfg["input"]["img_left"], band_list=["r", "g", "b"], no_data=np.nan, mask=None)
         right_rgb = read_img(user_cfg["input"]["img_right"], band_list=["r", "g", "b"], no_data=np.nan, mask=None)

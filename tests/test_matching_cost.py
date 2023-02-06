@@ -21,7 +21,7 @@
 # limitations under the License.
 #
 """
-This module contains functions to test the cost volume measure step.
+This module contains functions to test the matching cost step.
 """
 import unittest
 import numpy as np
@@ -34,8 +34,7 @@ from tests import common
 
 class TestMatchingCost(unittest.TestCase):
     """
-    TestMatchingCost class allows to test all the methods in the class MatchingCost,
-    and the plugins pixel_wise, zncc
+    TestMatchingCost class allows to test the methods in the class MatchingCost
     """
 
     def setUp(self):

@@ -86,12 +86,12 @@ class Zncc(matching_cost.AbstractMatchingCost):
         :param img_left: left Dataset image
         :type img_left:
             xarray.Dataset containing :
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :param img_right: right Dataset image
         :type img_right:
             xarray.Dataset containing :
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (row, col, band) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :param disp_min: minimum disparity
         :type disp_min: int
@@ -159,17 +159,18 @@ class Zncc(matching_cost.AbstractMatchingCost):
             q_std = (point_q[0], point_q[1] - (int(self._window_size / 2) * 2))  # type: ignore
 
             if self._band is not None:
-                band_index = img_right.attrs["band_list"].index(self._band)
+                band_index_left = img_left.attrs["band_list"].index(self._band)
+                band_index_right = img_right.attrs["band_list"].index(self._band)
                 if len(img_right_shift[i_right]["im"].shape) > 2:
                     # Compute the normalized summation of the product of intensities
                     zncc_ = (
-                        img_left["im"].data[band_index, :, point_p[0] : point_p[1]]
-                        * img_right_shift[i_right]["im"].data[band_index, :, point_q[0] : point_q[1]]
+                        img_left["im"].data[band_index_left, :, point_p[0] : point_p[1]]
+                        * img_right_shift[i_right]["im"].data[band_index_right, :, point_q[0] : point_q[1]]
                     )
                 else:
                     # Compute the normalized summation of the product of intensities
                     zncc_ = (
-                        img_left["im"].data[band_index, :, point_p[0] : point_p[1]]
+                        img_left["im"].data[band_index_left, :, point_p[0] : point_p[1]]
                         * img_right_shift[i_right]["im"].data[:, point_q[0] : point_q[1]]
                     )
             else:
