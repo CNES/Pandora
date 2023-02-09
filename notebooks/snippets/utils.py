@@ -19,6 +19,8 @@ from bokeh.plotting import figure
 from bokeh.layouts import row, column
 from bokeh.models import ColorBar, BasicTicker, LinearColorMapper, Legend  # type: ignore
 from bokeh.io import show, output_notebook
+from bokeh.embed import file_html  # Those two imports are necessary for the notebooks_tests
+from bokeh.resources import CDN
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib import cm
 from matplotlib.image import imsave
