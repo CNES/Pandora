@@ -47,6 +47,8 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
     _ETA_STEP = 0.01
     # Percentile value to normalize ambiguity
     _PERCENTILE = 1.0
+    # Ambiguity normalization
+    _NORMALIZATION = True
     # Method name
     _method = "confidence_from_ambiguity"
     # Indicator
@@ -62,6 +64,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         self.cfg = self.check_conf(**cfg)
         self._eta_min = self._ETA_MIN
         self._percentile = self._PERCENTILE
+        self._normalization = self.cfg["normalization"]
         self._eta_max = float(self.cfg["eta_max"])
         self._eta_step = float(self.cfg["eta_step"])
         self._indicator = self._method + str(self.cfg["indicator"])
@@ -81,11 +84,14 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
             cfg["eta_step"] = self._ETA_STEP
         if "indicator" not in cfg:
             cfg["indicator"] = self._indicator
+        if "normalization" not in cfg:
+            cfg["normalization"] = self._NORMALIZATION
 
         schema = {
             "confidence_method": And(str, lambda input: "ambiguity"),
             "eta_max": And(float, lambda input: 0 < input < 1),
             "eta_step": And(float, lambda input: 0 < input < 1),
+            "normalization": bool,
             "indicator": str,
         }
 
@@ -130,8 +136,9 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
             # Computes ambiguity using numba in parallel for memory and computation time optimization
             ambiguity = self.compute_ambiguity(cv["cost_volume"].data, self._eta_min, self._eta_max, self._eta_step)
 
-        # Ambiguity normalization with percentile
-        ambiguity = self.normalize_with_percentile(ambiguity)
+        # If activated, ambiguity normalization with percentile
+        if self._normalization:
+            ambiguity = self.normalize_with_percentile(ambiguity)
 
         # Conversion of ambiguity into a confidence measure
         ambiguity = 1 - ambiguity

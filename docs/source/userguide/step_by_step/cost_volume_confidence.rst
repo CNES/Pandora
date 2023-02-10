@@ -21,6 +21,8 @@ The available methods are :
   From the previous equation, ambiguity integral measure is derived and it is defined as the area under the ambiguity curve. Then, ambiguity integral measure
   is converted into a confidence measure :math:`Confidence Ambiguity(x,y) = 1 - Ambiguity Integral`.
 
+  The ambiguity integral is by default normalized. However, the user may choose not to perform this normalization by setting the `normalization` parameter to `false`.
+
 *Sarrazin, E., Cournet, M., Dumas, L., Defonte, V., Fardet, Q., Steux, Y., Jimenez Diaz, N., Dubois, E., Youssefi, D., Buffe, F., 2021. Ambiguity concept in stereo matching pipeline.
 ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences. (To be published)*
 
@@ -62,6 +64,8 @@ Configuration and parameters
 | *eta_max*                 | Maximum :math:`\eta`                          | float  | 0.7           | >0                                     | No. Only available if "ambiguity" or "risk" method |
 +---------------------------+-----------------------------------------------+--------+---------------+----------------------------------------+----------------------------------------------------+
 | *eta_step*                | :math:`\eta` step                             | float  | 0.01          | >0                                     | No. Only available if "ambiguity" or "risk" method |
++---------------------------+-----------------------------------------------+--------+---------------+----------------------------------------+----------------------------------------------------+
+| *normalization*           | Ambiguity normalization                       | bool   | true          | true, false                            | No. Only available if "ambiguity" method           |
 +---------------------------+-----------------------------------------------+--------+---------------+----------------------------------------+----------------------------------------------------+
 
 **Example**
