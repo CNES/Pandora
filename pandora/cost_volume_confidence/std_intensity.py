@@ -41,7 +41,7 @@ class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
     """
 
     # Method name
-    _method = "confidence_from_intensity_std"
+    _method = "intensity_std"
     # Indicator
     _indicator = ""
 

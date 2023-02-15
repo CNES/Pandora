@@ -220,6 +220,8 @@ class TestValidation(unittest.TestCase):
 
         # Check if the calculated confidence measure is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(left["confidence_measure"].data, gt_dist)
+        # Check if the confidence measure has the correct name indicator
+        assert left.coords["indicator"].data[1] == "confidence_from_left_right_consistency"
 
     @staticmethod
     def test_cross_checking_float_disparity():

@@ -181,7 +181,7 @@ This Dataset also has a :
     Coordinates:
       * row                 (row) int64 0 1 2 3 4 5 6 ... 994 995 996 997 998 999
       * col                 (col) int64 0 1 2 3 4 5 6 ... 994 995 996 997 998 999
-      * indicator           (indicator) object 'confidence_from_intensity_std' 'validation_pandora_distance_of_disp'
+      * indicator           (indicator) object 'confidence_from_intensity_std' 'confidence_from_left_right_consistency'
     Data variables:
         disparity_map       (row, col) float32 0.0 0.0 0.0 0.0 ... 0.0 0.0 0.0 0.0
         validity_mask       (row, col) uint16 1 1 1 1 1 1 1 1 1 ... 1 1 1 1 1 1 1 1

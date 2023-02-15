@@ -48,8 +48,8 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
     # Percentile value to normalize ambiguity
     _PERCENTILE = 1.0
     # Method name
-    _method_max = "confidence_from_risk_max"
-    _method_min = "confidence_from_risk_min"
+    _method_max = "risk_max"
+    _method_min = "risk_min"
     # Indicator
     _indicator = ""
 

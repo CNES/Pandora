@@ -56,7 +56,7 @@ Saved images
     - Ambiguity measurement, see :ref:`cost_volume_confidence`. This band is named *confidence_from_ambiguity*.
     - Mininum and maximum risk measurement, see :ref:`cost_volume_confidence`. Those bands are named *confidence_from_risk_min* and *confidence_from_risk_max*.
     - Number of SGM paths that give the same final disparity if SGM and its option activated, see :ref:`plugin_libsgm`. This band is named *optimization_pluginlibSGM_nbOfDisp*.
-    - Left-right distance following cross checking method, see :ref:`validation`. This band is named *validation_pandora_distance_of_disp*.
+    - Left-right distance following cross checking method, see :ref:`validation`. This band is named *confidence_from_left_right_consistency*.
 
 .. note::
     If more than one cost_volume_confidence is set on the pipeline (like for example `cost_volume_confidence` and `cost_volume_confidence.after`), then the corresponding band name will include the step indicator suffix (like `.after` in the example). For instance, with the following pipeline :
