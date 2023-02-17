@@ -26,6 +26,7 @@ This module contains functions to test the Pandora notebooks.
 import subprocess
 import tempfile
 import unittest
+import fileinput
 import pytest
 
 
@@ -43,6 +44,7 @@ class TestPandora(unittest.TestCase):
 
         """
         with tempfile.TemporaryDirectory() as directory:
+            # Convert notebook to script
             subprocess.run(
                 [
                     f"jupyter nbconvert --to script notebooks/statistical_and_visual_analysis.ipynb --output-dir {directory}"
@@ -50,15 +52,41 @@ class TestPandora(unittest.TestCase):
                 shell=True,
                 check=False,
             )
+            # Copy data into the temporary directory
+            subprocess.run(
+                ["cp -r " "notebooks/data " f"{directory}"],
+                shell=True,
+                check=True,
+            )
+            # Copy notebook snippets/utils.py
+            subprocess.run(
+                ["cp -r " "notebooks/snippets " f"{directory}"],
+                shell=True,
+                check=True,
+            )
+            # Deactivate matplotlib and bokeh show from utils.py file
+            for line in fileinput.input(
+                f"{directory}/snippets/utils.py",
+                inplace=True,
+            ):
+                # Deactivate bokeh show of fig and layout
+                if "show(fig)" in line:
+                    line = line.replace("show(fig)", "file_html(fig, CDN)")
+                if "show(layout)" in line:
+                    line = line.replace("show(layout)", "file_html(layout, CDN)")
+                # Deactivate matplotlib show of fig
+                if "fig.show()" in line:
+                    line = line.replace("fig.show()", 'fig.write_html("test.html")')
+                print(line)  # This print must be present, otherwise the file is empty
+            # run notebook
             out = subprocess.run(
                 [f"ipython {directory}/statistical_and_visual_analysis.py"],
                 shell=True,
                 check=False,
-                cwd="notebooks",
+                cwd=directory,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-
         assert out.returncode == 0
 
     @staticmethod
