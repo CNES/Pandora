@@ -391,6 +391,25 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> di
         logging.error("Multiscale processing does not accept input disparity grids.")
         sys.exit(1)
 
+    # If cross-checking validation is to be done and 3SGM optimization is present on the pipeline,
+    # then both left and right segmentations/classifications must be present
+    if "validation" in cfg_pipeline["pipeline"]:
+        if "optimization" in cfg_pipeline["pipeline"]:
+            if cfg_pipeline["pipeline"]["optimization"]["optimization_method"] == "3sgm":
+                if cfg_pipeline["pipeline"]["optimization"]["geometric_prior"]["source"] in ["segm", "classif"]:
+                    if not cfg_input["input"]["left_classif"] or not cfg_input["input"]["right_classif"]:
+                        logging.error(
+                            "For performing cross-checking step with 3SGM optimization in the pipeline,"
+                            "both left and right classifications must be present."
+                        )
+                        sys.exit(1)
+                    if not cfg_input["input"]["left_segm"] or not cfg_input["input"]["right_segm"]:
+                        logging.error(
+                            "For performing cross-checking step with 3SGM optimization in the pipeline,"
+                            "both left and right segmentations must be present."
+                        )
+                        sys.exit(1)
+
     # concatenate updated config
     cfg = concat_conf([cfg_input, cfg_pipeline])
 
