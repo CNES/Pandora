@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added 
+
+- Check that both segmentations/classifications are present if 3SGM and validation are intended. [#259]
+
 ## 1.3.0 (January 2023)
 
 ### Added 
