@@ -496,8 +496,8 @@ class TestPandora(unittest.TestCase):
         # working on green band
         user_cfg["pipeline"]["matching_cost"]["band"] = "g"
 
-        left_rgb = read_img(user_cfg["input"]["img_left"], band_list=["r", "g", "b"], no_data=np.nan, mask=None)
-        right_rgb = read_img(user_cfg["input"]["img_right"], band_list=["r", "g", "b"], no_data=np.nan, mask=None)
+        left_rgb = read_img(user_cfg["input"]["img_left"], no_data=np.nan, mask=None)
+        right_rgb = read_img(user_cfg["input"]["img_right"], no_data=np.nan, mask=None)
 
         pandora_machine = PandoraMachine()
         # Update the user configuration with default values

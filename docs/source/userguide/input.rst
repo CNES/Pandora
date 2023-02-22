@@ -13,9 +13,7 @@ Configuration and parameters
 
     **Name**,**Description**,**Type**,**Default value**,**Required**
     *img_left*,Path to the left image,string,,Yes
-    *band_left_list*, List of band name, list, none,Yes for multiband images
     *img_right*,Path to the right image,string,,Yes
-    *band_right_list*, List of band name, list, none,Yes for multiband images
     *nodata_left*,Nodata value for left image, int, NaN inf or -inf -9999,No
     *nodata_right*,Nodata value for right image,int, NaN inf or -inf -9999,No
     *disp_min*,Minimal disparity,int or string,,Yes
@@ -31,7 +29,6 @@ Configuration and parameters
 
 
 .. note::
-    - Parameters *band_left_list* and *band_right_list* must list all bands present in the multi-band image.
     - Parameters *disp_min* and *disp_max* can be the disparity range (type int) or the path to the grids
       that contain the minimum and maximum disparity of a pixel (type string).
     - If *disp_min* and *disp_max* are integers, then the range of disparities is fixed. The minimal and maximal
@@ -71,10 +68,8 @@ Configuration and parameters
     {
         "input":
         {
-            "img_left": "tests/pandora/left_rgb.png",
-            "band_left_list": ["r", "g", "b"],
-            "img_right": "tests/pandora/right_rgb.png",
-            "band_right_list": ["r", "g", "b"],
+            "img_left": "tests/pandora/left_rgb.tif",
+            "img_right": "tests/pandora/right_rgb.tif",
             "disp_min": -60,
             "disp_max": 0
         }

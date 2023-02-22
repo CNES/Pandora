@@ -57,9 +57,7 @@ def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.Da
         return rasterio.open(*args, **kwargs)
 
 
-def read_img(
-    img: str, no_data: float, band_list: list = None, mask: str = None, classif: str = None, segm: str = None
-) -> xr.Dataset:
+def read_img(img: str, no_data: float, mask: str = None, classif: str = None, segm: str = None) -> xr.Dataset:
     """
     Read image and mask, and return the corresponding xarray.DataSet
 
@@ -67,8 +65,6 @@ def read_img(
     :type img: string
     :type no_data: no_data value in the image
     :type no_data: float
-    :param band_list: User's value for selected band
-    :type band_list: list
     :param mask: Path to the mask (optional): 0 value for valid pixels, !=0 value for invalid pixels
     :type mask: string
     :param classif: Path to the classif (optional)
@@ -83,9 +79,10 @@ def read_img(
     """
     # Select correct band
     img_ds = rasterio_open(img)
-    data = img_ds.read(1)
-    if band_list is not None:
-        data = img_ds.read()
+    data = img_ds.read()
+    # If only one band is present, consider data as 2 dimensional
+    if data.shape[0] == 1:
+        data = data[0, :, :]
 
     if np.isnan(no_data):
         no_data_pixels = np.where(np.isnan(data))
@@ -101,13 +98,17 @@ def read_img(
         data[no_data_pixels] = -9999
         no_data = -9999
 
-    if band_list is None:
+    # If only one band is present
+    if len(data.shape) == 2:
         image = {"im": (["row", "col"], data.astype(np.float32))}
         coords = {"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
         ny_, nx_ = data.shape
+        band_list = None
     # if image is 3 dimensions we create a dataset with [row col band] dims for dataArray
     else:
         image = {"im": (["band", "row", "col"], data.astype(np.float32))}
+        # Band names are in the image metadata
+        band_list = list(img_ds.descriptions)
         coords = {"band": band_list, "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])}  # type: ignore
         _, ny_, nx_ = data.shape
 

@@ -212,10 +212,8 @@ input_cfg_basic = {
 }
 
 input_multiband_cfg = {
-    "img_left": "tests/pandora/left_rgb.png",
-    "band_left_list": ["r", "g", "b"],
-    "img_right": "tests/pandora/right_rgb.png",
-    "band_right_list": ["r", "g", "b"],
+    "img_left": "tests/pandora/left_rgb.tif",
+    "img_right": "tests/pandora/right_rgb.tif",
     "disp_min": -60,
     "disp_max": 0,
 }

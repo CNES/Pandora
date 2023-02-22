@@ -112,50 +112,31 @@ def check_images(img_left: str, img_right: str, msk_left: str, msk_right: str) -
             sys.exit(1)
 
 
-def check_band(img_left: str, band_left_list: list, img_right: str, band_right_list: list) -> None:
+def check_band(img_left: str, img_right: str) -> None:
     """
     Check band
 
     :param img_left: path to the left image
     :type img_left: string
-    :param band_left_list: User's value for selected band
-    :type band_left_list: list
     :param img_right: path to the left image
     :type img_right: string
-    :param band_right_list: User's value for selected band
-    :type band_right_list: list
     :return: None
     """
 
     # open images
-    left_ = rasterio_open(img_left)
-    right_ = rasterio_open(img_right)
+    left_ds = rasterio_open(img_left)
+    left_array = left_ds.read()
+    right_ds = rasterio_open(img_right)
+    right_array = left_ds.read()
 
-    # check that the images have the correct band number
-    if band_left_list is not None:
-        if not left_.count == len(band_left_list):
-            logging.error("Left image has %d band %d expected", left_.count, len(band_left_list))
-            sys.exit(1)
-            # check left band values in list
-        if not all(isinstance(band, str) for band in band_left_list):
+    # check that the images have the band names
+    if left_array.shape[0] != 1:
+        if not all(isinstance(band, str) for band in list(left_ds.descriptions)):
             logging.error("Band value must be str")
             sys.exit(1)
-    else:
-        if not left_.count == 1:
-            logging.error("Left image has %d band expected 1", left_.count)
-            sys.exit(1)
-
-    if band_right_list is not None:
-        if not right_.count == len(band_right_list):
-            logging.error("Right image has %d band %d expected", right_.count, len(band_right_list))
-            sys.exit(1)
-        # check right band values in list
-        if not all(isinstance(band, str) for band in band_right_list):
+    if right_array.shape[0] != 1:
+        if not all(isinstance(band, str) for band in list(right_ds.descriptions)):
             logging.error("Band value must be str")
-            sys.exit(1)
-    else:
-        if not right_.count == 1:
-            logging.error("Right image has %d band expected 1", right_.count)
             sys.exit(1)
 
 
@@ -380,9 +361,7 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
 
     check_band(
         cfg["input"]["img_left"],
-        cfg["input"]["band_left_list"],
         cfg["input"]["img_right"],
-        cfg["input"]["band_right_list"],
     )
 
     check_images(
@@ -507,9 +486,7 @@ def read_multiscale_params(cfg: Dict[str, dict]) -> Tuple[int, int]:
 
 input_configuration_schema = {
     "img_left": And(str, rasterio_can_open_mandatory),
-    "band_left_list": Or(list, lambda x: x is None),
     "img_right": And(str, rasterio_can_open_mandatory),
-    "band_right_list": Or(list, lambda x: x is None),
     "nodata_left": Or(int, lambda input: np.isnan(input)),
     "nodata_right": Or(int, lambda input: np.isnan(input)),
     "left_mask": And(Or(str, lambda input: input is None), rasterio_can_open),
@@ -547,9 +524,7 @@ input_configuration_schema_left_disparity_grids_right_grids = {
 default_short_configuration_input = {
     "input": {
         "nodata_left": -9999,
-        "band_left_list": None,
         "nodata_right": -9999,
-        "band_right_list": None,
         "left_mask": None,
         "right_mask": None,
         "left_classif": None,

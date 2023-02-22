@@ -50,10 +50,10 @@ Configuration and parameters
     *matching_cost_method*,Similarity measure,string,,ssd sad census zncc  or mc_cnn if plugin_libsgm is installed,Yes
     *window_size*,Window size for similarity measure,int,5,Must be >0 and For "census" : {3 5},No
     *subpix*,Cost volume upsampling factor,int,1, {1 2 4},No
-    *band*, Band value on which to calculate the correlation, str, None, band in *band_left_list* and *band_right_list* input parameter,No
+    *band*, Band value on which to calculate the correlation, str, None, band in left and right image's metadata,No
 
 - For *mc_cnn* similarity measure see :ref:`plugin_mccnn_conf` of :ref:`plugin_mccnn` for sub-parameters and configuration example.
-- NB: Parameter *band* must be one of the band presents in *band_left_list* and *band_right_list* inputs parameters
+- NB: Parameter *band* must be present in the left and right image's metadata
 
 **Example for mono band images**
 
