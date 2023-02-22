@@ -7,6 +7,11 @@
 - Check that both segmentations/classifications are present if 3SGM and validation are intended. [#259]
 - Multiband images compatibility. [#251]
 
+### Fixed
+
+- Correct Binder's notebooks dependency. [#292]
+- Correct statistical_and_visual_analysis notebook test. [#287]
+
 ## 1.3.0 (January 2023)
 
 ### Added 
