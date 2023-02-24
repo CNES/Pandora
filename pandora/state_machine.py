@@ -577,6 +577,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type right_disp_max: np.ndarray or None
         :return: None
         """
+
         # Mono-resolution processing by default if num_scales or scale_factor are not specified
         if num_scales is None or scale_factor is None:
             self.num_scales = 1

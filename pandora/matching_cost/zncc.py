@@ -159,8 +159,8 @@ class Zncc(matching_cost.AbstractMatchingCost):
             q_std = (point_q[0], point_q[1] - (int(self._window_size / 2) * 2))  # type: ignore
 
             if self._band is not None:
-                band_index_left = img_left.attrs["band_list"].index(self._band)
-                band_index_right = img_right.attrs["band_list"].index(self._band)
+                band_index_left = list(img_left.band.data).index(self._band)
+                band_index_right = list(img_right.band.data).index(self._band)
                 if len(img_right_shift[i_right]["im"].shape) > 2:
                     # Compute the normalized summation of the product of intensities
                     zncc_ = (

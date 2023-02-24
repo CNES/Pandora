@@ -56,7 +56,6 @@ class TestDisparityMask(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
-            "band_list": None,
         }
         data = np.array(([[6, 1, 2, 4], [6, 2, 4, 1], [10, 6, 7, 8]]), dtype=np.float64)
         self.right = xr.Dataset(
@@ -67,7 +66,6 @@ class TestDisparityMask(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
-            "band_list": None,
         }
 
     def test_to_disp_validity_mask(self):
@@ -507,7 +505,6 @@ class TestDisparityMask(unittest.TestCase):
             "no_data_mask": 2,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
-            "band_list": None,
         }
 
         data = np.array(([[6, 1, 2, 4], [6, 2, 4, 1], [10, 6, 7, 8]]), dtype=np.float64)
@@ -522,7 +519,6 @@ class TestDisparityMask(unittest.TestCase):
             "no_data_mask": 2,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
-            "band_list": None,
         }
 
         matching_cost_plugin = matching_cost.AbstractMatchingCost(
@@ -656,7 +652,6 @@ class TestDisparityMask(unittest.TestCase):
             "no_data_mask": 2,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
-            "band_list": None,
         }
 
         data = np.array(([[6, 1, 2, 4, 1], [6, 2, 4, 1, 6], [10, 6, 7, 8, 1], [5, 6, 7, 8, 0]]), dtype=np.float64)
@@ -671,7 +666,6 @@ class TestDisparityMask(unittest.TestCase):
             "no_data_mask": 2,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
-            "band_list": None,
         }
 
         matching_cost_plugin = matching_cost.AbstractMatchingCost(
@@ -743,7 +737,6 @@ class TestDisparityMask(unittest.TestCase):
             "no_data_mask": 0,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
-            "band_list": None,
         }
 
         data = np.ones((10, 10), dtype=np.float64)
@@ -759,7 +752,6 @@ class TestDisparityMask(unittest.TestCase):
             "no_data_mask": 0,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
-            "band_list": None,
         }
 
         matching_cost_plugin = matching_cost.AbstractMatchingCost(
@@ -937,7 +929,6 @@ class TestDisparityMask(unittest.TestCase):
             "no_data_mask": 2,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
-            "band_list": None,
         }
 
         data = np.array(([[6, 1, 2, 4]]), dtype=np.float64)
@@ -952,7 +943,6 @@ class TestDisparityMask(unittest.TestCase):
             "no_data_mask": 2,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
-            "band_list": None,
         }
 
         matching_cost_plugin = matching_cost.AbstractMatchingCost(

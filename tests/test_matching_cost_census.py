@@ -61,14 +61,14 @@ class TestMatchingCostCensus(unittest.TestCase):
         )
         left.attrs["crs"] = None
         left.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
-        left.attrs["band_list"] = None
+
         data = np.array(([5, 1, 2, 3], [1, 2, 1, 0], [2, 2, 0, 1], [1, 1, 1, 1]), dtype=np.float64)
         right = xr.Dataset(
             {"im": (["row", "col"], data)}, coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
         )
         right.attrs["crs"] = None
         right.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
-        right.attrs["band_list"] = None
+
         # census ground truth for the images left, right, window size = 3 and disp = -1
         census_ground_truth_d1 = np.array(
             (
@@ -678,7 +678,6 @@ class TestMatchingCostCensus(unittest.TestCase):
         )
 
         left.attrs = common.img_attrs
-        left.attrs["band_list"] = ["r", "g"]
 
         # Initialize multiband data
         data = np.zeros((2, 4, 4))
@@ -708,7 +707,6 @@ class TestMatchingCostCensus(unittest.TestCase):
         )
 
         right.attrs = common.img_attrs
-        right.attrs["band_list"] = ["r", "g"]
 
         # Initialization of matching_cost plugin with wrong band
         matching_cost_ = matching_cost.AbstractMatchingCost(
@@ -727,7 +725,6 @@ class TestMatchingCostCensus(unittest.TestCase):
         # Compute the cost_volume
         with pytest.raises(SystemExit):
             _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-
 
     @staticmethod
     def test_instantiate_band_with_monoband():

@@ -276,7 +276,7 @@ class TestPandora(unittest.TestCase):
         )
         img_left.attrs["crs"] = None
         img_left.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
-        img_left.attrs["band_list"] = None
+
         data_right = np.array(
             [
                 [1, 2, 1, 2, 5, 3, 1, 6],
@@ -295,7 +295,7 @@ class TestPandora(unittest.TestCase):
         )
         img_right.attrs["crs"] = None
         img_right.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
-        img_right.attrs["band_list"] = None
+
         # Load a configuration
         user_cfg = {"input": {"disp_min": -2, "disp_max": 2}, "pipeline": copy.deepcopy(common.validation_pipeline_cfg)}
 

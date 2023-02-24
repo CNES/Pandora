@@ -172,14 +172,14 @@ class TestMatchingCostSAD(unittest.TestCase):
         )
         left.attrs["crs"] = None
         left.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
-        left.attrs["band_list"] = None
+
         data = np.array(([6, 7, 8, 10], [2, 4, 1, 6], [9, 10, 1, 2]), dtype=np.float64)
         right = xr.Dataset(
             {"im": (["row", "col"], data)}, coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
         )
         right.attrs["crs"] = None
         right.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
-        right.attrs["band_list"] = None
+
         # Cost Volume ground truth for the stereo image simple_stereo_imgs,
         # with disp_min = -2, disp_max = 1, sad measure and subpixel_offset = 0
         ground_truth = np.array(
@@ -748,7 +748,6 @@ class TestMatchingCostSAD(unittest.TestCase):
             "no_data_mask": 7,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
-            "band_list": None,
         }
 
         data = np.array(([5, 1, 2], [1, 1, 1]), dtype=np.float64)
@@ -763,7 +762,6 @@ class TestMatchingCostSAD(unittest.TestCase):
             "no_data_mask": 7,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
-            "band_list": None,
         }
 
         dmin = -1
@@ -828,7 +826,6 @@ class TestMatchingCostSAD(unittest.TestCase):
             "no_data_mask": 7,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
-            "band_list": None,
         }
         data = np.array(([5, 1, 2, 3, 4], [1, 2, 1, 0, 2], [2, 2, 0, 1, 4], [1, 1, 1, 1, 2]), dtype=np.float64)
         mask = np.array(([7, 5, 5, 5, 5], [5, 5, 5, 65, 5], [5, 5, 5, 5, 5], [5, 23, 5, 5, 2]), dtype=np.int16)
@@ -842,7 +839,6 @@ class TestMatchingCostSAD(unittest.TestCase):
             "no_data_mask": 7,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
-            "band_list": None,
         }
 
         dmin = -1
@@ -940,7 +936,6 @@ class TestMatchingCostSAD(unittest.TestCase):
         )
 
         left.attrs = common.img_attrs
-        left.attrs["band_list"] = ["r", "g"]
 
         # Initialize multiband data
         data = np.zeros((2, 4, 4))
@@ -970,7 +965,6 @@ class TestMatchingCostSAD(unittest.TestCase):
         )
 
         right.attrs = common.img_attrs
-        right.attrs["band_list"] = ["r", "g"]
 
         # Initialization of matching_cost plugin with wrong band
         matching_cost_ = matching_cost.AbstractMatchingCost(

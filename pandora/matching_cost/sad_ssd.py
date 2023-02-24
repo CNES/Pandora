@@ -111,8 +111,8 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         # Contains the shifted right images
         img_right_shift = shift_right_img(img_right, self._subpix, self._band)  # type: ignore
         if self._band is not None:
-            band_index_left = img_left.attrs["band_list"].index(self._band)
-            band_index_right = img_right.attrs["band_list"].index(self._band)
+            band_index_left = list(img_left.band.data).index(self._band)
+            band_index_right = list(img_right.band.data).index(self._band)
             selected_band_right = img_right["im"].data[band_index_right, :, :]
             selected_band_left = img_left["im"].data[band_index_left, :, :]
         else:
@@ -269,8 +269,8 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         :rtype: numpy array
         """
         if self._band is not None:
-            band_index_left = img_left.attrs["band_list"].index(self._band)
-            band_index_right = img_right.attrs["band_list"].index(self._band)
+            band_index_left = list(img_left.band.data).index(self._band)
+            band_index_right = list(img_right.band.data).index(self._band)
             # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
             if len(img_right["im"].data.shape) > 2:
                 cost = abs(
@@ -315,8 +315,8 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         """
 
         if self._band is not None:
-            band_index_left = img_left.attrs["band_list"].index(self._band)
-            band_index_right = img_right.attrs["band_list"].index(self._band)
+            band_index_left = list(img_left.band.data).index(self._band)
+            band_index_right = list(img_right.band.data).index(self._band)
             # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
             if len(img_right["im"].data.shape) > 2:
                 cost = (

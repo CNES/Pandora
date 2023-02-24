@@ -58,7 +58,6 @@ class TestDisparity(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
-            "band_list": None,
         }
 
         data = np.array(([[6, 1, 2, 4], [6, 2, 4, 1], [10, 6, 7, 8]]), dtype=np.float64)
@@ -70,7 +69,6 @@ class TestDisparity(unittest.TestCase):
             "no_data_mask": 1,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
-            "band_list": None,
         }
 
     def test_to_disp(self):

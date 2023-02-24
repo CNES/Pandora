@@ -396,7 +396,6 @@ class TestMatchingCostZncc(unittest.TestCase):
         )
 
         left.attrs = common.img_attrs
-        left.attrs["band_list"] = ["r", "g"]
 
         # Initialize multiband data
         data = np.zeros((2, 4, 4))
@@ -426,7 +425,6 @@ class TestMatchingCostZncc(unittest.TestCase):
         )
 
         right.attrs = common.img_attrs
-        right.attrs["band_list"] = ["r", "g"]
 
         # Initialization of matching_cost plugin with wrong band
         matching_cost_ = matching_cost.AbstractMatchingCost(

@@ -105,13 +105,15 @@ def read_img(  # pylint:disable=too-many-branches
     if len(data.shape) == 2:
         image = {"im": (["row", "col"], data.astype(np.float32))}
         coords = {"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
-        band_list = None
     # if image is 3 dimensions we create a dataset with [band row col] dims for dataArray
     else:
         image = {"im": (["band", "row", "col"], data.astype(np.float32))}
         # Band names are in the image metadata
-        band_list = list(img_ds.descriptions)
-        coords = {"band": band_list, "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])}  # type: ignore
+        coords = {
+            "band": list(img_ds.descriptions),  # type: ignore
+            "row": np.arange(data.shape[1]),
+            "col": np.arange(data.shape[2]),
+        }
 
     dataset = xr.Dataset(
         image,
@@ -133,7 +135,6 @@ def read_img(  # pylint:disable=too-many-branches
         "transform": transform,
         "valid_pixels": 0,  # arbitrary default value
         "no_data_mask": 1,
-        "band_list": band_list,
     }  # arbitrary default value
 
     if classif is not None:
@@ -476,7 +477,7 @@ def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None) -> Lis
         selected_band = img_right["im"].data
     else:
         # if image has more than one band we only shift the one specified in matching_cost
-        band_index_right = img_right.attrs["band_list"].index(band)
+        band_index_right = list(img_right.band.data).index(band)
         selected_band = img_right["im"].data[band_index_right, :, :]
 
     if subpix > 1:
@@ -533,7 +534,7 @@ def census_transform(image: xr.Dataset, window_size: int, band: str = None) -> x
     ny_, nx_ = image.dims["row"], image.dims["col"]
 
     if len(image["im"].shape) > 2:
-        band_index = image.attrs["band_list"].index(band)
+        band_index = list(image.band.data).index(band)
         selected_band = image["im"].data[band_index, :, :]
     else:
         selected_band = image["im"].data
@@ -595,7 +596,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.
     # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
     ny_, nx_ = img.dims["row"], img.dims["col"]
     if len(img["im"].shape) > 2:
-        band_index = img.attrs["band_list"].index(band)
+        band_index = list(img.band.data).index(band)
         # Example with win_size = 3 and the input :
         #           10 | 5  | 3
         #            2 | 10 | 5
@@ -722,7 +723,7 @@ def compute_std_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.n
     mean_ = compute_mean_raster(img, win_size, band)
     # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
     if len(img["im"].shape) > 2:
-        band_index = img.attrs["band_list"].index(band)
+        band_index = list(img.band.data).index(band)
         selected_band = img["im"].data[band_index, :, :]
     else:
         selected_band = img["im"].data
