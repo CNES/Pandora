@@ -651,8 +651,8 @@ class TestMatchingCostCensus(unittest.TestCase):
         """
 
         # Initialize multiband data
-        data = np.zeros((4, 4, 2))
-        data[:, :, 0] = np.array(
+        data = np.zeros((2, 4, 4))
+        data[0, :, :] = np.array(
             (
                 [1, 1, 1, 3],
                 [1, 3, 2, 5],
@@ -662,7 +662,7 @@ class TestMatchingCostCensus(unittest.TestCase):
             dtype=np.float64,
         )
 
-        data[:, :, 1] = np.array(
+        data[1, :, :] = np.array(
             (
                 [2, 3, 4, 6],
                 [8, 7, 0, 4],
@@ -673,16 +673,16 @@ class TestMatchingCostCensus(unittest.TestCase):
         )
 
         left = xr.Dataset(
-            {"im": (["row", "col", "band"], data)},
-            coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1]), "band": np.arange(data.shape[2])},
+            {"im": (["band", "row", "col"], data)},
+            coords={"band": np.arange(data.shape[0]), "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])},
         )
 
         left.attrs = common.img_attrs
         left.attrs["band_list"] = ["r", "g"]
 
         # Initialize multiband data
-        data = np.zeros((4, 4, 2))
-        data[:, :, 0] = np.array(
+        data = np.zeros((2, 4, 4))
+        data[0, :, :] = np.array(
             (
                 [5, 1, 2, 3],
                 [1, 3, 0, 2],
@@ -692,7 +692,7 @@ class TestMatchingCostCensus(unittest.TestCase):
             dtype=np.float64,
         )
 
-        data[:, :, 1] = np.array(
+        data[1, :, :] = np.array(
             (
                 [6, 5, 2, 7],
                 [8, 7, 6, 5],
@@ -703,8 +703,8 @@ class TestMatchingCostCensus(unittest.TestCase):
         )
 
         right = xr.Dataset(
-            {"im": (["row", "col", "band"], data)},
-            coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1]), "band": np.arange(data.shape[2])},
+            {"im": (["band", "row", "col"], data)},
+            coords={"band": np.arange(data.shape[0]), "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])},
         )
 
         right.attrs = common.img_attrs
@@ -722,6 +722,55 @@ class TestMatchingCostCensus(unittest.TestCase):
         # Initialization of matching_cost plugin with no band
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "census", "window_size": 3, "subpix": 1}
+        )
+
+        # Compute the cost_volume
+        with pytest.raises(SystemExit):
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
+
+
+    @staticmethod
+    def test_instantiate_band_with_monoband():
+        """
+        Test the error when user instantiate band in matching_cost step with a monoband data
+        """
+
+        # Initialize data
+        data = np.array(
+            (
+                [1, 1, 1, 3, 2, 1, 7, 2, 3, 4, 6],
+                [1, 3, 2, 5, 2, 6, 1, 8, 7, 0, 4],
+                [2, 1, 0, 1, 7, 9, 5, 4, 9, 1, 5],
+                [1, 5, 4, 3, 2, 6, 7, 6, 5, 2, 1],
+            ),
+            dtype=np.float64,
+        )
+
+        left = xr.Dataset(
+            {"im": (["row", "col"], data)}, coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
+        )
+
+        left.attrs = common.img_attrs
+
+        data = np.array(
+            (
+                [5, 1, 2, 3, 4, 7, 9, 6, 5, 2, 7],
+                [1, 3, 0, 2, 5, 3, 7, 8, 7, 6, 5],
+                [2, 3, 5, 0, 1, 5, 6, 5, 2, 3, 6],
+                [1, 6, 7, 5, 3, 2, 1, 0, 3, 4, 7],
+            ),
+            dtype=np.float64,
+        )
+
+        right = xr.Dataset(
+            {"im": (["row", "col"], data)}, coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
+        )
+
+        right.attrs = common.img_attrs
+
+        # Initialization of matching_cost plugin with a band
+        matching_cost_ = matching_cost.AbstractMatchingCost(
+            **{"matching_cost_method": "census", "window_size": 3, "subpix": 1, "band": "r"}
         )
 
         # Compute the cost_volume

@@ -81,6 +81,7 @@ def read_img(  # pylint:disable=too-many-branches
     """
     # Select correct band
     img_ds = rasterio_open(img)
+    nx_, ny_ = img_ds.width, img_ds.height
     data = img_ds.read()
     # If only one band is present, consider data as 2 dimensional
     if data.shape[0] == 1:
@@ -104,15 +105,13 @@ def read_img(  # pylint:disable=too-many-branches
     if len(data.shape) == 2:
         image = {"im": (["row", "col"], data.astype(np.float32))}
         coords = {"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
-        ny_, nx_ = data.shape
         band_list = None
-    # if image is 3 dimensions we create a dataset with [row col band] dims for dataArray
+    # if image is 3 dimensions we create a dataset with [band row col] dims for dataArray
     else:
         image = {"im": (["band", "row", "col"], data.astype(np.float32))}
         # Band names are in the image metadata
         band_list = list(img_ds.descriptions)
         coords = {"band": band_list, "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])}  # type: ignore
-        _, ny_, nx_ = data.shape
 
     dataset = xr.Dataset(
         image,
@@ -437,7 +436,7 @@ def convert_pyramid_to_dataset(
             dataset = xr.Dataset(
                 {"im": (["band", "row", "col"], image.astype(np.float32))},
                 coords={
-                    "band": np.arange(image.shape[0]),
+                    "band": list(img_orig.band.data),
                     "row": np.arange(image.shape[1]),
                     "col": np.arange(image.shape[2]),
                 },

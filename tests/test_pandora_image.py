@@ -85,7 +85,7 @@ class TestImgTools(unittest.TestCase):
         """
         Test the census transform method for multiband image
         """
-        # Census transform ground truth for the image self.img with window size 3
+        # Census transform ground truth for the image self.img_multiband with window size 3
         census_ground_truth = np.array(
             (
                 [0b000000000, 0b000000001, 0b000001011, 0b000000110],
@@ -93,15 +93,15 @@ class TestImgTools(unittest.TestCase):
                 [0b000000000, 0b001000000, 0b011000000, 0b110000000],
             )
         )
-        # Computes the census transform for the image self.img with window size 3 and first band
+        # Computes the census transform for the image self.img_multiband with window size 3 and first band
         census_transform = img_tools.census_transform(self.img_multiband, 3, "r")
         # Check if the census_transform is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(census_transform["im"].data, census_ground_truth)
 
-        # Census transform ground truth for the image self.img with window size 5
+        # Census transform ground truth for the image self.img_multiband with window size 5
         census_ground_truth = np.array(([[0b0000000001000110000000000, 0b0]]))
-        # Computes the census transform for the image self.img with window size 5
-        census_transform = img_tools.census_transform(self.img, 5)
+        # Computes the census transform for the image self.img_multiband with window size 5
+        census_transform = img_tools.census_transform(self.img_multiband, 5, "r")
         # Check if the census_transform is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(census_transform["im"].data, census_ground_truth)
 
@@ -143,14 +143,14 @@ class TestImgTools(unittest.TestCase):
                 [1.0, 12 / 9.0, 14.0 / 9, 14.0 / 9],
             )
         )
-        # Computes the mean raster for the image self.img with window size 3 and first band
+        # Computes the mean raster for the image self.img_multiband with window size 3 and first band
         mean_r = img_tools.compute_mean_raster(self.img_multiband, 3, "r")
         # Check if the calculated mean is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(mean_r, mean_ground_truth)
 
-        # Mean raster ground truth for the image self.img with window size 5
+        # Mean raster ground truth for the image self.img_multiband with window size 5
         mean_ground_truth = np.array(([[31 / 25.0, 31 / 25.0]]))
-        # Computes the mean raster for the image self.img with window size 5 and first band
+        # Computes the mean raster for the image self.img_multiband with window size 5 and first band
         mean_r = img_tools.compute_mean_raster(self.img_multiband, 5, "r")
         # Check if the calculated mean is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(mean_r, mean_ground_truth)

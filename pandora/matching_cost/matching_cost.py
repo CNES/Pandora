@@ -172,11 +172,29 @@ class AbstractMatchingCost:
         :return: None
         """
         if self._band is not None:
-            if (self._band not in img_right.attrs["band_list"]) or (self._band not in img_left.attrs["band_list"]):
+            try:
+                list(img_right.band.data)
+            except AttributeError:
+                logging.error("Right dataset is monoband: %s band cannot be selected", self._band)
+                sys.exit(1)
+            try:
+                list(img_left.band.data)
+            except AttributeError:
+                logging.error("Left dataset is monoband: %s band cannot be selected", self._band)
+                sys.exit(1)
+            if (self._band not in list(img_right.band.data)) or (self._band not in list(img_left.band.data)):
                 logging.error("Wrong band instantiate : %s not in img_left or img_right", self._band)
                 sys.exit(1)
         else:
-            if (img_right.attrs["band_list"] is not None) or (img_left.attrs["band_list"] is not None):
+            try:
+                list(img_right.band.data)
+            except AttributeError:
+                return
+            try:
+                list(img_left.band.data)
+            except AttributeError:
+                return
+            if (img_right.band.data is not None) or (img_left.band.data is not None):
                 logging.error("Band must be instantiated in matching cost step")
                 sys.exit(1)
 

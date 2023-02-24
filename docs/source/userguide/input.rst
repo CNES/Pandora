@@ -44,7 +44,7 @@ Configuration and parameters
 
 .. note::
     If the input images are multiband, the band's names must be present on the image metadata. To see how to add band's names on the image's metadata, please
-    see :ref:`matching_cost`.
+    see :ref:`faq`.
 
 
 .. note::

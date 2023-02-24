@@ -104,12 +104,9 @@ class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
 
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
-        band = None
-        if len(img_left["im"].shape) == 2:
-            nb_row, nb_col = img_left["im"].shape
-        else:
-            _, nb_row, nb_col = img_left["im"].shape
-            band = cv.attrs["band_correl"]
+
+        nb_row, nb_col = img_left.dims["row"], img_left.dims["col"]
+        band = cv.attrs["band_correl"]
 
         window_size = cv.attrs["window_size"]
         confidence_measure = np.full((nb_row, nb_col), np.nan, dtype=np.float32)
