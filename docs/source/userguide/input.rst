@@ -3,7 +3,7 @@
 Inputs
 ======
 
-Pandora works with two stereo rectified one-channel images.
+Pandora works with two stereo rectified one-channel or multi-channel images.
 
 
 Configuration and parameters
@@ -42,40 +42,10 @@ Configuration and parameters
      - Value equal to 0 for valid pixel
      - Value not equal to 0 for invalid pixel
 
-**Example for mono band images**
+.. note::
+    If the input images are multiband, the band's names must be present on the image metadata. To see how to add band's names on the image's metadata, please
+    see :ref:`matching_cost`.
 
-.. sourcecode:: text
 
-    {
-        "input":
-        {
-            "img_left": "tests/pandora/left.png",
-            "img_right": "tests/pandora/right.png",
-            "disp_min": -60,
-            "disp_max": 0
-        }
-        ,
-        "pipeline" :
-        {
-            ...
-        }
-    }
-
-**Example for multiband images**
-
-.. sourcecode:: text
-
-    {
-        "input":
-        {
-            "img_left": "tests/pandora/left_rgb.tif",
-            "img_right": "tests/pandora/right_rgb.tif",
-            "disp_min": -60,
-            "disp_max": 0
-        }
-        ,
-        "pipeline" :
-        {
-            ...
-        }
-    }
+.. note::
+    Only one-band masks are accepted by pandora

@@ -1,7 +1,7 @@
 {
   "input": {
-    "img_left": "tests/pandora/left_rgb.tif",
-    "img_right": "tests/pandora/right_rgb.tif",
+    "img_left": "./left_rgb.tif",
+    "img_right": "./right_rgb.tif",
     "disp_min": -60,
     "disp_max": 0
   },

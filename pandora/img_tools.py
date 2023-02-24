@@ -57,7 +57,9 @@ def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.Da
         return rasterio.open(*args, **kwargs)
 
 
-def read_img(img: str, no_data: float, mask: str = None, classif: str = None, segm: str = None) -> xr.Dataset:
+def read_img(  # pylint:disable=too-many-branches
+    img: str, no_data: float, mask: str = None, classif: str = None, segm: str = None
+) -> xr.Dataset:
     """
     Read image and mask, and return the corresponding xarray.DataSet
 
@@ -257,6 +259,10 @@ def prepare_pyramid(
     img_left_fill, msk_left_fill = fill_nodata_image(img_left)
     img_right_fill, msk_right_fill = fill_nodata_image(img_right)
 
+    # If images are multiband, band coordinate is not to be reduced
+    channel_axis = None
+    if len(img_left_fill.shape) == 3:
+        channel_axis = 0
     # Create image pyramids
     images_left = list(
         pyramid_gaussian(
@@ -267,7 +273,7 @@ def prepare_pyramid(
             order=1,
             mode="reflect",
             cval=0,
-            channel_axis=None,
+            channel_axis=channel_axis,
         )
     )
     images_right = list(
@@ -279,7 +285,7 @@ def prepare_pyramid(
             order=1,
             mode="reflect",
             cval=0,
-            channel_axis=None,
+            channel_axis=channel_axis,
         )
     )
     # Create mask pyramids
@@ -306,7 +312,17 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
     :rtype: Tuple of np.ndarray
     """
     if "msk" in dataset:
-        img, msk = interpolate_nodata_sgm(dataset["im"].data, dataset["msk"].data)
+        if len(dataset["im"].data.shape) == 2:
+            img, msk = interpolate_nodata_sgm(dataset["im"].data, dataset["msk"].data)
+        else:
+            img = dataset["im"].data
+            msk = dataset["msk"].data
+            nband = dataset["im"].data.shape[0]
+            # We call the function for each band because of numba
+            for band in range(nband):
+                img[band, :, :], msk[:, :] = interpolate_nodata_sgm(
+                    dataset["im"].data[band, :, :], dataset["msk"].data[:, :]
+                )
     else:
         msk = np.full(
             (dataset.dims["row"], dataset.dims["col"]),
@@ -387,18 +403,14 @@ def convert_pyramid_to_dataset(
     """
     Return a List with the datasets at the different scales
 
-    :param img_left: left Dataset image containing :
+    :param img_orig: Dataset image containing :
 
         - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
-    :type img_left: xarray.Dataset
-    :param img_right: right Dataset image containing :
-
-        - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
-    :type img_right: xarray.Dataset
-    :param num_scales: number of scales
-    :type num_scales: int
-    :param scale_factor: factor by which downsample the images
-    :type scale_factor: int
+    :type img_orig: xarray.Dataset
+    :param images: list of images for the pyramid
+    :type images: list[np.ndarray]
+    :param masks: list of masks for the pyramid
+    :type masks: list[np.ndarray]
     :return: a List that contains the different scaled datasets
     :rtype: List of xarray.Dataset
     """
@@ -411,17 +423,30 @@ def convert_pyramid_to_dataset(
             continue
 
         # Creating new dataset
-        dataset = xr.Dataset(
-            {"im": (["row", "col"], image.astype(np.float32))},
-            coords={"row": np.arange(image.shape[0]), "col": np.arange(image.shape[1])},
-        )
-
-        # Allocate the mask
-        dataset["msk"] = xr.DataArray(
-            np.full((image.shape[0], image.shape[1]), masks[index].astype(np.int16)),
-            dims=["row", "col"],
-        )
-
+        if len(img_orig["im"].shape) == 2:
+            dataset = xr.Dataset(
+                {"im": (["row", "col"], image.astype(np.float32))},
+                coords={"row": np.arange(image.shape[0]), "col": np.arange(image.shape[1])},
+            )
+            # Allocate the mask
+            dataset["msk"] = xr.DataArray(
+                np.full((image.shape[0], image.shape[1]), masks[index].astype(np.int16)),
+                dims=["row", "col"],
+            )
+        else:
+            dataset = xr.Dataset(
+                {"im": (["band", "row", "col"], image.astype(np.float32))},
+                coords={
+                    "band": np.arange(image.shape[0]),
+                    "row": np.arange(image.shape[1]),
+                    "col": np.arange(image.shape[2]),
+                },
+            )
+            # Allocate the mask
+            dataset["msk"] = xr.DataArray(
+                np.full((image.shape[1], image.shape[2]), masks[index].astype(np.int16)),
+                dims=["row", "col"],
+            )
         # Add image conf to the image dataset
         # - attributes are linked to each others
         dataset.attrs = img_orig.attrs

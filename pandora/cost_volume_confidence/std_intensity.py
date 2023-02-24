@@ -104,7 +104,12 @@ class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
 
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
-        nb_row, nb_col = img_left["im"].shape
+        band = None
+        if len(img_left["im"].shape) == 2:
+            nb_row, nb_col = img_left["im"].shape
+        else:
+            _, nb_row, nb_col = img_left["im"].shape
+            band = cv.attrs["band_correl"]
 
         window_size = cv.attrs["window_size"]
         confidence_measure = np.full((nb_row, nb_col), np.nan, dtype=np.float32)
@@ -112,10 +117,10 @@ class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
         offset_row_col = int((window_size - 1) / 2)
         if offset_row_col != 0:
             confidence_measure[offset_row_col:-offset_row_col, offset_row_col:-offset_row_col] = compute_std_raster(
-                img_left, window_size
+                img_left, window_size, band
             )
         else:
-            confidence_measure = compute_std_raster(img_left, window_size)
+            confidence_measure = compute_std_raster(img_left, window_size, band)
 
         disp, cv = self.allocate_confidence_map(self._indicator, confidence_measure, disp, cv)
         return disp, cv

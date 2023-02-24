@@ -26,7 +26,6 @@ This module contains functions to test the matching cost step.
 import unittest
 import numpy as np
 
-
 from pandora import matching_cost
 
 from tests import common

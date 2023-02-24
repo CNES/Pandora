@@ -347,7 +347,6 @@ class AbstractMatchingCost:
                 - right mask shifted :  xarray.DataArray msk 2D(row, shifted col by 0.5)
         :rtype: tuple (left mask, list[right mask, right mask shifted by 0.5])
         """
-
         # Create the left mask with the convention : 0 = valid, nan = invalid and no_data
         if "msk" in img_left.data_vars:
             dilatate_left_mask = np.zeros(img_left["msk"].shape)
