@@ -20,6 +20,11 @@
     },
     "refinement": {
       "refinement_method": "quadratic"
+    },
+    "multiscale": {
+        "multiscale_method": "fixed_zoom_pyramid",
+        "num_scales": 3,
+        "marge": 2
     }
   }
 }

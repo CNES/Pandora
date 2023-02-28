@@ -1,4 +1,5 @@
 # pylint:disable=too-many-arguments
+# pylint: disable=too-many-public-methods
 # !/usr/bin/env python
 # coding: utf8
 #
@@ -49,6 +50,7 @@ from pandora import multiscale
 from pandora import optimization
 from pandora import refinement
 from pandora import matching_cost
+from pandora import semantic_segmentation
 
 # This silences numba's TBB threading layer warning
 with warnings.catch_warnings():
@@ -78,6 +80,12 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             "source": "cost_volume",
             "dest": "cost_volume",
             "after": "aggregation_run",
+        },
+        {
+            "trigger": "semantic_segmentation",
+            "source": "cost_volume",
+            "dest": "cost_volume",
+            "after": "semantic_segmentation_run",
         },
         {
             "trigger": "optimization",
@@ -139,6 +147,12 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             "source": "cost_volume",
             "dest": "cost_volume",
             "after": "aggregation_check_conf",
+        },
+        {
+            "trigger": "check_semantic_segmentation",
+            "source": "cost_volume",
+            "dest": "cost_volume",
+            "after": "semantic_segmentation_check_conf",
         },
         {
             "trigger": "check_optimization",
@@ -361,6 +375,28 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         else:
             aggregation_.cost_volume_aggregation(self.left_img, self.right_img, self.left_cv)
             aggregation_.cost_volume_aggregation(self.right_img, self.left_img, self.right_cv)
+
+    def semantic_segmentation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
+        """
+        Building semantic segmentation computation
+        :param cfg: pipeline configuration
+        :type  cfg: dict
+        :param input_step: step to trigger
+        :type input_step: str
+        :return: None
+        """
+        semantic_segmentation_ = semantic_segmentation.AbstractSemanticSegmentation(**cfg[input_step])  # type: ignore
+        if self.right_disp_map != "accurate":
+            self.left_img = semantic_segmentation_.compute_semantic_segmentation(
+                self.left_cv, self.left_img, self.right_img
+            )
+        else:
+            self.left_img = semantic_segmentation_.compute_semantic_segmentation(
+                self.left_cv, self.left_img, self.right_img
+            )
+            self.right_img = semantic_segmentation_.compute_semantic_segmentation(
+                self.right_cv, self.right_img, self.left_img
+            )
 
     def optimization_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -761,6 +797,19 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         aggregation_ = aggregation.AbstractAggregation(**cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = aggregation_.cfg
+
+    def semantic_segmentation_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
+        """
+        Check the semantic_segmentation configuration
+
+        :param cfg: configuration
+        :type cfg: dict
+        :param input_step: current step
+        :type input_step: string
+        :return: None
+        """
+        semantic_segmentation_ = semantic_segmentation.AbstractSemanticSegmentation(**cfg[input_step])  # type: ignore
+        self.pipeline_cfg["pipeline"][input_step] = semantic_segmentation_.cfg
 
     def optimization_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
