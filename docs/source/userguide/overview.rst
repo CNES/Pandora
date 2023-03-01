@@ -34,9 +34,18 @@ The following interactive diagram highlights all stereo steps avalaible in Pando
     :align: left
     :target: step_by_step/aggregation.html
 
-.. image:: ../Images/main_diagram_step_optimization.png
+.. image:: ../Images/main_diagram_step_semantic_segmentation.png
     :align: right
+    :target: step_by_step/semantic_segmentation.html
+
+
+.. image:: ../Images/main_diagram_step_optimization.png
+    :align: center
     :target: step_by_step/optimization.html
+
+.. image:: ../Images/arrow.png
+    :align: center
+
 
 .. image:: ../Images/main_diagram_step_cost_volume_confidence.png
     :align: center
