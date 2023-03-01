@@ -23,7 +23,6 @@
 This module contains functions associated to the disparity map computation step.
 """
 
-import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict, Union, Tuple
 
@@ -57,9 +56,8 @@ class AbstractDisparity:
             if isinstance(cfg["disparity_method"], str):
                 try:
                     return super(AbstractDisparity, cls).__new__(cls.disparity_methods_avail[cfg["disparity_method"]])
-                except KeyError:
-                    logging.error("No disparity method named % supported", cfg["disparity_method"])
-                    raise KeyError
+                except:
+                    raise KeyError("No disparity method named {} supported".format(cfg["disparity_method"]))
             else:
                 if isinstance(cfg["disparity_method"], unicode):  # type:ignore # pylint:disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
@@ -67,12 +65,8 @@ class AbstractDisparity:
                         return super(AbstractDisparity, cls).__new__(
                             cls.disparity_methods_avail[cfg["disparity_method"].encode("utf-8")]
                         )
-                    except KeyError:
-                        logging.error(
-                            "No disparity method named % supported",
-                            cfg["disparity_method"],
-                        )
-                        raise KeyError
+                    except:
+                        raise KeyError("No disparity method named {} supported".format(cfg["disparity_method"]))
         else:
             return super(AbstractDisparity, cls).__new__(cls)
         return None

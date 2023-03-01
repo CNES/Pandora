@@ -23,7 +23,6 @@
 This module contains classes and functions associated to the subpixel refinement step.
 """
 
-import logging
 import warnings
 from abc import ABCMeta, abstractmethod
 from typing import Tuple, Callable, Dict
@@ -57,9 +56,8 @@ class AbstractRefinement:
             if isinstance(cfg["refinement_method"], str):
                 try:
                     return super(AbstractRefinement, cls).__new__(cls.subpixel_methods_avail[cfg["refinement_method"]])
-                except KeyError:
-                    logging.error("No subpixel method named % supported", cfg["refinement_method"])
-                    raise KeyError
+                except:
+                    raise KeyError("No refinement method named {} supported".format(cfg["refinement_method"]))
             else:
                 if isinstance(cfg["refinement_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
@@ -67,12 +65,8 @@ class AbstractRefinement:
                         return super(AbstractRefinement, cls).__new__(
                             cls.subpixel_methods_avail[cfg["refinement_method"].encode("utf-8")]
                         )
-                    except KeyError:
-                        logging.error(
-                            "No subpixel method named % supported",
-                            cfg["refinement_method"],
-                        )
-                        raise KeyError
+                    except:
+                        raise KeyError("No refinement method named {} supported".format(cfg["refinement_method"]))
         else:
             return super(AbstractRefinement, cls).__new__(cls)
         return None
@@ -103,11 +97,7 @@ class AbstractRefinement:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             # Conversion to numpy array ( .data ), because Numba does not support Xarray
-            (
-                itp_coeff,
-                disp["disparity_map"].data,
-                disp["validity_mask"].data,
-            ) = self.loop_refinement(
+            (itp_coeff, disp["disparity_map"].data, disp["validity_mask"].data,) = self.loop_refinement(
                 cv["cost_volume"].data,
                 disp["disparity_map"].data,
                 disp["validity_mask"].data,

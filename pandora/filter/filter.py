@@ -23,8 +23,6 @@
 This module contains classes and functions associated to the disparity map filtering.
 """
 
-import logging
-import sys
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 import xarray as xr
@@ -51,9 +49,8 @@ class AbstractFilter:
             if isinstance(cfg["filter_method"], str):
                 try:
                     return super(AbstractFilter, cls).__new__(cls.filter_methods_avail[cfg["filter_method"]])
-                except KeyError:
-                    logging.error("No filter method named % supported", cfg["filter_method"])
-                    sys.exit(1)
+                except:
+                    raise KeyError("No filter method named {} supported".format(cfg["filter_method"]))
             else:
                 if isinstance(cfg["filter_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
@@ -61,9 +58,8 @@ class AbstractFilter:
                         return super(AbstractFilter, cls).__new__(
                             cls.filter_methods_avail[cfg["filter_method"].encode("utf-8")]
                         )
-                    except KeyError:
-                        logging.error("No filter method named % supported", cfg["filter_method"])
-                        sys.exit(1)
+                    except:
+                        raise KeyError("No filter method named {} supported".format(cfg["filter_method"]))
         else:
             return super(AbstractFilter, cls).__new__(cls)
         return None

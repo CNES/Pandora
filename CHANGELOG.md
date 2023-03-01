@@ -6,6 +6,7 @@
 
 - Check that both segmentations/classifications are present if 3SGM and validation are intended. [#259]
 - Multiband images compatibility. [#251]
+- Add semantic_segmentation pipeline step. [#257]
 
 ### Fixed
 

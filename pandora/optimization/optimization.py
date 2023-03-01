@@ -23,8 +23,6 @@
 This module contains classes and functions associated to the cost volume optimization step.
 """
 
-import logging
-import sys
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
@@ -54,12 +52,8 @@ class AbstractOptimization:
                     return super(AbstractOptimization, cls).__new__(
                         cls.optimization_methods_avail[cfg["optimization_method"]]
                     )
-                except KeyError:
-                    logging.error(
-                        "No optimization method named % supported",
-                        cfg["optimization_method"],
-                    )
-                    sys.exit(1)
+                except:
+                    raise KeyError("No optimization method named {} supported".format(cfg["optimization_method"]))
             else:
                 if isinstance(cfg["optimization_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
@@ -67,12 +61,8 @@ class AbstractOptimization:
                         return super(AbstractOptimization, cls).__new__(
                             cls.optimization_methods_avail[cfg["optimization_method"].encode("utf-8")]
                         )
-                    except KeyError:
-                        logging.error(
-                            "No optimization method named % supported",
-                            cfg["optimization_method"],
-                        )
-                        sys.exit(1)
+                    except:
+                        raise KeyError("No optimization method named {} supported".format(cfg["optimization_method"]))
         else:
             return super(AbstractOptimization, cls).__new__(cls)
         return None

@@ -23,8 +23,6 @@
 This module contains classes and functions associated to the semantic segmentation step.
 """
 
-import logging
-import sys
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
@@ -54,12 +52,10 @@ class AbstractSemanticSegmentation:
                     return super(AbstractSemanticSegmentation, cls).__new__(
                         cls.segmentation_methods_avail[cfg["segmentation_method"]]
                     )
-                except KeyError:
-                    logging.error(
-                        "No semantic segmentation method named % supported",
-                        cfg["segmentation_method"],
+                except:
+                    raise KeyError(
+                        "No semantic segmentation method named {} supported".format(cfg["segmentation_method"])
                     )
-                    sys.exit(1)
             else:
                 if isinstance(cfg["segmentation_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
@@ -67,12 +63,10 @@ class AbstractSemanticSegmentation:
                         return super(AbstractSemanticSegmentation, cls).__new__(
                             cls.segmentation_methods_avail[cfg["segmentation_method"].encode("utf-8")]
                         )
-                    except KeyError:
-                        logging.error(
-                            "No semantic segmentation method named % supported",
-                            cfg["segmentation_method"],
+                    except:
+                        raise KeyError(
+                            "No semantic segmentation method named {} supported".format(cfg["segmentation_method"])
                         )
-                        sys.exit(1)
         else:
             return super(AbstractSemanticSegmentation, cls).__new__(cls)
         return None
