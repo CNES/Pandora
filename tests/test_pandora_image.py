@@ -423,7 +423,7 @@ class TestImgTools(unittest.TestCase):
                     [4, np.inf, 4, -np.inf],
                 )
             )
-            imsave(tmp_dir + "/left_img.tif", imarray)
+            imsave(tmp_dir + "/left_img.tif", imarray, plugin="tifffile", photometric="MINISBLACK")
 
             # Computes the dataset image
             dst_left = img_tools.read_img(img=tmp_dir + "/left_img.tif", no_data=np.inf)
