@@ -97,11 +97,7 @@ class AbstractRefinement:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             # Conversion to numpy array ( .data ), because Numba does not support Xarray
-            (
-                itp_coeff,
-                disp["disparity_map"].data,
-                disp["validity_mask"].data,
-            ) = self.loop_refinement(
+            (itp_coeff, disp["disparity_map"].data, disp["validity_mask"].data,) = self.loop_refinement(
                 cv["cost_volume"].data,
                 disp["disparity_map"].data,
                 disp["validity_mask"].data,
