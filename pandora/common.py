@@ -170,6 +170,7 @@ def save_results(left: xr.Dataset, right: xr.Dataset, output: str) -> None:
                 os.path.join(output, get_out_file_path("right_confidence_measure.tif")),
                 crs=right.attrs["crs"],
                 transform=right.attrs["transform"],
+                band_names=right["confidence_measure"]["indicator"].data,
             )
         write_data_array(
             right["validity_mask"],
