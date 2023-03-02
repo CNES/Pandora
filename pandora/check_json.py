@@ -112,9 +112,9 @@ def check_images(img_left: str, img_right: str, msk_left: str, msk_right: str) -
             sys.exit(1)
 
 
-def check_band(img_left: str, img_right: str) -> None:
+def check_band_names(img_left: str, img_right: str) -> None:
     """
-    Check band
+    Check that band names have the correct format
 
     :param img_left: path to the left image
     :type img_left: string
@@ -131,13 +131,51 @@ def check_band(img_left: str, img_right: str) -> None:
 
     # check that the images have the band names
     if left_array.shape[0] != 1:
+        if not left_ds.descriptions:
+            logging.error("Left image is missing band names metadata")
+            sys.exit(1)
         if not all(isinstance(band, str) for band in list(left_ds.descriptions)):
             logging.error("Band value must be str")
             sys.exit(1)
     if right_array.shape[0] != 1:
+        if not right_ds.descriptions:
+            logging.error("Right image is missing band names metadata")
+            sys.exit(1)
         if not all(isinstance(band, str) for band in list(right_ds.descriptions)):
             logging.error("Band value must be str")
             sys.exit(1)
+
+
+def check_band_pipeline(img: str, step: str, bands: Union[None, str, List[str], Dict]) -> None:
+    """
+    Check coherence band parameter between pipeline step and image dataset
+
+    :param img: path to the image
+    :type img: str
+    :param step: pipeline step
+    :type step: str
+    :param bands: band names
+    :type bands: None, str, List[str] or Dict
+    :return: None
+    """
+    # open images
+    img_ds = rasterio_open(img)
+    # If no bands are given, then the input image shall be monoband
+    if not bands:
+        if img_ds.count != 1:
+            logging.error("Missing band instantiate on %s step : input image is multiband", step)
+            sys.exit(1)
+    # check that the image have the band names
+    elif isinstance(bands, dict):
+        for _, band in bands.items():
+            if not band in list(img_ds.descriptions):
+                logging.error("Wrong band instantiate on %s step: %s not in input image", step, band)
+                sys.exit(1)
+    else:
+        for band in bands:
+            if not band in list(img_ds.descriptions):
+                logging.error("Wrong band instantiate %s step: %s not in input image", step, band)
+                sys.exit(1)
 
 
 def check_disparities(
@@ -359,7 +397,7 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
         cfg["input"]["img_left"],
     )
 
-    check_band(
+    check_band_names(
         cfg["input"]["img_left"],
         cfg["input"]["img_right"],
     )
@@ -394,9 +432,35 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> di
     user_cfg_pipeline = get_config_pipeline(user_cfg)
     cfg_pipeline = check_pipeline_section(user_cfg_pipeline, pandora_machine)
 
+    # Check band for the matching_cost step
+    check_band_pipeline(
+        cfg_input["input"]["img_left"],
+        cfg_pipeline["pipeline"]["matching_cost"]["matching_cost_method"],
+        cfg_pipeline["pipeline"]["matching_cost"]["band"],
+    )
+    check_band_pipeline(
+        cfg_input["input"]["img_right"],
+        cfg_pipeline["pipeline"]["matching_cost"]["matching_cost_method"],
+        cfg_pipeline["pipeline"]["matching_cost"]["band"],
+    )
+
+    # If semantic_segmentation is present, check that the RGB band are present in left image
+    if "semantic_segmentation" in cfg_pipeline["pipeline"]:
+        check_band_pipeline(
+            cfg_input["input"]["img_left"],
+            cfg_pipeline["pipeline"]["semantic_segmentation"]["segmentation_method"],
+            cfg_pipeline["pipeline"]["semantic_segmentation"]["RGB_bands"],
+        )
+        # If semantic_segmentation and validation is present, check that the RGB band are present in the right image
+        if "validation" in cfg_pipeline["pipeline"]:
+            check_band_pipeline(
+                cfg_input["input"]["img_right"],
+                cfg_pipeline["pipeline"]["semantic_segmentation"]["segmentation_method"],
+                cfg_pipeline["pipeline"]["semantic_segmentation"]["RGB_bands"],
+            )
+
     # If left disparities are grids of disparity and the right disparities are none, the cross-checking
     # method cannot be used
-
     if (
         (isinstance(cfg_input["input"]["disp_min"], str))
         and (cfg_input["input"]["disp_min_right"] is None)
@@ -417,24 +481,26 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> di
         logging.error("Multiscale processing does not accept input disparity grids.")
         sys.exit(1)
 
-    # If cross-checking validation is to be done and 3SGM optimization is present on the pipeline,
-    # then both left and right segmentations/classifications must be present
-    if "validation" in cfg_pipeline["pipeline"]:
-        if "optimization" in cfg_pipeline["pipeline"]:
-            if cfg_pipeline["pipeline"]["optimization"]["optimization_method"] == "3sgm":
-                if cfg_pipeline["pipeline"]["optimization"]["geometric_prior"]["source"] in ["segm", "classif"]:
-                    if not cfg_input["input"]["left_classif"] or not cfg_input["input"]["right_classif"]:
-                        logging.error(
-                            "For performing cross-checking step with 3SGM optimization in the pipeline,"
-                            "both left and right classifications must be present."
-                        )
-                        sys.exit(1)
-                    if not cfg_input["input"]["left_segm"] or not cfg_input["input"]["right_segm"]:
-                        logging.error(
-                            "For performing cross-checking step with 3SGM optimization in the pipeline,"
-                            "both left and right segmentations must be present."
-                        )
-                        sys.exit(1)
+    # If segmentation or classif geometric_prior is needed for the optimization step,
+    # check that it is present on the input config
+    if "optimization" in cfg_pipeline["pipeline"]:
+        if "geometric_prior" in cfg_pipeline["pipeline"]["optimization"]:
+            source = cfg_pipeline["pipeline"]["optimization"]["geometric_prior"]["source"]
+            if source in ["classif", "segm"]:
+                if not cfg_input["input"]["left_" + source]:
+                    logging.error(
+                        "For performing the 3SGM optimization step in the pipeline, left %s must be present.", source
+                    )
+                    sys.exit(1)
+                # If cross-checking validation is to be done and 3SGM optimization is present on the pipeline,
+                # then both left and right segmentations/classifications must be present
+                if "validation" in cfg_pipeline["pipeline"] and not cfg_input["input"]["right_" + source]:
+                    logging.error(
+                        "For performing cross-checking step with 3SGM optimization in the pipeline,"
+                        "both left and right %s must be present.",
+                        source,
+                    )
+                    sys.exit(1)
 
     # concatenate updated config
     cfg = concat_conf([cfg_input, cfg_pipeline])
