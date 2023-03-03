@@ -440,21 +440,15 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> di
     else:
         right_disp_computation = True
 
-    # If semantic_segmentation is present, check that the RGB band are present in left image
+    # If semantic_segmentation is present, check that the necessary bands are present in the inputs
     if "semantic_segmentation" in cfg_pipeline["pipeline"]:
-        check_band_pipeline(
-            cfg_input["input"]["img_left"],
-            cfg_pipeline["pipeline"]["semantic_segmentation"]["segmentation_method"],
-            cfg_pipeline["pipeline"]["semantic_segmentation"]["RGB_bands"],
-        )
-        # If semantic_segmentation and right_disp_computation is present,
-        # check that the RGB band are present in the right image
-        if right_disp_computation:
-            check_band_pipeline(
-                cfg_input["input"]["img_right"],
-                cfg_pipeline["pipeline"]["semantic_segmentation"]["segmentation_method"],
-                cfg_pipeline["pipeline"]["semantic_segmentation"]["RGB_bands"],
-            )
+        check_semantic_segmentation_inputs(cfg_input, cfg_pipeline)
+
+    # If geometric_prior is needed for the optimization step,
+    # check that the necessary inputs and bands are present
+    if "optimization" in cfg_pipeline["pipeline"]:
+        if "geometric_prior" in cfg_pipeline["pipeline"]["optimization"]:
+            check_optimization_inputs(cfg_input, cfg_pipeline)
 
     # If left disparities are grids of disparity and the right disparities are none, the cross-checking
     # method cannot be used
@@ -469,6 +463,7 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> di
         )
         sys.exit(1)
 
+    # If multiscale step is present, input disparities cannot be grids
     if (
         isinstance(cfg_input["input"]["disp_min"], str)
         or isinstance(cfg_input["input"]["disp_min_right"], str)
@@ -478,31 +473,104 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> di
         logging.error("Multiscale processing does not accept input disparity grids.")
         sys.exit(1)
 
-    # If segmentation or classif geometric_prior is needed for the optimization step,
-    # check that it is present on the input config
-    if "optimization" in cfg_pipeline["pipeline"]:
-        if "geometric_prior" in cfg_pipeline["pipeline"]["optimization"]:
-            source = cfg_pipeline["pipeline"]["optimization"]["geometric_prior"]["source"]
-            if source in ["classif", "segm"]:
-                if not cfg_input["input"]["left_" + source]:
-                    logging.error(
-                        "For performing the 3SGM optimization step in the pipeline, left %s must be present.", source
-                    )
-                    sys.exit(1)
-                # If right_disp_computation is to be done and 3SGM optimization is present on the pipeline,
-                # then both left and right segmentations/classifications must be present
-                if right_disp_computation and not cfg_input["input"]["right_" + source]:
-                    logging.error(
-                        "For performing right disparity computation with 3SGM optimization in the pipeline,"
-                        " both left and right %s must be present.",
-                        source,
-                    )
-                    sys.exit(1)
-
     # concatenate updated config
     cfg = concat_conf([cfg_input, cfg_pipeline])
 
     return cfg
+
+
+def check_optimization_inputs(cfg_input: Dict, cfg_pipeline: Dict) -> None:
+    """
+    Checks optimization step's inputs when geometric_prior is present
+    Checks that the classification bands are present in the input classification
+
+    :param cfg_input: input configuration
+    :type cfg_input: dict
+    :param cfg_pipeline: pipeline configuration
+    :type cfg_pipeline: dict
+    :return: None
+    """
+    source = cfg_pipeline["pipeline"]["optimization"]["geometric_prior"]["source"]
+    if source in ["classif", "segm"]:
+        if not cfg_input["input"]["left_" + source]:
+            logging.error("For performing the 3SGM optimization step in the pipeline, left %s must be present.", source)
+            sys.exit(1)
+        # If cross-checking validation is to be done and 3SGM optimization is present on the pipeline,
+        # then both left and right segmentations/classifications must be present
+        if "validation" in cfg_pipeline["pipeline"] and not cfg_input["input"]["right_" + source]:
+            logging.error(
+                "For performing cross-checking step with 3SGM optimization in the pipeline,"
+                " right %s must be present.",
+                source,
+            )
+            sys.exit(1)
+        # If sgm optimization is present with geometric_prior classification, check that the
+        # classes bands are present in the input classification
+        if "classes" in cfg_pipeline["pipeline"]["optimization"]["geometric_prior"]:
+            check_band_pipeline(
+                cfg_input["input"]["left_classif"],
+                cfg_pipeline["pipeline"]["optimization"]["optimization_method"],
+                cfg_pipeline["pipeline"]["optimization"]["geometric_prior"]["classes"],
+            )
+            if "validation" in cfg_pipeline["pipeline"]:
+                check_band_pipeline(
+                    cfg_input["input"]["right_classif"],
+                    cfg_pipeline["pipeline"]["optimization"]["optimization_method"],
+                    cfg_pipeline["pipeline"]["optimization"]["geometric_prior"]["classes"],
+                )
+
+
+def check_semantic_segmentation_inputs(cfg_input: Dict, cfg_pipeline: Dict) -> None:
+    """
+    Checks semantic segmentation step's inputs
+    Checks that the RGB_bands are present in the input image
+    Checks that the vegetation_band are present in the input classification
+
+    :param cfg_input: input configuration
+    :type cfg_input: dict
+    :param cfg_pipeline: pipeline configuration
+    :type cfg_pipeline: dict
+    :return: None
+    """
+    check_band_pipeline(
+        cfg_input["input"]["img_left"],
+        cfg_pipeline["pipeline"]["semantic_segmentation"]["segmentation_method"],
+        cfg_pipeline["pipeline"]["semantic_segmentation"]["RGB_bands"],
+    )
+    # If vegetation_band is present in semantic_segmentation, check that the bands are present
+    # in the input left classification
+    if "vegetation_band" in cfg_pipeline["pipeline"]["semantic_segmentation"]:
+        if not cfg_input["input"]["left_classif"]:
+            logging.error(
+                "For performing the semantic_segmentation step in the pipeline, left_classif must be present."
+            )
+            sys.exit(1)
+        check_band_pipeline(
+            cfg_input["input"]["left_classif"],
+            cfg_pipeline["pipeline"]["semantic_segmentation"]["segmentation_method"],
+            cfg_pipeline["pipeline"]["semantic_segmentation"]["vegetation_band"]["classes"],
+        )
+    # If semantic_segmentation and validation are present, check that the RGB band are present in the right image
+    if "validation" in cfg_pipeline["pipeline"]:
+        check_band_pipeline(
+            cfg_input["input"]["img_right"],
+            cfg_pipeline["pipeline"]["semantic_segmentation"]["segmentation_method"],
+            cfg_pipeline["pipeline"]["semantic_segmentation"]["RGB_bands"],
+        )
+        # If vegetation_band is present in semantic_segmentation, and validation is present,
+        # check that the bands are present in the input right classification
+        if "vegetation_band" in cfg_pipeline["pipeline"]["semantic_segmentation"]:
+            if not cfg_input["input"]["right_classif"]:
+                logging.error(
+                    "For performing cross-checking step with semantic_segmentation in the pipeline,"
+                    " right classif must be present.",
+                )
+                sys.exit(1)
+            check_band_pipeline(
+                cfg_input["input"]["right_classif"],
+                cfg_pipeline["pipeline"]["semantic_segmentation"]["segmentation_method"],
+                cfg_pipeline["pipeline"]["semantic_segmentation"]["vegetation_band"]["classes"],
+            )
 
 
 def concat_conf(cfg_list: List[Dict[str, dict]]) -> Dict[str, dict]:
