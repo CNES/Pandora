@@ -77,6 +77,8 @@ def read_img(  # pylint:disable=too-many-branches
 
             - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray float32
             - msk : 2D (row, col) xarray.DataArray int16, with the convention defined in the configuration file
+            - classif : 3D (band, row, col) xarray.DataArray float32
+
     :rtype: xarray.DataSet
     """
     # Select correct band
@@ -138,12 +140,18 @@ def read_img(  # pylint:disable=too-many-branches
     }  # arbitrary default value
 
     if classif is not None:
-        input_classif = rasterio_open(classif).read(1)
+        classif_ds = rasterio_open(classif)
+        classif_data = classif_ds.read()
+        # Band names are in the image metadata
+        band_classif = list(classif_ds.descriptions)
+
+        # Add extra dataset coordinate for classification bands
+        dataset.coords["band_classif"] = band_classif
         dataset["classif"] = xr.DataArray(
-            np.full((data.shape[0], data.shape[1]), 0).astype(np.int16),
-            dims=["row", "col"],
+            np.full((classif_data.shape[0], classif_data.shape[1], classif_data.shape[2]), 0).astype(np.int16),
+            dims=["band_classif", "row", "col"],
         )
-        dataset["classif"].data = input_classif
+        dataset["classif"].data = classif_data
 
     if segm is not None:
         input_segm = rasterio_open(segm).read(1)
@@ -185,7 +193,6 @@ def read_img(  # pylint:disable=too-many-branches
     # If a pixel is invalid due to the input mask, and it is also no_data, then the value of this pixel in the
     # generated mask will be = no_data
     dataset["msk"].data[(no_data_pixels[0], no_data_pixels[1])] = int(dataset.attrs["no_data_mask"])
-
     return dataset
 
 
