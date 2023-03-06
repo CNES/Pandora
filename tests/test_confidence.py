@@ -80,6 +80,36 @@ class TestConfidence(unittest.TestCase):
         np.testing.assert_allclose(cv_["confidence_measure"].data[:, :, 0], ambiguity_ground_truth, rtol=1e-06)
 
     @staticmethod
+    def test_ambiguity_without_normalization():
+        """
+        Test the ambiguity method
+
+        """
+        cv_ = np.array(
+            [[[np.nan, 1, 3], [4, 1, 1], [1.2, 1, 2]], [[5, np.nan, np.nan], [6.2, np.nan, np.nan], [0, np.nan, 0]]],
+            dtype=np.float32,
+        )
+
+        cv_ = xr.Dataset(
+            {"cost_volume": (["row", "col", "disp"], cv_)}, coords={"row": [0, 1], "col": [0, 1, 2], "disp": [-1, 0, 1]}
+        )
+
+        ambiguity_ = confidence.AbstractCostVolumeConfidence(
+            **{"confidence_method": "ambiguity", "eta_max": 0.2, "eta_step": 0.1, "normalization": False}
+        )
+
+        # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
+        ambiguity_.confidence_prediction(None, None, None, cv_)
+
+        # Ambiguity integral not normalized
+        amb_int_not_normalized = np.array([[4.0, 4.0, 3.0], [6.0, 6.0, 6.0]])
+        #  Ambiguity to confidence measure
+        ambiguity_ground_truth = 1 - amb_int_not_normalized
+
+        # Check if the calculated ambiguity is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_allclose(cv_["confidence_measure"].data[:, :, 0], ambiguity_ground_truth, rtol=1e-06)
+
+    @staticmethod
     def test_ambiguity_std_full_pipeline():
         """
         Test the ambiguity and std_intensity methods using the pandora run method
@@ -177,6 +207,114 @@ class TestConfidence(unittest.TestCase):
         )
         #  Ambiguity to confidence measure
         ambiguity_ground_truth = 1 - amb_int
+
+        # Check if the calculated ambiguity is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_allclose(left["confidence_measure"].data[:, :, 1], ambiguity_ground_truth, rtol=1e-06)
+
+        # ----- Check std_intensity results ------
+        std_intensity_gt = np.array(
+            [[0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]
+        )
+        # Check if the calculated std_intensity is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(left["confidence_measure"].data[:, :, 0], std_intensity_gt)
+
+    @staticmethod
+    def test_non_normalized_ambiguity_std_full_pipeline():
+        """
+        Test the non normalized ambiguity and std_intensity methods using the pandora run method
+
+        """
+        # Create left and right images
+        left_im = np.array([[2, 5, 3, 1], [5, 3, 2, 1], [4, 2, 3, 2], [4, 5, 3, 2]], dtype=np.float32)
+
+        mask_ = np.array([[0, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 0], [0, 0, 0, 1]], dtype=np.int16)
+
+        left_im = xr.Dataset(
+            {"im": (["row", "col"], left_im), "msk": (["row", "col"], mask_)},
+            coords={"row": np.arange(left_im.shape[0]), "col": np.arange(left_im.shape[1])},
+        )
+        # Add image conf to the image dataset
+
+        left_im.attrs = {
+            "no_data_img": 0,
+            "valid_pixels": 0,
+            "no_data_mask": 1,
+            "crs": None,
+            "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+        }
+
+        right_im = np.array([[1, 2, 1, 2], [2, 3, 5, 3], [0, 2, 4, 2], [5, 3, 1, 4]], dtype=np.float32)
+
+        mask_ = np.array([[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], dtype=np.int16)
+
+        right_im = xr.Dataset(
+            {"im": (["row", "col"], right_im), "msk": (["row", "col"], mask_)},
+            coords={"row": np.arange(right_im.shape[0]), "col": np.arange(right_im.shape[1])},
+        )
+        # Add image conf to the image dataset
+        right_im.attrs = {
+            "no_data_img": 0,
+            "valid_pixels": 0,
+            "no_data_mask": 1,
+            "crs": None,
+            "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+        }
+
+        user_cfg = {
+            "input": {"disp_min": -1, "disp_max": 1},
+            "pipeline": {
+                "matching_cost": {"matching_cost_method": "sad", "window_size": 1, "subpix": 1},
+                "cost_volume_confidence": {"confidence_method": "std_intensity"},
+                "cost_volume_confidence.2": {
+                    "confidence_method": "ambiguity",
+                    "eta_max": 0.3,
+                    "eta_step": 0.25,
+                    "normalization": False,
+                },
+                "disparity": {"disparity_method": "wta"},
+                "filter": {"filter_method": "median"},
+            },
+        }
+        pandora_machine = PandoraMachine()
+
+        # Update the user configuration with default values
+        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+
+        # Run the pandora pipeline
+        left, _ = pandora.run(pandora_machine, left_im, right_im, -1, 1, cfg["pipeline"])
+
+        assert (
+            np.sum(left.coords["indicator"].data != ["confidence_from_intensity_std", "confidence_from_ambiguity.2"])
+            == 0
+        )
+
+        # ----- Check ambiguity results ------
+
+        # Cost volume               Normalized cost volume
+        # [[[nan  1.  0.]           [[[ nan 0.25 0.  ]
+        #   [ 4.  3.  4.]            [1.   0.75 1.  ]
+        #   [ 1.  2.  1.]            [0.25 0.5  0.25]
+        #   [ 0.  1. nan]]           [0.   0.25  nan]]
+        #  [[nan  3.  2.]           [[ nan 0.75 0.5 ]
+        #   [nan nan nan]            [ nan  nan  nan]
+        #   [ 1.  3.  1.]            [0.25 0.75 0.25]
+        #   [ 4.  2. nan]]           [1.   0.5   nan]]
+        #  [[nan  4.  2.]           [[ nan 1.   0.5 ]
+        #   [ 2.  0.  2.]            [0.5  0.   0.5 ]
+        #   [ 1.  1.  1.]            [0.25 0.25 0.25]
+        #   [ 2.  0. nan]]           [0.5  0.    nan]]
+        #  [[nan  1.  1.]           [[ nan 0.25 0.25]
+        #   [ 0.  2.  4.]            [0.   0.5  1.  ]
+        #   [ 0.  2.  1.]            [0.   0.5  0.25]
+        #   [nan nan nan]]]          [ nan  nan  nan]]]
+        #
+        # Ambiguity integral not normalized
+        amb_int_not_normalized = np.array(
+            [[5.0, 4.0, 5.0, 5.0], [5.0, 6.0, 4.0, 4.0], [4.0, 2.0, 6.0, 4.0], [6.0, 2.0, 3.0, 6.0]]
+        )
+
+        #  Ambiguity to confidence measure
+        ambiguity_ground_truth = 1 - amb_int_not_normalized
 
         # Check if the calculated ambiguity is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_allclose(left["confidence_measure"].data[:, :, 1], ambiguity_ground_truth, rtol=1e-06)
