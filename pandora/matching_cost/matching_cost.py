@@ -22,7 +22,8 @@
 """
 This module contains functions associated to the cost volume measure step.
 """
-
+# pylint:disable=too-many-branches
+import sys
 import logging
 from abc import ABCMeta, abstractmethod
 from math import ceil, floor
@@ -46,6 +47,12 @@ class AbstractMatchingCost:
     _subpix = None
     _window_size = None
     cfg = None
+    _band = None
+
+    # Default configuration, do not change these values
+    _WINDOW_SIZE = 5
+    _SUBPIX = 1
+    _BAND = None
 
     def __new__(cls, **cfg: Union[str, int]):
         """
@@ -116,6 +123,81 @@ class AbstractMatchingCost:
         """
         print("Matching cost description")
 
+    def instantiate_class(self, **cfg: Union[str, int]) -> None:
+        """
+        :param cfg: optional configuration,  {'window_size': int, 'subpix': int,
+                                                'band': str}
+        :type cfg: dictionary
+        :return: None
+        """
+        self.cfg = self.check_conf(**cfg)  # type: ignore
+        self._window_size = self.cfg["window_size"]
+        self._subpix = self.cfg["subpix"]
+        self._band = self.cfg["band"]
+
+    def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
+        """
+        Add default values to the dictionary if there are missing elements and check if the dictionary is correct
+
+        :param cfg: matching cost configuration
+        :type cfg: dict
+        :return cfg: matching cost configuration updated
+        :rtype: dict
+        """
+
+        # Give the default value if the required element is not in the conf
+        if "window_size" not in cfg:
+            cfg["window_size"] = self._WINDOW_SIZE  # type: ignore
+        if "subpix" not in cfg:
+            cfg["subpix"] = self._SUBPIX  # type: ignore
+        if "band" not in cfg:
+            cfg["band"] = self._BAND
+
+        return cfg  # type: ignore
+
+    def check_band_input_mc(self, img_left: xr.Dataset, img_right: xr.Dataset) -> None:
+        """
+        Check coherence band parameter between inputs and matching cost step
+
+        :param img_left: left Dataset image containing :
+
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - msk : 2D (row, col) xarray.DataArray
+        :type img_left: xarray.Dataset
+        :param img_right: right Dataset  containing :
+
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - msk : 2D (row, col) xarray.DataArray
+        :type img_right: xarray.Dataset
+        :return: None
+        """
+        if self._band is not None:
+            try:
+                list(img_right.band.data)
+            except AttributeError:
+                logging.error("Right dataset is monoband: %s band cannot be selected", self._band)
+                sys.exit(1)
+            try:
+                list(img_left.band.data)
+            except AttributeError:
+                logging.error("Left dataset is monoband: %s band cannot be selected", self._band)
+                sys.exit(1)
+            if (self._band not in list(img_right.band.data)) or (self._band not in list(img_left.band.data)):
+                logging.error("Wrong band instantiate : %s not in img_left or img_right", self._band)
+                sys.exit(1)
+        else:
+            try:
+                list(img_right.band.data)
+            except AttributeError:
+                return
+            try:
+                list(img_left.band.data)
+            except AttributeError:
+                return
+            if (img_right.band.data is not None) or (img_left.band.data is not None):
+                logging.error("Band must be instantiated in matching cost step")
+                sys.exit(1)
+
     @abstractmethod
     def compute_cost_volume(
         self, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: int, disp_max: int
@@ -125,12 +207,12 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset  containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param disp_min: minimum disparity
@@ -158,7 +240,7 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param subpix: subpixel precision = (1 or 2 or 4)
@@ -218,12 +300,12 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param disp: current disparity
@@ -231,8 +313,8 @@ class AbstractMatchingCost:
         :return: the range of the left and right image over which the similarity measure will be applied
         :rtype: tuple
         """
-        _, nx_left = img_left["im"].shape
-        _, nx_right = img_right["im"].shape
+        nx_left = img_left.dims["col"]
+        nx_right = img_right.dims["col"]
 
         # range in the left image
         point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))
@@ -264,12 +346,12 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param window_size: window size of the measure
@@ -302,7 +384,7 @@ class AbstractMatchingCost:
             dilatate_left_mask[dil] = np.nan
         else:
             # All pixels are valid
-            dilatate_left_mask = np.zeros(img_left["im"].shape)
+            dilatate_left_mask = np.zeros((img_left.dims["row"], img_left.dims["col"]))
 
         # Create the right mask with the convention : 0 = valid, nan = invalid and no_data
         if "msk" in img_right.data_vars:
@@ -321,27 +403,30 @@ class AbstractMatchingCost:
                 iterations=1,
             )
             dilatate_right_mask[dil] = np.nan
-
         else:
             # All pixels are valid
-            dilatate_right_mask = np.zeros(img_left["im"].shape)
+            dilatate_right_mask = np.zeros((img_left.dims["row"], img_left.dims["col"]))
 
-        ny_, nx_ = img_left["im"].shape
+        ny_, nx_ = img_left.dims["row"], img_left.dims["col"]
+
         row = np.arange(0, ny_)
         col = np.arange(0, nx_)
 
         # Shift the right mask, for sub-pixel precision. If an no_data or invalid pixel was used to create the
         # sub-pixel point, then the sub-pixel point is invalidated / no_data.
         dilatate_right_mask_shift = xr.DataArray()
+
         if subp != 1:
             # Since the interpolation of the right image is of order 1, the shifted right mask corresponds
             # to an aggregation of two columns of the dilated right mask
+
             str_row, str_col = dilatate_right_mask.strides
             shape_windows = (
                 dilatate_right_mask.shape[0],
                 dilatate_right_mask.shape[1] - 1,
                 2,
             )
+
             strides_windows = (str_row, str_col, str_col)
             aggregation_window = np.lib.stride_tricks.as_strided(dilatate_right_mask, shape_windows, strides_windows)
             dilatate_right_mask_shift = np.sum(aggregation_window, 2)
@@ -405,12 +490,12 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param cost_volume: the cost_volume DataSet with the data variables:
@@ -425,18 +510,20 @@ class AbstractMatchingCost:
         :type cfg: dict
         :return: None
         """
-        ny_, nx_, nd_ = cost_volume["cost_volume"].shape  # pylint: disable=unused-variable
+        ny_, nx_, nd_ = cost_volume["cost_volume"].shape
 
-        dmin, dmax = self.dmin_dmax(disp_min, disp_max)  # pylint: disable=unused-variable
+        dmin, _ = self.dmin_dmax(disp_min, disp_max)
 
         # ----- Masking invalid pixels -----
 
         # Contains the shifted right images
-        img_right_shift = shift_right_img(img_right, self._subpix)
+        img_right_shift = shift_right_img(img_right, self._subpix, self._band)  # type: ignore
 
         # Computes the validity mask of the cost volume : invalid pixels or no_data are masked with the value nan.
         # Valid pixels are = 0
-        mask_left, mask_right = self.masks_dilatation(img_left, img_right, self._window_size, self._subpix)
+        mask_left, mask_right = self.masks_dilatation(
+            img_left, img_right, self._window_size, self._subpix  # type: ignore
+        )
 
         for disp in cost_volume.coords["disp"].data:
             i_right = int((disp % 1) * self._subpix)
@@ -476,3 +563,40 @@ class AbstractMatchingCost:
                     )
                 )
                 cost_volume["cost_volume"].data[masking[0], masking[1], dsp] = np.nan
+
+    @staticmethod
+    def allocate_numpy_cost_volume(
+        img_left: xr.Dataset, disparity_range: np.ndarray, offset_row_col: int
+    ) -> Tuple[xr.Dataset, xr.Dataset]:
+        """
+        Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
+
+        :param img_left: left Dataset image containing :
+
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - msk : 2D (row, col) xarray.DataArray
+        :type img_left: xarray.Dataset
+        :param disparity_range: disparity range
+        :type disparity_range: np.ndarray
+        :param offset_row_col: offset in row and col
+        :type offset_row_col: int
+        :return: the cost volume dataset , with the data variables:
+
+                - cost_volume 3D xarray.DataArray (row, col, disp)
+                - a cropped cost volume dataset
+        :rtype: Tuple[xarray.Dataset, xarray.Dataset]
+        """
+
+        cv = np.zeros(
+            (len(disparity_range), img_left.dims["col"], img_left.dims["row"]),
+            dtype=np.float32,
+        )
+        cv += np.nan
+
+        # If offset, do not consider border position for cost computation
+        if offset_row_col != 0:
+            cv_crop = cv[:, offset_row_col:-offset_row_col, offset_row_col:-offset_row_col]
+        else:
+            cv_crop = cv
+
+        return cv, cv_crop  # type: ignore

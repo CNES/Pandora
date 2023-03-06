@@ -96,12 +96,12 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param cv: cost volume dataset with the data variables:
@@ -196,12 +196,12 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param cv: cost volume dataset with the data variables:

@@ -27,7 +27,7 @@ from typing import Dict, Union
 
 import numpy as np
 import xarray as xr
-from json_checker import Checker, And
+from json_checker import Checker, And, Or
 
 from pandora.img_tools import shift_right_img, compute_mean_raster, compute_std_raster
 from pandora.matching_cost import matching_cost
@@ -40,21 +40,15 @@ class Zncc(matching_cost.AbstractMatchingCost):
     Zncc class allows to compute the cost volume
     """
 
-    # Default configuration, do not change these values
-    _WINDOW_SIZE = 5
-    _SUBPIX = 1
-
     def __init__(self, **cfg: Union[str, int]) -> None:
         """
         :param cfg: optional configuration,  {'window_size': value, 'subpix': value}
         :type cfg: dictionary
         :return: None
         """
-        self.cfg = self.check_conf(**cfg)
-        self._window_size = self.cfg["window_size"]
-        self._subpix = self.cfg["subpix"]
+        super().instantiate_class(**cfg)
 
-    def check_conf(self, **cfg: Union[str, int]) -> Dict[str, Union[str, int]]:
+    def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
@@ -63,16 +57,13 @@ class Zncc(matching_cost.AbstractMatchingCost):
         :return cfg: matching cost configuration updated
         :rtype: dict
         """
-        # Give the default value if the required element is not in the configuration
-        if "window_size" not in cfg:
-            cfg["window_size"] = self._WINDOW_SIZE
-        if "subpix" not in cfg:
-            cfg["subpix"] = self._SUBPIX
+        cfg = super().check_conf(**cfg)
 
         schema = {
             "matching_cost_method": And(str, lambda input: "zncc"),
             "window_size": And(int, lambda input: input > 0 and (input % 2) != 0),
             "subpix": And(int, lambda input: input > 0 and ((input % 2) == 0) or input == 1),
+            "band": Or(str, lambda input: input is None),
         }
 
         checker = Checker(schema)
@@ -95,12 +86,12 @@ class Zncc(matching_cost.AbstractMatchingCost):
         :param img_left: left Dataset image
         :type img_left:
             xarray.Dataset containing :
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :param img_right: right Dataset image
         :type img_right:
             xarray.Dataset containing :
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :param disp_min: minimum disparity
         :type disp_min: int
@@ -111,28 +102,31 @@ class Zncc(matching_cost.AbstractMatchingCost):
             xarray.Dataset, with the data variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
         """
+        # check band parameter
+        self.check_band_input_mc(img_left, img_right)
+
         # Contains the shifted right images
-        img_right_shift = shift_right_img(img_right, self._subpix)
+        img_right_shift = shift_right_img(img_right, self._subpix, self._band)  # type: ignore
 
         # Computes the standard deviation raster for the whole images
         # The standard deviation raster is truncated for points that are not calculable
-        img_left_std = compute_std_raster(img_left, self._window_size)
+        img_left_std = compute_std_raster(img_left, self._window_size, self._band)  # type: ignore
         img_right_std = []
         for i, img in enumerate(img_right_shift):  # pylint: disable=unused-variable
-            img_right_std.append(compute_std_raster(img, self._window_size))
+            img_right_std.append(compute_std_raster(img, self._window_size, self._band))  # type: ignore
 
         # Computes the mean raster for the whole images
         # The standard mean raster is truncated for points that are not calculable
-        img_left_mean = compute_mean_raster(img_left, self._window_size)
+        img_left_mean = compute_mean_raster(img_left, self._window_size, self._band)  # type: ignore
         img_right_mean = []
         for i, img in enumerate(img_right_shift):
-            img_right_mean.append(compute_mean_raster(img, self._window_size))
+            img_right_mean.append(compute_mean_raster(img, self._window_size, self._band))  # type: ignore
 
         # Maximal cost of the cost volume with zncc measure
         cmax = 1
 
         # Cost volume metadata
-        offset_row_col = int((self._window_size - 1) / 2)
+        offset_row_col = int((self._window_size - 1) / 2)  # type: ignore
         metadata = {
             "measure": "zncc",
             "subpixel": self._subpix,
@@ -140,6 +134,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
             "window_size": self._window_size,
             "type_measure": "max",
             "cmax": cmax,
+            "band_correl": self._band,
         }
 
         # Disparity range
@@ -149,18 +144,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
             disparity_range = np.arange(disp_min, disp_max, step=1 / float(self._subpix), dtype=np.float64)
             disparity_range = np.append(disparity_range, [disp_max])
 
-        # Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
-        cv = np.zeros(
-            (len(disparity_range), img_left["im"].shape[1], img_right["im"].shape[0]),
-            dtype=np.float32,
-        )
-        cv += np.nan
-
-        # If offset, do not consider border position for cost computation
-        if offset_row_col != 0:
-            cv_crop = cv[:, offset_row_col:-offset_row_col, offset_row_col:-offset_row_col]
-        else:
-            cv_crop = cv
+        cv, cv_crop = self.allocate_numpy_cost_volume(img_left, disparity_range, offset_row_col)
 
         # Computes the matching cost
         for disp in disparity_range:
@@ -170,15 +154,32 @@ class Zncc(matching_cost.AbstractMatchingCost):
 
             # Point interval in the left standard deviation image
             # -  (win_radius * 2) because img_std is truncated for points that are not calculable
-            p_std = (point_p[0], point_p[1] - (int(self._window_size / 2) * 2))
+            p_std = (point_p[0], point_p[1] - (int(self._window_size / 2) * 2))  # type: ignore
             # Point interval in the right standard deviation image
-            q_std = (point_q[0], point_q[1] - (int(self._window_size / 2) * 2))
+            q_std = (point_q[0], point_q[1] - (int(self._window_size / 2) * 2))  # type: ignore
 
-            # Compute the normalized summation of the product of intensities
-            zncc_ = (
-                img_left["im"].data[:, point_p[0] : point_p[1]]
-                * img_right_shift[i_right]["im"].data[:, point_q[0] : point_q[1]]
-            )
+            if self._band is not None:
+                band_index_left = list(img_left.band.data).index(self._band)
+                band_index_right = list(img_right.band.data).index(self._band)
+                if len(img_right_shift[i_right]["im"].shape) > 2:
+                    # Compute the normalized summation of the product of intensities
+                    zncc_ = (
+                        img_left["im"].data[band_index_left, :, point_p[0] : point_p[1]]
+                        * img_right_shift[i_right]["im"].data[band_index_right, :, point_q[0] : point_q[1]]
+                    )
+                else:
+                    # Compute the normalized summation of the product of intensities
+                    zncc_ = (
+                        img_left["im"].data[band_index_left, :, point_p[0] : point_p[1]]
+                        * img_right_shift[i_right]["im"].data[:, point_q[0] : point_q[1]]
+                    )
+            else:
+                # Compute the normalized summation of the product of intensities
+                zncc_ = (
+                    img_left["im"].data[:, point_p[0] : point_p[1]]
+                    * img_right_shift[i_right]["im"].data[:, point_q[0] : point_q[1]]
+                )
+
             zncc_ = xr.Dataset(
                 {"im": (["row", "col"], zncc_)},
                 coords={
@@ -186,7 +187,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
                     "col": np.arange(zncc_.shape[1]),
                 },
             )
-            zncc_ = compute_mean_raster(zncc_, self._window_size)
+            zncc_ = compute_mean_raster(zncc_, self._window_size, self._band)  # type: ignore
             # Subtracting  the  local mean  value  of  intensities
             zncc_ -= img_left_mean[:, p_std[0] : p_std[1]] * img_right_mean[i_right][:, q_std[0] : q_std[1]]
 
@@ -208,10 +209,10 @@ class Zncc(matching_cost.AbstractMatchingCost):
         # Create the xarray.DataSet that will contain the cost_volume of dimensions (row, col, disp)
         cv = self.allocate_costvolume(
             img_left,
-            self._subpix,
+            self._subpix,  # type: ignore
             disp_min,
             disp_max,
-            self._window_size,
+            self._window_size,  # type: ignore
             metadata,
             np.swapaxes(cv, 0, 2),
         )

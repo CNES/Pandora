@@ -88,15 +88,8 @@ def check_images(img_left: str, img_right: str, msk_left: str, msk_right: str) -
     :type msk_right: string
     :return: None
     """
-    # verify that the images have 1 channel
     left_ = rasterio_open(img_left)
-    if left_.count != 1:
-        logging.error("The input images must be 1-channel grayscale images")
-        sys.exit(1)
     right_ = rasterio_open(img_right)
-    if right_.count != 1:
-        logging.error("The input images must be 1-channel grayscale images")
-        sys.exit(1)
 
     # verify that the images have the same size
     if (left_.width != right_.width) or (left_.height != right_.height):
@@ -116,6 +109,34 @@ def check_images(img_left: str, img_right: str, msk_left: str, msk_right: str) -
         # verify that the image and mask have the same size
         if (right_.width != msk_.width) or (right_.height != msk_.height):
             logging.error("Image and masks must have the same size")
+            sys.exit(1)
+
+
+def check_band(img_left: str, img_right: str) -> None:
+    """
+    Check band
+
+    :param img_left: path to the left image
+    :type img_left: string
+    :param img_right: path to the left image
+    :type img_right: string
+    :return: None
+    """
+
+    # open images
+    left_ds = rasterio_open(img_left)
+    left_array = left_ds.read()
+    right_ds = rasterio_open(img_right)
+    right_array = left_ds.read()
+
+    # check that the images have the band names
+    if left_array.shape[0] != 1:
+        if not all(isinstance(band, str) for band in list(left_ds.descriptions)):
+            logging.error("Band value must be str")
+            sys.exit(1)
+    if right_array.shape[0] != 1:
+        if not all(isinstance(band, str) for band in list(right_ds.descriptions)):
+            logging.error("Band value must be str")
             sys.exit(1)
 
 
@@ -336,6 +357,11 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
         cfg["input"]["disp_min_right"],
         cfg["input"]["disp_max_right"],
         cfg["input"]["img_left"],
+    )
+
+    check_band(
+        cfg["input"]["img_left"],
+        cfg["input"]["img_right"],
     )
 
     check_images(

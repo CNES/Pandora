@@ -57,7 +57,9 @@ def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.Da
         return rasterio.open(*args, **kwargs)
 
 
-def read_img(img: str, no_data: float, mask: str = None, classif: str = None, segm: str = None) -> xr.Dataset:
+def read_img(  # pylint:disable=too-many-branches
+    img: str, no_data: float, mask: str = None, classif: str = None, segm: str = None
+) -> xr.Dataset:
     """
     Read image and mask, and return the corresponding xarray.DataSet
 
@@ -73,12 +75,17 @@ def read_img(img: str, no_data: float, mask: str = None, classif: str = None, se
     :type segm: string
     :return: xarray.DataSet containing the variables :
 
-            - im : 2D (row, col) xarray.DataArray float32
+            - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray float32
             - msk : 2D (row, col) xarray.DataArray int16, with the convention defined in the configuration file
     :rtype: xarray.DataSet
     """
+    # Select correct band
     img_ds = rasterio_open(img)
-    data = img_ds.read(1)
+    nx_, ny_ = img_ds.width, img_ds.height
+    data = img_ds.read()
+    # If only one band is present, consider data as 2 dimensional
+    if data.shape[0] == 1:
+        data = data[0, :, :]
 
     if np.isnan(no_data):
         no_data_pixels = np.where(np.isnan(data))
@@ -94,9 +101,23 @@ def read_img(img: str, no_data: float, mask: str = None, classif: str = None, se
         data[no_data_pixels] = -9999
         no_data = -9999
 
+    # If only one band is present
+    if len(data.shape) == 2:
+        image = {"im": (["row", "col"], data.astype(np.float32))}
+        coords = {"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
+    # if image is 3 dimensions we create a dataset with [band row col] dims for dataArray
+    else:
+        image = {"im": (["band", "row", "col"], data.astype(np.float32))}
+        # Band names are in the image metadata
+        coords = {
+            "band": list(img_ds.descriptions),  # type: ignore
+            "row": np.arange(data.shape[1]),
+            "col": np.arange(data.shape[2]),
+        }
+
     dataset = xr.Dataset(
-        {"im": (["row", "col"], data.astype(np.float32))},
-        coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
+        image,
+        coords=coords,
     )
 
     transform = img_ds.profile["transform"]
@@ -142,8 +163,9 @@ def read_img(img: str, no_data: float, mask: str = None, classif: str = None, se
     # dataset.attrs['valid_pixels'] : a valid pixel
     # dataset.attrs['no_data_mask'] : a no_data_pixel
     # other value : an invalid_pixel
+
     dataset["msk"] = xr.DataArray(
-        np.full((data.shape[0], data.shape[1]), dataset.attrs["valid_pixels"]).astype(np.int16),
+        np.full((ny_, nx_), dataset.attrs["valid_pixels"]).astype(np.int16),
         dims=["row", "col"],
     )
 
@@ -162,7 +184,7 @@ def read_img(img: str, no_data: float, mask: str = None, classif: str = None, se
     # Masks no_data pixels
     # If a pixel is invalid due to the input mask, and it is also no_data, then the value of this pixel in the
     # generated mask will be = no_data
-    dataset["msk"].data[no_data_pixels] = int(dataset.attrs["no_data_mask"])
+    dataset["msk"].data[(no_data_pixels[0], no_data_pixels[1])] = int(dataset.attrs["no_data_mask"])
 
     return dataset
 
@@ -220,11 +242,11 @@ def prepare_pyramid(
 
     :param img_left: left Dataset image containing :
 
-            - im : 2D (row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
     :type img_left: xarray.Dataset
     :param img_right: right Dataset containing :
 
-            - im : 2D (row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
     :type img_right: xarray.Dataset
     :param num_scales: number of scales
     :type num_scales: int
@@ -237,6 +259,10 @@ def prepare_pyramid(
     img_left_fill, msk_left_fill = fill_nodata_image(img_left)
     img_right_fill, msk_right_fill = fill_nodata_image(img_right)
 
+    # If images are multiband, band coordinate is not to be reduced
+    channel_axis = None
+    if len(img_left_fill.shape) == 3:
+        channel_axis = 0
     # Create image pyramids
     images_left = list(
         pyramid_gaussian(
@@ -247,7 +273,7 @@ def prepare_pyramid(
             order=1,
             mode="reflect",
             cval=0,
-            channel_axis=None,
+            channel_axis=channel_axis,
         )
     )
     images_right = list(
@@ -259,7 +285,7 @@ def prepare_pyramid(
             order=1,
             mode="reflect",
             cval=0,
-            channel_axis=None,
+            channel_axis=channel_axis,
         )
     )
     # Create mask pyramids
@@ -281,15 +307,25 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
     :param dataset: Dataset image
     :type dataset: xarray.Dataset containing :
 
-        - im : 2D (row, col) xarray.DataArray
+        - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
     :return: a Tuple that contains the filled image and mask
     :rtype: Tuple of np.ndarray
     """
     if "msk" in dataset:
-        img, msk = interpolate_nodata_sgm(dataset["im"].data, dataset["msk"].data)
+        if len(dataset["im"].data.shape) == 2:
+            img, msk = interpolate_nodata_sgm(dataset["im"].data, dataset["msk"].data)
+        else:
+            img = dataset["im"].data
+            msk = dataset["msk"].data
+            nband = dataset["im"].data.shape[0]
+            # We call the function for each band because of numba
+            for band in range(nband):
+                img[band, :, :], msk[:, :] = interpolate_nodata_sgm(
+                    dataset["im"].data[band, :, :], dataset["msk"].data[:, :]
+                )
     else:
         msk = np.full(
-            (dataset["im"].data.shape[0], dataset["im"].data.shape[1]),
+            (dataset.dims["row"], dataset.dims["col"]),
             int(dataset.attrs["valid_pixels"]),
         )
         img = dataset["im"].data
@@ -318,8 +354,6 @@ def interpolate_nodata_sgm(img: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarr
     # Output disparity map and validity mask
     out_img = np.copy(img)
     out_val = np.copy(valid)
-
-    ncol, nrow = img.shape
 
     # 8 directions : [row, y]
     dirs = np.array([[0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0], [1, 1]])
@@ -369,18 +403,14 @@ def convert_pyramid_to_dataset(
     """
     Return a List with the datasets at the different scales
 
-    :param img_left: left Dataset image containing :
+    :param img_orig: Dataset image containing :
 
-        - im : 2D (row, col) xarray.DataArray
-    :type img_left: xarray.Dataset
-    :param img_right: right Dataset image containing :
-
-        - im : 2D (row, col) xarray.DataArray
-    :type img_right: xarray.Dataset
-    :param num_scales: number of scales
-    :type num_scales: int
-    :param scale_factor: factor by which downsample the images
-    :type scale_factor: int
+        - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+    :type img_orig: xarray.Dataset
+    :param images: list of images for the pyramid
+    :type images: list[np.ndarray]
+    :param masks: list of masks for the pyramid
+    :type masks: list[np.ndarray]
     :return: a List that contains the different scaled datasets
     :rtype: List of xarray.Dataset
     """
@@ -393,17 +423,30 @@ def convert_pyramid_to_dataset(
             continue
 
         # Creating new dataset
-        dataset = xr.Dataset(
-            {"im": (["row", "col"], image.astype(np.float32))},
-            coords={"row": np.arange(image.shape[0]), "col": np.arange(image.shape[1])},
-        )
-
-        # Allocate the mask
-        dataset["msk"] = xr.DataArray(
-            np.full((image.shape[0], image.shape[1]), masks[index].astype(np.int16)),
-            dims=["row", "col"],
-        )
-
+        if len(img_orig["im"].shape) == 2:
+            dataset = xr.Dataset(
+                {"im": (["row", "col"], image.astype(np.float32))},
+                coords={"row": np.arange(image.shape[0]), "col": np.arange(image.shape[1])},
+            )
+            # Allocate the mask
+            dataset["msk"] = xr.DataArray(
+                np.full((image.shape[0], image.shape[1]), masks[index].astype(np.int16)),
+                dims=["row", "col"],
+            )
+        else:
+            dataset = xr.Dataset(
+                {"im": (["band", "row", "col"], image.astype(np.float32))},
+                coords={
+                    "band": list(img_orig.band.data),
+                    "row": np.arange(image.shape[1]),
+                    "col": np.arange(image.shape[2]),
+                },
+            )
+            # Allocate the mask
+            dataset["msk"] = xr.DataArray(
+                np.full((image.shape[1], image.shape[2]), masks[index].astype(np.int16)),
+                dims=["row", "col"],
+            )
         # Add image conf to the image dataset
         # - attributes are linked to each others
         dataset.attrs = img_orig.attrs
@@ -412,27 +455,36 @@ def convert_pyramid_to_dataset(
     return pyramid
 
 
-def shift_right_img(img_right: xr.Dataset, subpix: int) -> List[xr.Dataset]:
+def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None) -> List[xr.Dataset]:
     """
     Return an array that contains the shifted right images
 
     :param img_right: right Dataset image containing :
 
-        - im : 2D (row, col) xarray.DataArray
+        - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
     :type img_right: xarray.Dataset
     :param subpix: subpixel precision = (1 or pair number)
     :type subpix: int
+    :param band: User's value for selected band
+    :type band: str
     :return: an array that contains the shifted right images
     :rtype: array of xarray.Dataset
     """
     img_right_shift = [img_right]
-    ny_, nx_ = img_right["im"].shape
+    ny_, nx_ = img_right.dims["row"], img_right.dims["col"]
+
+    if band is None:
+        selected_band = img_right["im"].data
+    else:
+        # if image has more than one band we only shift the one specified in matching_cost
+        band_index_right = list(img_right.band.data).index(band)
+        selected_band = img_right["im"].data[band_index_right, :, :]
 
     if subpix > 1:
         for ind in np.arange(1, subpix):
             shift = 1 / subpix
             # For each index, shift the right image for subpixel precision 1/subpix*index
-            data = zoom(img_right["im"].data, (1, (nx_ * subpix - (subpix - 1)) / float(nx_)), order=1)[:, ind::subpix]
+            data = zoom(selected_band, (1, (nx_ * subpix - (subpix - 1)) / float(nx_)), order=1)[:, ind::subpix]
             col = np.arange(
                 img_right.coords["col"][0] + shift * ind, img_right.coords["col"][-1], step=1
             )  # type: np.ndarray
@@ -451,7 +503,7 @@ def check_inside_image(img: xr.Dataset, row: int, col: int) -> bool:
 
     :param img: Dataset image containing :
 
-            - im : 2D (row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
     :type img: xarray.Dataset
     :param row: row coordinates
     :type row: int
@@ -460,11 +512,11 @@ def check_inside_image(img: xr.Dataset, row: int, col: int) -> bool:
     :return: a boolean
     :rtype: boolean
     """
-    nx_, ny_ = img["im"].shape
+    ny_, nx_ = img.dims["row"], img.dims["col"]
     return 0 <= row < nx_ and 0 <= col < ny_
 
 
-def census_transform(image: xr.Dataset, window_size: int) -> xr.Dataset:
+def census_transform(image: xr.Dataset, window_size: int, band: str = None) -> xr.Dataset:
     """
     Generates the census transformed image from an image
 
@@ -472,17 +524,27 @@ def census_transform(image: xr.Dataset, window_size: int) -> xr.Dataset:
     :type image: xarray.Dataset
     :param window_size: Census window size
     :type window_size: int
+    :param band: User's value for selected band
+    :type band: str
     :return: Dataset census transformed uint32 containing the transformed image im: 2D (row, col) xarray.DataArray \
     uint32
     :rtype: xarray.Dataset
     """
-    ny_, nx_ = image["im"].shape
+
+    ny_, nx_ = image.dims["row"], image.dims["col"]
+
+    if len(image["im"].shape) > 2:
+        band_index = list(image.band.data).index(band)
+        selected_band = image["im"].data[band_index, :, :]
+    else:
+        selected_band = image["im"].data
+
     border = int((window_size - 1) / 2)
 
     # Create a sliding window of using as_strided function : this function create a new a view (by manipulating data
     #  pointer) of the image array with a different shape. The new view pointing to the same memory block as
     # image so it does not consume any additional memory.
-    str_row, str_col = image["im"].data.strides
+    str_row, str_col = selected_band.strides
     shape_windows = (
         ny_ - (window_size - 1),
         nx_ - (window_size - 1),
@@ -490,10 +552,10 @@ def census_transform(image: xr.Dataset, window_size: int) -> xr.Dataset:
         window_size,
     )
     strides_windows = (str_row, str_col, str_row, str_col)
-    windows = np.lib.stride_tricks.as_strided(image["im"].data, shape_windows, strides_windows, writeable=False)
+    windows = np.lib.stride_tricks.as_strided(selected_band, shape_windows, strides_windows, writeable=False)
 
     # Pixels inside the image which can be centers of windows
-    central_pixels = image["im"].data[border:-border, border:-border]
+    central_pixels = selected_band[border:-border, border:-border]
 
     # Allocate the census mask
     census = np.zeros((ny_ - (window_size - 1), nx_ - (window_size - 1)), dtype="uint32")
@@ -516,28 +578,34 @@ def census_transform(image: xr.Dataset, window_size: int) -> xr.Dataset:
     return census
 
 
-def compute_mean_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
+def compute_mean_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.ndarray:
     """
     Compute the mean within a sliding window for the whole image
 
     :param img: Dataset image containing :
 
-            - im : 2D (row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
     :type img: xarray.Dataset
     :param win_size: window size
     :type win_size: int
+    :param band: User's value for selected band
+    :type band: str
     :return: mean raster
     :rtype: numpy array
     """
-    ny_, nx_ = img["im"].shape
+    # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
+    ny_, nx_ = img.dims["row"], img.dims["col"]
+    if len(img["im"].shape) > 2:
+        band_index = list(img.band.data).index(band)
+        # Example with win_size = 3 and the input :
+        #           10 | 5  | 3
+        #            2 | 10 | 5
+        #            5 | 3  | 1
 
-    # Example with win_size = 3 and the input :
-    #           10 | 5  | 3
-    #            2 | 10 | 5
-    #            5 | 3  | 1
-
-    # Compute the cumulative sum of the elements along the column axis
-    r_mean = np.r_[np.zeros((1, nx_)), img["im"]]
+        # Compute the cumulative sum of the elements along the column axis
+        r_mean = np.r_[np.zeros((1, nx_)), img["im"].data[band_index, :, :]]
+    else:
+        r_mean = np.r_[np.zeros((1, nx_)), img["im"].data]
     # r_mean :   0 | 0  | 0
     #           10 | 5  | 3
     #            2 | 10 | 5
@@ -608,7 +676,7 @@ def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np
 
     :param img: Dataset image containing :
 
-            - im : 2D (row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
     :type img: xarray.Dataset
     :param row: row coordinates
     :type row: int
@@ -635,29 +703,37 @@ def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np
     raise IndexError
 
 
-def compute_std_raster(img: xr.Dataset, win_size: int) -> np.ndarray:
+def compute_std_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.ndarray:
     """
     Compute the standard deviation within a sliding window for the whole image
     with the formula : std = sqrt( E[row^2] - E[row]^2 )
 
     :param img: Dataset image containing :
 
-            - im : 2D (row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
     :type img: xarray.Dataset
     :param win_size: window size
     :type win_size: int
+    :param band: User's value for selected band
+    :type band: str
     :return: std raster
     :rtype: numpy array
     """
     # Computes E[row]
-    mean_ = compute_mean_raster(img, win_size)
+    mean_ = compute_mean_raster(img, win_size, band)
+    # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
+    if len(img["im"].shape) > 2:
+        band_index = list(img.band.data).index(band)
+        selected_band = img["im"].data[band_index, :, :]
+    else:
+        selected_band = img["im"].data
 
     # Computes E[row^2]
     raster_power_two = xr.Dataset(
-        {"im": (["row", "col"], img["im"].data ** 2)},
+        {"im": (["row", "col"], selected_band**2)},
         coords={
-            "row": np.arange(img["im"].shape[0]),
-            "col": np.arange(img["im"].shape[1]),
+            "row": np.arange(selected_band.shape[0]),
+            "col": np.arange(selected_band.shape[1]),
         },
     )
     mean_power_two = compute_mean_raster(raster_power_two, win_size)

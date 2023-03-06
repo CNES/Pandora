@@ -68,12 +68,7 @@ def matching_cost_tests_setup() -> Tuple[xr.Dataset, xr.Dataset]:
     left = xr.Dataset(
         {"im": (["row", "col"], data)}, coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
     )
-    left.attrs = {
-        "valid_pixels": 0,
-        "no_data_mask": 1,
-        "crs": None,
-        "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
-    }
+    left.attrs = {"valid_pixels": 0, "no_data_mask": 1, "crs": None, "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
 
     data = np.array(
         ([1, 1, 1, 2, 2, 2], [1, 1, 1, 4, 2, 4], [1, 1, 1, 4, 4, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1]),
@@ -81,6 +76,77 @@ def matching_cost_tests_setup() -> Tuple[xr.Dataset, xr.Dataset]:
     )
     right = xr.Dataset(
         {"im": (["row", "col"], data)}, coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
+    )
+    right.attrs = {"valid_pixels": 0, "no_data_mask": 1, "crs": None, "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
+
+    return left, right
+
+
+def matching_cost_tests_multiband_setup() -> Tuple[xr.Dataset, xr.Dataset]:
+    """
+    Setup the matching_cost_tests data
+
+    :return: left, right datasets
+    :rtype: Tuple[xr.Dataset]
+    """
+    # Create a multiband stereo object
+    # Initialize multiband data
+    data = np.zeros((2, 5, 6))
+    data[0, :, :] = np.array(
+        (
+            [1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 2, 1],
+            [1, 1, 1, 4, 3, 1],
+            [1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1],
+        ),
+        dtype=np.float64,
+    )
+
+    data[1, :, :] = np.array(
+        (
+            [1, 1, 1, 1, 1, 1],
+            [1, 2, 1, 1, 1, 1],
+            [4, 3, 1, 1, 1, 1],
+            [5, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1],
+        ),
+        dtype=np.float64,
+    )
+
+    left = xr.Dataset(
+        {"im": (["band", "row", "col"], data)},
+        coords={"band": ["r", "g"], "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])},
+    )
+
+    left.attrs = {"valid_pixels": 0, "no_data_mask": 1, "crs": None, "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
+    # initialize right data
+    data = np.zeros((2, 5, 6))
+    data[0, :, :] = np.array(
+        (
+            [1, 1, 1, 2, 2, 2],
+            [1, 1, 1, 4, 2, 4],
+            [1, 1, 1, 4, 4, 1],
+            [1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1],
+        ),
+        dtype=np.float64,
+    )
+
+    data[1, :, :] = np.array(
+        (
+            [1, 1, 1, 1, 1, 1],
+            [2, 2, 2, 1, 1, 1],
+            [4, 2, 4, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1],
+        ),
+        dtype=np.float64,
+    )
+
+    right = xr.Dataset(
+        {"im": (["band", "row", "col"], data)},
+        coords={"band": ["r", "g"], "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])},
     )
     right.attrs = {
         "valid_pixels": 0,
@@ -94,7 +160,7 @@ def matching_cost_tests_setup() -> Tuple[xr.Dataset, xr.Dataset]:
 
 basic_pipeline_cfg = {
     "right_disp_map": {"method": "none"},
-    "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2},
+    "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": None},
     "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
     "refinement": {"refinement_method": "vfit"},
     "filter": {"filter_method": "median", "filter_size": 3},
@@ -102,7 +168,7 @@ basic_pipeline_cfg = {
 
 validation_pipeline_cfg = {
     "right_disp_map": {"method": "accurate"},
-    "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2},
+    "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": None},
     "cost_volume_confidence": {"confidence_method": "std_intensity"},
     "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
     "refinement": {"refinement_method": "vfit"},
@@ -112,7 +178,7 @@ validation_pipeline_cfg = {
 
 multiscale_pipeline_cfg = {
     "right_disp_map": {"method": "none"},
-    "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2},
+    "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": None},
     "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
     "refinement": {"refinement_method": "vfit"},
     "filter": {"filter_method": "median", "filter_size": 3},
@@ -122,6 +188,13 @@ multiscale_pipeline_cfg = {
 input_cfg_basic = {
     "img_left": "tests/pandora/left.png",
     "img_right": "tests/pandora/right.png",
+    "disp_min": -60,
+    "disp_max": 0,
+}
+
+input_multiband_cfg = {
+    "img_left": "tests/pandora/left_rgb.tif",
+    "img_right": "tests/pandora/right_rgb.tif",
     "disp_min": -60,
     "disp_max": 0,
 }

@@ -276,6 +276,7 @@ class TestPandora(unittest.TestCase):
         )
         img_left.attrs["crs"] = None
         img_left.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+
         data_right = np.array(
             [
                 [1, 2, 1, 2, 5, 3, 1, 6],
@@ -294,6 +295,7 @@ class TestPandora(unittest.TestCase):
         )
         img_right.attrs["crs"] = None
         img_right.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+
         # Load a configuration
         user_cfg = {"input": {"disp_min": -2, "disp_max": 2}, "pipeline": copy.deepcopy(common.validation_pipeline_cfg)}
 
@@ -481,6 +483,119 @@ class TestPandora(unittest.TestCase):
             # Check the right disparity map
             if self.error(-1 * rasterio_open(tmp_dir + "/right_disparity.tif").read(1), self.disp_right, 1) > 0.20:
                 raise AssertionError
+
+    def test_main_with_rgb_image(self):
+        """
+        Test the basic pipeline with an rgb data input
+        """
+
+        user_cfg = {
+            "input": copy.deepcopy(common.input_multiband_cfg),
+            "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
+        }
+        # working on green band
+        user_cfg["pipeline"]["matching_cost"]["band"] = "g"
+
+        left_rgb = read_img(user_cfg["input"]["img_left"], no_data=np.nan, mask=None)
+        right_rgb = read_img(user_cfg["input"]["img_right"], no_data=np.nan, mask=None)
+
+        pandora_machine = PandoraMachine()
+        # Update the user configuration with default values
+        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+
+        # Run the pandora pipeline
+        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg["pipeline"])
+
+        # Check the left disparity map
+        if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.25:
+            raise AssertionError
+
+    def test_main_with_rgb_image_and_mask(self):
+        """
+        Test the basic pipeline with an rgb data input and masks
+        """
+
+        user_cfg = {
+            "input": copy.deepcopy(common.input_multiband_cfg),
+            "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
+        }
+        # add masks
+        user_cfg["input"]["left_mask"] = "tests/pandora/occlusion.png"
+
+        # working on green band
+        user_cfg["pipeline"]["matching_cost"]["band"] = "g"
+
+        left_rgb = read_img(user_cfg["input"]["img_left"], no_data=np.nan, mask=None)
+        right_rgb = read_img(user_cfg["input"]["img_right"], no_data=np.nan, mask=None)
+
+        pandora_machine = PandoraMachine()
+        # Update the user configuration with default values
+        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+
+        # Run the pandora pipeline
+        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg["pipeline"])
+
+        # Check the left disparity map
+        if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.25:
+            raise AssertionError
+
+    def test_multiscale_with_rgb_image_and_mask(self):
+        """
+        Test the multiscale pipeline with an rgb data input and masks
+        """
+
+        user_cfg = {
+            "input": copy.deepcopy(common.input_multiband_cfg),
+            "pipeline": copy.deepcopy(common.multiscale_pipeline_cfg),
+        }
+        # add masks
+        user_cfg["input"]["left_mask"] = "tests/pandora/occlusion.png"
+
+        # working on green band
+        user_cfg["pipeline"]["matching_cost"]["band"] = "g"
+
+        left_rgb = read_img(user_cfg["input"]["img_left"], no_data=np.nan, mask=None)
+        right_rgb = read_img(user_cfg["input"]["img_right"], no_data=np.nan, mask=None)
+
+        pandora_machine = PandoraMachine()
+        # Update the user configuration with default values
+        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+
+        # Run the pandora pipeline
+        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg["pipeline"])
+
+        # Check the left disparity map
+        if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.25:
+            raise AssertionError
+
+    def test_validation_with_rgb_image_and_mask(self):
+        """
+        Test the validation pipeline with an rgb data input and masks
+        """
+
+        user_cfg = {
+            "input": copy.deepcopy(common.input_multiband_cfg),
+            "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
+        }
+        # add masks
+        user_cfg["input"]["left_mask"] = "tests/pandora/occlusion.png"
+
+        # working on green band
+        user_cfg["pipeline"]["matching_cost"]["band"] = "g"
+
+        left_rgb = read_img(user_cfg["input"]["img_left"], no_data=np.nan, mask=None)
+        right_rgb = read_img(user_cfg["input"]["img_right"], no_data=np.nan, mask=None)
+
+        pandora_machine = PandoraMachine()
+        # Update the user configuration with default values
+        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+
+        # Run the pandora pipeline
+        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg["pipeline"])
+
+        # Check the left disparity map
+        if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.25:
+            raise AssertionError
 
 
 if __name__ == "__main__":

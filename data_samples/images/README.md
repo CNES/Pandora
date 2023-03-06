@@ -3,3 +3,7 @@ Images provided in this repository are:
 (D. Scharstein and R. Szeliski. High-accuracy stereo depth maps using structured light.
 In IEEE Computer Society Conference on Computer Vision and Pattern Recognition (CVPR 2003),
 volume 1, pages 195-202, Madison, WI, June 2003.)
+- cones_rgb.zip: the so called cones stereo pair from the 2003 Middleburry dataset with RBG channels
+(D. Scharstein and R. Szeliski. High-accuracy stereo depth maps using structured light.
+In IEEE Computer Society Conference on Computer Vision and Pattern Recognition (CVPR 2003),
+volume 1, pages 195-202, Madison, WI, June 2003.)

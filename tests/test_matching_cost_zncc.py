@@ -22,9 +22,10 @@
 # limitations under the License.
 #
 """
-This module contains functions to test the cost volume measure step.
+This module contains functions to test the Zncc matching cost step.
 """
 import unittest
+import pytest
 
 import numpy as np
 import xarray as xr
@@ -33,10 +34,10 @@ from pandora import matching_cost
 from tests import common
 
 
-class TestMatchingCost(unittest.TestCase):
+class TestMatchingCostZncc(unittest.TestCase):
     """
-    TestMatchingCost class allows to test all the methods in the class MatchingCost,
-    and the plugins pixel_wise, zncc
+    TestMatchingCost class allows to test all the methods in the
+    matching_cost Zncc class
     """
 
     def setUp(self):
@@ -360,6 +361,88 @@ class TestMatchingCost(unittest.TestCase):
 
         # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv["cost_volume"], cv_ground_truth)
+
+    @staticmethod
+    def test_check_band_zncc():
+        """
+        Test the multiband choice for census measure with wrong matching_cost initialization
+        """
+
+        # Initialize multiband data
+        data = np.zeros((2, 4, 4))
+        data[0, :, :] = np.array(
+            (
+                [1, 1, 1, 3],
+                [1, 3, 2, 5],
+                [2, 1, 0, 1],
+                [1, 5, 4, 3],
+            ),
+            dtype=np.float64,
+        )
+
+        data[1, :, :] = np.array(
+            (
+                [2, 3, 4, 6],
+                [8, 7, 0, 4],
+                [4, 9, 1, 5],
+                [6, 5, 2, 1],
+            ),
+            dtype=np.float64,
+        )
+
+        left = xr.Dataset(
+            {"im": (["band", "row", "col"], data)},
+            coords={"band": np.arange(data.shape[0]), "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])},
+        )
+
+        left.attrs = common.img_attrs
+
+        # Initialize multiband data
+        data = np.zeros((2, 4, 4))
+        data[0, :, :] = np.array(
+            (
+                [5, 1, 2, 3],
+                [1, 3, 0, 2],
+                [2, 3, 5, 0],
+                [1, 6, 7, 5],
+            ),
+            dtype=np.float64,
+        )
+
+        data[1, :, :] = np.array(
+            (
+                [6, 5, 2, 7],
+                [8, 7, 6, 5],
+                [5, 2, 3, 6],
+                [0, 3, 4, 7],
+            ),
+            dtype=np.float64,
+        )
+
+        right = xr.Dataset(
+            {"im": (["band", "row", "col"], data)},
+            coords={"band": np.arange(data.shape[0]), "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])},
+        )
+
+        right.attrs = common.img_attrs
+
+        # Initialization of matching_cost plugin with wrong band
+        matching_cost_ = matching_cost.AbstractMatchingCost(
+            **{"matching_cost_method": "zncc", "window_size": 3, "subpix": 1, "band": "b"}
+        )
+
+        # Compute the cost_volume
+        with pytest.raises(SystemExit):
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
+
+        # Initialization of matching_cost plugin with no band
+        matching_cost_ = matching_cost.AbstractMatchingCost(
+            **{"matching_cost_method": "zncc", "window_size": 3, "subpix": 1}
+        )
+
+        # Compute the cost_volume
+        with pytest.raises(SystemExit):
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
 
 
 if __name__ == "__main__":

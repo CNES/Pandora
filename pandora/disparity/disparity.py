@@ -117,12 +117,12 @@ class AbstractDisparity:
         :type cv: xarray.Dataset,
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :return: Dataset with the disparity map and the confidence measure with the data variables :
@@ -171,7 +171,7 @@ class AbstractDisparity:
         :type cv: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param invalid_value: disparity to assign to invalid pixels
@@ -304,12 +304,12 @@ class AbstractDisparity:
                 - confidence_measure 3D xarray.DataArray(row, col, indicator)
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param cv: cost volume dataset with the data variables:
@@ -448,7 +448,7 @@ class AbstractDisparity:
         :type disp: xarray.Dataset
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :return: None
@@ -484,7 +484,7 @@ class AbstractDisparity:
         :type disp: xarray.Dataset
         :param img_right: left Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param bit_1: where the disparity interval is missing in the right image ( disparity range outside the image )
@@ -605,12 +605,12 @@ class WinnerTakesAll(AbstractDisparity):
         :type cv: xarray.Dataset
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :return: Dataset with the disparity map and the confidence measure  with the data variables :

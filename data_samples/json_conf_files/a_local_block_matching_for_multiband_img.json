@@ -1,0 +1,26 @@
+{
+  "input": {
+    "img_left": "./left_rgb.tif",
+    "img_right": "./right_rgb.tif",
+    "disp_min": -60,
+    "disp_max": 0
+  },
+  "pipeline": {
+    "right_disp_map": {
+      "method": "accurate"
+    },
+    "matching_cost": {
+      "matching_cost_method": "zncc",
+      "band": "r",
+      "window_size": 5,
+      "subpix": 4
+    },
+    "disparity": {
+      "disparity_method": "wta",
+      "invalid_disparity": "NaN"
+    },
+    "refinement": {
+      "refinement_method": "quadratic"
+    }
+  }
+}
