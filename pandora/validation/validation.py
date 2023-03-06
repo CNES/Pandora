@@ -347,7 +347,7 @@ class CrossChecking(AbstractValidation):
         dataset_left.attrs["validation"] = "cross_checking"
 
         dataset_left, _ = AbstractCostVolumeConfidence.allocate_confidence_map(
-            "validation_pandora_distance_of_disp", conf_measure, dataset_left, cv
+            "left_right_consistency", conf_measure, dataset_left, cv
         )
 
         return dataset_left

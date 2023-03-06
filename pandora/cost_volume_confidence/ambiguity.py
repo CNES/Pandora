@@ -50,7 +50,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
     # Ambiguity normalization
     _NORMALIZATION = True
     # Method name
-    _method = "confidence_from_ambiguity"
+    _method = "ambiguity"
     # Indicator
     _indicator = ""
 

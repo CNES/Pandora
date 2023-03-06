@@ -140,6 +140,10 @@ class AbstractCostVolumeConfidence:
             Tuple(xarray.Dataset, xarray.Dataset) with the data variables:
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
+
+        # Add common prefix to confidence measure name
+        name_confidence_measure = "confidence_from_" + name_confidence_measure
+
         if cv is not None:
             # cost volume already contains a confidence map, it must be updated
             if "confidence_measure" in cv.data_vars:
