@@ -770,3 +770,26 @@ def read_disp(disparity: Union[None, int, str]) -> Union[None, int, np.ndarray]:
         data_disp = disparity
 
     return data_disp
+
+
+def fuse_classification_bands(img: xr.Dataset, class_names: List[str]) -> np.ndarray:
+    """
+    Get the multiband classification map present in the input image dataset
+    and select the given classes to make a single-band classification map
+
+    :param img: image dataset
+    :type img: xr.Dataset
+    :param class_names: chosen classification classes
+    :type class_names: List[str]
+    :return: the map representing the selected classifications
+    :rtype: np.ndarray
+    """
+    # Non classified pixels have value 0
+    monoband_classif = np.zeros((len(img.coords["row"]), len(img.coords["col"])))
+    for count, class_name in enumerate(class_names):
+        # Each class must have a different pixel value
+        band_index = list(img.band_classif.data).index(class_name)
+        pixel_val = count + 1
+        monoband_classif += pixel_val * img["classif"].data[band_index, :, :]
+
+    return monoband_classif
