@@ -444,6 +444,15 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> di
         cfg_pipeline["pipeline"]["matching_cost"]["band"],
     )
 
+    # If validation is present, right disparity map computation must be activated
+    if cfg_pipeline["pipeline"]["right_disp_map"]["method"] != "accurate":
+        right_disp_computation = False
+        if "validation" in cfg_pipeline["pipeline"]:
+            logging.error('For cross-checking, right_disp_map must be set to "accurate"')
+            sys.exit(1)
+    else:
+        right_disp_computation = True
+
     # If semantic_segmentation is present, check that the RGB band are present in left image
     if "semantic_segmentation" in cfg_pipeline["pipeline"]:
         check_band_pipeline(
@@ -451,8 +460,9 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> di
             cfg_pipeline["pipeline"]["semantic_segmentation"]["segmentation_method"],
             cfg_pipeline["pipeline"]["semantic_segmentation"]["RGB_bands"],
         )
-        # If semantic_segmentation and validation is present, check that the RGB band are present in the right image
-        if "validation" in cfg_pipeline["pipeline"]:
+        # If semantic_segmentation and right_disp_computation is present,
+        # check that the RGB band are present in the right image
+        if right_disp_computation:
             check_band_pipeline(
                 cfg_input["input"]["img_right"],
                 cfg_pipeline["pipeline"]["semantic_segmentation"]["segmentation_method"],
@@ -492,12 +502,12 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> di
                         "For performing the 3SGM optimization step in the pipeline, left %s must be present.", source
                     )
                     sys.exit(1)
-                # If cross-checking validation is to be done and 3SGM optimization is present on the pipeline,
+                # If right_disp_computation is to be done and 3SGM optimization is present on the pipeline,
                 # then both left and right segmentations/classifications must be present
-                if "validation" in cfg_pipeline["pipeline"] and not cfg_input["input"]["right_" + source]:
+                if right_disp_computation and not cfg_input["input"]["right_" + source]:
                     logging.error(
-                        "For performing cross-checking step with 3SGM optimization in the pipeline,"
-                        "both left and right %s must be present.",
+                        "For performing right disparity computation with 3SGM optimization in the pipeline,"
+                        " both left and right %s must be present.",
                         source,
                     )
                     sys.exit(1)
