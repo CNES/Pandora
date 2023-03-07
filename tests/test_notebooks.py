@@ -77,6 +77,9 @@ class TestPandora(unittest.TestCase):
                 # Deactivate matplotlib show of fig
                 if "fig.show()" in line:
                     line = line.replace("fig.show()", 'fig.write_html("test.html")')
+                # Deactivate JupyterDash app
+                if "app = JupyterDash" in line:
+                    line = "app = None"
                 print(line)  # This print must be present, otherwise the file is empty
             # run notebook
             out = subprocess.run(
