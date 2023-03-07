@@ -433,12 +433,9 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> di
 
     # If validation is present, right disparity map computation must be activated
     if cfg_pipeline["pipeline"]["right_disp_map"]["method"] != "accurate":
-        right_disp_computation = False
         if "validation" in cfg_pipeline["pipeline"]:
             logging.error('For cross-checking, right_disp_map must be set to "accurate"')
             sys.exit(1)
-    else:
-        right_disp_computation = True
 
     # If semantic_segmentation is present, check that the necessary bands are present in the inputs
     if "semantic_segmentation" in cfg_pipeline["pipeline"]:
@@ -495,9 +492,12 @@ def check_optimization_inputs(cfg_input: Dict, cfg_pipeline: Dict) -> None:
         if not cfg_input["input"]["left_" + source]:
             logging.error("For performing the 3SGM optimization step in the pipeline, left %s must be present.", source)
             sys.exit(1)
-        # If cross-checking validation is to be done and 3SGM optimization is present on the pipeline,
+        # If right disparity is to be computed and 3SGM optimization is present on the pipeline,
         # then both left and right segmentations/classifications must be present
-        if "validation" in cfg_pipeline["pipeline"] and not cfg_input["input"]["right_" + source]:
+        if (
+            cfg_pipeline["pipeline"]["right_disp_map"]["method"] == "accurate"
+            and not cfg_input["input"]["right_" + source]
+        ):
             logging.error(
                 "For performing cross-checking step with 3SGM optimization in the pipeline,"
                 " right %s must be present.",
@@ -512,7 +512,9 @@ def check_optimization_inputs(cfg_input: Dict, cfg_pipeline: Dict) -> None:
                 cfg_pipeline["pipeline"]["optimization"]["optimization_method"],
                 cfg_pipeline["pipeline"]["optimization"]["geometric_prior"]["classes"],
             )
-            if "validation" in cfg_pipeline["pipeline"]:
+            # If right disparity is to be computed, check that the classes bands are present
+            # in the input right classification
+            if cfg_pipeline["pipeline"]["right_disp_map"]["method"] == "accurate":
                 check_band_pipeline(
                     cfg_input["input"]["right_classif"],
                     cfg_pipeline["pipeline"]["optimization"]["optimization_method"],
@@ -550,14 +552,15 @@ def check_semantic_segmentation_inputs(cfg_input: Dict, cfg_pipeline: Dict) -> N
             cfg_pipeline["pipeline"]["semantic_segmentation"]["segmentation_method"],
             cfg_pipeline["pipeline"]["semantic_segmentation"]["vegetation_band"]["classes"],
         )
-    # If semantic_segmentation and validation are present, check that the RGB band are present in the right image
-    if "validation" in cfg_pipeline["pipeline"]:
+    # If semantic_segmentation and right disparity is to be computed,
+    # check that the RGB band are present in the right image
+    if cfg_pipeline["pipeline"]["right_disp_map"]["method"] == "accurate":
         check_band_pipeline(
             cfg_input["input"]["img_right"],
             cfg_pipeline["pipeline"]["semantic_segmentation"]["segmentation_method"],
             cfg_pipeline["pipeline"]["semantic_segmentation"]["RGB_bands"],
         )
-        # If vegetation_band is present in semantic_segmentation, and validation is present,
+        # If vegetation_band is present in semantic_segmentation, and right disparity is to be computed,
         # check that the bands are present in the input right classification
         if "vegetation_band" in cfg_pipeline["pipeline"]["semantic_segmentation"]:
             if not cfg_input["input"]["right_classif"]:
