@@ -15,6 +15,7 @@
 - Add semantic_segmentation pipeline step. [#257]
 - Add a control margin size. [#285]
 - Allows the choice to normalize ambiguity. [#284]
+- Add multiband input image classification. [#256]
 
 ### Fixed
 
