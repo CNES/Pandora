@@ -715,6 +715,25 @@ class TestConfig(unittest.TestCase):
         )
         np.testing.assert_allclose((min_mem_consump, max_mem_consump), consumption_vt, rtol=1e-02)
 
+    def test_right_disp_map_none_with_validation(self):
+        """
+        Test that user can't implement validation with right_disp_map set to none
+        """
+
+        cfg_pipeline = {
+            "pipeline": {
+                "right_disp_map": {"method": "none"},
+                "matching_cost": {"matching_cost_method": "census", "window_size": 5, "subpix": 2},
+                "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
+                "filter": {"filter_method": "median"},
+                "validation": {"validation_method": "cross_checking"},
+            }
+        }
+
+        pandora_machine = PandoraMachine()
+
+        self.assertRaises(MachineError, JSON_checker.check_pipeline_section, cfg_pipeline, pandora_machine)
+
 
 if __name__ == "__main__":
     common.setup_logging()
