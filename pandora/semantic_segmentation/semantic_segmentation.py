@@ -103,7 +103,7 @@ class AbstractSemanticSegmentation:
     @abstractmethod
     def compute_semantic_segmentation(self, cv: xr.Dataset, img_left: xr.Dataset, img_right: xr.Dataset) -> xr.Dataset:
         """
-        Compute building semantic segmentation
+        Compute semantic segmentation
 
         :param cv: the cost volume, with the data variables:
 
@@ -120,10 +120,10 @@ class AbstractSemanticSegmentation:
                 - im : 3D (band, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :type img_right: xarray
-        :return: The building segmentation in the left image dataset with the data variables:
+        :return: The semantic segmentation in the left image dataset with the data variables:
 
                 - im : 3D (band, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
-                - initial : 2D (row, col) xarray.DataArray building segmentation
+                - initial : 2D (row, col) xarray.DataArray semantic segmentation
         :rtype: xarray.Dataset
         """

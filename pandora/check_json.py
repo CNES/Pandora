@@ -112,36 +112,25 @@ def check_images(img_left: str, img_right: str, msk_left: str, msk_right: str) -
             sys.exit(1)
 
 
-def check_band_names(img_left: str, img_right: str) -> None:
+def check_band_names(img: str) -> None:
     """
     Check that band names have the correct format
 
-    :param img_left: path to the left image
-    :type img_left: string
-    :param img_right: path to the left image
-    :type img_right: string
+    :param img: path to the image
+    :type img: string
     :return: None
     """
 
-    # open images
-    left_ds = rasterio_open(img_left)
-    left_array = left_ds.read()
-    right_ds = rasterio_open(img_right)
-    right_array = left_ds.read()
+    # open image
+    img_ds = rasterio_open(img)
+    img_array = img_ds.read()
 
-    # check that the images have the band names
-    if left_array.shape[0] != 1:
-        if not left_ds.descriptions:
-            logging.error("Left image is missing band names metadata")
+    # check that the image have the band names
+    if img_array.shape[0] != 1:
+        if not img_ds.descriptions:
+            logging.error("Image is missing band names metadata")
             sys.exit(1)
-        if not all(isinstance(band, str) for band in list(left_ds.descriptions)):
-            logging.error("Band value must be str")
-            sys.exit(1)
-    if right_array.shape[0] != 1:
-        if not right_ds.descriptions:
-            logging.error("Right image is missing band names metadata")
-            sys.exit(1)
-        if not all(isinstance(band, str) for band in list(right_ds.descriptions)):
+        if not all(isinstance(band, str) for band in list(img_ds.descriptions)):
             logging.error("Band value must be str")
             sys.exit(1)
 
@@ -397,10 +386,8 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
         cfg["input"]["img_left"],
     )
 
-    check_band_names(
-        cfg["input"]["img_left"],
-        cfg["input"]["img_right"],
-    )
+    check_band_names(cfg["input"]["img_left"])
+    check_band_names(cfg["input"]["img_right"])
 
     check_images(
         cfg["input"]["img_left"],
