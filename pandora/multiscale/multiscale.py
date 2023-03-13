@@ -23,7 +23,6 @@
 This module contains functions associated to the multiscale step.
 """
 
-import logging
 from abc import ABCMeta, abstractmethod
 from typing import Tuple, Union, Dict
 
@@ -56,12 +55,8 @@ class AbstractMultiscale:
                     return super(AbstractMultiscale, cls).__new__(
                         cls.multiscale_methods_avail[cfg["multiscale_method"]]
                     )
-                except KeyError:
-                    logging.error(
-                        "No multiscale matching method named % supported",
-                        cfg["multiscale_method"],
-                    )
-                    raise KeyError
+                except:
+                    raise KeyError("No multiscale method named {} supported".format(cfg["multiscale_method"]))
             else:
                 if isinstance(cfg["multiscale_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
@@ -69,12 +64,8 @@ class AbstractMultiscale:
                         return super(AbstractMultiscale, cls).__new__(
                             cls.multiscale_methods_avail[cfg["multiscale_method"].encode("utf-8")]
                         )
-                    except KeyError:
-                        logging.error(
-                            "No multiscale matching method named % supported",
-                            cfg["multiscale_method"],
-                        )
-                        raise KeyError
+                    except:
+                        raise KeyError("No multiscale method named {} supported".format(cfg["multiscale_method"]))
         else:
             return super(AbstractMultiscale, cls).__new__(cls)
         return None

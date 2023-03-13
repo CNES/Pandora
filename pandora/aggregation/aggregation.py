@@ -23,8 +23,6 @@
 This module contains classes and functions associated to the cost volume aggregation step.
 """
 
-import logging
-import sys
 from abc import ABCMeta, abstractmethod
 from typing import Union, Dict
 
@@ -53,12 +51,8 @@ class AbstractAggregation:
             if isinstance(cfg["aggregation_method"], str):
                 try:
                     return super(AbstractAggregation, cls).__new__(cls.aggreg_methods_avail[cfg["aggregation_method"]])
-                except KeyError:
-                    logging.error(
-                        "No aggregation method named % supported",
-                        cfg["aggregation_method"],
-                    )
-                    sys.exit(1)
+                except:
+                    raise KeyError("No aggregation method named {} supported".format(cfg["aggregation_method"]))
             else:
                 if isinstance(cfg["aggregation_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
@@ -66,12 +60,8 @@ class AbstractAggregation:
                         return super(AbstractAggregation, cls).__new__(
                             cls.aggreg_methods_avail[cfg["aggregation_method"].encode("utf-8")]
                         )
-                    except KeyError:
-                        logging.error(
-                            "No aggregation method named % supported",
-                            cfg["aggregation_method"],
-                        )
-                        sys.exit(1)
+                    except:
+                        raise KeyError("No aggregation method named {} supported".format(cfg["aggregation_method"]))
         else:
             return super(AbstractAggregation, cls).__new__(cls)
         return None

@@ -23,7 +23,6 @@
 This module contains classes and functions associated to the validation step.
 """
 
-import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict, Union
 
@@ -61,12 +60,8 @@ class AbstractValidation:
                     return super(AbstractValidation, cls).__new__(
                         cls.validation_methods_avail[cfg["validation_method"]]
                     )
-                except KeyError:
-                    logging.error(
-                        "No validation method named % supported",
-                        cfg["validation_method"],
-                    )
-                    raise KeyError
+                except:
+                    raise KeyError("No validation method named {} supported".format(cfg["validation_method"]))
             else:
                 if isinstance(cfg["validation_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
@@ -74,12 +69,8 @@ class AbstractValidation:
                         return super(AbstractValidation, cls).__new__(
                             cls.validation_methods_avail[cfg["validation_method"].encode("utf-8")]
                         )
-                    except KeyError:
-                        logging.error(
-                            "No validation method named % supported",
-                            cfg["validation_method"],
-                        )
-                        raise KeyError
+                    except:
+                        raise KeyError("No validation method named {} supported".format(cfg["validation_method"]))
         else:
             return super(AbstractValidation, cls).__new__(cls)
         return None
