@@ -167,7 +167,7 @@ class TestConfidence(unittest.TestCase):
         cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, _ = pandora.run(pandora_machine, left_im, right_im, -1, 1, cfg["pipeline"])
+        left, _ = pandora.run(pandora_machine, left_im, right_im, -1, 1, cfg)
 
         assert (
             np.sum(left.coords["indicator"].data != ["confidence_from_intensity_std", "confidence_from_ambiguity.2"])
@@ -281,7 +281,7 @@ class TestConfidence(unittest.TestCase):
         cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, _ = pandora.run(pandora_machine, left_im, right_im, -1, 1, cfg["pipeline"])
+        left, _ = pandora.run(pandora_machine, left_im, right_im, -1, 1, cfg)
 
         assert (
             np.sum(left.coords["indicator"].data != ["confidence_from_intensity_std", "confidence_from_ambiguity.2"])

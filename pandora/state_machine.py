@@ -1,4 +1,5 @@
 # pylint:disable=too-many-arguments
+# pylint:disable=too-many-lines
 # pylint: disable=too-many-public-methods
 # !/usr/bin/env python
 # coding: utf8
@@ -27,6 +28,7 @@ This module contains class associated to the pandora state machine
 
 import warnings
 import logging
+import sys
 from typing import Dict, Union, List
 import numpy as np
 import xarray as xr
@@ -51,6 +53,7 @@ from pandora import optimization
 from pandora import refinement
 from pandora import matching_cost
 from pandora import semantic_segmentation
+from pandora.img_tools import rasterio_open
 
 # This silences numba's TBB threading layer warning
 with warnings.catch_warnings():
@@ -314,7 +317,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
 
         logging.info("Matching cost computation...")
-        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg[input_step])  # type: ignore
+        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg["pipeline"][input_step])  # type: ignore
 
         # Update min and max disparity according to the current scale
         self.disp_min = self.disp_min * self.scale_factor
@@ -359,7 +362,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
-        aggregation_ = aggregation.AbstractAggregation(**cfg[input_step])  # type: ignore
+        aggregation_ = aggregation.AbstractAggregation(**cfg["pipeline"][input_step])  # type: ignore
         aggregation_.cost_volume_aggregation(self.left_img, self.right_img, self.left_cv)
         if self.right_disp_map == "accurate":
             aggregation_.cost_volume_aggregation(self.right_img, self.left_img, self.right_cv)
@@ -373,7 +376,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
-        semantic_segmentation_ = semantic_segmentation.AbstractSemanticSegmentation(**cfg[input_step])  # type: ignore
+        semantic_segmentation_ = semantic_segmentation.AbstractSemanticSegmentation(
+            **cfg["pipeline"][input_step]
+        )  # type: ignore
         self.left_img = semantic_segmentation_.compute_semantic_segmentation(
             self.left_cv, self.left_img, self.right_img
         )
@@ -391,7 +396,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
-        optimization_ = optimization.AbstractOptimization(**cfg[input_step])  # type: ignore
+        optimization_ = optimization.AbstractOptimization(**cfg["pipeline"][input_step])  # type: ignore
         logging.info("Cost optimization...")
 
         self.left_cv = optimization_.optimize_cv(self.left_cv, self.left_img, self.right_img)
@@ -408,7 +413,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :return: None
         """
         logging.info("Disparity computation...")
-        disparity_ = disparity.AbstractDisparity(**cfg[input_step])  # type: ignore
+        disparity_ = disparity.AbstractDisparity(**cfg["pipeline"][input_step])  # type: ignore
 
         self.left_disparity = disparity_.to_disp(self.left_cv, self.left_img, self.right_img)
         disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img, self.left_cv)
@@ -426,7 +431,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :return: None
         """
         logging.info("Disparity filtering...")
-        filter_ = filter.AbstractFilter(**cfg[input_step])  # type: ignore
+        filter_ = filter.AbstractFilter(**cfg["pipeline"][input_step])  # type: ignore
         filter_.filter_disparity(self.left_disparity)
         if self.right_disp_map == "accurate":
             filter_.filter_disparity(self.right_disparity)
@@ -440,7 +445,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
-        refinement_ = refinement.AbstractRefinement(**cfg[input_step])  # type: ignore
+        refinement_ = refinement.AbstractRefinement(**cfg["pipeline"][input_step])  # type: ignore
         logging.info("Subpixel refinement...")
 
         refinement_.subpixel_refinement(self.left_cv, self.left_disparity)
@@ -456,7 +461,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
-        validation_ = validation.AbstractValidation(**cfg[input_step])  # type: ignore
+        validation_ = validation.AbstractValidation(**cfg["pipeline"][input_step])  # type: ignore
 
         logging.info("Validation...")
 
@@ -464,8 +469,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         if self.right_disp_map == "accurate":
             self.right_disparity = validation_.disparity_checking(self.right_disparity, self.left_disparity)
             # Interpolated mismatch and occlusions
-            if "interpolated_disparity" in cfg[input_step]:
-                interpolate_ = validation.AbstractInterpolation(**cfg[input_step])  # type: ignore
+            if "interpolated_disparity" in cfg["pipeline"][input_step]:
+                interpolate_ = validation.AbstractInterpolation(**cfg["pipeline"][input_step])  # type: ignore
                 interpolate_.interpolated_disparity(self.left_disparity)
                 interpolate_.interpolated_disparity(self.right_disparity)
 
@@ -481,7 +486,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         logging.info("Disparity range computation...")
 
-        multiscale_ = multiscale.AbstractMultiscale(**cfg[input_step])  # type: ignore
+        multiscale_ = multiscale.AbstractMultiscale(**cfg["pipeline"][input_step])  # type: ignore
 
         # Update min and max user disparity according to the current scale
         self.dmin_user = self.dmin_user * self.scale_factor
@@ -521,10 +526,10 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         # In case multiple confidence maps are computed, add its
         # name to the indicator to distinguish the different maps
-        cfg[input_step]["indicator"] = ""
+        cfg["pipeline"][input_step]["indicator"] = ""
         if len(input_step.split(".")) == 2:
-            cfg[input_step]["indicator"] = "." + input_step.split(".")[1]
-        confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg[input_step])  # type: ignore
+            cfg["pipeline"][input_step]["indicator"] = "." + input_step.split(".")[1]
+        confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg["pipeline"][input_step])  # type: ignore
 
         logging.info("Confidence prediction...")
 
@@ -632,7 +637,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         self.left_disparity = xr.Dataset()
         self.right_disparity = xr.Dataset()
         # To determine whether the right disparity map has to be computed
-        self.right_disp_map = cfg["right_disp_map"]["method"]
+        self.right_disp_map = cfg["pipeline"]["right_disp_map"]["method"]
         # Add transitions
         self.add_transitions(self._transitions_run)
 
@@ -691,10 +696,10 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         schema = {"method": And(str, lambda input: "none" or "accurate")}
 
         checker = Checker(schema)
-        checker.validate(cfg["right_disp_map"])
+        checker.validate(cfg["pipeline"]["right_disp_map"])
 
         # Store the righ disparity map configuration
-        self.right_disp_map = cfg["right_disp_map"]["method"]
+        self.right_disp_map = cfg["pipeline"]["right_disp_map"]["method"]
 
     def matching_cost_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -706,8 +711,26 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
+        # Create matching_cost object to check its step configuration
+        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg["pipeline"][input_step])  # type: ignore
 
-        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg[input_step])  # type: ignore
+        # Check the coherence between the band selected for the matching_cost step
+        # and the bands present on left and right image
+        if not "band" in cfg["pipeline"]["matching_cost"]:
+            band = None
+        else:
+            band = cfg["pipeline"]["matching_cost"]["band"]
+        self.check_band_pipeline(
+            cfg["input"]["img_left"],
+            cfg["pipeline"]["matching_cost"]["matching_cost_method"],
+            band,
+        )
+        self.check_band_pipeline(
+            cfg["input"]["img_right"],
+            cfg["pipeline"]["matching_cost"]["matching_cost_method"],
+            band,
+        )
+
         self.pipeline_cfg["pipeline"][input_step] = matching_cost_.cfg
 
     def disparity_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -720,7 +743,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        disparity_ = disparity.AbstractDisparity(**cfg[input_step])  # type: ignore
+        disparity_ = disparity.AbstractDisparity(**cfg["pipeline"][input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = disparity_.cfg
 
     def filter_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -733,7 +756,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        filter_ = filter.AbstractFilter(**cfg[input_step])  # type: ignore
+        filter_ = filter.AbstractFilter(**cfg["pipeline"][input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = filter_.cfg
 
     def refinement_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -746,7 +769,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        refinement_ = refinement.AbstractRefinement(**cfg[input_step])  # type: ignore
+        refinement_ = refinement.AbstractRefinement(**cfg["pipeline"][input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = refinement_.cfg
 
     def aggregation_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -759,7 +782,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        aggregation_ = aggregation.AbstractAggregation(**cfg[input_step])  # type: ignore
+        aggregation_ = aggregation.AbstractAggregation(**cfg["pipeline"][input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = aggregation_.cfg
 
     def semantic_segmentation_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -772,8 +795,52 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        semantic_segmentation_ = semantic_segmentation.AbstractSemanticSegmentation(**cfg[input_step])  # type: ignore
+        semantic_segmentation_ = semantic_segmentation.AbstractSemanticSegmentation(
+            **cfg["pipeline"][input_step]
+        )  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = semantic_segmentation_.cfg
+
+        # If semantic_segmentation is present, check that the necessary bands are present in the inputs
+        self.check_band_pipeline(
+            cfg["input"]["img_left"],
+            cfg["pipeline"]["semantic_segmentation"]["segmentation_method"],
+            cfg["pipeline"]["semantic_segmentation"]["RGB_bands"],
+        )
+        # If vegetation_band is present in semantic_segmentation, check that the bands are present
+        # in the input left classification
+        if "vegetation_band" in cfg["pipeline"]["semantic_segmentation"]:
+            if not cfg["input"]["left_classif"]:
+                logging.error(
+                    "For performing the semantic_segmentation step in the pipeline, left_classif must be present."
+                )
+                sys.exit(1)
+            self.check_band_pipeline(
+                cfg["input"]["left_classif"],
+                cfg["pipeline"]["semantic_segmentation"]["segmentation_method"],
+                cfg["pipeline"]["semantic_segmentation"]["vegetation_band"]["classes"],
+            )
+        # If semantic_segmentation and right disparity is to be computed,
+        # check that the RGB band are present in the right image
+        if self.right_disp_map == "accurate":
+            self.check_band_pipeline(
+                cfg["input"]["img_right"],
+                cfg["pipeline"]["semantic_segmentation"]["segmentation_method"],
+                cfg["pipeline"]["semantic_segmentation"]["RGB_bands"],
+            )
+            # If vegetation_band is present in semantic_segmentation, and right disparity is to be computed,
+            # check that the bands are present in the input right classification
+            if "vegetation_band" in cfg["pipeline"]["semantic_segmentation"]:
+                if not cfg["input"]["right_classif"]:
+                    logging.error(
+                        "For performing cross-checking step with semantic_segmentation in the pipeline,"
+                        " right classif must be present.",
+                    )
+                    sys.exit(1)
+                self.check_band_pipeline(
+                    cfg["input"]["right_classif"],
+                    cfg["pipeline"]["semantic_segmentation"]["segmentation_method"],
+                    cfg["pipeline"]["semantic_segmentation"]["vegetation_band"]["classes"],
+                )
 
     def optimization_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -785,8 +852,44 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        optimization_ = optimization.AbstractOptimization(**cfg[input_step])  # type: ignore
+        optimization_ = optimization.AbstractOptimization(**cfg["pipeline"][input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = optimization_.cfg
+
+        # If geometric_prior is needed for the optimization step,
+        # check that the necessary inputs and bands are present
+        if "geometric_prior" in cfg["pipeline"]["optimization"]:
+            source = cfg["pipeline"]["optimization"]["geometric_prior"]["source"]
+            if source in ["classif", "segm"]:
+                if not cfg["input"]["left_" + source]:
+                    logging.error(
+                        "For performing the 3SGM optimization step in the pipeline, left %s must be present.", source
+                    )
+                    sys.exit(1)
+                # If right disparity is to be computed and 3SGM optimization is present on the pipeline,
+                # then both left and right segmentations/classifications must be present
+                if self.right_disp_map == "accurate" and not cfg["input"]["right_" + source]:
+                    logging.error(
+                        "For performing cross-checking step with 3SGM optimization in the pipeline,"
+                        " right %s must be present.",
+                        source,
+                    )
+                    sys.exit(1)
+                # If sgm optimization is present with geometric_prior classification, check that the
+                # classes bands are present in the input classification
+                if "classes" in cfg["pipeline"]["optimization"]["geometric_prior"]:
+                    self.check_band_pipeline(
+                        cfg["input"]["left_classif"],
+                        cfg["pipeline"]["optimization"]["optimization_method"],
+                        cfg["pipeline"]["optimization"]["geometric_prior"]["classes"],
+                    )
+                    # If right disparity is to be computed, check that the classes bands are present
+                    # in the input right classification
+                    if self.right_disp_map == "accurate":
+                        self.check_band_pipeline(
+                            cfg["input"]["right_classif"],
+                            cfg["pipeline"]["optimization"]["optimization_method"],
+                            cfg["pipeline"]["optimization"]["geometric_prior"]["classes"],
+                        )
 
     def validation_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -799,18 +902,27 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :return: None
         """
 
-        validation_ = validation.AbstractValidation(**cfg[input_step])  # type: ignore
+        validation_ = validation.AbstractValidation(**cfg["pipeline"][input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = validation_.cfg
         if "interpolated_disparity" in validation_.cfg:
             interpolate_ = validation.AbstractInterpolation(  # type:ignore # pylint:disable=unused-variable
-                **cfg[input_step]
+                **cfg["pipeline"][input_step]
             )
 
         if validation_.cfg["validation_method"] == "cross_checking" and self.right_disp_map != "accurate":
             raise MachineError(
-                "Can t trigger event cross-checking validation  if right_disp_map method equal to "
-                + self.right_disp_map
+                "Can t trigger event cross-checking validation if right_disp_map method equal to " + self.right_disp_map
             )
+
+        # If left disparities are grids of disparity and the right disparities are none, the cross-checking
+        # method cannot be used
+        if isinstance(cfg["input"]["disp_min"], str) and "validation" in cfg["pipeline"]:
+            if not "disp_min_right" in cfg["input"]:
+                logging.error(
+                    "The cross-checking step cannot be processed if disp_min, disp_max are paths to the left "
+                    "disparity grids and disp_right_min, disp_right_max are none."
+                )
+                sys.exit(1)
 
     def multiscale_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -822,8 +934,24 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return:
         """
-        multiscale_ = multiscale.AbstractMultiscale(**cfg[input_step])  # type: ignore
+        multiscale_ = multiscale.AbstractMultiscale(**cfg["pipeline"][input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = multiscale_.cfg
+
+        # If multiscale step is present, input disparities cannot be grids
+        disp_min_right = None
+        if "disp_min_right" in cfg["input"]:
+            disp_min_right = cfg["input"]
+        disp_max_right = None
+        if "disp_max_right" in cfg["input"]:
+            disp_max_right = cfg["input"]
+        if (
+            isinstance(cfg["input"]["disp_min"], str)
+            or isinstance(disp_min_right, str)
+            or (isinstance(cfg["input"]["disp_max"], str))
+            or isinstance(disp_max_right, str)
+        ) and ("multiscale" in cfg["pipeline"]):
+            logging.error("Multiscale processing does not accept input disparity grids.")
+            sys.exit(1)
 
     def cost_volume_confidence_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -835,7 +963,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg[input_step])  # type: ignore
+        confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg["pipeline"][input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = confidence_.cfg
 
     def check_conf(self, cfg: Dict[str, dict]) -> None:
@@ -852,7 +980,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         # Warning: first element of cfg dictionary is not a transition. It contains information about the way to
         # compute right disparity map.
-        for input_step in list(cfg)[1:]:
+        for input_step in list(cfg["pipeline"])[1:]:
             try:
                 # There may be steps that are repeated several times, for example:
                 #     'filter': {
@@ -913,3 +1041,35 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         if self.current_scale == 0:
             return False
         return True
+
+    @staticmethod
+    def check_band_pipeline(img: str, step: str, bands: Union[None, str, List[str], Dict]) -> None:
+        """
+        Check coherence band parameter between pipeline step and image dataset
+
+        :param img: path to the image
+        :type img: str
+        :param step: pipeline step
+        :type step: str
+        :param bands: band names
+        :type bands: None, str, List[str] or Dict
+        :return: None
+        """
+        # open images
+        img_ds = rasterio_open(img)
+        # If no bands are given, then the input image shall be monoband
+        if not bands:
+            if img_ds.count != 1:
+                logging.error("Missing band instantiate on %s step : input image is multiband", step)
+                sys.exit(1)
+        # check that the image have the band names
+        elif isinstance(bands, dict):
+            for _, band in bands.items():
+                if not band in list(img_ds.descriptions):
+                    logging.error("Wrong band instantiate on %s step: %s not in input image", step, band)
+                    sys.exit(1)
+        else:
+            for band in bands:
+                if not band in list(img_ds.descriptions):
+                    logging.error("Wrong band instantiate %s step: %s not in input image", step, band)
+                    sys.exit(1)

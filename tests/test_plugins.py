@@ -25,12 +25,12 @@ This module contains functions to test the error message of Pandora
  when a plugin step is present on the pipeline, but the plugin has not
  been installed.
 """
-
-
+import copy
 import unittest
 
 import numpy as np
 
+from tests import common
 import pandora
 from pandora.img_tools import read_img, rasterio_open
 from pandora.state_machine import PandoraMachine
@@ -67,7 +67,7 @@ class TestPandora(unittest.TestCase):
             "filter": {"filter_method": "median", "filter_size": 3},
             "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1.0},
         }
-        user_cfg = {"pipeline": pipeline_cfg}
+        user_cfg = {"input": copy.deepcopy(common.input_cfg_basic), "pipeline": pipeline_cfg}
 
         pandora_machine = PandoraMachine()
         # Update the user configuration with default values
@@ -75,7 +75,7 @@ class TestPandora(unittest.TestCase):
 
         # Run the pandora pipeline
         with self.assertRaises(KeyError) as error:
-            pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg["pipeline"])
+            pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
         self.assertEqual(str(error.exception), "'No semantic segmentation method named ARNN supported'")
 
     def test_run_with_sgm_optimization(self):
@@ -96,7 +96,7 @@ class TestPandora(unittest.TestCase):
             "filter": {"filter_method": "median", "filter_size": 3},
             "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1.0},
         }
-        user_cfg = {"pipeline": pipeline_cfg}
+        user_cfg = {"input": copy.deepcopy(common.input_cfg_basic), "pipeline": pipeline_cfg}
 
         pandora_machine = PandoraMachine()
 
@@ -105,7 +105,7 @@ class TestPandora(unittest.TestCase):
 
         # Run the pandora pipeline
         with self.assertRaises(KeyError) as error:
-            pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg["pipeline"])
+            pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
         self.assertEqual(str(error.exception), "'No optimization method named sgm supported'")
 
     def test_run_with_mc_cnn_matching_cost(self):
@@ -122,7 +122,7 @@ class TestPandora(unittest.TestCase):
             "filter": {"filter_method": "median", "filter_size": 3},
             "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1.0},
         }
-        user_cfg = {"pipeline": pipeline_cfg}
+        user_cfg = {"input": copy.deepcopy(common.input_cfg_basic), "pipeline": pipeline_cfg}
         pandora_machine = PandoraMachine()
 
         # Update the user configuration with default values
@@ -130,5 +130,5 @@ class TestPandora(unittest.TestCase):
 
         # Run the pandora pipeline
         with self.assertRaises(KeyError) as error:
-            pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg["pipeline"])
+            pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
         self.assertEqual(str(error.exception), "'No matching cost method named mc_cnn supported'")
