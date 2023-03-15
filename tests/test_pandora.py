@@ -92,7 +92,7 @@ class TestPandora(unittest.TestCase):
 
         """
         user_cfg = {
-            "input": copy.deepcopy(common.basic_pipeline_cfg),
+            "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
         }
         pandora_machine = PandoraMachine()
@@ -123,7 +123,7 @@ class TestPandora(unittest.TestCase):
 
         """
         user_cfg = {
-            "input": copy.deepcopy(common.basic_pipeline_cfg),
+            "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
         }
         pandora_machine = PandoraMachine()
@@ -153,7 +153,7 @@ class TestPandora(unittest.TestCase):
 
         """
         user_cfg = {
-            "input": copy.deepcopy(common.basic_pipeline_cfg),
+            "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": copy.deepcopy(common.multiscale_pipeline_cfg),
         }
         user_cfg["pipeline"]["right_disp_map"]["method"] = "accurate"
@@ -187,7 +187,7 @@ class TestPandora(unittest.TestCase):
 
         """
         user_cfg = {
-            "input": copy.deepcopy(common.basic_pipeline_cfg),
+            "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": copy.deepcopy(common.multiscale_pipeline_cfg),
         }
         user_cfg["pipeline"]["multiscale"]["num_scales"] = 3
@@ -221,7 +221,7 @@ class TestPandora(unittest.TestCase):
 
         """
         user_cfg = {
-            "input": copy.deepcopy(common.basic_pipeline_cfg),
+            "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": {
                 "right_disp_map": {"method": "none"},
                 "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2},
@@ -311,7 +311,7 @@ class TestPandora(unittest.TestCase):
 
         # Load a configuration
         user_cfg = {
-            "input": copy.deepcopy(common.basic_pipeline_cfg),
+            "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
         }
         user_cfg["input"]["disp_min"] = -2
@@ -447,7 +447,7 @@ class TestPandora(unittest.TestCase):
         """
 
         user_cfg = {
-            "input": copy.deepcopy(common.basic_pipeline_cfg),
+            "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
         }
         user_cfg["pipeline"]["matching_cost"]["matching_cost_method"] = "census"

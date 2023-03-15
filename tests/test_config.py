@@ -627,7 +627,7 @@ class TestConfig(unittest.TestCase):
         Test the method check_input_section that must raise an error from PandoraMachine
         """
 
-        cfg_pipeline = {
+        cfg = {
             "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": {
                 "right_disp_map": {"method": "accurate"},
@@ -640,7 +640,7 @@ class TestConfig(unittest.TestCase):
 
         pandora_machine = PandoraMachine()
 
-        self.assertRaises(MachineError, JSON_checker.check_pipeline_section, cfg_pipeline, pandora_machine)
+        self.assertRaises(MachineError, JSON_checker.check_pipeline_section, cfg, pandora_machine)
 
     @staticmethod
     def test_memory_consumption_estimation():
