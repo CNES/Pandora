@@ -38,3 +38,25 @@ How do I add the band's names as metadata on a multiband image ?
             # Band indexing starts at 1
             source_ds.write_band(band+1, data_array[band, :, :])
             source_ds.set_band_description(band+1, descriptions[band])
+
+.. code-block::
+
+    gdalinfo left_rgb.tif
+
+    Driver: GTiff/GeoTIFF
+    Files: left_rgb.tif
+    Size is 450, 375
+    Image Structure Metadata:
+      INTERLEAVE=PIXEL
+    Corner Coordinates:
+    Upper Left  (    0.0,    0.0)
+    Lower Left  (    0.0,  375.0)
+    Upper Right (  450.0,    0.0)
+    Lower Right (  450.0,  375.0)
+    Center      (  225.0,  187.5)
+    Band 1 Block=450x1 Type=Float32, ColorInterp=Red
+      Description = r
+    Band 2 Block=450x1 Type=Float32, ColorInterp=Green
+      Description = g
+    Band 3 Block=450x1 Type=Float32, ColorInterp=Blue
+      Description = b

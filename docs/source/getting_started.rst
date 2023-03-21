@@ -4,7 +4,7 @@ Getting started
 Overview
 ########
 
-From stereo rectified images to disparity map
+Pandora computes a disparity map from stereo rectified images
 
 .. figure:: Images/doc_sources_Images_schema_readme.png
     :align: center
@@ -57,7 +57,7 @@ You will learn:
  * which stereo matching steps you can use and combine
  * how to quickly set up a Pandora pipeline
  * how to add your own private algorithms to customize your Pandora Framework
- * how to use Pandora API (see `CARS <https://github.com/CNES/CARS>`_ for real life exemple)
+ * how to use Pandora API (see `CARS <https://github.com/CNES/CARS>`_ for real life example)
 
 Credits
 #######
@@ -68,8 +68,8 @@ to handle 3D Cost Volumes with few `numba <https://github.com/numba/numba>`_ opt
 
 Our data test sample is based on the 2003 Middleburry dataset [Scharstein2003]_.
 
-.. [Scharstein2002] D. Scharstein & R. Szeliski, 2002). Scharstein, D., & Szeliski, R. (2002). A taxonomy and evaluation of dense two-frame stereo correspondence algorithms. International journal of computer vision, 47(1-3), 7-42.
-.. [Scharstein2003] D. Scharstein & R. Szeliski, 2003). Scharstein, D., & Szeliski, R. (2003, June). High-accuracy stereo depth maps using structured light. In 2003 IEEE Computer Society Conference on Computer Vision and Pattern Recognition, 2003. Proceedings. (Vol. 1, pp. I-I). IEEE.
+.. [Scharstein2002] Scharstein D. & Szeliski R., 2002). Scharstein, D., & Szeliski, R. (2002). A taxonomy and evaluation of dense two-frame stereo correspondence algorithms. International journal of computer vision, 47(1-3), 7-42.
+.. [Scharstein2003] Scharstein D. & Szeliski R., 2003). Scharstein, D., & Szeliski, R. (2003, June). High-accuracy stereo depth maps using structured light. In 2003 IEEE Computer Society Conference on Computer Vision and Pattern Recognition, 2003. Proceedings. (Vol. 1, pp. I-I). IEEE.
 
 Related
 #######
