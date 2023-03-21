@@ -59,7 +59,7 @@ The following diagram explains the concept:
 
     .. image:: ../../Images/piecewise_optimization_segments.png
 
-.. [Hirschmuller2008] H. Hirschmuller, "Stereo Processing by Semiglobal Matching and Mutual Information," in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 30, no. 2, pp. 328-341, Feb. 2008. doi: 10.1109/TPAMI.2007.1166
+.. [Hirschmuller2008] Hirschmuller, H. "Stereo Processing by Semiglobal Matching and Mutual Information," in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 30, no. 2, pp. 328-341, Feb. 2008. doi: 10.1109/TPAMI.2007.1166
 .. [Banz2012] Banz, C. & Pirsch, P. & Blume, Holger. (2012). EVALUATION OF PENALTY FUNCTIONS FOR SEMI-GLOBAL MATCHING COST AGGREGATION. ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences. XXXIX-B3. 1-6. 10.5194/isprsarchives-XXXIX-B3-1-2012.
 .. [Zbontar2016] Zbontar, Jure and Yann LeCun. “Stereo Matching by Training a Convolutional Neural Network to Compare Image Patches.” ArXiv abs/1510.05970 (2016): n. pag.
 .. [Dumas2022] Dumas, L., Defonte, V., Steux, Y., and Sarrazin, E.: IMPROVING PAIRWISE DSM WITH 3SGM: A SEMANTIC SEGMENTATION FOR SGM USING AN AUTOMATICALLY REFINED NEURAL NETWORK, ISPRS Ann. Photogramm. Remote Sens. Spatial Inf. Sci., V-2-2022, 167–175, https://doi.org/10.5194/isprs-annals-V-2-2022-167-2022, 2022.
@@ -186,5 +186,5 @@ The plugin receives this cost volume and uses the libsgm to optimize it. Then, t
 to Pandora.
 
 Moreover, if *cost_min_path* option is activated, the cost volume is enriched with a new confidence_measure called
-*optimization_pluginlibSGM_nbOfDisp*. This 2-dimension map represents the number of sgm paths that give the same
+*optimization_plugin_libsgm_nb_of_directions*. This 2-dimension map represents the number of sgm paths that give the same
 position for minimal optimized cost at each point.
