@@ -31,7 +31,18 @@ import xarray as xr
 
 def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.Dataset:
     """
-    Calculates the margins for the left and right images according to the configuration
+    Calculates the margins for the left and right images according to the
+    steps present on the pipeline.
+
+    - The margins are initialized at [+-disp_max, 0, -+disp_min, 0] for
+      right and left images.
+    - For matching_cost computation, a margin of half the window size is considered.
+    - For vfit refinement, a margin of 1 pixel size is considered at positions 0 and 2.
+    - For median filter, a margin of half the filter size is considered.
+    - For SGM or 3SGM optimization, since infinite margins are theoretically
+      required, a relatively high value (40 pixels) is considered.
+    - The maximum margin obtained between (matching_cost + vfit
+      refinement + median filter) and SGM/3SGM will be considered.
 
     :param disp_min: minimal disparity
     :type disp_min: int
@@ -51,43 +62,48 @@ def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.Datase
 
     # Margins for the left image and for the right image
 
+    r_marg = np.array([disp_max, 0, -disp_min, 0])
+    s_marg = np.array([-disp_min, 0, +disp_max, 0])
+
+    if cfg["matching_cost"]["window_size"] != 1:
+        r_marg += int(cfg["matching_cost"]["window_size"] / 2)
+        s_marg += int(cfg["matching_cost"]["window_size"] / 2)
+
+    if "refinement" in cfg:
+        if cfg["refinement"]["refinement_method"] == "vfit":
+            r_marg[0] += 1
+            r_marg[2] += 1
+            s_marg[0] += 1
+            s_marg[2] += 1
+
+    if "filter" in cfg:
+        if cfg["filter"]["filter_method"] == "median":
+            r_marg += int(cfg["filter"]["filter_size"] / 2)
+            s_marg += int(cfg["filter"]["filter_size"] / 2)
+
     # Pandora margins depends on the steps configured
     if "optimization" in cfg:
         if cfg["optimization"]["optimization_method"] in ["sgm", "3sgm"]:
-            # SGM margin includes the census, vfit and median filter margins
+            # Since SGM theoretically requires infinite margins, they are fixed to a
+            # relatively high value
             sgm_margins = 40
-            r_marg = [
+            r_marg_optim = [
                 sgm_margins + disp_max,
                 sgm_margins,
                 sgm_margins - disp_min,
                 sgm_margins,
             ]
-            s_marg = [
+            s_marg_optim = [
                 sgm_margins - disp_min,
                 sgm_margins,
                 sgm_margins + disp_max,
                 sgm_margins,
             ]
-
-    else:
-        r_marg = np.array([disp_max, 0, -disp_min, 0])  # type:ignore
-        s_marg = np.array([-disp_min, 0, +disp_max, 0])  # type:ignore
-
-        if cfg["matching_cost"]["window_size"] != 1:
-            r_marg += int(cfg["matching_cost"]["window_size"] / 2)  # type:ignore
-            s_marg += int(cfg["matching_cost"]["window_size"] / 2)  # type:ignore
-
-        if "refinement" in cfg:
-            if cfg["refinement"]["refinement_method"] == "vfit":
-                r_marg[0] += 1
-                r_marg[2] += 1
-                s_marg[0] += 1
-                s_marg[2] += 1
-
-        if "filter" in cfg:
-            if cfg["filter"]["filter_method"] == "median":
-                r_marg += int(cfg["filter"]["filter_size"] / 2)  # type:ignore
-                s_marg += int(cfg["filter"]["filter_size"] / 2)  # type:ignore
+            # Select the maximum margin between optimization and the rest
+            # of Pandora's pipeline steps
+            for idx, _ in enumerate(s_marg):
+                r_marg[idx] = np.max([r_marg[idx], r_marg_optim[idx]])
+                s_marg[idx] = np.max([s_marg[idx], s_marg_optim[idx]])
 
     # Same margin for left and right: take the larger
     same_margin = list(map(lambda input: max(input[0], input[1]), zip(r_marg, s_marg)))

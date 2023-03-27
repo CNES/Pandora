@@ -1,4 +1,5 @@
 # pylint:disable=too-many-arguments
+# pylint: disable=too-many-public-methods
 # !/usr/bin/env python
 # coding: utf8
 #
@@ -49,6 +50,7 @@ from pandora import multiscale
 from pandora import optimization
 from pandora import refinement
 from pandora import matching_cost
+from pandora import semantic_segmentation
 
 # This silences numba's TBB threading layer warning
 with warnings.catch_warnings():
@@ -78,6 +80,12 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             "source": "cost_volume",
             "dest": "cost_volume",
             "after": "aggregation_run",
+        },
+        {
+            "trigger": "semantic_segmentation",
+            "source": "cost_volume",
+            "dest": "cost_volume",
+            "after": "semantic_segmentation_run",
         },
         {
             "trigger": "optimization",
@@ -139,6 +147,12 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             "source": "cost_volume",
             "dest": "cost_volume",
             "after": "aggregation_check_conf",
+        },
+        {
+            "trigger": "check_semantic_segmentation",
+            "source": "cost_volume",
+            "dest": "cost_volume",
+            "after": "semantic_segmentation_check_conf",
         },
         {
             "trigger": "check_optimization",
@@ -309,26 +323,16 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         dmin_min, dmax_max = matching_cost_.dmin_dmax(self.disp_min, self.disp_max)
 
         # Compute cost volume and mask it
-        if self.right_disp_map != "accurate":
-            self.left_cv = matching_cost_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max)
-            matching_cost_.cv_masked(
-                self.left_img,
-                self.right_img,
-                self.left_cv,
-                self.disp_min,
-                self.disp_max,
-            )
+        self.left_cv = matching_cost_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max)
+        matching_cost_.cv_masked(
+            self.left_img,
+            self.right_img,
+            self.left_cv,
+            self.disp_min,
+            self.disp_max,
+        )
 
-        else:
-            self.left_cv = matching_cost_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max)
-            matching_cost_.cv_masked(
-                self.left_img,
-                self.right_img,
-                self.left_cv,
-                self.disp_min,
-                self.disp_max,
-            )
-
+        if self.right_disp_map == "accurate":
             # Update min and max disparity according to the current scale
             self.right_disp_min = self.right_disp_min * self.scale_factor
             self.right_disp_max = self.right_disp_max * self.scale_factor
@@ -356,11 +360,27 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :return: None
         """
         aggregation_ = aggregation.AbstractAggregation(**cfg[input_step])  # type: ignore
-        if self.right_disp_map != "accurate":
-            aggregation_.cost_volume_aggregation(self.left_img, self.right_img, self.left_cv)
-        else:
-            aggregation_.cost_volume_aggregation(self.left_img, self.right_img, self.left_cv)
+        aggregation_.cost_volume_aggregation(self.left_img, self.right_img, self.left_cv)
+        if self.right_disp_map == "accurate":
             aggregation_.cost_volume_aggregation(self.right_img, self.left_img, self.right_cv)
+
+    def semantic_segmentation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
+        """
+        Building semantic segmentation computation
+        :param cfg: pipeline configuration
+        :type  cfg: dict
+        :param input_step: step to trigger
+        :type input_step: str
+        :return: None
+        """
+        semantic_segmentation_ = semantic_segmentation.AbstractSemanticSegmentation(**cfg[input_step])  # type: ignore
+        self.left_img = semantic_segmentation_.compute_semantic_segmentation(
+            self.left_cv, self.left_img, self.right_img
+        )
+        if self.right_disp_map == "accurate":
+            self.right_img = semantic_segmentation_.compute_semantic_segmentation(
+                self.right_cv, self.right_img, self.left_img
+            )
 
     def optimization_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -373,10 +393,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         optimization_ = optimization.AbstractOptimization(**cfg[input_step])  # type: ignore
         logging.info("Cost optimization...")
-        if self.right_disp_map != "accurate":
-            self.left_cv = optimization_.optimize_cv(self.left_cv, self.left_img, self.right_img)
-        else:
-            self.left_cv = optimization_.optimize_cv(self.left_cv, self.left_img, self.right_img)
+
+        self.left_cv = optimization_.optimize_cv(self.left_cv, self.left_img, self.right_img)
+        if self.right_disp_map == "accurate":
             self.right_cv = optimization_.optimize_cv(self.right_cv, self.right_img, self.left_img)
 
     def disparity_run(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -390,12 +409,10 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         logging.info("Disparity computation...")
         disparity_ = disparity.AbstractDisparity(**cfg[input_step])  # type: ignore
-        if self.right_disp_map != "accurate":
-            self.left_disparity = disparity_.to_disp(self.left_cv, self.left_img, self.right_img)
-            disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img, self.left_cv)
-        elif self.right_disp_map == "accurate":
-            self.left_disparity = disparity_.to_disp(self.left_cv, self.left_img, self.right_img)
-            disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img, self.left_cv)
+
+        self.left_disparity = disparity_.to_disp(self.left_cv, self.left_img, self.right_img)
+        disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img, self.left_cv)
+        if self.right_disp_map == "accurate":
             self.right_disparity = disparity_.to_disp(self.right_cv, self.right_img, self.left_img)
             disparity_.validity_mask(self.right_disparity, self.right_img, self.left_img, self.right_cv)
 
@@ -410,10 +427,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         logging.info("Disparity filtering...")
         filter_ = filter.AbstractFilter(**cfg[input_step])  # type: ignore
-        if self.right_disp_map != "accurate":
-            filter_.filter_disparity(self.left_disparity)
-        else:
-            filter_.filter_disparity(self.left_disparity)
+        filter_.filter_disparity(self.left_disparity)
+        if self.right_disp_map == "accurate":
             filter_.filter_disparity(self.right_disparity)
 
     def refinement_run(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -427,10 +442,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         refinement_ = refinement.AbstractRefinement(**cfg[input_step])  # type: ignore
         logging.info("Subpixel refinement...")
-        if self.right_disp_map != "accurate":
-            refinement_.subpixel_refinement(self.left_cv, self.left_disparity)
-        else:
-            refinement_.subpixel_refinement(self.left_cv, self.left_disparity)
+
+        refinement_.subpixel_refinement(self.left_cv, self.left_disparity)
+        if self.right_disp_map == "accurate":
             refinement_.subpixel_refinement(self.right_cv, self.right_disparity)
 
     def validation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -446,11 +460,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         logging.info("Validation...")
 
-        if self.right_disp_map != "accurate":
-            self.left_disparity = validation_.disparity_checking(self.left_disparity, self.right_disparity)
-
-        else:
-            self.left_disparity = validation_.disparity_checking(self.left_disparity, self.right_disparity)
+        self.left_disparity = validation_.disparity_checking(self.left_disparity, self.right_disparity)
+        if self.right_disp_map == "accurate":
             self.right_disparity = validation_.disparity_checking(self.right_disparity, self.left_disparity)
             # Interpolated mismatch and occlusions
             if "interpolated_disparity" in cfg[input_step]:
@@ -477,20 +488,13 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         self.dmax_user = self.dmax_user * self.scale_factor
 
         # Compute disparity range for the next scale level
-        if self.right_disp_map != "accurate":
-            self.disp_min, self.disp_max = multiscale_.disparity_range(
-                self.left_disparity, int(self.dmin_user), int(self.dmax_user)
-            )
-            # Set to None the disparity map for the next scale
-            self.left_disparity = None
+        self.disp_min, self.disp_max = multiscale_.disparity_range(
+            self.left_disparity, int(self.dmin_user), int(self.dmax_user)
+        )
+        # Set to None the disparity map for the next scale
+        self.left_disparity = None
 
-        else:
-            self.disp_min, self.disp_max = multiscale_.disparity_range(
-                self.left_disparity, int(self.dmin_user), int(self.dmax_user)
-            )
-            # Set to None the disparity map for the next scale
-            self.left_disparity = None
-
+        if self.right_disp_map == "accurate":
             # Update min and max user disparity according to the current scale
             self.dmin_user_right = self.dmin_user_right * self.scale_factor
             self.dmax_user_right = self.dmax_user_right * self.scale_factor
@@ -524,14 +528,10 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         logging.info("Confidence prediction...")
 
-        if self.right_disp_map == "none":
-            self.left_disparity, self.left_cv = confidence_.confidence_prediction(
-                self.left_disparity, self.left_img, self.right_img, self.left_cv
-            )
-        else:
-            self.left_disparity, self.left_cv = confidence_.confidence_prediction(
-                self.left_disparity, self.left_img, self.right_img, self.left_cv
-            )
+        self.left_disparity, self.left_cv = confidence_.confidence_prediction(
+            self.left_disparity, self.left_img, self.right_img, self.left_cv
+        )
+        if self.right_disp_map == "accurate":
             self.right_disparity, self.right_cv = confidence_.confidence_prediction(
                 self.right_disparity, self.right_img, self.left_img, self.right_cv
             )
@@ -761,6 +761,19 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         aggregation_ = aggregation.AbstractAggregation(**cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = aggregation_.cfg
+
+    def semantic_segmentation_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
+        """
+        Check the semantic_segmentation configuration
+
+        :param cfg: configuration
+        :type cfg: dict
+        :param input_step: current step
+        :type input_step: string
+        :return: None
+        """
+        semantic_segmentation_ = semantic_segmentation.AbstractSemanticSegmentation(**cfg[input_step])  # type: ignore
+        self.pipeline_cfg["pipeline"][input_step] = semantic_segmentation_.cfg
 
     def optimization_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """

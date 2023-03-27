@@ -23,8 +23,6 @@
 This module contains classes and functions to estimate confidence.
 """
 
-import logging
-import sys
 from abc import ABCMeta, abstractmethod
 from typing import Tuple
 
@@ -55,12 +53,8 @@ class AbstractCostVolumeConfidence:
                     return super(AbstractCostVolumeConfidence, cls).__new__(
                         cls.confidence_methods_avail[cfg["confidence_method"]]
                     )
-                except KeyError:
-                    logging.error(
-                        "No confidence method named % supported",
-                        cfg["confidence_method"],
-                    )
-                    sys.exit(1)
+                except:
+                    raise KeyError("No confidence method named {} supported".format(cfg["confidence_method"]))
         else:
             return super(AbstractCostVolumeConfidence, cls).__new__(cls)
         return None

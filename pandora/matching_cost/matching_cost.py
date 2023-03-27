@@ -68,12 +68,8 @@ class AbstractMatchingCost:
                     return super(AbstractMatchingCost, cls).__new__(
                         cls.matching_cost_methods_avail[cfg["matching_cost_method"]]
                     )
-                except KeyError:
-                    logging.error(
-                        "No matching_cost method named % supported",
-                        cfg["matching_cost_method"],
-                    )
-                    raise KeyError
+                except:
+                    raise KeyError("No matching cost method named {} supported".format(cfg["matching_cost_method"]))
             else:
                 if isinstance(cfg["matching_cost_method"], unicode):  # type:ignore # pylint:disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
@@ -81,12 +77,8 @@ class AbstractMatchingCost:
                         return super(AbstractMatchingCost, cls).__new__(
                             cls.matching_cost_methods_avail[cfg["matching_cost_method"].encode("utf-8")]
                         )
-                    except KeyError:
-                        logging.error(
-                            "No matching_cost method named % supported",
-                            cfg["matching_cost_method"],
-                        )
-                        raise KeyError
+                    except:
+                        raise KeyError("No matching cost method named {} supported".format(cfg["matching_cost_method"]))
         else:
             return super(AbstractMatchingCost, cls).__new__(cls)
         return None

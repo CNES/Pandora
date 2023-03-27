@@ -6,42 +6,6 @@ Outputs
 Pandora will store several data in the output folder, the tree structure is defined in the file
 pandora/output_tree_design.py.
 
-Memory consumption estimation
-*****************************
-
-Pandora can give an estimation of the memory consumption of a given pipeline without running it.
-
-The memory consumption estimation is obtained given the following graph, which shows the memory consumption of the
-10 most consuming or used Pandora's functions in respect of the size of the cost volume in MiB, defined as :
-:math:`nbpix_x * nbpix_y * nbdisps`
-
-.. image:: ../Images/memory_consumption.png
-
-Being the functions :
-
-1. Mc_cnn.run_mc_cnn_fast/accurate
-
-2. Plugin_libsgm.optimize_cv
-
-3. Aggregation.cost_volume_aggregation cbca
-
-4. Matching_cost.compute_cost_volume sd/sad
-
-5. Disparity.mask_invalid_variable_disparity_range/to_disp
-
-6. Cost_volume_confidence.confidence_prediction ambiguity/std_intensity
-
-7. Validation.Interpolated_disparity sgm
-
-8. Matching_cost.compute_cost_volume census
-
-9. Filter.bilateral_kernel
-
-10. Matching_cost.compute_cost_volume zncc
-
-The equation of each function's consumption has been obtained and since the maximum memory consumption of a pipeline is defined by its most consuming function, Pandora just needs to find
-the first function in the list that is present in the pipeline to estimate the pipeline's memory consumption.
-
 Saved images
 ************
 
@@ -55,7 +19,7 @@ Saved images
     - Standard deviation of pixel intensity inside matching cost window. see :ref:`cost_volume_confidence`. This band is named *confidence_from_intensity_std*.
     - Ambiguity measurement, see :ref:`cost_volume_confidence`. This band is named *confidence_from_ambiguity*.
     - Mininum and maximum risk measurement, see :ref:`cost_volume_confidence`. Those bands are named *confidence_from_risk_min* and *confidence_from_risk_max*.
-    - Number of SGM paths that give the same final disparity if SGM and its option activated, see :ref:`plugin_libsgm`. This band is named *optimization_pluginlibSGM_nbOfDisp*.
+    - Number of SGM paths that give the same final disparity if SGM and its option activated, see :ref:`plugin_libsgm`. This band is named *optimization_plugin_libsgm_nb_of_directions*.
     - Left-right distance following cross checking method, see :ref:`validation`. This band is named *confidence_from_left_right_consistency*.
 
 .. note::
@@ -150,3 +114,39 @@ represents a rejection / information criterion (= 1 if rejection / information, 
  +---------+------------------+--------------------------------------------------------------------------------------------------+
  |    9    | 0000001000000000 | The point is invalid: mismatch                                                                   |
  +---------+------------------+--------------------------------------------------------------------------------------------------+
+
+Memory consumption estimation
+*****************************
+
+Pandora can give an estimation of the memory consumption of a given pipeline without running it.
+
+The memory consumption estimation is obtained given the following graph, which shows the memory consumption of the
+10 most consuming or used Pandora's functions in respect of the size of the cost volume in MiB, defined as :
+:math:`nbpix_x * nbpix_y * nbdisps`
+
+.. image:: ../Images/memory_consumption.png
+
+Being the functions :
+
+1. Mc_cnn.run_mc_cnn_fast/accurate
+
+2. Plugin_libsgm.optimize_cv
+
+3. Aggregation.cost_volume_aggregation cbca
+
+4. Matching_cost.compute_cost_volume sd/sad
+
+5. Disparity.mask_invalid_variable_disparity_range/to_disp
+
+6. Cost_volume_confidence.confidence_prediction ambiguity/std_intensity
+
+7. Validation.Interpolated_disparity sgm
+
+8. Matching_cost.compute_cost_volume census
+
+9. Filter.bilateral_kernel
+
+10. Matching_cost.compute_cost_volume zncc
+
+The equation of each function's consumption has been obtained and since the maximum memory consumption of a pipeline is defined by its most consuming function, Pandora just needs to find
+the first function in the list that is present in the pipeline to estimate the pipeline's memory consumption.

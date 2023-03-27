@@ -33,8 +33,6 @@ import numpy as np
 from tests import common
 import pandora.check_json as JSON_checker
 from pandora.state_machine import PandoraMachine
-from pandora.matching_cost import matching_cost
-from pandora.img_tools import read_img
 
 
 class TestConfig(unittest.TestCase):
@@ -307,6 +305,8 @@ class TestConfig(unittest.TestCase):
         Test the method check_conf for multiband images with errors
         """
 
+        pandora_machine = PandoraMachine()
+
         # config with wrong band parameters
         cfg = {
             "input": copy.deepcopy(common.input_multiband_cfg),
@@ -315,13 +315,22 @@ class TestConfig(unittest.TestCase):
                 "disparity": {"disparity_method": "wta"},
             },
         }
-        left_img = read_img(cfg["input"]["img_left"], no_data=-999)
-        right_img = read_img(cfg["input"]["img_right"], no_data=-999)
-
-        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg["pipeline"]["matching_cost"])
-
+        # Check that the check_conf function raises an error
         with pytest.raises(SystemExit):
-            matching_cost_.check_band_input_mc(left_img, right_img)
+            JSON_checker.check_conf(cfg, pandora_machine)
+        # Check that the check_band_pipeline raises an error (this shall be the source of check_conf's error)
+        with pytest.raises(SystemExit):
+            JSON_checker.check_band_pipeline(
+                cfg["input"]["img_left"],
+                cfg["pipeline"]["matching_cost"]["matching_cost_method"],
+                cfg["pipeline"]["matching_cost"]["band"],
+            )
+        with pytest.raises(SystemExit):
+            JSON_checker.check_band_pipeline(
+                cfg["input"]["img_right"],
+                cfg["pipeline"]["matching_cost"]["matching_cost_method"],
+                cfg["pipeline"]["matching_cost"]["band"],
+            )
 
         # config with missing band parameters
         cfg = {
@@ -331,13 +340,21 @@ class TestConfig(unittest.TestCase):
                 "disparity": {"disparity_method": "wta"},
             },
         }
-        left_img = read_img(cfg["input"]["img_left"], no_data=-999)
-        right_img = read_img(cfg["input"]["img_right"], no_data=-999)
 
-        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg["pipeline"]["matching_cost"])
-
+        # Check that the check_conf function raises an error
         with pytest.raises(SystemExit):
-            matching_cost_.check_band_input_mc(left_img, right_img)
+            JSON_checker.check_conf(cfg, pandora_machine)
+        # Check that the check_band_pipeline raises an error (this shall be the source of check_conf's error)
+        with pytest.raises(SystemExit):
+            # We add the band argument ad None because normally it is completed in the check_conf function,
+            # which then calls check_band_pipeline
+            JSON_checker.check_band_pipeline(
+                cfg["input"]["img_left"], cfg["pipeline"]["matching_cost"]["matching_cost_method"], bands=None
+            )
+        with pytest.raises(SystemExit):
+            JSON_checker.check_band_pipeline(
+                cfg["input"]["img_right"], cfg["pipeline"]["matching_cost"]["matching_cost_method"], bands=None
+            )
 
     @staticmethod
     def test_update_conf():
@@ -697,6 +714,25 @@ class TestConfig(unittest.TestCase):
             pipeline_cfg, input_cfg, pandora_machine, True
         )
         np.testing.assert_allclose((min_mem_consump, max_mem_consump), consumption_vt, rtol=1e-02)
+
+    def test_right_disp_map_none_with_validation(self):
+        """
+        Test that user can't implement validation with right_disp_map set to none
+        """
+
+        cfg_pipeline = {
+            "pipeline": {
+                "right_disp_map": {"method": "none"},
+                "matching_cost": {"matching_cost_method": "census", "window_size": 5, "subpix": 2},
+                "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
+                "filter": {"filter_method": "median"},
+                "validation": {"validation_method": "cross_checking"},
+            }
+        }
+
+        pandora_machine = PandoraMachine()
+
+        self.assertRaises(MachineError, JSON_checker.check_pipeline_section, cfg_pipeline, pandora_machine)
 
 
 if __name__ == "__main__":

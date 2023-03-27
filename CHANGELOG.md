@@ -4,8 +4,17 @@
 
 ### Added 
 
+### Fixed
+
+## 1.4.0 (March 2023)
+
+### Added 
+
 - Check that both segmentations/classifications are present if 3SGM and validation are intended. [#259]
 - Multiband images compatibility. [#251]
+- Add semantic_segmentation pipeline step. [#257]
+- Add a control margin size. [#285]
+- Allows the choice to normalize ambiguity. [#284]
 
 ### Fixed
 

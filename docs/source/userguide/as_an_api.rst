@@ -1,3 +1,5 @@
+.. _as_an_api:
+
 As an API
 =========
 
@@ -78,9 +80,12 @@ Images
 ######
 
 Pandora reads input images before stereo computation and creates two datasets for left and right
-images containing data's image, data's mask and additionnal information.
+images containing data's image, data's mask and additional information.
 
-Example of an image dataset
+Images can be multiband. The band's names must be present on the image metadata.
+To see how to add band's names on the image's metadata, please see :ref:`faq`.
+
+Example of a monoband image dataset
 
 ::
 
@@ -102,6 +107,24 @@ Two data variables are created in this dataset:
 
  * *im*: contains input image data
  * *msk*: contains input mask data + no_data of input image
+
+Example of a multiband image dataset
+
+::
+
+    Dimensions:  (band: 2, row: 5, col: 6)
+    Coordinates:
+      * band     (band) <U1 'r' 'g'
+      * row      (row) int64 0 1 2 3 4
+      * col      (col) int64 0 1 2 3 4 5
+    Data variables:
+        im       (band, row, col) float64 1.0 1.0 1.0 1.0 1.0 ... 1.0 1.0 1.0 1.0
+    Attributes:
+        valid_pixels:  0
+        no_data_mask:  1
+        crs:           None
+        transform:     | 1.00, 0.00, 0.00|\n| 0.00, 1.00, 0.00|\n| 0.00, 0.00, 1.00|
+
 
 .. note::
     This example comes from a dataset created by Pandora's reading function. Dataset attributes
