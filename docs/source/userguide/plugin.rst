@@ -3,7 +3,7 @@ Plugins
 
 
 One of the strengths of Pandora framework is the ability to develop an algorithm and use it as an external plugin.
-This mechanism makes it possible to enrich methods avalaible for each step of Pandora.
+This mechanism makes it possible to enrich methods available for each step of Pandora.
 
 
 The following chapters contains all official plugins of Pandora:
@@ -12,6 +12,7 @@ The following chapters contains all official plugins of Pandora:
 
    plugins/plugin_libsgm.rst
    plugins/plugin_mccnn.rst
+   plugins/plugin_arnn.rst
 
 One can implements it own plugin, see :ref:`develop_plugin`.
 

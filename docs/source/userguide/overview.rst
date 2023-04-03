@@ -4,7 +4,7 @@ Overviews
 Diagram
 *******
 
-The following interactive diagram highlights all stereo steps avalaible in Pandora.
+The following interactive diagram highlights all stereo steps available in Pandora.
 
 .. image:: ../Images/white_box.png
     :align: left
@@ -87,7 +87,7 @@ The following interactive diagram highlights all stereo steps avalaible in Pando
 Configuration file
 ******************
 The configuration file provides a list of parameters to Pandora so that the processing pipeline can
-run according to the parameters choosen by the user.
+run according to the parameters chosen by the user.
 
 Pandora works with JSON formatted data with the following nested structures.
 

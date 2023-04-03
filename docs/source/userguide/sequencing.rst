@@ -14,8 +14,9 @@ Pandora Machine defines 3 possible states:
  - cost_volume
  - disparity_map
 
-and 9 transitions, each one corresponding to a stereo step described in :ref:`step_by_step` chapter:
+and 10 transitions, each one corresponding to a stereo step described in :ref:`step_by_step` chapter:
  - matching_cost (:ref:`matching_cost`)
+ - semantic segmentation (:ref:`semantic_segmentation`)
  - aggregation (:ref:`cost_aggregation`)
  - optimization (:ref:`optimization`)
  - confidence (:ref:`cost_volume_confidence`)
@@ -28,7 +29,7 @@ and 9 transitions, each one corresponding to a stereo step described in :ref:`st
 Pandora machine starts at the begin state. To go from a state to another one, transitions are called and triggered
 by specific name. It corresponds to the name of Pandora steps you can write in configuration file.
 
-The following diagram highligts all states and possible transitions.
+The following diagram highlights all states and possible transitions.
 
     .. figure:: ../Images/Machine_state_diagram.png
 
@@ -61,10 +62,10 @@ If you want to understand in more details how Pandora machine works, please cons
 Examples
 ********
 
-SSD measurment and filtered disparity map
-#########################################
+SSD measurement and filtered disparity map
+###########################################
 
-Configuration to produce a disparity map, computed by SSD method, and filterd by
+Configuration to produce a disparity map, computed by SSD method, and filtered by
 median filter method.
 
 .. sourcecode:: text
@@ -106,8 +107,8 @@ median filter method.
 
 .. _right_map_example:
 
-SSD measurment ,filtered disparity map and compute right map
-############################################################
+SSD measurement ,filtered disparity map and compute right map
+##############################################################
 
 The same configuration as the previous example but right disparity map is also computed.
 
@@ -254,7 +255,7 @@ Same step, multiple times
 Multiscale
 #########################################
 
-Configuration to produce a disparity map, computed by SSD method with mutliscale processing (3 scales)
+Configuration to produce a disparity map, computed by SSD method with multiscale processing (3 scales)
 
 .. sourcecode:: text
 
