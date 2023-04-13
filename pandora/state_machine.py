@@ -809,7 +809,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # If vegetation_band is present in semantic_segmentation, check that the bands are present
         # in the input left classification
         if "vegetation_band" in cfg["pipeline"]["semantic_segmentation"]:
-            if not cfg["input"]["left_classif"]:
+            if not "left_classif" in cfg["input"]:
                 logging.error(
                     "For performing the semantic_segmentation step in the pipeline, left_classif must be present."
                 )
@@ -830,7 +830,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             # If vegetation_band is present in semantic_segmentation, and right disparity is to be computed,
             # check that the bands are present in the input right classification
             if "vegetation_band" in cfg["pipeline"]["semantic_segmentation"]:
-                if not cfg["input"]["right_classif"]:
+                if not "right_classif" in cfg["input"]:
                     logging.error(
                         "For performing cross-checking step with semantic_segmentation in the pipeline,"
                         " right classif must be present.",
@@ -860,14 +860,14 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         if "geometric_prior" in cfg["pipeline"]["optimization"]:
             source = cfg["pipeline"]["optimization"]["geometric_prior"]["source"]
             if source in ["classif", "segm"]:
-                if not cfg["input"]["left_" + source]:
+                if not "left_" + source in cfg["input"]:
                     logging.error(
                         "For performing the 3SGM optimization step in the pipeline, left %s must be present.", source
                     )
                     sys.exit(1)
                 # If right disparity is to be computed and 3SGM optimization is present on the pipeline,
                 # then both left and right segmentations/classifications must be present
-                if self.right_disp_map == "accurate" and not cfg["input"]["right_" + source]:
+                if self.right_disp_map == "accurate" and "right_" + source not in cfg["input"]:
                     logging.error(
                         "For performing cross-checking step with 3SGM optimization in the pipeline,"
                         " right %s must be present.",

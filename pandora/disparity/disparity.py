@@ -571,6 +571,8 @@ class WinnerTakesAll(AbstractDisparity):
         # Give the default value if the required element is not in the configuration
         if "invalid_disparity" not in cfg:
             cfg["invalid_disparity"] = self._INVALID_DISPARITY
+        elif cfg["invalid_disparity"] == "NaN":
+            cfg["invalid_disparity"] = np.nan
 
         schema = {
             "disparity_method": And(str, lambda input: "wta"),
