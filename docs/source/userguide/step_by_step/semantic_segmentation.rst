@@ -6,18 +6,16 @@ Semantic segmentation
 Theoretical basics
 ------------------
 
-The main idea of our proposal is to create a building semantic segmentation from the left epipolar image and use it to optimize the Disparity Space Image (DSI).
-We then propose a slight modification of SGM optimization method to incorporate the semantic segmentation. This methodology is resumed in the following equation.
-We simply stop the optimization of a given path every time this path crosses a building edge
+The main idea of our proposal is to create a semantic segmentation map to improve the quality of the disparity map by using this information in other steps of the pipeline.
+The semantic segmentation produced during this step can be used during the SGM optimization step to improve results. The methodology is resumed in the following equation:
+
 
 :math:`E(D) = \sum_{p}{C(p,Dp)} + \beta(\sum_{q \in Np}{P_{1}T(|D_{p} - D_{q}|=1)} + \sum_{q \in Np}{P_{2}T(|D_{p} - D_{q}|>1)})`
 with :math:`D` the disparity image, :math:`N_{p}` the neighborhood of :math:`p` and :math:`\beta` stops optimization of a given path every time this path crosses a building edge.
 
-OSM labels or Neural network generated labels can be used to define edges.
-
 The method available in Pandora is
 
-- ARNN, made available by :ref:`plugin_arnn`.
+- ARNN for building semantic segmentation, made available by :ref:`plugin_arnn`.
 
 
 Configuration and parameters

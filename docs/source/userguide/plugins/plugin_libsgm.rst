@@ -9,7 +9,10 @@ Theoretical basics
 `Pandora plugin <https://github.com/CNES/Pandora_plugin_libSGM>`_ to optimize the cost volume following SGM algorithm [Hirschmuller2008]_ with the `libSGM library <https://github.com/CNES/Pandora_libSGM>`_ .
 
 As a reminder, SGM equation: :math:`E(D) = \sum_{p}{C(p,Dp)} + \sum_{q \in Np}{P_{1}T(|D_{p} - D_{q}|=1)} + \sum_{q \in Np}{P_{2}T(|D_{p} - D_{q}|>1)}`
-with :math:`D` the disparity image and :math:`N_{p}` the neighborhood of :math:`p`.
+with
+
+
+:math:`D` the disparity image and :math:`N_{p}` the neighborhood of :math:`p`.
 
 One can implement their own penalty estimation methods, corresponding to :math:`P_{1}` and :math:`P_{2}` parameters of SGM equation.
 Some are already available,computed by the plugin_libsgm and divided in two categories:
@@ -212,6 +215,8 @@ There are some parameters depending on penalty_method choice and p2_method choic
             ...
         }
     }
+
+.. warning:: If no semantic segmentation step was computed before 3SGM optimization in the pipeline, internal segmentation will be the default value.
 
 Pandora's data
 **************

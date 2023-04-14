@@ -107,7 +107,7 @@ median filter method.
 
 .. _right_map_example:
 
-SSD measurement ,filtered disparity map and compute right map
+SSD measurement, filtered disparity map and compute right map
 ##############################################################
 
 The same configuration as the previous example but right disparity map is also computed.

@@ -43,9 +43,9 @@ The following interactive diagram highlights all stereo steps available in Pando
     :align: center
     :target: step_by_step/optimization.html
 
-.. image:: ../Images/arrow.png
+.. image:: ../Images/white_box.png
     :align: center
-
+    :width: 30
 
 .. image:: ../Images/main_diagram_step_cost_volume_confidence.png
     :align: center
