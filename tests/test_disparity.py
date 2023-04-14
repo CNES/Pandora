@@ -23,7 +23,7 @@
 """
 This module contains functions to test the disparity module.
 """
-
+import copy
 import unittest
 
 import numpy as np
@@ -310,34 +310,36 @@ class TestDisparity(unittest.TestCase):
         pandora_right = read_img("tests/pandora/right.png", no_data=np.nan, mask=None)
 
         fast_cfg = {
+            "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": {
                 "right_disp_map": {"method": "accurate"},
                 "matching_cost": {"matching_cost_method": "census"},
                 "disparity": {"disparity_method": "wta"},
                 "refinement": {"refinement_method": "vfit"},
                 "validation": {"validation_method": "cross_checking"},
-            }
+            },
         }
 
         pandora_machine_fast = PandoraMachine()
         cfg = pandora.check_json.update_conf(default_cfg, fast_cfg)
         left, right_fast = pandora.run(  # pylint: disable=unused-variable
-            pandora_machine_fast, pandora_left, pandora_right, -60, 0, cfg["pipeline"]
+            pandora_machine_fast, pandora_left, pandora_right, -60, 0, cfg
         )
 
         acc_cfg = {
+            "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": {
                 "right_disp_map": {"method": "accurate"},
                 "matching_cost": {"matching_cost_method": "census"},
                 "disparity": {"disparity_method": "wta"},
                 "refinement": {"refinement_method": "vfit"},
                 "validation": {"validation_method": "cross_checking"},
-            }
+            },
         }
 
         pandora_machine_acc = PandoraMachine()
         cfg = pandora.check_json.update_conf(default_cfg, acc_cfg)
-        left, right_acc = pandora.run(pandora_machine_acc, pandora_left, pandora_right, -60, 0, cfg["pipeline"])
+        left, right_acc = pandora.run(pandora_machine_acc, pandora_left, pandora_right, -60, 0, cfg)
         # Check if the calculated disparity map in fast mode is equal to the disparity map in accurate mode
         np.testing.assert_array_equal(right_fast["disparity_map"].data, right_acc["disparity_map"].data)
 

@@ -45,16 +45,19 @@ The user must have computed ambiguity confidence previously in the pipeline. If 
 
 **Piecewise Optimization**
 
-Method defined by [Dumas2022]_. The user can activate the piecewise optimization by choosing the layer *piecewise_optimization_layer* to use as segments for piecewise optimization.
+Method defined by [Dumas2022]_. The user can activate the piecewise optimization by choosing the layer *geometric_prior* to use as segments for piecewise optimization.
 For each segment, optimization will only be applied inside this segment.
+
+If no *geometric_prior* is specified, the default `internal` mode is used. For now, 3SGM doesn't compute piecewise layer from internal mode.
+Hence, no piecewise optimization will be done (equivalent to performing SGM optimization).
 
 The user can use the `classif` or `segm` layer respectively corresponding to the `left_classif` and `left_segm` (`right_classif` and `right_segm` for right image) specified in the input configuration.
 
-The input segmentation or classification .tif file must be the same format as the input image, with the same dimensions. Moreover, this option requires :
+The input segmentation or classification must be provided as raster image. This .tif file must have the same format as the input image, with the same dimensions. Moreover, this input must meet the following conditions :
   For input segmentation:
     - All pixels inside a segment must have the same value (int or float).
     - The value of a segment must be different to the values of surrounding segments.
-    - The data must be dense: for example if the user wants to perform a piecewise optimization with only one small segment, the data must be composed of two different values.
+    - The data must be dense, which means that all pixels must be filed in: for example if the user wants to perform a piecewise optimization with only one small segment, the data must be composed of two different values for all the image.
   For input classification:
     - The input classification image must have one band per class (with value 1 on the pixels belonging to the class, and 0 for the rest), and the band's names must be present on the image metadata. To see how to add band's names on the classification image's metadata, please
       see :ref:`faq`.

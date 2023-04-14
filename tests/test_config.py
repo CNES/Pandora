@@ -320,13 +320,13 @@ class TestConfig(unittest.TestCase):
             JSON_checker.check_conf(cfg, pandora_machine)
         # Check that the check_band_pipeline raises an error (this shall be the source of check_conf's error)
         with pytest.raises(SystemExit):
-            JSON_checker.check_band_pipeline(
+            pandora_machine.check_band_pipeline(
                 cfg["input"]["img_left"],
                 cfg["pipeline"]["matching_cost"]["matching_cost_method"],
                 cfg["pipeline"]["matching_cost"]["band"],
             )
         with pytest.raises(SystemExit):
-            JSON_checker.check_band_pipeline(
+            pandora_machine.check_band_pipeline(
                 cfg["input"]["img_right"],
                 cfg["pipeline"]["matching_cost"]["matching_cost_method"],
                 cfg["pipeline"]["matching_cost"]["band"],
@@ -340,6 +340,7 @@ class TestConfig(unittest.TestCase):
                 "disparity": {"disparity_method": "wta"},
             },
         }
+        pandora_machine = PandoraMachine()
 
         # Check that the check_conf function raises an error
         with pytest.raises(SystemExit):
@@ -348,11 +349,11 @@ class TestConfig(unittest.TestCase):
         with pytest.raises(SystemExit):
             # We add the band argument ad None because normally it is completed in the check_conf function,
             # which then calls check_band_pipeline
-            JSON_checker.check_band_pipeline(
+            pandora_machine.check_band_pipeline(
                 cfg["input"]["img_left"], cfg["pipeline"]["matching_cost"]["matching_cost_method"], bands=None
             )
         with pytest.raises(SystemExit):
-            JSON_checker.check_band_pipeline(
+            pandora_machine.check_band_pipeline(
                 cfg["input"]["img_right"], cfg["pipeline"]["matching_cost"]["matching_cost_method"], bands=None
             )
 
@@ -626,19 +627,20 @@ class TestConfig(unittest.TestCase):
         Test the method check_input_section that must raise an error from PandoraMachine
         """
 
-        cfg_pipeline = {
+        cfg = {
+            "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": {
                 "right_disp_map": {"method": "accurate"},
                 "matching_cost": {"matching_cost_method": "census", "window_size": 5, "subpix": 2},
                 "filter": {"filter_method": "median"},
                 "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
                 "validation": {"validation_method": "cross_checking"},
-            }
+            },
         }
 
         pandora_machine = PandoraMachine()
 
-        self.assertRaises(MachineError, JSON_checker.check_pipeline_section, cfg_pipeline, pandora_machine)
+        self.assertRaises(MachineError, JSON_checker.check_pipeline_section, cfg, pandora_machine)
 
     @staticmethod
     def test_memory_consumption_estimation():
@@ -697,10 +699,10 @@ class TestConfig(unittest.TestCase):
         disp_min = -60
         disp_max = 0
         pandora_machine = PandoraMachine()
-        pipeline_cfg = {"pipeline": copy.deepcopy(common.basic_pipeline_cfg)}
+        cfg = {"input": copy.deepcopy(common.input_cfg_basic), "pipeline": copy.deepcopy(common.basic_pipeline_cfg)}
 
         # check pipeline before memory_consumption_estimation
-        pipeline_cfg = JSON_checker.check_pipeline_section(pipeline_cfg, pandora_machine)
+        pipeline_cfg = JSON_checker.check_pipeline_section(cfg, pandora_machine)
 
         min_mem_consump, max_mem_consump = JSON_checker.memory_consumption_estimation(
             pipeline_cfg, (img_left_path, disp_min, disp_max), pandora_machine, True
@@ -720,19 +722,19 @@ class TestConfig(unittest.TestCase):
         Test that user can't implement validation with right_disp_map set to none
         """
 
-        cfg_pipeline = {
+        cfg = {
+            "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": {
                 "right_disp_map": {"method": "none"},
                 "matching_cost": {"matching_cost_method": "census", "window_size": 5, "subpix": 2},
                 "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
                 "filter": {"filter_method": "median"},
                 "validation": {"validation_method": "cross_checking"},
-            }
+            },
         }
 
         pandora_machine = PandoraMachine()
-
-        self.assertRaises(MachineError, JSON_checker.check_pipeline_section, cfg_pipeline, pandora_machine)
+        self.assertRaises(MachineError, JSON_checker.check_pipeline_section, cfg, pandora_machine)
 
 
 if __name__ == "__main__":
