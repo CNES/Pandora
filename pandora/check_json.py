@@ -135,38 +135,6 @@ def check_band_names(img: str) -> None:
             sys.exit(1)
 
 
-def check_band_pipeline(img: str, step: str, bands: Union[None, str, List[str], Dict]) -> None:
-    """
-    Check coherence band parameter between pipeline step and image dataset
-
-    :param img: path to the image
-    :type img: str
-    :param step: pipeline step
-    :type step: str
-    :param bands: band names
-    :type bands: None, str, List[str] or Dict
-    :return: None
-    """
-    # open images
-    img_ds = rasterio_open(img)
-    # If no bands are given, then the input image shall be monoband
-    if not bands:
-        if img_ds.count != 1:
-            logging.error("Missing band instantiate on %s step : input image is multiband", step)
-            sys.exit(1)
-    # check that the image have the band names
-    elif isinstance(bands, dict):
-        for _, band in bands.items():
-            if not band in list(img_ds.descriptions):
-                logging.error("Wrong band instantiate on %s step: %s not in input image", step, band)
-                sys.exit(1)
-    else:
-        for band in bands:
-            if not band in list(img_ds.descriptions):
-                logging.error("Wrong band instantiate %s step: %s not in input image", step, band)
-                sys.exit(1)
-
-
 def check_disparities(
     disp_min: Union[int, str, None],
     disp_max: Union[int, str, None],
@@ -220,23 +188,6 @@ def check_disparities(
             sys.exit(1)
 
 
-def get_config_pipeline(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
-    """
-    Get the pipeline configuration
-
-    :param user_cfg: user configuration
-    :type user_cfg: dict
-    :return: cfg: partial configuration
-    :rtype: cfg: dict
-    """
-    cfg = {}
-
-    if "pipeline" in user_cfg:
-        cfg["pipeline"] = user_cfg["pipeline"]
-
-    return cfg
-
-
 def get_config_input(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     """
     Get the input configuration
@@ -282,6 +233,10 @@ def memory_consumption_estimation(
         img_path = user_input["input"]["img_left"]
     else:
         img_path, dmin, dmax = user_input
+        # Since only the size is to be used for the memory computation, the same path is set on left and right
+        input_cfg = {"disp_min": dmin, "disp_max": dmax, "img_left": img_path, "img_right": img_path}
+        user_input = {"input": input_cfg}
+
     # Read input image
     img = rasterio_open(img_path)
     # Obtain cost volume size
@@ -291,7 +246,8 @@ def memory_consumption_estimation(
         pipeline_cfg = user_pipeline_cfg["pipeline"]
     else:
         # First, check if the configuration is valid
-        checked_cfg = check_pipeline_section(user_pipeline_cfg, pandora_machine)
+        cfg = {"pipeline": user_pipeline_cfg["pipeline"], "input": user_input["input"]}
+        checked_cfg = check_pipeline_section(cfg, pandora_machine)
         # Obtain pipeline cfg
         pipeline_cfg = checked_cfg["pipeline"]
 
@@ -330,16 +286,18 @@ def check_pipeline_section(user_cfg: Dict[str, dict], pandora_machine: PandoraMa
     """
     # Check if user configuration pipeline is compatible with transitions/states of pandora machine.
     cfg = update_conf(default_short_configuration_pipeline, user_cfg)
-    pandora_machine.check_conf(cfg["pipeline"])
+    pandora_machine.check_conf(cfg)
 
     cfg = update_conf(cfg, pandora_machine.pipeline_cfg)
 
     configuration_schema = {"pipeline": dict}
 
     checker = Checker(configuration_schema)
-    checker.validate(cfg)
+    # We select only the pipeline section for the checker
+    pipeline_cfg = {"pipeline": cfg["pipeline"]}
+    checker.validate(pipeline_cfg)
 
-    return cfg
+    return pipeline_cfg
 
 
 def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
@@ -416,88 +374,7 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> di
     cfg_input = check_input_section(user_cfg_input)
 
     # check pipeline
-    user_cfg_pipeline = get_config_pipeline(user_cfg)
-    cfg_pipeline = check_pipeline_section(user_cfg_pipeline, pandora_machine)
-
-    # Check band for the matching_cost step
-    check_band_pipeline(
-        cfg_input["input"]["img_left"],
-        cfg_pipeline["pipeline"]["matching_cost"]["matching_cost_method"],
-        cfg_pipeline["pipeline"]["matching_cost"]["band"],
-    )
-    check_band_pipeline(
-        cfg_input["input"]["img_right"],
-        cfg_pipeline["pipeline"]["matching_cost"]["matching_cost_method"],
-        cfg_pipeline["pipeline"]["matching_cost"]["band"],
-    )
-
-    # If validation is present, right disparity map computation must be activated
-    if cfg_pipeline["pipeline"]["right_disp_map"]["method"] != "accurate":
-        right_disp_computation = False
-        if "validation" in cfg_pipeline["pipeline"]:
-            logging.error('For cross-checking, right_disp_map must be set to "accurate"')
-            sys.exit(1)
-    else:
-        right_disp_computation = True
-
-    # If semantic_segmentation is present, check that the RGB band are present in left image
-    if "semantic_segmentation" in cfg_pipeline["pipeline"]:
-        check_band_pipeline(
-            cfg_input["input"]["img_left"],
-            cfg_pipeline["pipeline"]["semantic_segmentation"]["segmentation_method"],
-            cfg_pipeline["pipeline"]["semantic_segmentation"]["RGB_bands"],
-        )
-        # If semantic_segmentation and right_disp_computation is present,
-        # check that the RGB band are present in the right image
-        if right_disp_computation:
-            check_band_pipeline(
-                cfg_input["input"]["img_right"],
-                cfg_pipeline["pipeline"]["semantic_segmentation"]["segmentation_method"],
-                cfg_pipeline["pipeline"]["semantic_segmentation"]["RGB_bands"],
-            )
-
-    # If left disparities are grids of disparity and the right disparities are none, the cross-checking
-    # method cannot be used
-    if (
-        (isinstance(cfg_input["input"]["disp_min"], str))
-        and (cfg_input["input"]["disp_min_right"] is None)
-        and ("validation" in cfg_pipeline["pipeline"])
-    ):
-        logging.error(
-            "The cross-checking step cannot be processed if disp_min, disp_max are paths to the left "
-            "disparity grids and disp_right_min, disp_right_max are none."
-        )
-        sys.exit(1)
-
-    if (
-        isinstance(cfg_input["input"]["disp_min"], str)
-        or isinstance(cfg_input["input"]["disp_min_right"], str)
-        or (isinstance(cfg_input["input"]["disp_max"], str))
-        or isinstance(cfg_input["input"]["disp_max_right"], str)
-    ) and ("multiscale" in cfg_pipeline["pipeline"]):
-        logging.error("Multiscale processing does not accept input disparity grids.")
-        sys.exit(1)
-
-    # If segmentation or classif geometric_prior is needed for the optimization step,
-    # check that it is present on the input config
-    if "optimization" in cfg_pipeline["pipeline"]:
-        if "geometric_prior" in cfg_pipeline["pipeline"]["optimization"]:
-            source = cfg_pipeline["pipeline"]["optimization"]["geometric_prior"]["source"]
-            if source in ["classif", "segm"]:
-                if not cfg_input["input"]["left_" + source]:
-                    logging.error(
-                        "For performing the 3SGM optimization step in the pipeline, left %s must be present.", source
-                    )
-                    sys.exit(1)
-                # If right_disp_computation is to be done and 3SGM optimization is present on the pipeline,
-                # then both left and right segmentations/classifications must be present
-                if right_disp_computation and not cfg_input["input"]["right_" + source]:
-                    logging.error(
-                        "For performing right disparity computation with 3SGM optimization in the pipeline,"
-                        " both left and right %s must be present.",
-                        source,
-                    )
-                    sys.exit(1)
+    cfg_pipeline = check_pipeline_section(user_cfg, pandora_machine)
 
     # concatenate updated config
     cfg = concat_conf([cfg_input, cfg_pipeline])

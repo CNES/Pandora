@@ -356,19 +356,45 @@ class TestImgTools(unittest.TestCase):
         default_cfg = pandora.check_json.default_short_configuration
 
         # Computes the dataset image
+        # The classes present in left_classif are "cornfields", "olive tree", "forest"
         dst_left = img_tools.read_img(
-            img="tests/image/left_img.tif",
+            img="tests/pandora/left.png",
             no_data=default_cfg["input"]["nodata_left"],
-            classif="tests/image/mask_left.tif",
+            classif="tests/pandora/left_classif.tif",
         )
 
-        # Classif ground truth
-        classif_gt = np.array(
-            [[0, 0, 1, 2, 0], [0, 0, 0, 0, 1], [3, 5, 0, 0, 1], [0, 0, 255, 0, 0]],
+        # The classes present in left_classif are "cornfields", "olive tree", "forest"
+        gt_classes = ["cornfields", "olive tree", "forest"]
+
+        # Check if the classes names are correctly set on the dataset
+        np.testing.assert_array_equal(list(dst_left.band_classif.data), gt_classes)
+
+    @staticmethod
+    def test_read_img_rgb_classif():
+        """
+        Test the method read_img for the multiband image and classif
+
+        """
+        # Build the default configuration
+        default_cfg = pandora.check_json.default_short_configuration
+
+        # Computes the dataset image
+        # The classes present in left_classif are "cornfields", "olive tree", "forest"
+        dst_left = img_tools.read_img(
+            img="tests/pandora/left_rgb.tif",
+            no_data=default_cfg["input"]["nodata_left"],
+            classif="tests/pandora/left_classif.tif",
         )
 
-        # Check if the calculated mask is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(dst_left["classif"].data, classif_gt)
+        # The bands present in left_rgb are "r", "g", "b"
+        gt_bands = ["r", "g", "b"]
+        # Check if the classes names are correctly set on the dataset
+        np.testing.assert_array_equal(list(dst_left.band.data), gt_bands)
+
+        # The classes present in left_classif are "cornfields", "olive tree", "forest"
+        gt_classes = ["cornfields", "olive tree", "forest"]
+        # Check if the classes names are correctly set on the dataset
+        np.testing.assert_array_equal(list(dst_left.band_classif.data), gt_classes)
 
     @staticmethod
     def test_read_img_segm():
@@ -553,6 +579,31 @@ class TestImgTools(unittest.TestCase):
 
         # check if columns coordinates has been shifted
         np.testing.assert_array_equal(gt, shifted_img[1].col)
+
+    def test_fuse_classification_bands(self):
+        """
+        Test the fuse_classification_bands function
+        """
+        # Create dataset with input classification map
+        # The classes present in left_classif are "cornfields", "olive tree", "forest"
+        img = img_tools.read_img(
+            img="tests/pandora/left.png",
+            no_data=np.nan,
+            classif="tests/pandora/left_classif.tif",
+        )
+
+        # Create ground truth monoband classification map
+        gt_monoband_classif = np.zeros((len(img.coords["row"]), len(img.coords["col"])))
+        band_index_corn = list(img.band_classif.data).index("cornfields")
+        gt_monoband_classif += 1 * img["classif"].data[band_index_corn, :, :]
+        band_index_nenuphar = list(img.band_classif.data).index("forest")
+        gt_monoband_classif += 2 * img["classif"].data[band_index_nenuphar, :, :]
+
+        # Obtain output monoband classification map
+        output_classif_array = img_tools.fuse_classification_bands(img, class_names=["cornfields", "forest"])
+
+        # Check that the obtained classification map is the same as ground truth
+        np.testing.assert_array_equal(gt_monoband_classif, output_classif_array)
 
 
 if __name__ == "__main__":

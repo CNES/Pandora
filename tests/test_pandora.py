@@ -91,13 +91,16 @@ class TestPandora(unittest.TestCase):
         Test the run method
 
         """
-        user_cfg = {"pipeline": copy.deepcopy(common.validation_pipeline_cfg)}
+        user_cfg = {
+            "input": copy.deepcopy(common.input_cfg_basic),
+            "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
+        }
         pandora_machine = PandoraMachine()
 
         # Update the user configuration with default values
         cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
         # Run the pandora pipeline
-        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg["pipeline"])
+        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.20:
@@ -119,7 +122,10 @@ class TestPandora(unittest.TestCase):
         Test the run method
 
         """
-        user_cfg = {"pipeline": copy.deepcopy(common.basic_pipeline_cfg)}
+        user_cfg = {
+            "input": copy.deepcopy(common.input_cfg_basic),
+            "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
+        }
         pandora_machine = PandoraMachine()
 
         # Update the user configuration with default values
@@ -127,7 +133,7 @@ class TestPandora(unittest.TestCase):
 
         # Run the pandora pipeline
         left, right = pandora.run(  # pylint: disable = unused-variable
-            pandora_machine, self.left, self.right, -60, 0, cfg["pipeline"]
+            pandora_machine, self.left, self.right, -60, 0, cfg
         )
 
         # Check the left disparity map
@@ -146,7 +152,10 @@ class TestPandora(unittest.TestCase):
         Test the run method for 2 scales
 
         """
-        user_cfg = {"pipeline": copy.deepcopy(common.multiscale_pipeline_cfg)}
+        user_cfg = {
+            "input": copy.deepcopy(common.input_cfg_basic),
+            "pipeline": copy.deepcopy(common.multiscale_pipeline_cfg),
+        }
         user_cfg["pipeline"]["right_disp_map"]["method"] = "accurate"
 
         pandora_machine = PandoraMachine()
@@ -155,7 +164,7 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg["pipeline"])
+        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.20:
@@ -177,7 +186,10 @@ class TestPandora(unittest.TestCase):
         Test the run method for 3 scales
 
         """
-        user_cfg = {"pipeline": copy.deepcopy(common.multiscale_pipeline_cfg)}
+        user_cfg = {
+            "input": copy.deepcopy(common.input_cfg_basic),
+            "pipeline": copy.deepcopy(common.multiscale_pipeline_cfg),
+        }
         user_cfg["pipeline"]["multiscale"]["num_scales"] = 3
         user_cfg["pipeline"]["right_disp_map"]["method"] = "accurate"
 
@@ -187,7 +199,7 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg["pipeline"])
+        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.20:
             raise AssertionError
@@ -209,6 +221,7 @@ class TestPandora(unittest.TestCase):
 
         """
         user_cfg = {
+            "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": {
                 "right_disp_map": {"method": "none"},
                 "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2},
@@ -222,7 +235,7 @@ class TestPandora(unittest.TestCase):
                     "scale_factor": 2,
                     "marge": 1,
                 },
-            }
+            },
         }
         user_cfg["pipeline"]["right_disp_map"]["method"] = "accurate"
         user_cfg["pipeline"]["cost_volume_confidence"]["confidence_method"] = "ambiguity"
@@ -233,7 +246,7 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg["pipeline"])
+        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.20:
@@ -297,8 +310,12 @@ class TestPandora(unittest.TestCase):
         img_right.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
 
         # Load a configuration
-        user_cfg = {"input": {"disp_min": -2, "disp_max": 2}, "pipeline": copy.deepcopy(common.validation_pipeline_cfg)}
-
+        user_cfg = {
+            "input": copy.deepcopy(common.input_cfg_basic),
+            "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
+        }
+        user_cfg["input"]["disp_min"] = -2
+        user_cfg["input"]["disp_max"] = 2
         user_cfg["pipeline"]["matching_cost"]["matching_cost_method"] = "census"
         user_cfg["pipeline"]["matching_cost"]["subpix"] = 1
         user_cfg["pipeline"]["disparity"]["invalid_disparity"] = -10
@@ -312,7 +329,7 @@ class TestPandora(unittest.TestCase):
 
         # Run the Pandora pipeline
         left, right = pandora.run(
-            pandora_machine, img_left, img_right, cfg["input"]["disp_min"], cfg["input"]["disp_max"], cfg["pipeline"]
+            pandora_machine, img_left, img_right, cfg["input"]["disp_min"], cfg["input"]["disp_max"], cfg
         )
 
         # Ground truth confidence measure
@@ -429,7 +446,10 @@ class TestPandora(unittest.TestCase):
 
         """
 
-        user_cfg = {"pipeline": copy.deepcopy(common.validation_pipeline_cfg)}
+        user_cfg = {
+            "input": copy.deepcopy(common.input_cfg_basic),
+            "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
+        }
         user_cfg["pipeline"]["matching_cost"]["matching_cost_method"] = "census"
 
         pandora_machine = PandoraMachine()
@@ -441,7 +461,7 @@ class TestPandora(unittest.TestCase):
         right_img = read_img("tests/pandora/right.png", no_data=np.nan, mask=None)
 
         # Run the pandora pipeline on images without modified coordinates
-        left_origin, right_origin = pandora.run(pandora_machine, left_img, right_img, -60, 0, cfg["pipeline"])
+        left_origin, right_origin = pandora.run(pandora_machine, left_img, right_img, -60, 0, cfg)
 
         row_c = left_img.coords["row"].data
         row_c += 41
@@ -452,7 +472,7 @@ class TestPandora(unittest.TestCase):
         right_img.assign_coords(row=row_c, col=col_c)
 
         # Run the pandora pipeline on images with modified coordinates
-        left_modified, right_modified = pandora.run(pandora_machine, left_img, right_img, -60, 0, cfg["pipeline"])
+        left_modified, right_modified = pandora.run(pandora_machine, left_img, right_img, -60, 0, cfg)
 
         # check if the disparity maps are equals
         np.testing.assert_array_equal(left_origin["disparity_map"].values, left_modified["disparity_map"].values)
@@ -504,7 +524,7 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg["pipeline"])
+        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg)
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.25:
@@ -533,7 +553,7 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg["pipeline"])
+        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg)
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.25:
@@ -562,7 +582,7 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg["pipeline"])
+        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg)
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.25:
@@ -591,7 +611,7 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg["pipeline"])
+        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg)
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.25:

@@ -45,3 +45,16 @@ Images
     - If *disp_min* or *disp_max* are strings, that means they are paths to grids of disparities which have the same size as the input images.
       Each pixel (x,y) of the grid corresponds to a local disparity (min for disp_min and max for disp_max) related to the same pixel (x, y) of the image.
     - Cross-checking step is not applicable if only left grids are provided (i.e the right one must be provided).
+
+.. note::
+    Mask must comply with the following convention
+     - Value equal to 0 for valid pixel
+     - Value not equal to 0 for invalid pixel
+
+.. note::
+    If the input images are multiband, the band's names must be present on the image metadata. To see how to add band's names on the image's metadata, please
+    see :ref:`faq`.
+
+.. note::
+    The input classification image must have one band per class (with value 1 on the pixels belonging to the class, and 0 for the rest), and the band's names must be present on the image metadata. To see how to add band's names on the classification image's metadata, please
+    see :ref:`faq`.

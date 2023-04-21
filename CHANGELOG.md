@@ -2,8 +2,17 @@
 
 ## Unreleased
 
+## 1.5.0 (April 2023)
+
+### Added 
+- Documentation plugin_arnn [#261]
+- Multiband input image classification. [#256]
+
 ### Fixed
  - Deletion of the pip install codecov of githubAction CI [#305].
+
+### Changed
+- Reformatting check conf [#299]
 
 
 ## 1.4.0 (March 2023)
