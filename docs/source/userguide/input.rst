@@ -31,6 +31,7 @@ Images
 ******
 
 - If the input images are multiband, the band's names must be present on the image metadata. To see how to add band's names on the image's metadata, please see :ref:`faq`.
+- For semantic segmentation classification, the band's names must be present on the image metadata. To see how to add band's names on the image's metadata, please see :ref:`faq`.
 - Only one-band masks are accepted by pandora. Mask must comply with the following convention :
     - Value equal to 0 for valid pixel
     - Value not equal to 0 for invalid pixel
