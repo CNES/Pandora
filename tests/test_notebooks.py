@@ -144,3 +144,29 @@ class TestPandora(unittest.TestCase):
             )
 
             assert out.returncode == 0
+
+    @staticmethod
+    @pytest.mark.notebook_tests
+    def test_api_check_conf():
+        """
+        Test that the api_check_conf notebook runs without errors
+
+        """
+        with tempfile.TemporaryDirectory() as directory:
+            subprocess.run(
+                [
+                    f"jupyter nbconvert --to script notebooks/advanced_examples/api_check_conf.ipynb --output-dir {directory}"
+                ],
+                shell=True,
+                check=False,
+            )
+            out = subprocess.run(
+                [f"ipython {directory}/api_check_conf.py"],
+                shell=True,
+                check=False,
+                cwd="notebooks/advanced_examples",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+
+            assert out.returncode == 0

@@ -30,6 +30,7 @@ import pytest
 from transitions import MachineError
 
 import numpy as np
+import xarray as xr
 from tests import common
 import pandora.check_json as JSON_checker
 from pandora.state_machine import PandoraMachine
@@ -258,6 +259,29 @@ class TestConfig(unittest.TestCase):
         # Json checker must raise an error
         self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
 
+    def test_get_metadata(self):
+        """
+        Test the method get_metadata
+
+        """
+
+        cfg = {"input": copy.deepcopy(common.input_cfg_basic)}
+
+        # get metadata without classif and mask
+        metadata_img = JSON_checker.get_metadata(
+            cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"]
+        )
+
+        print("metadata_img", metadata_img)
+        # Metadata ground truth
+        metadata_gt = xr.Dataset(
+            data_vars={}, coords={"band": [None], "row": 375, "col": 450}, attrs={"disp_min": -60, "disp_max": 0}
+        )
+
+        # Check that the get_metadata function raises whitout error
+        assert metadata_img.coords == metadata_gt.coords
+        assert metadata_img.attrs == metadata_gt.attrs
+
     def test_multiband_pipeline(self):
         """
         Test the method check_conf for multiband images
@@ -315,19 +339,23 @@ class TestConfig(unittest.TestCase):
                 "disparity": {"disparity_method": "wta"},
             },
         }
+        img_left = JSON_checker.get_metadata(
+            cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"]
+        )
+        img_right = JSON_checker.get_metadata(cfg["input"]["img_right"], None, None)
         # Check that the check_conf function raises an error
         with pytest.raises(SystemExit):
             JSON_checker.check_conf(cfg, pandora_machine)
         # Check that the check_band_pipeline raises an error (this shall be the source of check_conf's error)
         with pytest.raises(SystemExit):
             pandora_machine.check_band_pipeline(
-                cfg["input"]["img_left"],
+                img_left.coords["band"].data,
                 cfg["pipeline"]["matching_cost"]["matching_cost_method"],
                 cfg["pipeline"]["matching_cost"]["band"],
             )
         with pytest.raises(SystemExit):
             pandora_machine.check_band_pipeline(
-                cfg["input"]["img_right"],
+                img_right.coords["band"].data,
                 cfg["pipeline"]["matching_cost"]["matching_cost_method"],
                 cfg["pipeline"]["matching_cost"]["band"],
             )
@@ -340,6 +368,10 @@ class TestConfig(unittest.TestCase):
                 "disparity": {"disparity_method": "wta"},
             },
         }
+        img_left = JSON_checker.get_metadata(
+            cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"]
+        )
+        img_right = JSON_checker.get_metadata(cfg["input"]["img_right"], None, None)
         pandora_machine = PandoraMachine()
 
         # Check that the check_conf function raises an error
@@ -350,11 +382,15 @@ class TestConfig(unittest.TestCase):
             # We add the band argument ad None because normally it is completed in the check_conf function,
             # which then calls check_band_pipeline
             pandora_machine.check_band_pipeline(
-                cfg["input"]["img_left"], cfg["pipeline"]["matching_cost"]["matching_cost_method"], bands=None
+                img_left.coords["band"].data,
+                cfg["pipeline"]["matching_cost"]["matching_cost_method"],
+                band_used=None,
             )
         with pytest.raises(SystemExit):
             pandora_machine.check_band_pipeline(
-                cfg["input"]["img_right"], cfg["pipeline"]["matching_cost"]["matching_cost_method"], bands=None
+                img_right.coords["band"].data,
+                cfg["pipeline"]["matching_cost"]["matching_cost_method"],
+                band_used=None,
             )
 
     @staticmethod
@@ -639,8 +675,12 @@ class TestConfig(unittest.TestCase):
         }
 
         pandora_machine = PandoraMachine()
+        img_left = JSON_checker.get_metadata(
+            cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"]
+        )
+        img_right = JSON_checker.get_metadata(cfg["input"]["img_right"], None, None)
 
-        self.assertRaises(MachineError, JSON_checker.check_pipeline_section, cfg, pandora_machine)
+        self.assertRaises(MachineError, JSON_checker.check_pipeline_section, cfg, img_left, img_right, pandora_machine)
 
     @staticmethod
     def test_memory_consumption_estimation():
@@ -700,9 +740,13 @@ class TestConfig(unittest.TestCase):
         disp_max = 0
         pandora_machine = PandoraMachine()
         cfg = {"input": copy.deepcopy(common.input_cfg_basic), "pipeline": copy.deepcopy(common.basic_pipeline_cfg)}
+        img_left = JSON_checker.get_metadata(
+            cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"]
+        )
+        img_right = JSON_checker.get_metadata(cfg["input"]["img_right"], None, None)
 
         # check pipeline before memory_consumption_estimation
-        pipeline_cfg = JSON_checker.check_pipeline_section(cfg, pandora_machine)
+        pipeline_cfg = JSON_checker.check_pipeline_section(cfg, img_left, img_right, pandora_machine)
 
         min_mem_consump, max_mem_consump = JSON_checker.memory_consumption_estimation(
             pipeline_cfg, (img_left_path, disp_min, disp_max), pandora_machine, True
@@ -732,9 +776,13 @@ class TestConfig(unittest.TestCase):
                 "validation": {"validation_method": "cross_checking"},
             },
         }
+        img_left = JSON_checker.get_metadata(
+            cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"]
+        )
+        img_right = JSON_checker.get_metadata(cfg["input"]["img_right"], None, None)
 
         pandora_machine = PandoraMachine()
-        self.assertRaises(MachineError, JSON_checker.check_pipeline_section, cfg, pandora_machine)
+        self.assertRaises(MachineError, JSON_checker.check_pipeline_section, cfg, img_left, img_right, pandora_machine)
 
 
 if __name__ == "__main__":
