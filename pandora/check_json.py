@@ -30,6 +30,7 @@ import logging
 import sys
 from collections.abc import Mapping
 from typing import Dict, Union, List, Tuple
+import xarray as xr
 
 import numpy as np
 from json_checker import Checker, Or, And
@@ -206,6 +207,64 @@ def get_config_input(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     return cfg
 
 
+def get_config_pipeline(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
+    """
+    Get the pipeline configuration
+
+    :param user_cfg: user configuration
+    :type user_cfg: dict
+    :return cfg: partial configuration
+    :rtype cfg: dict
+    """
+
+    cfg = {}
+
+    if "pipeline" in user_cfg:
+        cfg["pipeline"] = user_cfg["pipeline"]
+
+    return cfg
+
+
+def get_metadata(
+    img: str, disp_min: Union[int, str, None], disp_max: Union[int, str, None], classif: str = None, segm: str = None
+) -> xr.Dataset:
+    """
+    Read metadata from image, and return the corresponding xarray.DataSet
+
+    :param img: img_path
+    :type img: str
+    :param disp_min: minimal disparity
+    :type disp_min: int or str or None
+    :param disp_max: maximal disparity
+    :type disp_max: int or str or None
+    :param classif: path to the classif (optional)
+    :type classif: str
+    :param segm: path to the segm (optional)
+    :type segm: str
+    :return: partial xarray.DataSet (attributes and coordinates)
+    :rtype: xarray.DataSet
+    """
+    img_ds = rasterio_open(img)
+    coords = {
+        "band": list(img_ds.descriptions),
+        "row": img_ds.height,
+        "col": img_ds.width,
+    }
+    attrs = {"disp_min": disp_min, "disp_max": disp_max}
+    dataset = xr.Dataset(data_vars={}, coords=coords, attrs=attrs)
+
+    if classif is not None:
+        classif_ds = rasterio_open(classif)
+        band_classif = list(classif_ds.descriptions)
+        dataset.coords["band_classif"] = band_classif
+        dataset.attrs["classif"] = True
+
+    if segm is not None:
+        dataset.attrs["segm"] = True
+
+    return dataset
+
+
 def memory_consumption_estimation(
     user_pipeline_cfg: Dict[str, dict],
     user_input: Union[Dict[str, dict], Tuple[str, int, int]],
@@ -247,7 +306,9 @@ def memory_consumption_estimation(
     else:
         # First, check if the configuration is valid
         cfg = {"pipeline": user_pipeline_cfg["pipeline"], "input": user_input["input"]}
-        checked_cfg = check_pipeline_section(cfg, pandora_machine)
+        img_left_metadata = get_metadata(cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"])
+        img_right_metadata = get_metadata(cfg["input"]["img_right"], None, None)
+        checked_cfg = check_pipeline_section(cfg, img_left_metadata, img_right_metadata, pandora_machine)
         # Obtain pipeline cfg
         pipeline_cfg = checked_cfg["pipeline"]
 
@@ -271,7 +332,9 @@ def memory_consumption_estimation(
     return None
 
 
-def check_pipeline_section(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> Dict[str, dict]:
+def check_pipeline_section(
+    user_cfg: Dict[str, dict], img_left: xr.Dataset, img_right: xr.Dataset, pandora_machine: PandoraMachine
+) -> Dict[str, dict]:
     """
     Check if the pipeline is correct by
     - Checking the sequence of steps according to the machine transitions
@@ -279,6 +342,10 @@ def check_pipeline_section(user_cfg: Dict[str, dict], pandora_machine: PandoraMa
 
     :param user_cfg: pipeline user configuration
     :type user_cfg: dict
+    :param img_left: image left with metadata
+    :type  img_left: xarray.Dataset
+    :param img_right: image right with metadata
+    :type  img_right: xarray.Dataset
     :param pandora_machine: instance of PandoraMachine
     :type pandora_machine: PandoraMachine object
     :return: cfg: pipeline configuration
@@ -286,7 +353,7 @@ def check_pipeline_section(user_cfg: Dict[str, dict], pandora_machine: PandoraMa
     """
     # Check if user configuration pipeline is compatible with transitions/states of pandora machine.
     cfg = update_conf(default_short_configuration_pipeline, user_cfg)
-    pandora_machine.check_conf(cfg)
+    pandora_machine.check_conf(cfg, img_left, img_right)
 
     cfg = update_conf(cfg, pandora_machine.pipeline_cfg)
 
@@ -341,9 +408,9 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     check_disparities(
         cfg["input"]["disp_min_right"],
         cfg["input"]["disp_max_right"],
-        cfg["input"]["img_left"],
+        cfg["input"]["img_right"],
     )
-
+    # check bands
     check_band_names(cfg["input"]["img_left"])
     check_band_names(cfg["input"]["img_right"])
 
@@ -373,8 +440,25 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> di
     user_cfg_input = get_config_input(user_cfg)
     cfg_input = check_input_section(user_cfg_input)
 
+    # read metadata from left and right images
+    img_left_metadata = get_metadata(
+        cfg_input["input"]["img_left"],
+        cfg_input["input"]["disp_min"],
+        cfg_input["input"]["disp_max"],
+        cfg_input["input"]["left_classif"],
+        cfg_input["input"]["left_segm"],
+    )
+    img_right_metadata = get_metadata(
+        cfg_input["input"]["img_right"],
+        cfg_input["input"]["disp_min_right"],
+        cfg_input["input"]["disp_max_right"],
+        cfg_input["input"]["right_classif"],
+        cfg_input["input"]["right_segm"],
+    )
+
     # check pipeline
-    cfg_pipeline = check_pipeline_section(user_cfg, pandora_machine)
+    user_cfg_pipeline = get_config_pipeline(user_cfg)
+    cfg_pipeline = check_pipeline_section(user_cfg_pipeline, img_left_metadata, img_right_metadata, pandora_machine)
 
     # concatenate updated config
     cfg = concat_conf([cfg_input, cfg_pipeline])
