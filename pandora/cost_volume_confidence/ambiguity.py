@@ -56,8 +56,9 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
 
     def __init__(self, **cfg: str) -> None:
         """
-        :param cfg: optional configuration, {'confidence_method': 'ambiguity', 'eta_min': float, 'eta_max': float,
-        'eta_step': float}
+        :param cfg: optional configuration,
+            {'confidence_method': 'ambiguity',
+            'eta_min': float, 'eta_max': float, 'eta_step': float}
         :type cfg: dict
         :return: None
         """

@@ -661,7 +661,7 @@ def add_mask(all_validity_mask: np.ndarray, msk_type: int) -> np.ndarray:
 
 def add_validity_mask_to_dataset(input_disp_map: xr.Dataset) -> xr.Dataset:
     """
-    Adds validity mask to imput dataset
+    Adds validity mask to input dataset
 
     :param input_disp_map: disparity map
     :type input_disp_map: dataset
@@ -690,7 +690,7 @@ def add_validity_mask_to_dataset(input_disp_map: xr.Dataset) -> xr.Dataset:
         np.copy(add_mask(disp_map["validity_mask"].values, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE)),
         dims=["row", "col"],
     )
-    # Bit 3: Unsuccesful sub-pixel interpolation
+    # Bit 3: Unsuccessful sub-pixel interpolation
     disp_map["stopped_interp_mask"] = xr.DataArray(
         np.copy(add_mask(disp_map["validity_mask"].values, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION)),
         dims=["row", "col"],

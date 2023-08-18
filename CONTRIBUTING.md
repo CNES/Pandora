@@ -85,10 +85,10 @@ pre-commit install
 
 This command installs the pre-commit hooks in `.git/hooks/pre-commit`  from `.pre-commit-config.yaml` file configuration.
 ```
-It is possible to test pre-commit before commiting:
-* pre-commit run --all-files                # Run all hooks on all files
+It is possible to test pre-commit before committing:
+* pre-commit run --all-files                   # Run all hooks on all files
 * pre-commit run --files pandora/__init__.py   # Run all hooks on one file
-* pre-commit run pylint                     # Run only pylint hook
+* pre-commit run pylint                        # Run only pylint hook
 ```
 
 It is possible to run only pylint tool to check code modifications:

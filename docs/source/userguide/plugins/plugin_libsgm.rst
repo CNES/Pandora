@@ -42,7 +42,7 @@ The user can activate *use_confidence* if he wants to apply the confidence as fo
     .. math::
       E(D) = \sum_{p}{C(p,Dp) * Confidence(p)} + \sum_{q \in Np}{P_{1}T(|D_{p} - D_{q}|=1)} + \sum_{q \in Np}{P_{2}T(|D_{p} - D_{q}|>1)}
 
-with :math:`D` the disparity image and :math:`N_{p}` the neigborhood of :math:`p`.
+with :math:`D` the disparity image and :math:`N_{p}` the neighborhood of :math:`p`.
 
 The user must have computed ambiguity confidence previously in the pipeline. If not, default confidence values equal to 1 will be used, which is equivalent to not use confidence.
 

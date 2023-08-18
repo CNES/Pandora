@@ -55,8 +55,9 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
 
     def __init__(self, **cfg: str) -> None:
         """
-        :param cfg: optional configuration, {'confidence_method': 'risk', 'eta_min': float, 'eta_max': float,
-        'eta_step': float}
+        :param cfg: optional configuration,
+            {'confidence_method': 'risk',
+            'eta_min': float, 'eta_max': float, 'eta_step': float}
         :type cfg: dict
         :return: None
         """
@@ -165,7 +166,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         :return: the minimum and maximum risk
         :rtype: Tuple(2D np.array (row, col) dtype = float32, 2D np.array (row, col) dtype = float32)
         """
-        #  Miniumum and maximum of all costs, useful to normalize the cost volume
+        #  Minimum and maximum of all costs, useful to normalize the cost volume
         min_cost = np.nanmin(cv)
         max_cost = np.nanmax(cv)
 
@@ -243,7 +244,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         :rtype: Tuple(2D np.array (row, col) dtype = float32, 2D np.array (row, col) dtype = float32,
                      3D np.array (row, col) dtype = float32, 3D np.array (row, col) dtype = float32)
         """
-        #  Miniumum and maximum of all costs, useful to normalize the cost volume
+        #  Minimum and maximum of all costs, useful to normalize the cost volume
         min_cost = np.nanmin(cv)
         max_cost = np.nanmax(cv)
 

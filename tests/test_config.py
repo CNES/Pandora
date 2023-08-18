@@ -278,7 +278,7 @@ class TestConfig(unittest.TestCase):
             data_vars={}, coords={"band": [None], "row": 375, "col": 450}, attrs={"disp_min": -60, "disp_max": 0}
         )
 
-        # Check that the get_metadata function raises whitout error
+        # Check that the get_metadata function raises without error
         assert metadata_img.coords == metadata_gt.coords
         assert metadata_img.attrs == metadata_gt.attrs
 

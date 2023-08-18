@@ -67,10 +67,10 @@ Each subpackage of Pandora, representing one particular step, defines an `abstra
         checker.validate(cfg)
         return cfg desc(self):
 
-4. Make your plugin avalaible
+4. Make your plugin available
 
 Pandora works with `entry point specification <https://packaging.python.org/specifications/entry-points/>`_
-and can load all plugin refered in the "pandora.plugin" group.
+and can load all plugin referred in the "pandora.plugin" group.
 
 So, you must declare, on your setup.py file, an entry point:
 

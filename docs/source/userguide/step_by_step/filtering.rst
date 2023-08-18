@@ -23,14 +23,14 @@ Configuration and parameters
 | *filter_method* | Filtering method           | string |               | "median", "bilateral" | Yes                                |
 +-----------------+----------------------------+--------+---------------+-----------------------+------------------------------------+
 | *filter_size*   | Filter's size              | int    | 3             | >= 1                  | No                                 |
-|                 |                            |        |               |                       | Only avalaible if median filter    |
+|                 |                            |        |               |                       | Only available if median filter    |
 +-----------------+----------------------------+--------+---------------+-----------------------+------------------------------------+
 | *sigma_color*   | Bilateral filter parameter | float  | 2.0           |                       | No                                 |
-|                 |                            |        |               |                       | Only avalaible if bilateral filter |
+|                 |                            |        |               |                       | Only available if bilateral filter |
 +-----------------+----------------------------+--------+---------------+-----------------------+------------------------------------+
 | *sigma_space*   | Bilateral filter parameter | float  | 6.0           |                       | No                                 |
 |                 |                            |        |               |                       |                                    |
-|                 |                            |        |               |                       | Only avalaible if bilateral filter |
+|                 |                            |        |               |                       | Only available if bilateral filter |
 +-----------------+----------------------------+--------+---------------+-----------------------+------------------------------------+
 
 

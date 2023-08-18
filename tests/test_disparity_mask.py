@@ -913,7 +913,7 @@ class TestDisparityMask(unittest.TestCase):
         )
         # Check if the calculated validity mask is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(dataset["validity_mask"].data, gt_mask)
-        # ---------------------- Test with posible constant duplication ----------------------
+        # ---------------------- Test with possible constant duplication ----------------------
         # Masks convention
         # 1 = valid
         # 2 = no_data

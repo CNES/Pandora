@@ -4,7 +4,7 @@
 
 ## 1.5.0 (April 2023)
 
-### Added 
+### Added
 - Documentation plugin_arnn [#261]
 - Multiband input image classification. [#256]
 
@@ -17,7 +17,7 @@
 
 ## 1.4.0 (March 2023)
 
-### Added 
+### Added
 
 - Check that both segmentations/classifications are present if 3SGM and validation are intended. [#259]
 - Multiband images compatibility. [#251]
@@ -32,16 +32,16 @@
 
 ## 1.3.0 (January 2023)
 
-### Added 
+### Added
 
 - Add indicator to distinguish different cost volume confidence maps. [#243]
 - Add Makefile. [#248]
-- Add confidence method naming according to the selected confidence method. [#268] 
+- Add confidence method naming according to the selected confidence method. [#268]
 - Add compatibility to plugin_libsgm's 3SGM method. [#255]
 
-### Changed 
+### Changed
 
-- Remove dependance to ipyvolume. [#250]
+- Remove dependence to ipyvolume. [#250]
 - Adapt confidence method naming to snake case style. [#278]
 
 ### Fixed
@@ -90,7 +90,7 @@
 
 ### Added
 
-- Binder for Pandora's notebooks. [#215] 
+- Binder for Pandora's notebooks. [#215]
 - Version handling with setuptools_scm. [#212]
 - Set dataset's transform to None if it is the identity matrix. [#211]
 - Handling of np.inf values on input images. [#210]
@@ -108,8 +108,8 @@
 
 ### Added
 
-- Implementation of the ambiguity confidence measure. [#162] 
-- Implementation of the  bilateral filter to suppress OpenCV dependency. [#148] 
+- Implementation of the ambiguity confidence measure. [#162]
+- Implementation of the  bilateral filter to suppress OpenCV dependency. [#148]
 - Checker to check if an image dataset is valid. [#196]
 - Creation of Jupyter notebooks for Pandora.[#153]
 
@@ -131,7 +131,7 @@
 
 ## 0.5.0 (January 2021)
 
-### Added 
+### Added
 
 - Implementation of multi scale processing for the disparity map computation. [#80]
 - A `./data_sample/` directory with images and configuration files for user's first steps with Pandora [#168]
@@ -141,7 +141,7 @@
 
 - Semantic change: stereo becomes matching_cost (transition name, module, files and class name). [#170]
 - Merge image on input configuration section. [#169]
-- Enable the use of GraphMachine if graphviz avalaible to generate machine states diagram. [#149]
+- Enable the use of GraphMachine if graphviz available to generate machine states diagram. [#149]
 - Move find_valid_neighbors function to img_tools. [#184]
 - Renamed json_cheker to check_json. [#182]
 

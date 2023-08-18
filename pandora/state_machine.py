@@ -281,7 +281,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # Right disparity map computation information: Can be "none" or "accurate"
         # Useful during the running steps to choose if we must compute left and right objects.
         self.right_disp_map = "none"
-        # Define avalaible states
+        # Define available states
         states_ = ["begin", "cost_volume", "disp_map"]
 
         if FLAG_GRAPHVIZ:
