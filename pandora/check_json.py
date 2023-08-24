@@ -252,15 +252,25 @@ def get_metadata(
     }
     attrs = {"disp_min": disp_min, "disp_max": disp_max}
     dataset = xr.Dataset(data_vars={}, coords=coords, attrs=attrs)
+    default_dataarray = xr.DataArray(
+        data=np.zeros([coords["row"], coords["col"]]),
+        coords={
+            "row": np.arange(coords["row"]),
+            "col": np.arange(coords["col"]),
+        },
+        dims=["row", "col"],
+    )
 
     if classif is not None:
         classif_ds = rasterio_open(classif)
         band_classif = list(classif_ds.descriptions)
         dataset.coords["band_classif"] = band_classif
         dataset.attrs["classif"] = True
+        dataset["classif"] = default_dataarray
 
     if segm is not None:
         dataset.attrs["segm"] = True
+        dataset["segm"] = default_dataarray
 
     return dataset
 
