@@ -559,7 +559,7 @@ class AbstractMatchingCost:
     @staticmethod
     def allocate_numpy_cost_volume(
         img_left: xr.Dataset, disparity_range: np.ndarray, offset_row_col: int
-    ) -> Tuple[xr.Dataset, xr.Dataset]:
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
 
@@ -591,4 +591,4 @@ class AbstractMatchingCost:
         else:
             cv_crop = cv
 
-        return cv, cv_crop  # type: ignore
+        return cv, cv_crop
