@@ -54,11 +54,7 @@ class TestMatchingCost:
         """
 
         # compute ground truth cv for allocate
-        gt_cv = np.zeros((5, 6, 5), dtype=np.float32)
-        gt_cv += np.nan
-
-        gt_cv_cropped = np.zeros((5, 2, 1), dtype=np.float32)
-        gt_cv_cropped += np.nan
+        expected = np.full((5, 6, 5), np.nan, dtype=np.float32)
 
         # Create matching cost object
         matching_cost_ = matching_cost.AbstractMatchingCost(
@@ -66,11 +62,36 @@ class TestMatchingCost:
         )
 
         # Function allocate_numpy_cost_volume
-        cv, cv_cropped = matching_cost_.allocate_numpy_cost_volume(left, [0, 0.5, 1, 1.5, 2], 2)
+        result = matching_cost_.allocate_numpy_cost_volume(left, [0, 0.5, 1, 1.5, 2])
 
         # Test that cv and cv_cropped are equal to the ground truth
-        np.testing.assert_array_equal(cv, gt_cv)
-        np.testing.assert_array_equal(cv_cropped, gt_cv_cropped)
+        np.testing.assert_array_equal(result, expected)
+
+    @pytest.mark.parametrize(
+        ["cost_volume", "expected", "offset"],
+        [
+            pytest.param(
+                np.full((5, 6, 5), np.nan, dtype=np.float32),
+                np.full((5, 6, 5), np.nan, dtype=np.float32),
+                0,
+                id="With null offset",
+            ),
+            pytest.param(
+                np.full((5, 6, 5), np.nan, dtype=np.float32),
+                np.full((5, 2, 1), np.nan, dtype=np.float32),
+                2,
+                id="With offset",
+            ),
+        ],
+    )
+    def test_crop_cost_volume(self, cost_volume, expected, offset):
+        """
+        Test the crop_cost_volume function
+        """
+        # Function allocate_numpy_cost_volume
+        result = matching_cost.AbstractMatchingCost.crop_cost_volume(cost_volume, offset)
+
+        np.testing.assert_array_equal(result, expected)
 
     @pytest.mark.parametrize(
         ["disparity_min", "disparity_max", "subpix", "expected"],

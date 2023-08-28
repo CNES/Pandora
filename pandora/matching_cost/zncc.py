@@ -138,7 +138,8 @@ class Zncc(matching_cost.AbstractMatchingCost):
         }
 
         disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
-        cv, cv_crop = self.allocate_numpy_cost_volume(img_left, disparity_range, offset_row_col)
+        cv = self.allocate_numpy_cost_volume(img_left, disparity_range)
+        cv_crop = self.crop_cost_volume(cv, offset_row_col)
 
         # Computes the matching cost
         for disp in disparity_range:

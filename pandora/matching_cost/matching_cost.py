@@ -572,9 +572,7 @@ class AbstractMatchingCost:
                 cost_volume["cost_volume"].data[masking[0], masking[1], dsp] = np.nan
 
     @staticmethod
-    def allocate_numpy_cost_volume(
-        img_left: xr.Dataset, disparity_range: np.ndarray, offset_row_col: int
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def allocate_numpy_cost_volume(img_left: xr.Dataset, disparity_range: Union[np.ndarray, List]) -> np.ndarray:
         """
         Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
 
@@ -590,20 +588,26 @@ class AbstractMatchingCost:
         :return: the cost volume dataset , with the data variables:
 
                 - cost_volume 3D xarray.DataArray (row, col, disp)
-                - a cropped cost volume dataset
-        :rtype: Tuple[xarray.Dataset, xarray.Dataset]
+        :rtype: xarray.Dataset
         """
 
-        cv = np.full(
+        return np.full(
             (len(disparity_range), img_left.dims["col"], img_left.dims["row"]),
             np.nan,
             dtype=np.float32,
         )
 
-        # If offset, do not consider border position for cost computation
-        if offset_row_col != 0:
-            cv_crop = cv[:, offset_row_col:-offset_row_col, offset_row_col:-offset_row_col]
-        else:
-            cv_crop = cv
+    @staticmethod
+    def crop_cost_volume(cost_volume: np.ndarray, offset: int = 0) -> np.ndarray:
+        """
+        Return a cropped view of cost_volume.
 
-        return cv, cv_crop
+        If offset, do not consider border position for cost computation.
+        :param cost_volume: cost volume to crop
+        :type cost_volume: np.ndarray
+        :param offset: offset used to crop cost volume
+        :type offset: int
+        :return: cropped view of cost_volume.
+        :rtype: np.ndarray
+        """
+        return cost_volume[:, offset:-offset, offset:-offset] if offset else cost_volume

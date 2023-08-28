@@ -23,7 +23,7 @@
 This module contains functions associated to SAD and SSD methods used in the cost volume measure step.
 """
 
-from typing import Dict, Union, Tuple
+from typing import Dict, Union, Tuple, List
 
 import numpy as np
 import xarray as xr
@@ -150,7 +150,8 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         }
 
         disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
-        cv, cv_enlarge = self.allocate_numpy_cost_volume(img_left, disparity_range, offset_row_col)
+        cv_enlarge = self.allocate_numpy_cost_volume(img_left, disparity_range, offset_row_col)
+        cv = self.crop_cost_volume(cv_enlarge, offset_row_col)
 
         # Giving the 2 images, the matching cost will be calculated as :
         #                 1, 1, 1                2, 5, 6
@@ -206,7 +207,11 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             cv[:, -offset_row_col:, :] = np.nan
         else:
             cv = self.pixel_wise_aggregation(cv.data)  # type: ignore
-            cv = np.swapaxes(cv, 0, 2)
+
+        # Computations were optimized with a cost_volume of dimensions (disp, row, col)
+        # As we are expected to return a cost_volume of dimensions (row, col, disp),
+        # we swap axes.
+        cv = np.swapaxes(cv, 0, 2)
 
         # Create the xarray.DataSet that will contain the cv of dimensions (row, col, disp)
         cv = self.allocate_costvolume(
@@ -217,13 +222,13 @@ class SadSsd(matching_cost.AbstractMatchingCost):
 
     @staticmethod
     def allocate_numpy_cost_volume(
-        img_left: xr.Dataset, disparity_range: np.ndarray, offset_row_col: int
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        img_left: xr.Dataset, disparity_range: Union[np.ndarray, List], offset_row_col: int = 0
+    ) -> np.ndarray:
         # Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
         # If offset , over allocate the cost volume by adding 2 * offset on row and col dimension
         # The following computation will reduce the dimension during the pixel wise aggregation so the final
         # cv dimension will be equal to the correct one.
-        cost_volume_enlarged = np.full(
+        return np.full(
             (
                 len(disparity_range),
                 img_left.dims["col"] + 2 * offset_row_col,
@@ -232,12 +237,6 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             np.nan,
             dtype=np.float32,
         )
-        cost_volume = (
-            cost_volume_enlarged
-            if offset_row_col == 0
-            else cost_volume_enlarged[:, offset_row_col:-offset_row_col, offset_row_col:-offset_row_col]
-        )
-        return cost_volume, cost_volume_enlarged
 
     def ad_cost(
         self,
