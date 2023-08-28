@@ -23,7 +23,8 @@
 """
 This module contains functions to test the matching cost step.
 """
-import unittest
+# pylint with pytest's fixtures compatibility:
+# pylint: disable=redefined-outer-name
 import numpy as np
 import pytest
 
@@ -32,20 +33,22 @@ from pandora import matching_cost
 from tests import common
 
 
-class TestMatchingCost(unittest.TestCase):
+@pytest.fixture()
+def images():
+    return common.matching_cost_tests_setup()
+
+
+@pytest.fixture()
+def left(images):
+    return images[0]
+
+
+class TestMatchingCost:
     """
     TestMatchingCost class allows to test the methods in the class MatchingCost
     """
 
-    def setUp(self):
-        """
-        Method called to prepare the test fixture
-
-        """
-
-        self.left, self.right = common.matching_cost_tests_setup()
-
-    def test_allocate_numpy_cost_volume(self):
+    def test_allocate_numpy_cost_volume(self, left):
         """
         Test the allocate_numpy_cost_volume function
         """
@@ -63,27 +66,21 @@ class TestMatchingCost(unittest.TestCase):
         )
 
         # Function allocate_numpy_cost_volume
-        cv, cv_cropped = matching_cost_.allocate_numpy_cost_volume(self.left, [0, 0.5, 1, 1.5, 2], 2)
+        cv, cv_cropped = matching_cost_.allocate_numpy_cost_volume(left, [0, 0.5, 1, 1.5, 2], 2)
 
         # Test that cv and cv_cropped are equal to the ground truth
         np.testing.assert_array_equal(cv, gt_cv)
         np.testing.assert_array_equal(cv_cropped, gt_cv_cropped)
 
-
-@pytest.mark.parametrize(
-    ["disparity_min", "disparity_max", "subpix", "expected"],
-    [
-        [0, 2, 1, [0, 1, 2]],
-        [0, 2, 2, [0, 0.5, 1, 1.5, 2]],
-        [0, 2, 4, [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]],
-    ],
-)
-def test_get_disparity_range(disparity_min, disparity_max, subpix, expected):
-    """Test get_disparity_range."""
-    result = matching_cost.AbstractMatchingCost.get_disparity_range(disparity_min, disparity_max, subpix)
-    np.testing.assert_array_equal(result, expected)
-
-
-if __name__ == "__main__":
-    common.setup_logging()
-    unittest.main()
+    @pytest.mark.parametrize(
+        ["disparity_min", "disparity_max", "subpix", "expected"],
+        [
+            [0, 2, 1, [0, 1, 2]],
+            [0, 2, 2, [0, 0.5, 1, 1.5, 2]],
+            [0, 2, 4, [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]],
+        ],
+    )
+    def test_get_disparity_range(self, disparity_min, disparity_max, subpix, expected):
+        """Test get_disparity_range."""
+        result = matching_cost.AbstractMatchingCost.get_disparity_range(disparity_min, disparity_max, subpix)
+        np.testing.assert_array_equal(result, expected)
