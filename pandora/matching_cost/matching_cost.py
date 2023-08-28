@@ -579,11 +579,11 @@ class AbstractMatchingCost:
         :rtype: Tuple[xarray.Dataset, xarray.Dataset]
         """
 
-        cv = np.zeros(
+        cv = np.full(
             (len(disparity_range), img_left.dims["col"], img_left.dims["row"]),
+            np.nan,
             dtype=np.float32,
         )
-        cv += np.nan
 
         # If offset, do not consider border position for cost computation
         if offset_row_col != 0:
