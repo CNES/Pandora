@@ -259,12 +259,7 @@ class AbstractMatchingCost:
         row = np.arange(c_row[0], c_row[-1] + 1)  # type: np.ndarray
         col = np.arange(c_col[0], c_col[-1] + 1)  # type: np.ndarray
 
-        # Compute the disparity range
-        if subpix == 1:
-            disparity_range = np.arange(disp_min, disp_max + 1)
-        else:
-            disparity_range = np.arange(disp_min, disp_max, step=1 / float(subpix), dtype=np.float64)
-            disparity_range = np.append(disparity_range, [disp_max])
+        disparity_range = AbstractMatchingCost.get_disparity_range(disp_min, disp_max, subpix)
 
         # Create the cost volume
         if np_data is None:
@@ -282,6 +277,26 @@ class AbstractMatchingCost:
         cost_volume.attrs["window_size"] = window_size
 
         return cost_volume
+
+    @staticmethod
+    def get_disparity_range(disparity_min: int, disparity_max: int, subpix: int) -> np.ndarray:
+        """
+        Build disparity range and return it.
+
+        :param disparity_min: minimum disparity
+        :type disparity_min: int
+        :param disparity_max: maximum disparity
+        :type disparity_max: int
+        :param subpix: subpixel precision = (1 or 2 or 4)
+        :return: disparity range
+        :rtype: np.ndarray
+        """
+        if subpix == 1:
+            disparity_range = np.arange(disparity_min, disparity_max + 1)
+        else:
+            disparity_range = np.arange(disparity_min, disparity_max, step=1 / float(subpix), dtype=np.float64)
+            disparity_range = np.append(disparity_range, [disparity_max])
+        return disparity_range
 
     @staticmethod
     def point_interval(

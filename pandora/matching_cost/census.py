@@ -126,13 +126,7 @@ class Census(matching_cost.AbstractMatchingCost):
         for i, img in enumerate(img_right_shift):
             img_right_shift[i] = census_transform(img, self._window_size, self._band)  # type: ignore
 
-        # Disparity range # pylint: disable=undefined-variable
-        if self._subpix == 1:
-            disparity_range = np.arange(disp_min, disp_max + 1)
-        else:
-            disparity_range = np.arange(disp_min, disp_max, step=1 / float(self._subpix))  # type: ignore
-            disparity_range = np.append(disparity_range, [disp_max])
-
+        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
         cv, cv_crop = self.allocate_numpy_cost_volume(img_left, disparity_range, offset_row_col)
 
         # Giving the 2 images, the matching cost will be calculated as :

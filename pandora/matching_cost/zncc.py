@@ -137,13 +137,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
             "band_correl": self._band,
         }
 
-        # Disparity range
-        if self._subpix == 1:
-            disparity_range = np.arange(disp_min, disp_max + 1)
-        else:
-            disparity_range = np.arange(disp_min, disp_max, step=1 / float(self._subpix), dtype=np.float64)
-            disparity_range = np.append(disparity_range, [disp_max])
-
+        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
         cv, cv_crop = self.allocate_numpy_cost_volume(img_left, disparity_range, offset_row_col)
 
         # Computes the matching cost
