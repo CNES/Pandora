@@ -124,7 +124,7 @@ class AbstractMatchingCost:
         """
         self.cfg = self.check_conf(**cfg)  # type: ignore
         self._window_size = self.cfg["window_size"]
-        self._subpix = self.cfg["subpix"]
+        self._subpix = int(self.cfg["subpix"])
         self._band = self.cfg["band"]
 
     def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
