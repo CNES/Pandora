@@ -199,10 +199,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             cv = self.pixel_wise_aggregation(cv_enlarge.data)  # type: ignore
             cv = np.swapaxes(cv, 0, 2)
             cv[:offset_row_col, :, :] = np.nan
-            cv[
-                -offset_row_col:,
-                :,
-            ] = np.nan
+            cv[-offset_row_col:, :, :] = np.nan
             cv[:, :offset_row_col, :] = np.nan
             cv[:, -offset_row_col:, :] = np.nan
         else:
