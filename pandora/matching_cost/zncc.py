@@ -126,7 +126,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
         cmax = 1
 
         # Cost volume metadata
-        offset_row_col = int((self._window_size - 1) / 2)  # type: ignore
+        offset_row_col = int((self._window_size - 1) / 2)
         metadata = {
             "measure": "zncc",
             "subpixel": self._subpix,
@@ -149,9 +149,9 @@ class Zncc(matching_cost.AbstractMatchingCost):
 
             # Point interval in the left standard deviation image
             # -  (win_radius * 2) because img_std is truncated for points that are not calculable
-            p_std = (point_p[0], point_p[1] - (int(self._window_size / 2) * 2))  # type: ignore
+            p_std = (point_p[0], point_p[1] - (int(self._window_size / 2) * 2))
             # Point interval in the right standard deviation image
-            q_std = (point_q[0], point_q[1] - (int(self._window_size / 2) * 2))  # type: ignore
+            q_std = (point_q[0], point_q[1] - (int(self._window_size / 2) * 2))
 
             if self._band is not None:
                 band_index_left = list(img_left.band_im.data).index(self._band)
@@ -210,7 +210,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
             self._subpix,
             disp_min,
             disp_max,
-            self._window_size,  # type: ignore
+            self._window_size,
             metadata,
             np.swapaxes(cv, 0, 2),
         )

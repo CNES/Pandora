@@ -129,16 +129,11 @@ class SadSsd(matching_cost.AbstractMatchingCost):
 
         if self._method == "sad":
             # Maximal cost of the cost volume with sad measure
-            cmax = int(
-                max(abs(max_left - min_right), abs(max_right - min_left)) * (self._window_size**2)  # type: ignore
-            )
+            cmax = int(max(abs(max_left - min_right), abs(max_right - min_left)) * (self._window_size**2))
         if self._method == "ssd":
             # Maximal cost of the cost volume with ssd measure
-            cmax = int(
-                max(abs(max_left - min_right) ** 2, abs(max_right - min_left) ** 2)
-                * (self._window_size**2)  # type: ignore
-            )
-        offset_row_col = int((self._window_size - 1) / 2)  # type: ignore
+            cmax = int(max(abs(max_left - min_right) ** 2, abs(max_right - min_left) ** 2) * (self._window_size**2))
+        offset_row_col = int((self._window_size - 1) / 2)
         metadata = {
             "measure": self._method,
             "subpixel": self._subpix,
@@ -209,9 +204,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             cv[:, -offset_row_col:, :] = np.nan
 
         # Create the xarray.DataSet that will contain the cv of dimensions (row, col, disp)
-        cv = self.allocate_costvolume(
-            img_left, self._subpix, disp_min, disp_max, self._window_size, metadata, cv  # type: ignore
-        )
+        cv = self.allocate_costvolume(img_left, self._subpix, disp_min, disp_max, self._window_size, metadata, cv)
 
         return cv
 
@@ -351,12 +344,12 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             self._window_size,
             self._window_size,
             nb_disp,
-            nx_ - (self._window_size - 1),  # type: ignore
-            ny_ - (self._window_size - 1),  # type: ignore
+            nx_ - (self._window_size - 1),
+            ny_ - (self._window_size - 1),
         )
         strides_windows = (str_row, str_col, str_disp, str_col, str_row)
         aggregation_window = np.lib.stride_tricks.as_strided(
-            cost_volume, shape_windows, strides_windows, writeable=False  # type: ignore
+            cost_volume, shape_windows, strides_windows, writeable=False
         )
         cost_volume = np.sum(aggregation_window, (0, 1))
         return cost_volume

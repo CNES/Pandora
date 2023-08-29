@@ -123,7 +123,7 @@ class AbstractMatchingCost:
         :return: None
         """
         self.cfg = self.check_conf(**cfg)  # type: ignore
-        self._window_size = self.cfg["window_size"]
+        self._window_size = int(self.cfg["window_size"])
         self._subpix = int(self.cfg["subpix"])
         self._band = self.cfg["band"]
 
@@ -528,9 +528,7 @@ class AbstractMatchingCost:
 
         # Computes the validity mask of the cost volume : invalid pixels or no_data are masked with the value nan.
         # Valid pixels are = 0
-        mask_left, mask_right = self.masks_dilatation(
-            img_left, img_right, self._window_size, self._subpix  # type: ignore
-        )
+        mask_left, mask_right = self.masks_dilatation(img_left, img_right, self._window_size, self._subpix)
 
         for disp in cost_volume.coords["disp"].data:
             i_right = int((disp % 1) * self._subpix)

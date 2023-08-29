@@ -109,8 +109,8 @@ class Census(matching_cost.AbstractMatchingCost):
         img_right_shift = shift_right_img(img_right, self._subpix, self._band)  # type: ignore
 
         # Maximal cost of the cost volume with census measure
-        cmax = int(self._window_size**2)  # type: ignore
-        offset_row_col = int((self._window_size - 1) / 2)  # type: ignore
+        cmax = int(self._window_size**2)
+        offset_row_col = int((self._window_size - 1) / 2)
         metadata = {
             "measure": "census",
             "subpixel": self._subpix,
@@ -178,7 +178,7 @@ class Census(matching_cost.AbstractMatchingCost):
             self._subpix,
             disp_min,
             disp_max,
-            self._window_size,  # type: ignore
+            self._window_size,
             metadata,
             np.swapaxes(cv, 0, 2),
         )
