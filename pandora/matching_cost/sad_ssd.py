@@ -194,21 +194,19 @@ class SadSsd(matching_cost.AbstractMatchingCost):
                 1,
             )
 
-        # Pixel wise aggregation modifies border values so it is important to reconvert to nan values
-        if offset_row_col != 0:
-            cv = self.pixel_wise_aggregation(cv_enlarge.data)  # type: ignore
-            cv = np.swapaxes(cv, 0, 2)
-            cv[:offset_row_col, :, :] = np.nan
-            cv[-offset_row_col:, :, :] = np.nan
-            cv[:, :offset_row_col, :] = np.nan
-            cv[:, -offset_row_col:, :] = np.nan
-        else:
-            cv = self.pixel_wise_aggregation(cv.data)  # type: ignore
+        cv = self.pixel_wise_aggregation(cv_enlarge.data if offset_row_col else cv.data)  # type: ignore
 
         # Computations were optimized with a cost_volume of dimensions (disp, row, col)
         # As we are expected to return a cost_volume of dimensions (row, col, disp),
         # we swap axes.
         cv = np.swapaxes(cv, 0, 2)
+
+        if offset_row_col:
+            # Pixel wise aggregation modifies border values so it is important to reconvert to nan values
+            cv[:offset_row_col, :, :] = np.nan
+            cv[-offset_row_col:, :, :] = np.nan
+            cv[:, :offset_row_col, :] = np.nan
+            cv[:, -offset_row_col:, :] = np.nan
 
         # Create the xarray.DataSet that will contain the cv of dimensions (row, col, disp)
         cv = self.allocate_costvolume(

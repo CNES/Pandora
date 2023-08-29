@@ -170,6 +170,9 @@ class Census(matching_cost.AbstractMatchingCost):
             )
 
         # Create the xarray.DataSet that will contain the cv of dimensions (row, col, disp)
+        # Computations were optimized with a cost_volume of dimensions (disp, row, col)
+        # As we are expected to return a cost_volume of dimensions (row, col, disp),
+        # we swap axes.
         cv = self.allocate_costvolume(
             img_left,
             self._subpix,

@@ -202,6 +202,9 @@ class Zncc(matching_cost.AbstractMatchingCost):
             cv_crop[dsp, point_p[0] : p_std[1], :] = np.swapaxes(zncc_, 0, 1)
 
         # Create the xarray.DataSet that will contain the cost_volume of dimensions (row, col, disp)
+        # Computations were optimized with a cost_volume of dimensions (disp, row, col)
+        # As we are expected to return a cost_volume of dimensions (row, col, disp),
+        # we swap axes.
         cv = self.allocate_costvolume(
             img_left,
             self._subpix,
