@@ -71,7 +71,7 @@ class TestPandora(unittest.TestCase):
 
         pandora_machine = PandoraMachine()
         # Update the user configuration with default values
-        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+        cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
         with self.assertRaises(KeyError) as error:
@@ -101,7 +101,7 @@ class TestPandora(unittest.TestCase):
         pandora_machine = PandoraMachine()
 
         # Update the user configuration with default values
-        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+        cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
         with self.assertRaises(KeyError) as error:
@@ -126,7 +126,7 @@ class TestPandora(unittest.TestCase):
         pandora_machine = PandoraMachine()
 
         # Update the user configuration with default values
-        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+        cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
         with self.assertRaises(KeyError) as error:

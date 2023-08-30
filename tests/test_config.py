@@ -32,7 +32,7 @@ from transitions import MachineError
 import numpy as np
 import xarray as xr
 from tests import common
-import pandora.check_json as JSON_checker
+import pandora.check_configuration as JSON_checker
 from pandora.state_machine import PandoraMachine
 
 

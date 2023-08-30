@@ -98,7 +98,7 @@ class TestPandora(unittest.TestCase):
         pandora_machine = PandoraMachine()
 
         # Update the user configuration with default values
-        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+        cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
         # Run the pandora pipeline
         left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
 
@@ -129,7 +129,7 @@ class TestPandora(unittest.TestCase):
         pandora_machine = PandoraMachine()
 
         # Update the user configuration with default values
-        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+        cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
         left, right = pandora.run(  # pylint: disable = unused-variable
@@ -161,7 +161,7 @@ class TestPandora(unittest.TestCase):
         pandora_machine = PandoraMachine()
 
         # Update the user configuration with default values
-        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+        cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
         left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
@@ -196,7 +196,7 @@ class TestPandora(unittest.TestCase):
         pandora_machine = PandoraMachine()
 
         # Update the user configuration with default values
-        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+        cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
         left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
@@ -243,7 +243,7 @@ class TestPandora(unittest.TestCase):
         pandora_machine = PandoraMachine()
 
         # Update the user configuration with default values
-        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+        cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
         left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
@@ -324,7 +324,7 @@ class TestPandora(unittest.TestCase):
 
         pandora_machine = PandoraMachine()
 
-        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+        cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
         import_plugin()
 
         # Run the Pandora pipeline
@@ -455,7 +455,7 @@ class TestPandora(unittest.TestCase):
         pandora_machine = PandoraMachine()
 
         # Update the user configuration with default values
-        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+        cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         left_img = read_img("tests/pandora/left.png", no_data=np.nan, mask=None)
         right_img = read_img("tests/pandora/right.png", no_data=np.nan, mask=None)
@@ -521,7 +521,7 @@ class TestPandora(unittest.TestCase):
 
         pandora_machine = PandoraMachine()
         # Update the user configuration with default values
-        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+        cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
         left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg)
@@ -550,7 +550,7 @@ class TestPandora(unittest.TestCase):
 
         pandora_machine = PandoraMachine()
         # Update the user configuration with default values
-        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+        cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
         left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg)
@@ -579,7 +579,7 @@ class TestPandora(unittest.TestCase):
 
         pandora_machine = PandoraMachine()
         # Update the user configuration with default values
-        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+        cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
         left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg)
@@ -608,7 +608,7 @@ class TestPandora(unittest.TestCase):
 
         pandora_machine = PandoraMachine()
         # Update the user configuration with default values
-        cfg = pandora.check_json.update_conf(pandora.check_json.default_short_configuration, user_cfg)
+        cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
         left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg)

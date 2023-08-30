@@ -267,7 +267,7 @@ class TestImgTools(unittest.TestCase):
 
         """
         # Build the default configuration
-        default_cfg = pandora.check_json.default_short_configuration
+        default_cfg = pandora.check_configuration.default_short_configuration
         # left_img = array([[ -9999.,  1.,  2.,  3.,  -9999.],
         #                  [ 5.,  6.,  7.,  8.,  9.],
         #                  [ -9999.,  -9999., 23.,  5.,  6.],
@@ -353,7 +353,7 @@ class TestImgTools(unittest.TestCase):
 
         """
         # Build the default configuration
-        default_cfg = pandora.check_json.default_short_configuration
+        default_cfg = pandora.check_configuration.default_short_configuration
 
         # Computes the dataset image
         # The classes present in left_classif are "cornfields", "olive tree", "forest"
@@ -376,7 +376,7 @@ class TestImgTools(unittest.TestCase):
 
         """
         # Build the default configuration
-        default_cfg = pandora.check_json.default_short_configuration
+        default_cfg = pandora.check_configuration.default_short_configuration
 
         # Computes the dataset image
         # The classes present in left_classif are "cornfields", "olive tree", "forest"
@@ -403,7 +403,7 @@ class TestImgTools(unittest.TestCase):
 
         """
         # Build the default configuration
-        default_cfg = pandora.check_json.default_short_configuration
+        default_cfg = pandora.check_configuration.default_short_configuration
 
         # Computes the dataset image
         dst_left = img_tools.read_img(
@@ -446,7 +446,7 @@ class TestImgTools(unittest.TestCase):
 
         """
         # Build the default configuration
-        default_cfg = pandora.check_json.default_short_configuration
+        default_cfg = pandora.check_configuration.default_short_configuration
 
         # Computes the dataset image
         dst__correct = img_tools.read_img(img="tests/image/left_img.tif", no_data=default_cfg["input"]["nodata_left"])
@@ -494,7 +494,7 @@ class TestImgTools(unittest.TestCase):
 
         """
         # Build the default configuration
-        default_cfg = pandora.check_json.default_short_configuration
+        default_cfg = pandora.check_configuration.default_short_configuration
 
         # Computes the dataset image
         dst_left = img_tools.read_img(img="tests/pandora/left.png", no_data=default_cfg["input"]["nodata_left"])
@@ -513,7 +513,7 @@ class TestImgTools(unittest.TestCase):
 
         """
         # Build the default configuration
-        default_cfg = pandora.check_json.default_short_configuration
+        default_cfg = pandora.check_configuration.default_short_configuration
 
         # Computes the dataset image
         dst_left = img_tools.read_img(img="tests/image/left_img.tif", no_data=default_cfg["input"]["nodata_left"])

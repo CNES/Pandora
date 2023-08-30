@@ -304,7 +304,7 @@ class TestDisparity(unittest.TestCase):
 
         """
         # Build the default configuration
-        default_cfg = pandora.check_json.default_short_configuration
+        default_cfg = pandora.check_configuration.default_short_configuration
 
         pandora_left = read_img("tests/pandora/left.png", no_data=np.nan, mask=None)
         pandora_right = read_img("tests/pandora/right.png", no_data=np.nan, mask=None)
@@ -321,7 +321,7 @@ class TestDisparity(unittest.TestCase):
         }
 
         pandora_machine_fast = PandoraMachine()
-        cfg = pandora.check_json.update_conf(default_cfg, fast_cfg)
+        cfg = pandora.check_configuration.update_conf(default_cfg, fast_cfg)
         left, right_fast = pandora.run(  # pylint: disable=unused-variable
             pandora_machine_fast, pandora_left, pandora_right, -60, 0, cfg
         )
@@ -338,7 +338,7 @@ class TestDisparity(unittest.TestCase):
         }
 
         pandora_machine_acc = PandoraMachine()
-        cfg = pandora.check_json.update_conf(default_cfg, acc_cfg)
+        cfg = pandora.check_configuration.update_conf(default_cfg, acc_cfg)
         left, right_acc = pandora.run(pandora_machine_acc, pandora_left, pandora_right, -60, 0, cfg)
         # Check if the calculated disparity map in fast mode is equal to the disparity map in accurate mode
         np.testing.assert_array_equal(right_fast["disparity_map"].data, right_acc["disparity_map"].data)

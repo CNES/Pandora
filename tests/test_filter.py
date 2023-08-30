@@ -238,10 +238,10 @@ class TestFilter(unittest.TestCase):
         user_cfg = {"filter": {"filter_method": "bilateral", "sigma_color": 4.0, "sigma_space": 6.0}}
 
         # Build the default configuration
-        cfg = pandora.check_json.default_short_configuration
+        cfg = pandora.check_configuration.default_short_configuration
 
         # Update the configuration with default values
-        cfg = pandora.check_json.update_conf(cfg, user_cfg)
+        cfg = pandora.check_configuration.update_conf(cfg, user_cfg)
 
         filter_bilateral = flt.AbstractFilter(**cfg["filter"])
 
@@ -304,10 +304,10 @@ class TestFilter(unittest.TestCase):
         user_cfg = {"filter": {"filter_method": "bilateral", "sigma_color": 4.0, "sigma_space": 6.0}}
 
         # Build the default configuration
-        cfg = pandora.check_json.default_short_configuration
+        cfg = pandora.check_configuration.default_short_configuration
 
         # Update the configuration with default values
-        cfg = pandora.check_json.update_conf(cfg, user_cfg)
+        cfg = pandora.check_configuration.update_conf(cfg, user_cfg)
 
         filter_bilateral = flt.AbstractFilter(**cfg["filter"])
 
@@ -403,10 +403,10 @@ class TestFilter(unittest.TestCase):
         user_cfg = {"filter": {"filter_method": "bilateral", "sigma_color": 4.0, "sigma_space": 6.0}}
 
         # Build the default configuration
-        cfg = pandora.check_json.default_short_configuration
+        cfg = pandora.check_configuration.default_short_configuration
 
         # Update the configuration with default values
-        cfg = pandora.check_json.update_conf(cfg, user_cfg)
+        cfg = pandora.check_configuration.update_conf(cfg, user_cfg)
 
         filter_bilateral = flt.AbstractFilter(**cfg["filter"])
 
@@ -552,10 +552,10 @@ class TestFilter(unittest.TestCase):
         user_cfg = {"filter": {"filter_method": "bilateral", "sigma_color": 4.0, "sigma_space": 6.0}}
 
         # Build the default configuration
-        cfg = pandora.check_json.default_short_configuration
+        cfg = pandora.check_configuration.default_short_configuration
 
         # Update the configuration with default values
-        cfg = pandora.check_json.update_conf(cfg, user_cfg)
+        cfg = pandora.check_configuration.update_conf(cfg, user_cfg)
 
         filter_bilateral = flt.AbstractFilter(**cfg["filter"])
         disp = np.array(
