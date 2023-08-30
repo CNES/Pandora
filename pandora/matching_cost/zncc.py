@@ -142,10 +142,9 @@ class Zncc(matching_cost.AbstractMatchingCost):
         cv_crop = self.crop_cost_volume(cv, offset_row_col)
 
         # Computes the matching cost
-        for disp in disparity_range:
+        for disp_index, disp in enumerate(disparity_range):
             i_right = int((disp % 1) * self._subpix)
             point_p, point_q = self.point_interval(img_left, img_right_shift[i_right], disp)
-            dsp = int((disp - disp_min) * self._subpix)
 
             # Point interval in the left standard deviation image
             # -  (win_radius * 2) because img_std is truncated for points that are not calculable
@@ -199,7 +198,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
             zncc_[np.where(divide_standard <= 0)] = 0
 
             # Places the result in the cost_volume
-            cv_crop[dsp, point_p[0] : p_std[1], :] = np.swapaxes(zncc_, 0, 1)
+            cv_crop[disp_index, point_p[0] : p_std[1], :] = np.swapaxes(zncc_, 0, 1)
 
         # Create the xarray.DataSet that will contain the cost_volume of dimensions (row, col, disp)
         # Computations were optimized with a cost_volume of dimensions (disp, row, col)

@@ -160,12 +160,11 @@ class Census(matching_cost.AbstractMatchingCost):
         # Computes the matching cost
         # In the loop, cv is of shape (disp, col, row) and images / masks of shape (row, col)
         # np.swapaxes allow to interchange row and col in images and masks
-        for disp in disparity_range:
+        for disp_index, disp in enumerate(disparity_range):
             i_right = int((disp % 1) * self._subpix)
             point_p, point_q = self.point_interval(left, img_right_shift[i_right], disp)
-            dsp = int((disp - disp_min) * self._subpix)
 
-            cv_crop[dsp, point_p[0] : point_p[1], :] = np.swapaxes(
+            cv_crop[disp_index, point_p[0] : point_p[1], :] = np.swapaxes(
                 self.census_cost(point_p, point_q, left, img_right_shift[i_right]), 0, 1
             )
 
