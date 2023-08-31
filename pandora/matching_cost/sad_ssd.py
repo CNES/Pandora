@@ -89,12 +89,12 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         :param img_left: left Dataset image
         :type img_left:
             xarray.Dataset containing :
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :param img_right: right Dataset image
         :type img_right:
             xarray.Dataset containing :
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :param disp_min: minimum disparity
         :type disp_min: int
@@ -111,8 +111,8 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         # Contains the shifted right images
         img_right_shift = shift_right_img(img_right, self._subpix, self._band)  # type: ignore
         if self._band is not None:
-            band_index_left = list(img_left.band.data).index(self._band)
-            band_index_right = list(img_right.band.data).index(self._band)
+            band_index_left = list(img_left.band_im.data).index(self._band)
+            band_index_right = list(img_right.band_im.data).index(self._band)
             selected_band_right = img_right["im"].data[band_index_right, :, :]
             selected_band_left = img_left["im"].data[band_index_left, :, :]
         else:
@@ -258,19 +258,19 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         :param img_left: left Dataset image
         :type img_left:
             xarray.Dataset containing :
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :param img_right: right Dataset image
         :type img_right:
             xarray.Dataset containing :
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :return: the absolute difference pixel-wise between elements in the interval
         :rtype: numpy array
         """
         if self._band is not None:
-            band_index_left = list(img_left.band.data).index(self._band)
-            band_index_right = list(img_right.band.data).index(self._band)
+            band_index_left = list(img_left.band_im.data).index(self._band)
+            band_index_right = list(img_right.band_im.data).index(self._band)
             # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
             if len(img_right["im"].data.shape) > 2:
                 cost = abs(
@@ -303,20 +303,20 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         :param img_left: left Dataset image
         :type img_left:
             xarray.Dataset containing :
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :param img_right: right Dataset image
         :type img_right:
             xarray.Dataset containing :
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :return: the squared difference pixel-wise between elements in the interval
         :rtype: numpy array
         """
 
         if self._band is not None:
-            band_index_left = list(img_left.band.data).index(self._band)
-            band_index_right = list(img_right.band.data).index(self._band)
+            band_index_left = list(img_left.band_im.data).index(self._band)
+            band_index_right = list(img_right.band_im.data).index(self._band)
             # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
             if len(img_right["im"].data.shape) > 2:
                 cost = (

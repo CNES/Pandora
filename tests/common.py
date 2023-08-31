@@ -115,8 +115,8 @@ def matching_cost_tests_multiband_setup() -> Tuple[xr.Dataset, xr.Dataset]:
     )
 
     left = xr.Dataset(
-        {"im": (["band", "row", "col"], data)},
-        coords={"band": ["r", "g"], "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])},
+        {"im": (["band_im", "row", "col"], data)},
+        coords={"band_im": ["r", "g"], "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])},
     )
 
     left.attrs = {"valid_pixels": 0, "no_data_mask": 1, "crs": None, "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)}
@@ -145,8 +145,8 @@ def matching_cost_tests_multiband_setup() -> Tuple[xr.Dataset, xr.Dataset]:
     )
 
     right = xr.Dataset(
-        {"im": (["band", "row", "col"], data)},
-        coords={"band": ["r", "g"], "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])},
+        {"im": (["band_im", "row", "col"], data)},
+        coords={"band_im": ["r", "g"], "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])},
     )
     right.attrs = {
         "valid_pixels": 0,

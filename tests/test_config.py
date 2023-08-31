@@ -275,7 +275,7 @@ class TestConfig(unittest.TestCase):
         print("metadata_img", metadata_img)
         # Metadata ground truth
         metadata_gt = xr.Dataset(
-            data_vars={}, coords={"band": [None], "row": 375, "col": 450}, attrs={"disp_min": -60, "disp_max": 0}
+            data_vars={}, coords={"band_im": [None], "row": 375, "col": 450}, attrs={"disp_min": -60, "disp_max": 0}
         )
 
         # Check that the get_metadata function raises whitout error
@@ -349,13 +349,13 @@ class TestConfig(unittest.TestCase):
         # Check that the check_band_pipeline raises an error (this shall be the source of check_conf's error)
         with pytest.raises(SystemExit):
             pandora_machine.check_band_pipeline(
-                img_left.coords["band"].data,
+                img_left.coords["band_im"].data,
                 cfg["pipeline"]["matching_cost"]["matching_cost_method"],
                 cfg["pipeline"]["matching_cost"]["band"],
             )
         with pytest.raises(SystemExit):
             pandora_machine.check_band_pipeline(
-                img_right.coords["band"].data,
+                img_right.coords["band_im"].data,
                 cfg["pipeline"]["matching_cost"]["matching_cost_method"],
                 cfg["pipeline"]["matching_cost"]["band"],
             )
@@ -382,13 +382,13 @@ class TestConfig(unittest.TestCase):
             # We add the band argument ad None because normally it is completed in the check_conf function,
             # which then calls check_band_pipeline
             pandora_machine.check_band_pipeline(
-                img_left.coords["band"].data,
+                img_left.coords["band_im"].data,
                 cfg["pipeline"]["matching_cost"]["matching_cost_method"],
                 band_used=None,
             )
         with pytest.raises(SystemExit):
             pandora_machine.check_band_pipeline(
-                img_right.coords["band"].data,
+                img_right.coords["band_im"].data,
                 cfg["pipeline"]["matching_cost"]["matching_cost_method"],
                 band_used=None,
             )

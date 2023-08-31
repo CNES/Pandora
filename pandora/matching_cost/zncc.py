@@ -86,12 +86,12 @@ class Zncc(matching_cost.AbstractMatchingCost):
         :param img_left: left Dataset image
         :type img_left:
             xarray.Dataset containing :
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :param img_right: right Dataset image
         :type img_right:
             xarray.Dataset containing :
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :param disp_min: minimum disparity
         :type disp_min: int
@@ -159,8 +159,8 @@ class Zncc(matching_cost.AbstractMatchingCost):
             q_std = (point_q[0], point_q[1] - (int(self._window_size / 2) * 2))  # type: ignore
 
             if self._band is not None:
-                band_index_left = list(img_left.band.data).index(self._band)
-                band_index_right = list(img_right.band.data).index(self._band)
+                band_index_left = list(img_left.band_im.data).index(self._band)
+                band_index_right = list(img_right.band_im.data).index(self._band)
                 if len(img_right_shift[i_right]["im"].shape) > 2:
                     # Compute the normalized summation of the product of intensities
                     zncc_ = (

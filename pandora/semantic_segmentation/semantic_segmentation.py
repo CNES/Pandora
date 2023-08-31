@@ -112,7 +112,7 @@ class AbstractSemanticSegmentation:
         :type cv: xarray.Dataset
         :param img_left: left Dataset image containing :
 
-                - im : 3D (band, row, col) xarray.DataArray
+                - im : 3D (band_im, row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :type img_left: xarray
         :param img_right: right Dataset image containing :

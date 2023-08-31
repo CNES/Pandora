@@ -131,12 +131,12 @@ class AbstractInterpolation:
         :type left: xarray.Dataset
         :param img_left: left Datset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param cv: cost_volume Dataset with the variables:
@@ -197,12 +197,12 @@ class McCnnInterpolation(AbstractInterpolation):
         :type left: xarray.Dataset
         :param img_left: left Datset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param cv: cost_volume Dataset with the variables:
@@ -414,12 +414,12 @@ class SgmInterpolation(AbstractInterpolation):
         :type left: xarray.Dataset
         :param img_left: left Datset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param cv: cost_volume Dataset with the variables:

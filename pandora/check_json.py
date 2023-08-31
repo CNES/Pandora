@@ -246,7 +246,7 @@ def get_metadata(
     """
     img_ds = rasterio_open(img)
     coords = {
-        "band": list(img_ds.descriptions),
+        "band_im": list(img_ds.descriptions),
         "row": img_ds.height,
         "col": img_ds.width,
     }

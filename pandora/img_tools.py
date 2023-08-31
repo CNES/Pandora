@@ -75,9 +75,9 @@ def read_img(  # pylint:disable=too-many-branches
     :type segm: string
     :return: xarray.DataSet containing the variables :
 
-            - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray float32
+            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
             - msk : 2D (row, col) xarray.DataArray int16, with the convention defined in the configuration file
-            - classif : 3D (band, row, col) xarray.DataArray float32
+            - classif : 3D (band_classif, row, col) xarray.DataArray float32
 
     :rtype: xarray.DataSet
     """
@@ -109,10 +109,10 @@ def read_img(  # pylint:disable=too-many-branches
         coords = {"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
     # if image is 3 dimensions we create a dataset with [band row col] dims for dataArray
     else:
-        image = {"im": (["band", "row", "col"], data.astype(np.float32))}
+        image = {"im": (["band_im", "row", "col"], data.astype(np.float32))}
         # Band names are in the image metadata
         coords = {
-            "band": list(img_ds.descriptions),  # type: ignore
+            "band_im": list(img_ds.descriptions),  # type: ignore
             "row": np.arange(data.shape[1]),
             "col": np.arange(data.shape[2]),
         }
@@ -249,11 +249,11 @@ def prepare_pyramid(
 
     :param img_left: left Dataset image containing :
 
-            - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
     :type img_left: xarray.Dataset
     :param img_right: right Dataset containing :
 
-            - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
     :type img_right: xarray.Dataset
     :param num_scales: number of scales
     :type num_scales: int
@@ -314,7 +314,7 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
     :param dataset: Dataset image
     :type dataset: xarray.Dataset containing :
 
-        - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+        - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
     :return: a Tuple that contains the filled image and mask
     :rtype: Tuple of np.ndarray
     """
@@ -412,7 +412,7 @@ def convert_pyramid_to_dataset(
 
     :param img_orig: Dataset image containing :
 
-        - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+        - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
     :type img_orig: xarray.Dataset
     :param images: list of images for the pyramid
     :type images: list[np.ndarray]
@@ -442,9 +442,9 @@ def convert_pyramid_to_dataset(
             )
         else:
             dataset = xr.Dataset(
-                {"im": (["band", "row", "col"], image.astype(np.float32))},
+                {"im": (["band_im", "row", "col"], image.astype(np.float32))},
                 coords={
-                    "band": list(img_orig.band.data),
+                    "band_im": list(img_orig.band.data),
                     "row": np.arange(image.shape[1]),
                     "col": np.arange(image.shape[2]),
                 },
@@ -468,7 +468,7 @@ def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None) -> Lis
 
     :param img_right: right Dataset image containing :
 
-        - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+        - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
     :type img_right: xarray.Dataset
     :param subpix: subpixel precision = (1 or pair number)
     :type subpix: int
@@ -484,7 +484,7 @@ def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None) -> Lis
         selected_band = img_right["im"].data
     else:
         # if image has more than one band we only shift the one specified in matching_cost
-        band_index_right = list(img_right.band.data).index(band)
+        band_index_right = list(img_right.band_im.data).index(band)
         selected_band = img_right["im"].data[band_index_right, :, :]
 
     if subpix > 1:
@@ -510,7 +510,7 @@ def check_inside_image(img: xr.Dataset, row: int, col: int) -> bool:
 
     :param img: Dataset image containing :
 
-            - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
     :type img: xarray.Dataset
     :param row: row coordinates
     :type row: int
@@ -541,7 +541,7 @@ def census_transform(image: xr.Dataset, window_size: int, band: str = None) -> x
     ny_, nx_ = image.dims["row"], image.dims["col"]
 
     if len(image["im"].shape) > 2:
-        band_index = list(image.band.data).index(band)
+        band_index = list(image.band_im.data).index(band)
         selected_band = image["im"].data[band_index, :, :]
     else:
         selected_band = image["im"].data
@@ -591,7 +591,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.
 
     :param img: Dataset image containing :
 
-            - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
     :type img: xarray.Dataset
     :param win_size: window size
     :type win_size: int
@@ -603,7 +603,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.
     # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
     ny_, nx_ = img.dims["row"], img.dims["col"]
     if len(img["im"].shape) > 2:
-        band_index = list(img.band.data).index(band)
+        band_index = list(img.band_im.data).index(band)
         # Example with win_size = 3 and the input :
         #           10 | 5  | 3
         #            2 | 10 | 5
@@ -683,7 +683,7 @@ def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np
 
     :param img: Dataset image containing :
 
-            - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
     :type img: xarray.Dataset
     :param row: row coordinates
     :type row: int
@@ -717,7 +717,7 @@ def compute_std_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.n
 
     :param img: Dataset image containing :
 
-            - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
     :type img: xarray.Dataset
     :param win_size: window size
     :type win_size: int
@@ -730,7 +730,7 @@ def compute_std_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.n
     mean_ = compute_mean_raster(img, win_size, band)
     # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
     if len(img["im"].shape) > 2:
-        band_index = list(img.band.data).index(band)
+        band_index = list(img.band_im.data).index(band)
         selected_band = img["im"].data[band_index, :, :]
     else:
         selected_band = img["im"].data

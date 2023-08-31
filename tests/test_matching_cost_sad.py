@@ -931,8 +931,12 @@ class TestMatchingCostSAD(unittest.TestCase):
         )
 
         left = xr.Dataset(
-            {"im": (["band", "row", "col"], data)},
-            coords={"band": np.arange(data.shape[0]), "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])},
+            {"im": (["band_im", "row", "col"], data)},
+            coords={
+                "band_im": np.arange(data.shape[0]),
+                "row": np.arange(data.shape[1]),
+                "col": np.arange(data.shape[2]),
+            },
         )
 
         left.attrs = common.img_attrs
@@ -960,8 +964,12 @@ class TestMatchingCostSAD(unittest.TestCase):
         )
 
         right = xr.Dataset(
-            {"im": (["band", "row", "col"], data)},
-            coords={"band": np.arange(data.shape[0]), "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])},
+            {"im": (["band_im", "row", "col"], data)},
+            coords={
+                "band_im": np.arange(data.shape[0]),
+                "row": np.arange(data.shape[1]),
+                "col": np.arange(data.shape[2]),
+            },
         )
 
         right.attrs = common.img_attrs
