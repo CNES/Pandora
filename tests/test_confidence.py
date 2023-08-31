@@ -412,9 +412,9 @@ class TestConfidence(unittest.TestCase):
             dtype=np.float32,
         )
         left = xr.Dataset(
-            {"im": (["band", "row", "col"], left_data)},
+            {"im": (["band_im", "row", "col"], left_data)},
             coords={
-                "band": ["r", "g"],
+                "band_im": ["r", "g"],
                 "row": np.arange(left_data.shape[1]),
                 "col": np.arange(left_data.shape[2]),
             },
@@ -436,9 +436,9 @@ class TestConfidence(unittest.TestCase):
             dtype=np.float64,
         )
         right = xr.Dataset(
-            {"im": (["band", "row", "col"], right_data)},
+            {"im": (["band_im", "row", "col"], right_data)},
             coords={
-                "band": ["r", "g"],
+                "band_im": ["r", "g"],
                 "row": np.arange(right_data.shape[1]),
                 "col": np.arange(right_data.shape[2]),
             },

@@ -55,7 +55,7 @@ Configuration and parameters
 - For *mc_cnn* similarity measure see :ref:`plugin_mccnn_conf` of :ref:`plugin_mccnn` for sub-parameters and configuration example.
 
 .. note::
-    - NB: Parameter *band* must be present in the left and right image's metadata.
+    - NB: Parameter *band_im* must be present in the left and right image's metadata.
     - If the input images are multiband, the band's names must be present on the image metadata. To see how to add band's names on the image's metadata, please see :ref:`faq`.
 
 **Example for mono band images**

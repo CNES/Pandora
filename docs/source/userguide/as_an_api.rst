@@ -114,11 +114,11 @@ Example of a multiband image dataset
 
     Dimensions:  (band: 2, row: 5, col: 6)
     Coordinates:
-      * band     (band) <U1 'r' 'g'
+      * band_im     (band_im) <U1 'r' 'g'
       * row      (row) int64 0 1 2 3 4
       * col      (col) int64 0 1 2 3 4 5
     Data variables:
-        im       (band, row, col) float64 1.0 1.0 1.0 1.0 1.0 ... 1.0 1.0 1.0 1.0
+        im       (band_im, row, col) float64 1.0 1.0 1.0 1.0 1.0 ... 1.0 1.0 1.0 1.0
     Attributes:
         valid_pixels:  0
         no_data_mask:  1

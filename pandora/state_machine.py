@@ -217,12 +217,12 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         :param img_left_pyramid: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :type img_left_pyramid: xarray.Dataset
         :param img_right_pyramid: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :type img_right_pyramid: xarray.Dataset
         :param disp_min: minimal disparity
@@ -560,12 +560,12 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type cfg: dict
         :param left_img: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :type left_img: xarray.Dataset
         :param right_img: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk (optional): 2D (row, col) xarray.DataArray
         :type right_img: xarray.Dataset
         :param disp_min: minimal disparity
@@ -723,12 +723,12 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         else:
             band = cfg["matching_cost"]["band"]
         self.check_band_pipeline(
-            self.left_img.coords["band"].data,
+            self.left_img.coords["band_im"].data,
             cfg["matching_cost"]["matching_cost_method"],
             band,
         )
         self.check_band_pipeline(
-            self.right_img.coords["band"].data,
+            self.right_img.coords["band_im"].data,
             cfg["matching_cost"]["matching_cost_method"],
             band,
         )
@@ -802,7 +802,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         # If semantic_segmentation is present, check that the necessary bands are present in the inputs
         self.check_band_pipeline(
-            self.left_img.coords["band"].data,
+            self.left_img.coords["band_im"].data,
             cfg["semantic_segmentation"]["segmentation_method"],
             cfg["semantic_segmentation"]["RGB_bands"],
         )
@@ -824,7 +824,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # check that the RGB band are present in the right image
         if self.right_disp_map == "accurate":
             self.check_band_pipeline(
-                self.right_img.coords["band"].data,
+                self.right_img.coords["band_im"].data,
                 cfg["semantic_segmentation"]["segmentation_method"],
                 cfg["semantic_segmentation"]["RGB_bands"],
             )

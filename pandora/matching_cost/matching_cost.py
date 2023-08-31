@@ -153,40 +153,40 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset  containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :return: None
         """
         if self._band is not None:
             try:
-                list(img_right.band.data)
+                list(img_right.band_im.data)
             except AttributeError:
                 logging.error("Right dataset is monoband: %s band cannot be selected", self._band)
                 sys.exit(1)
             try:
-                list(img_left.band.data)
+                list(img_left.band_im.data)
             except AttributeError:
                 logging.error("Left dataset is monoband: %s band cannot be selected", self._band)
                 sys.exit(1)
-            if (self._band not in list(img_right.band.data)) or (self._band not in list(img_left.band.data)):
+            if (self._band not in list(img_right.band_im.data)) or (self._band not in list(img_left.band_im.data)):
                 logging.error("Wrong band instantiate : %s not in img_left or img_right", self._band)
                 sys.exit(1)
         else:
             try:
-                list(img_right.band.data)
+                list(img_right.band_im.data)
             except AttributeError:
                 return
             try:
-                list(img_left.band.data)
+                list(img_left.band_im.data)
             except AttributeError:
                 return
-            if (img_right.band.data is not None) or (img_left.band.data is not None):
+            if (img_right.band_im.data is not None) or (img_left.band_im.data is not None):
                 logging.error("Band must be instantiated in matching cost step")
                 sys.exit(1)
 
@@ -199,12 +199,12 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset  containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param disp_min: minimum disparity
@@ -232,7 +232,7 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param subpix: subpixel precision = (1 or 2 or 4)
@@ -292,12 +292,12 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param disp: current disparity
@@ -338,12 +338,12 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param window_size: window size of the measure
@@ -482,12 +482,12 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_right: xarray.Dataset
         :param cost_volume: the cost_volume DataSet with the data variables:
@@ -565,7 +565,7 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band, row, col) xarray.DataArray
+                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
                 - msk : 2D (row, col) xarray.DataArray
         :type img_left: xarray.Dataset
         :param disparity_range: disparity range

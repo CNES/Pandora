@@ -389,7 +389,7 @@ class TestImgTools(unittest.TestCase):
         # The bands present in left_rgb are "r", "g", "b"
         gt_bands = ["r", "g", "b"]
         # Check if the classes names are correctly set on the dataset
-        np.testing.assert_array_equal(list(dst_left.band.data), gt_bands)
+        np.testing.assert_array_equal(list(dst_left.band_im.data), gt_bands)
 
         # The classes present in left_classif are "cornfields", "olive tree", "forest"
         gt_classes = ["cornfields", "olive tree", "forest"]
