@@ -259,11 +259,30 @@ class TestDisparity(unittest.TestCase):
         Test the approximate_right_disparity method
 
         """
+        disparity_min, disparity_max = -2, 1
         # Create the left cost volume, with SAD measure window size 3 and subpixel 1
-        matching_cost_plugin = matching_cost.AbstractMatchingCost(
-            **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
+        cost_volume_data = np.full((3, 4, 4), np.nan, dtype=np.float32)
+        cost_volume_data[1, 1, 2] = 23
+        cost_volume_data[1, 1, 3] = 0
+        cost_volume_data[1, 2, 1] = 24
+        cost_volume_data[1, 2, 2] = 19
+
+        # Cost Volume, for the images described in the setUp method
+        cv = xr.Dataset(
+            {"cost_volume": (["row", "col", "disp"], cost_volume_data)},
+            coords={"row": np.arange(3), "col": np.arange(4), "disp": np.arange(disparity_min, disparity_max + 1)},
+            attrs={
+                "measure": "sad",
+                "subpixel": 1,
+                "offset_row_col": 1,
+                "window_size": 3,
+                "type_measure": "min",
+                "cmax": 81,
+                "band_correl": None,
+                "crs": None,
+                "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            },
         )
-        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, -2, 1)
 
         # Right disparity map ground truth, for the images described in the setUp method
         gt_disp = np.array([[0, 0, 0, 0], [0, 0, -1, 0], [0, 0, 0, 0]])
