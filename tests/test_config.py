@@ -32,7 +32,7 @@ from transitions import MachineError
 import numpy as np
 import xarray as xr
 from tests import common
-import pandora.check_configuration as JSON_checker
+from pandora import check_configuration
 from pandora.state_machine import PandoraMachine
 
 
@@ -55,19 +55,19 @@ class TestConfig(unittest.TestCase):
 
         # Test configuration with left disparity grids and right disparity = none
         cfg = {"input": copy.deepcopy(common.input_cfg_left_grids)}
-        cfg_return = JSON_checker.check_input_section(cfg)
+        cfg_return = check_configuration.check_input_section(cfg)
         if (cfg_return["input"]["disp_min_right"] is not None) and (cfg_return["input"]["disp_max_right"] is not None):
             raise AssertionError
 
         # Test configuration with left disparity as integer
         cfg = {"input": copy.deepcopy(common.input_cfg_basic)}
-        cfg_return = JSON_checker.check_input_section(cfg)
+        cfg_return = check_configuration.check_input_section(cfg)
         if (cfg_return["input"]["disp_min_right"] is not None) and (cfg_return["input"]["disp_max_right"] is not None):
             raise AssertionError
 
         # Test configuration with left and right disparity grids
         cfg = {"input": copy.deepcopy(common.input_cfg_left_right_grids)}
-        cfg_return = JSON_checker.check_input_section(cfg)
+        cfg_return = check_configuration.check_input_section(cfg)
 
         if (cfg_return["input"]["disp_min_right"] != "tests/pandora/right_disp_min_grid.tif") and (
             cfg_return["input"]["disp_max_right"] != "tests/pandora/right_disp_max_grid.tif"
@@ -76,7 +76,7 @@ class TestConfig(unittest.TestCase):
 
         # Test configuration with left disparity grids and right disparity = none and classif and segm = none
         cfg = {"input": copy.deepcopy(common.input_cfg_left_grids)}
-        cfg_return = JSON_checker.check_input_section(cfg)
+        cfg_return = check_configuration.check_input_section(cfg)
         if (
             (cfg_return["input"]["left_classif"] is not None)
             and (cfg_return["input"]["left_segm"] is not None)
@@ -91,7 +91,7 @@ class TestConfig(unittest.TestCase):
         cfg["input"]["left_classif"] = "tests/pandora/right.png"
         cfg["input"]["left_segm"] = "tests/pandora/left.png"
 
-        cfg_return = JSON_checker.check_input_section(cfg)
+        cfg_return = check_configuration.check_input_section(cfg)
         if (
             (cfg_return["input"]["left_classif"] != "tests/pandora/right.png")
             and (cfg_return["input"]["left_segm"] != "tests/pandora/left.png")
@@ -106,7 +106,7 @@ class TestConfig(unittest.TestCase):
         cfg["input"]["right_classif"] = "tests/pandora/right.png"
         cfg["input"]["right_segm"] = "tests/pandora/left.png"
 
-        cfg_return = JSON_checker.check_input_section(cfg)
+        cfg_return = check_configuration.check_input_section(cfg)
         if (
             (cfg_return["input"]["right_classif"] != "tests/pandora/right.png")
             and (cfg_return["input"]["right_segm"] != "tests/pandora/left.png")
@@ -124,28 +124,28 @@ class TestConfig(unittest.TestCase):
         cfg["input"]["disp_max"] = 45
 
         # Json checker must raise an error
-        self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
+        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
 
         # Test configuration with left disparity grids and right disparity max as integer
         cfg = {"input": copy.deepcopy(common.input_cfg_left_grids)}
         cfg["input"]["disp_max_right"] = -4
 
         # Json checker must raise an error
-        self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
+        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
 
         # Test configuration with left disparity grids and right disparity max as integer
         cfg = {"input": copy.deepcopy(common.input_cfg_left_right_grids)}
         cfg["input"]["disp_max_right"] = -4
 
         # Json checker must raise an error
-        self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
+        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
 
         # Test configuration with left disparity grids and right disparity min as integer
         cfg = {"input": copy.deepcopy(common.input_cfg_left_grids)}
         cfg["input"]["disp_min_right"] = -4
 
         # Json checker must raise an error
-        self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
+        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
 
         # Test configuration with left disparity grids and right disparities as integer
         cfg = {"input": copy.deepcopy(common.input_cfg_left_grids)}
@@ -153,7 +153,7 @@ class TestConfig(unittest.TestCase):
         cfg["input"]["disp_max_right"] = 0
 
         # Json checker must raise an error
-        self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
+        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
 
         # Test configuration with left disparity as int and right disparites as str
         cfg = {
@@ -167,7 +167,7 @@ class TestConfig(unittest.TestCase):
             }
         }
         # Json checker must raise an error
-        self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
+        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
 
         # Test configuration with left disparity grids inverted
         cfg = {
@@ -179,7 +179,7 @@ class TestConfig(unittest.TestCase):
             }
         }
         # Json checker must raise an error
-        self.assertRaises(SystemExit, JSON_checker.check_input_section, cfg)
+        self.assertRaises(SystemExit, check_configuration.check_input_section, cfg)
 
         # Test configuration with left disparity inverted
         cfg = {
@@ -191,7 +191,7 @@ class TestConfig(unittest.TestCase):
             }
         }
         # Json checker must raise an error
-        self.assertRaises(SystemExit, JSON_checker.check_input_section, cfg)
+        self.assertRaises(SystemExit, check_configuration.check_input_section, cfg)
 
         # Test configuration with left disparity grids and right disparity grids inverted
         cfg = {
@@ -205,7 +205,7 @@ class TestConfig(unittest.TestCase):
             }
         }
         # Json checker must raise an error
-        self.assertRaises(SystemExit, JSON_checker.check_input_section, cfg)
+        self.assertRaises(SystemExit, check_configuration.check_input_section, cfg)
 
         # Test configuration with left disparity grids and right disparity max as str
         cfg = {
@@ -218,7 +218,7 @@ class TestConfig(unittest.TestCase):
             }
         }
         # Json checker must raise an error
-        self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
+        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
 
         # Test configuration with left disparity grids and right disparity min as str
         cfg = {
@@ -231,7 +231,7 @@ class TestConfig(unittest.TestCase):
             }
         }
         # Json checker must raise an error
-        self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
+        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
 
         # Test configuration with left disparity as int and right disparity min as str
         cfg = {
@@ -244,7 +244,7 @@ class TestConfig(unittest.TestCase):
             }
         }
         # Json checker must raise an error
-        self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
+        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
 
         # Test configuration with left disparity as int and right disparity max as str
         cfg = {
@@ -257,7 +257,7 @@ class TestConfig(unittest.TestCase):
             }
         }
         # Json checker must raise an error
-        self.assertRaises(json_checker.core.exceptions.DictCheckerError, JSON_checker.check_input_section, cfg)
+        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
 
     def test_get_metadata(self):
         """
@@ -268,7 +268,7 @@ class TestConfig(unittest.TestCase):
         cfg = {"input": copy.deepcopy(common.input_cfg_basic)}
 
         # get metadata without classif and mask
-        metadata_img = JSON_checker.get_metadata(
+        metadata_img = check_configuration.get_metadata(
             cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"]
         )
 
@@ -295,7 +295,7 @@ class TestConfig(unittest.TestCase):
             },
         }
 
-        cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
+        cfg_return = check_configuration.check_conf(cfg, pandora_machine)
 
         cfg_gt = {
             "input": {
@@ -339,13 +339,13 @@ class TestConfig(unittest.TestCase):
                 "disparity": {"disparity_method": "wta"},
             },
         }
-        img_left = JSON_checker.get_metadata(
+        img_left = check_configuration.get_metadata(
             cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"]
         )
-        img_right = JSON_checker.get_metadata(cfg["input"]["img_right"], None, None)
+        img_right = check_configuration.get_metadata(cfg["input"]["img_right"], None, None)
         # Check that the check_conf function raises an error
         with pytest.raises(SystemExit):
-            JSON_checker.check_conf(cfg, pandora_machine)
+            check_configuration.check_conf(cfg, pandora_machine)
         # Check that the check_band_pipeline raises an error (this shall be the source of check_conf's error)
         with pytest.raises(SystemExit):
             pandora_machine.check_band_pipeline(
@@ -368,15 +368,15 @@ class TestConfig(unittest.TestCase):
                 "disparity": {"disparity_method": "wta"},
             },
         }
-        img_left = JSON_checker.get_metadata(
+        img_left = check_configuration.get_metadata(
             cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"]
         )
-        img_right = JSON_checker.get_metadata(cfg["input"]["img_right"], None, None)
+        img_right = check_configuration.get_metadata(cfg["input"]["img_right"], None, None)
         pandora_machine = PandoraMachine()
 
         # Check that the check_conf function raises an error
         with pytest.raises(SystemExit):
-            JSON_checker.check_conf(cfg, pandora_machine)
+            check_configuration.check_conf(cfg, pandora_machine)
         # Check that the check_band_pipeline raises an error (this shall be the source of check_conf's error)
         with pytest.raises(SystemExit):
             # We add the band argument ad None because normally it is completed in the check_conf function,
@@ -411,7 +411,7 @@ class TestConfig(unittest.TestCase):
             }
         }
 
-        cfg_return = JSON_checker.update_conf(JSON_checker.default_short_configuration_input, user_cfg)
+        cfg_return = check_configuration.update_conf(check_configuration.default_short_configuration_input, user_cfg)
 
         if (not np.isnan(cfg_return["input"]["nodata_left"])) or (not np.isnan(cfg_return["input"]["nodata_right"])):
             raise AssertionError
@@ -428,7 +428,7 @@ class TestConfig(unittest.TestCase):
             }
         }
 
-        cfg_return = JSON_checker.update_conf(JSON_checker.default_short_configuration_input, user_cfg)
+        cfg_return = check_configuration.update_conf(check_configuration.default_short_configuration_input, user_cfg)
 
         if not cfg_return["input"]["nodata_left"] == np.inf or not cfg_return["input"]["nodata_right"] == np.inf:
             raise AssertionError
@@ -445,7 +445,7 @@ class TestConfig(unittest.TestCase):
             }
         }
 
-        cfg_return = JSON_checker.update_conf(JSON_checker.default_short_configuration_input, user_cfg)
+        cfg_return = check_configuration.update_conf(check_configuration.default_short_configuration_input, user_cfg)
 
         if not cfg_return["input"]["nodata_left"] == -np.inf or not cfg_return["input"]["nodata_right"] == -np.inf:
             raise AssertionError
@@ -462,7 +462,7 @@ class TestConfig(unittest.TestCase):
             }
         }
 
-        cfg_return = JSON_checker.update_conf(JSON_checker.default_short_configuration_input, user_cfg)
+        cfg_return = check_configuration.update_conf(check_configuration.default_short_configuration_input, user_cfg)
 
         if not cfg_return["input"]["nodata_left"] == 3 or not cfg_return["input"]["nodata_right"] == -7:
             raise AssertionError
@@ -478,7 +478,7 @@ class TestConfig(unittest.TestCase):
             }
         }
 
-        cfg_return = JSON_checker.update_conf(JSON_checker.default_short_configuration_input, user_cfg)
+        cfg_return = check_configuration.update_conf(check_configuration.default_short_configuration_input, user_cfg)
 
         if not np.isnan(cfg_return["input"]["nodata_left"]) or not cfg_return["input"]["nodata_right"] == -9999:
             raise AssertionError
@@ -494,7 +494,7 @@ class TestConfig(unittest.TestCase):
             }
         }
 
-        cfg_return = JSON_checker.update_conf(JSON_checker.default_short_configuration_input, user_cfg)
+        cfg_return = check_configuration.update_conf(check_configuration.default_short_configuration_input, user_cfg)
 
         if not (cfg_return["input"]["nodata_left"] == -9999) or not np.isnan(cfg_return["input"]["nodata_right"]):
             raise AssertionError
@@ -515,7 +515,7 @@ class TestConfig(unittest.TestCase):
             },
         }
 
-        cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
+        cfg_return = check_configuration.check_conf(cfg, pandora_machine)
         cfg_gt = {
             "input": {
                 "nodata_left": -9999,
@@ -549,7 +549,7 @@ class TestConfig(unittest.TestCase):
                 "disparity": {"disparity_method": "wta"},
             },
         }
-        cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
+        cfg_return = check_configuration.check_conf(cfg, pandora_machine)
 
         cfg_gt = {
             "input": {
@@ -584,7 +584,7 @@ class TestConfig(unittest.TestCase):
         }
 
         # When left disparities are grids and right are none, cross checking method cannot be used : the program exits
-        self.assertRaises(SystemExit, JSON_checker.check_conf, cfg, pandora_machine)
+        self.assertRaises(SystemExit, check_configuration.check_conf, cfg, pandora_machine)
 
         # Check the configuration returned with left and right disparity grids and cross checking method
         cfg = {
@@ -593,7 +593,7 @@ class TestConfig(unittest.TestCase):
         }
         # When left and right disparities are grids, cross checking method can be used
         pandora_machine = PandoraMachine()
-        cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
+        cfg_return = check_configuration.check_conf(cfg, pandora_machine)
         cfg_gt = {
             "input": {
                 "nodata_left": -9999,
@@ -625,7 +625,7 @@ class TestConfig(unittest.TestCase):
         }
 
         # When left disparities are grids and multiscale processing cannot be used : the program exits
-        self.assertRaises(SystemExit, JSON_checker.check_conf, cfg, pandora_machine)
+        self.assertRaises(SystemExit, check_configuration.check_conf, cfg, pandora_machine)
 
         # Check the configuration returned with left disparity integer and multiscale processing
         pandora_machine = PandoraMachine()
@@ -634,7 +634,7 @@ class TestConfig(unittest.TestCase):
             "pipeline": copy.deepcopy(common.multiscale_pipeline_cfg),
         }
 
-        cfg_return = JSON_checker.check_conf(cfg, pandora_machine)
+        cfg_return = check_configuration.check_conf(cfg, pandora_machine)
 
         cfg_gt = {
             "input": {
@@ -675,12 +675,14 @@ class TestConfig(unittest.TestCase):
         }
 
         pandora_machine = PandoraMachine()
-        img_left = JSON_checker.get_metadata(
+        img_left = check_configuration.get_metadata(
             cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"]
         )
-        img_right = JSON_checker.get_metadata(cfg["input"]["img_right"], None, None)
+        img_right = check_configuration.get_metadata(cfg["input"]["img_right"], None, None)
 
-        self.assertRaises(MachineError, JSON_checker.check_pipeline_section, cfg, img_left, img_right, pandora_machine)
+        self.assertRaises(
+            MachineError, check_configuration.check_pipeline_section, cfg, img_left, img_right, pandora_machine
+        )
 
     @staticmethod
     def test_memory_consumption_estimation():
@@ -705,7 +707,7 @@ class TestConfig(unittest.TestCase):
         pandora_machine = PandoraMachine()
         pipeline_cfg = {"pipeline": copy.deepcopy(common.basic_pipeline_cfg)}
 
-        min_mem_consump, max_mem_consump = JSON_checker.memory_consumption_estimation(
+        min_mem_consump, max_mem_consump = check_configuration.memory_consumption_estimation(
             pipeline_cfg, (img_left_path, disp_min, disp_max), pandora_machine
         )
         np.testing.assert_allclose((min_mem_consump, max_mem_consump), consumption_vt, rtol=1e-02)
@@ -713,7 +715,7 @@ class TestConfig(unittest.TestCase):
         # Run memory_consumption_estimation giving the input parameters in a dict
         pandora_machine = PandoraMachine()
         input_cfg = {"input": copy.deepcopy(common.input_cfg_basic)}
-        min_mem_consump, max_mem_consump = JSON_checker.memory_consumption_estimation(
+        min_mem_consump, max_mem_consump = check_configuration.memory_consumption_estimation(
             pipeline_cfg, input_cfg, pandora_machine
         )
         np.testing.assert_allclose((min_mem_consump, max_mem_consump), consumption_vt, rtol=1e-02)
@@ -740,15 +742,15 @@ class TestConfig(unittest.TestCase):
         disp_max = 0
         pandora_machine = PandoraMachine()
         cfg = {"input": copy.deepcopy(common.input_cfg_basic), "pipeline": copy.deepcopy(common.basic_pipeline_cfg)}
-        img_left = JSON_checker.get_metadata(
+        img_left = check_configuration.get_metadata(
             cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"]
         )
-        img_right = JSON_checker.get_metadata(cfg["input"]["img_right"], None, None)
+        img_right = check_configuration.get_metadata(cfg["input"]["img_right"], None, None)
 
         # check pipeline before memory_consumption_estimation
-        pipeline_cfg = JSON_checker.check_pipeline_section(cfg, img_left, img_right, pandora_machine)
+        pipeline_cfg = check_configuration.check_pipeline_section(cfg, img_left, img_right, pandora_machine)
 
-        min_mem_consump, max_mem_consump = JSON_checker.memory_consumption_estimation(
+        min_mem_consump, max_mem_consump = check_configuration.memory_consumption_estimation(
             pipeline_cfg, (img_left_path, disp_min, disp_max), pandora_machine, True
         )
         np.testing.assert_allclose((min_mem_consump, max_mem_consump), consumption_vt, rtol=1e-02)
@@ -756,7 +758,7 @@ class TestConfig(unittest.TestCase):
         # Run memory_consumption_estimation giving the input parameters in a dict
         pandora_machine = PandoraMachine()
         input_cfg = {"input": copy.deepcopy(common.input_cfg_basic)}
-        min_mem_consump, max_mem_consump = JSON_checker.memory_consumption_estimation(
+        min_mem_consump, max_mem_consump = check_configuration.memory_consumption_estimation(
             pipeline_cfg, input_cfg, pandora_machine, True
         )
         np.testing.assert_allclose((min_mem_consump, max_mem_consump), consumption_vt, rtol=1e-02)
@@ -776,13 +778,15 @@ class TestConfig(unittest.TestCase):
                 "validation": {"validation_method": "cross_checking"},
             },
         }
-        img_left = JSON_checker.get_metadata(
+        img_left = check_configuration.get_metadata(
             cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"]
         )
-        img_right = JSON_checker.get_metadata(cfg["input"]["img_right"], None, None)
+        img_right = check_configuration.get_metadata(cfg["input"]["img_right"], None, None)
 
         pandora_machine = PandoraMachine()
-        self.assertRaises(MachineError, JSON_checker.check_pipeline_section, cfg, img_left, img_right, pandora_machine)
+        self.assertRaises(
+            MachineError, check_configuration.check_pipeline_section, cfg, img_left, img_right, pandora_machine
+        )
 
 
 if __name__ == "__main__":
