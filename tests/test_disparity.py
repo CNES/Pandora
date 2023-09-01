@@ -25,6 +25,7 @@ This module contains functions to test the disparity module.
 """
 import copy
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 import xarray as xr
@@ -126,6 +127,58 @@ class TestDisparity(unittest.TestCase):
         disp["disparity_map"].data[0, 0] = -95
         # Check if the xarray disp_indices is equal to the ground truth disparity map
         np.testing.assert_array_equal(cv["disp_indices"].data, gt_disp)
+
+    @patch("pandora.disparity.disparity.extract_disparity_extrema_from_cost_volume", return_value=[1])
+    def test_to_disp_disparity_extrema_data_variable(self, mocked_extract_disparity_extrema_from_cost_volume):
+        """Test data_variable `disparity_extrema` is as expected."""
+        disparity_min, disparity_max = -3, 1
+        cost_volume_data = np.array(
+            [
+                [
+                    [np.nan, np.nan, np.nan, 5.0, 0.0],
+                    [np.nan, np.nan, 4.0, 1.0, 0.0],
+                    [np.nan, 2.0, 3.0, 2.0, 0.0],
+                    [0.0, 5.0, 4.0, 2.0, np.nan],
+                ],
+                [
+                    [np.nan, np.nan, np.nan, 4.0, 0.0],
+                    [np.nan, np.nan, 2.0, 2.0, 0.0],
+                    [np.nan, 5.0, 1.0, 3.0, 0.0],
+                    [0.0, 4.0, 2.0, 5.0, np.nan],
+                ],
+                [
+                    [np.nan, np.nan, np.nan, 4.0, 0.0],
+                    [np.nan, np.nan, 3.0, 1.0, 0.0],
+                    [np.nan, 2.0, 2.0, 1.0, 0.0],
+                    [0.0, 4.0, 3.0, 2.0, np.nan],
+                ],
+            ],
+            dtype=np.float32,
+        )
+
+        cost_volume = xr.Dataset(
+            {"cost_volume": (["row", "col", "disp"], cost_volume_data)},
+            coords={"row": np.arange(3), "col": np.arange(4), "disp": np.arange(disparity_min, disparity_max + 1)},
+            attrs={
+                "measure": "sad",
+                "subpixel": 1,
+                "offset_row_col": 1,
+                "window_size": 3,
+                "type_measure": "min",
+                "cmax": 81,
+                "band_correl": None,
+                "crs": None,
+                "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            },
+        )
+        # Compute the disparity
+        disparity_ = disparity.AbstractDisparity(**{"disparity_method": "wta", "invalid_disparity": 0})
+        disp = disparity_.to_disp(cost_volume)
+
+        result = disp["disparity_extrema"]
+
+        mocked_extract_disparity_extrema_from_cost_volume.assert_called_with(cost_volume)
+        assert result == mocked_extract_disparity_extrema_from_cost_volume.return_value
 
     def test_to_disp_with_offset(self):
         """
@@ -254,9 +307,9 @@ class TestDisparity(unittest.TestCase):
         # Check if the calculated coefficient map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(coeff.data, gt_coeff)
 
-    def test_approximate_right_disparity(self):
+    def test_approximate_right_disparity_data_variable_disparity_map(self):
         """
-        Test the approximate_right_disparity method
+        Test `disparity_map` data_values are correct.
 
         """
         disparity_min, disparity_max = -2, 1
@@ -293,6 +346,47 @@ class TestDisparity(unittest.TestCase):
 
         # Check if the calculated right disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(disp_r["disparity_map"].data, gt_disp)
+
+    @patch("pandora.disparity.disparity.extract_disparity_extrema_from_cost_volume", return_value=[1])
+    def test_approximate_right_disparity_data_variable_disparity_extrema(
+        self, mocked_extract_disparity_extrema_from_cost_volume
+    ):
+        """
+        Test `disparity_extrema` data_values are correct.
+
+        """
+        disparity_min, disparity_max = -2, 1
+        # Create the left cost volume, with SAD measure window size 3 and subpixel 1
+        cost_volume_data = np.full((3, 4, 4), np.nan, dtype=np.float32)
+        cost_volume_data[1, 1, 2] = 23
+        cost_volume_data[1, 1, 3] = 0
+        cost_volume_data[1, 2, 1] = 24
+        cost_volume_data[1, 2, 2] = 19
+
+        # Cost Volume, for the images described in the setUp method
+        cost_volume = xr.Dataset(
+            {"cost_volume": (["row", "col", "disp"], cost_volume_data)},
+            coords={"row": np.arange(3), "col": np.arange(4), "disp": np.arange(disparity_min, disparity_max + 1)},
+            attrs={
+                "measure": "sad",
+                "subpixel": 1,
+                "offset_row_col": 1,
+                "window_size": 3,
+                "type_measure": "min",
+                "cmax": 81,
+                "band_correl": None,
+                "crs": None,
+                "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+            },
+        )
+
+        # Compute the right disparity map
+        disparity_ = disparity.AbstractDisparity(**{"disparity_method": "wta", "invalid_disparity": 0})
+        disp_r = disparity_.approximate_right_disparity(cost_volume, self.right)
+        result = disp_r["disparity_extrema"]
+
+        mocked_extract_disparity_extrema_from_cost_volume.assert_called_with(cost_volume)
+        assert result == mocked_extract_disparity_extrema_from_cost_volume.return_value
 
     def test_right_disparity_subpixel(self):
         """

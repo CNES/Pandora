@@ -216,10 +216,9 @@ class AbstractDisparity:
             dims=["row", "col"],
         )
 
+        disp_map["disparity_extrema"] = extract_disparity_extrema_from_cost_volume(cv)
+
         disp_map.attrs = cv.attrs
-        d_range = cv.coords["disp"].data
-        disp_map.attrs["disp_min"] = d_range[0]
-        disp_map.attrs["disp_max"] = d_range[-1]
         offset = disp_map.attrs["offset_row_col"]
 
         indices_nan = np.isnan(cv["cost_volume"].data)
@@ -654,14 +653,12 @@ class WinnerTakesAll(AbstractDisparity):
         # Pixels where the disparity interval is missing in the right image, have a disparity value invalid_value
         invalid_pixel = np.where(invalid_mc)
         disp_map["disparity_map"].data[invalid_pixel] = self._invalid_disparity
+        disp_map["disparity_extrema"] = extract_disparity_extrema_from_cost_volume(cv)
 
         # Save the disparity map in the cost volume
         cv["disp_indices"] = disp_map["disparity_map"].copy(deep=True)
 
         disp_map.attrs = cv.attrs
-        d_range = cv.coords["disp"].data
-        disp_map.attrs["disp_min"] = d_range[0]
-        disp_map.attrs["disp_max"] = d_range[-1]
 
         # ----- Confidence measure -----
         # Allocate the confidence measure in the disparity_map dataset
