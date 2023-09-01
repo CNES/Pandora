@@ -542,6 +542,23 @@ class AbstractDisparity:
             ] += cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
 
 
+def extract_disparity_extrema_from_cost_volume(cost_volume: xr.Dataset) -> xr.DataArray:
+    """
+    Return a DataArray with min and max disparity from `cost_volume`.
+
+    :param cost_volume: cost volume dataset with the data variables:
+
+            - cost_volume 3D xarray.DataArray (row, col, disp)
+            - confidence_measure 3D xarray.DataArray (row, col, indicator)
+    :type cost_volume: xarray.Dataset
+    :return: Disparity interval
+    :rtype: xarray.DataArray (min, max)
+    """
+    disparity_extrema = cost_volume.coords["disp"].data[[0, -1]]
+    result = xr.DataArray(disparity_extrema, coords=[("disparity", ["min", "max"])])
+    return result
+
+
 @AbstractDisparity.register_subclass("wta")
 class WinnerTakesAll(AbstractDisparity):
     """

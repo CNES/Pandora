@@ -366,6 +366,44 @@ class TestDisparity(unittest.TestCase):
         np.testing.assert_array_equal(right_fast["interpolated_coeff"].data, right_acc["interpolated_coeff"].data)
 
 
+def test_extract_disparity_extrema_from_cost_volume():
+    """
+    We expect coordinate `disparity_extrema` to be an array of the first and the last value of cost volume `disp`
+    coordinate.
+
+    """
+    disparity_min, disparity_max = -2, 1
+    # Create the left cost volume, with SAD measure window size 3 and subpixel 1
+    cost_volume_data = np.full((3, 4, 4), np.nan, dtype=np.float32)
+    cost_volume_data[1, 1, 2] = 23
+    cost_volume_data[1, 1, 3] = 0
+    cost_volume_data[1, 2, 1] = 24
+    cost_volume_data[1, 2, 2] = 19
+
+    # Cost Volume, for the images described in the setUp method
+    cost_volume = xr.Dataset(
+        {"cost_volume": (["row", "col", "disp"], cost_volume_data)},
+        coords={"row": np.arange(3), "col": np.arange(4), "disp": np.arange(disparity_min, disparity_max + 1)},
+        attrs={
+            "measure": "sad",
+            "subpixel": 1,
+            "offset_row_col": 1,
+            "window_size": 3,
+            "type_measure": "min",
+            "cmax": 81,
+            "band_correl": None,
+            "crs": None,
+            "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+        },
+    )
+
+    expected = xr.DataArray([disparity_min, disparity_max], coords=[("disparity", ["min", "max"])])
+
+    result = disparity.extract_disparity_extrema_from_cost_volume(cost_volume)
+
+    xr.testing.assert_identical(result, expected)
+
+
 if __name__ == "__main__":
     common.setup_logging()
     unittest.main()

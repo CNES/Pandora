@@ -22,6 +22,6 @@
 """
 Init file for disparity module.
 """
-from .disparity import AbstractDisparity
+from .disparity import AbstractDisparity, extract_disparity_extrema_from_cost_volume
 
 # pylint: disable=missing-module-docstring
