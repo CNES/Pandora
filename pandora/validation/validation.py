@@ -35,6 +35,7 @@ from pandora import common
 from pandora.cost_volume_confidence.cost_volume_confidence import (
     AbstractCostVolumeConfidence,
 )
+from pandora.disparity import extract_disparity_range_from_disparity_map
 
 
 class AbstractValidation:
@@ -263,7 +264,7 @@ class CrossChecking(AbstractValidation):
         :rtype: xarray.Dataset
         """
         nb_row, nb_col = dataset_left["disparity_map"].shape
-        disparity_range = np.arange(dataset_left.attrs["disp_min"], dataset_left.attrs["disp_max"] + 1)
+        disparity_range = extract_disparity_range_from_disparity_map(dataset_left)
 
         # Confidence measure which calculates the distance LR / RL
         conf_measure = np.full((nb_row, nb_col), np.nan, dtype=np.float32)

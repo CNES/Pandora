@@ -317,8 +317,7 @@ class AbstractDisparity:
             np.zeros(disp["disparity_map"].shape, dtype=np.uint16), dims=["row", "col"]
         )
 
-        d_min = int(disp.attrs["disp_min"])
-        d_max = int(disp.attrs["disp_max"])
+        d_min, d_max = extract_extrema_from_disparity_map(disp)
         col = disp.coords["col"].data
 
         # Since disparity map is full size (input images size)
@@ -488,8 +487,7 @@ class AbstractDisparity:
         offset = disp.attrs["offset_row_col"]
 
         _, r_mask = xr.align(disp["validity_mask"], img_right["msk"])
-        d_min = int(disp.attrs["disp_min"])
-        d_max = int(disp.attrs["disp_max"])
+        d_min, d_max = extract_extrema_from_disparity_map(disp)
         col = disp.coords["col"].data
         row = disp.coords["row"].data
 
@@ -556,6 +554,38 @@ def extract_disparity_extrema_from_cost_volume(cost_volume: xr.Dataset) -> xr.Da
     disparity_extrema = cost_volume.coords["disp"].data[[0, -1]]
     result = xr.DataArray(disparity_extrema, coords=[("disparity", ["min", "max"])])
     return result
+
+
+def extract_extrema_from_disparity_map(disparity_map: xr.Dataset) -> Tuple[int, int]:
+    """
+    Return a DataArray with min and max disparity from `disparity_map`.
+
+    :param disparity_map: dataset with the disparity map and the confidence measure
+    :type disparity_map: xarray.Dataset with the data variables :
+
+            - disparity_map 2D xarray.DataArray (row, col)
+            - confidence_measure 3D xarray.DataArray(row, col, indicator)
+    :return: disparity interval
+    :rtype: Tuple[int, int]
+    """
+    disparity_min, disparity_max = disparity_map["disparity_extrema"]
+    return int(disparity_min), int(disparity_max)
+
+
+def extract_disparity_range_from_disparity_map(disparity_map: xr.Dataset) -> np.ndarray:
+    """
+    Return a numpy array of evenly spaced values within disparity min and disparity max.
+
+    :param disparity_map: dataset with the disparity map and the confidence measure
+    :type disparity_map: xarray.Dataset with the data variables :
+
+            - disparity_map 2D xarray.DataArray (row, col)
+            - confidence_measure 3D xarray.DataArray(row, col, indicator)
+    :return: disparity range.
+    :rtype: np.ndarray
+    """
+    disparity_min, disparity_max = extract_extrema_from_disparity_map(disparity_map)
+    return np.arange(disparity_min, disparity_max + 1)
 
 
 @AbstractDisparity.register_subclass("wta")

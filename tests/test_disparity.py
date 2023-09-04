@@ -498,6 +498,68 @@ def test_extract_disparity_extrema_from_cost_volume():
     xr.testing.assert_identical(result, expected)
 
 
+def test_extract_extrema_from_disparity_map():
+    """
+    We expect the return value to be a tuple of integers with disparity min and max as values.
+    """
+    disparity_min, disparity_max = -2, 1
+
+    disparity_map = xr.Dataset(
+        {
+            "disparity_map": xr.DataArray(np.zeros((2, 2)), coords=[("row", range(0, 2)), ("col", range(0, 2))]),
+            "disparity_extrema": xr.DataArray([disparity_min, disparity_max], coords=[("disparity", ["min", "max"])]),
+        },
+        attrs={
+            "measure": "sad",
+            "subpixel": 1,
+            "offset_row_col": 1,
+            "window_size": 3,
+            "type_measure": "min",
+            "cmax": 81,
+            "band_correl": None,
+            "crs": None,
+            "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+        },
+    )
+
+    result_min, result_max = disparity.extract_extrema_from_disparity_map(disparity_map)
+
+    assert isinstance(result_min, int)
+    assert result_min == disparity_min
+    assert isinstance(result_max, int)
+    assert result_max == disparity_max
+
+
+def test_extract_disparity_range_from_disparity_map():
+    """
+    We expect the return value to be a numpy array of evenly spaced values within disparity min and disparity max.
+    """
+    disparity_min, disparity_max = -2, 1
+    expected = np.array([-2, -1, 0, 1])
+
+    disparity_map = xr.Dataset(
+        {
+            "disparity_map": xr.DataArray(np.zeros((2, 2)), coords=[("row", range(0, 2)), ("col", range(0, 2))]),
+            "disparity_extrema": xr.DataArray([disparity_min, disparity_max], coords=[("disparity", ["min", "max"])]),
+        },
+        attrs={
+            "measure": "sad",
+            "subpixel": 1,
+            "offset_row_col": 1,
+            "window_size": 3,
+            "type_measure": "min",
+            "cmax": 81,
+            "band_correl": None,
+            "crs": None,
+            "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+        },
+    )
+
+    result = disparity.extract_disparity_range_from_disparity_map(disparity_map)
+
+    np.testing.assert_array_equal(result, expected)
+
+
 if __name__ == "__main__":
     common.setup_logging()
     unittest.main()
