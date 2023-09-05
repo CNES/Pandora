@@ -128,9 +128,9 @@ class TestDisparity(unittest.TestCase):
         # Check if the xarray disp_indices is equal to the ground truth disparity map
         np.testing.assert_array_equal(cv["disp_indices"].data, gt_disp)
 
-    @patch("pandora.disparity.disparity.extract_disparity_extrema_from_cost_volume", return_value=[1])
-    def test_to_disp_disparity_extrema_data_variable(self, mocked_extract_disparity_extrema_from_cost_volume):
-        """Test data_variable `disparity_extrema` is as expected."""
+    @patch("pandora.disparity.disparity.extract_disparity_interval_from_cost_volume", return_value=[1])
+    def test_to_disp_disparity_interval_data_variable(self, mocked_extract_disparity_interval_from_cost_volume):
+        """Test data_variable `disparity_interval` is as expected."""
         disparity_min, disparity_max = -3, 1
         cost_volume_data = np.array(
             [
@@ -175,10 +175,10 @@ class TestDisparity(unittest.TestCase):
         disparity_ = disparity.AbstractDisparity(**{"disparity_method": "wta", "invalid_disparity": 0})
         disp = disparity_.to_disp(cost_volume)
 
-        result = disp["disparity_extrema"]
+        result = disp["disparity_interval"]
 
-        mocked_extract_disparity_extrema_from_cost_volume.assert_called_with(cost_volume)
-        assert result == mocked_extract_disparity_extrema_from_cost_volume.return_value
+        mocked_extract_disparity_interval_from_cost_volume.assert_called_with(cost_volume)
+        assert result == mocked_extract_disparity_interval_from_cost_volume.return_value
 
     def test_to_disp_with_offset(self):
         """
@@ -347,12 +347,12 @@ class TestDisparity(unittest.TestCase):
         # Check if the calculated right disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(disp_r["disparity_map"].data, gt_disp)
 
-    @patch("pandora.disparity.disparity.extract_disparity_extrema_from_cost_volume", return_value=[1])
-    def test_approximate_right_disparity_data_variable_disparity_extrema(
-        self, mocked_extract_disparity_extrema_from_cost_volume
+    @patch("pandora.disparity.disparity.extract_disparity_interval_from_cost_volume", return_value=[1])
+    def test_approximate_right_disparity_data_variable_disparity_interval(
+        self, mocked_extract_disparity_interval_from_cost_volume
     ):
         """
-        Test `disparity_extrema` data_values are correct.
+        Test `disparity_interval` data_values are correct.
 
         """
         disparity_min, disparity_max = -2, 1
@@ -383,10 +383,10 @@ class TestDisparity(unittest.TestCase):
         # Compute the right disparity map
         disparity_ = disparity.AbstractDisparity(**{"disparity_method": "wta", "invalid_disparity": 0})
         disp_r = disparity_.approximate_right_disparity(cost_volume, self.right)
-        result = disp_r["disparity_extrema"]
+        result = disp_r["disparity_interval"]
 
-        mocked_extract_disparity_extrema_from_cost_volume.assert_called_with(cost_volume)
-        assert result == mocked_extract_disparity_extrema_from_cost_volume.return_value
+        mocked_extract_disparity_interval_from_cost_volume.assert_called_with(cost_volume)
+        assert result == mocked_extract_disparity_interval_from_cost_volume.return_value
 
     def test_right_disparity_subpixel(self):
         """
@@ -460,9 +460,9 @@ class TestDisparity(unittest.TestCase):
         np.testing.assert_array_equal(right_fast["interpolated_coeff"].data, right_acc["interpolated_coeff"].data)
 
 
-def test_extract_disparity_extrema_from_cost_volume():
+def test_extract_disparity_interval_from_cost_volume():
     """
-    We expect coordinate `disparity_extrema` to be an array of the first and the last value of cost volume `disp`
+    We expect coordinate `disparity_interval` to be an array of the first and the last value of cost volume `disp`
     coordinate.
 
     """
@@ -493,12 +493,12 @@ def test_extract_disparity_extrema_from_cost_volume():
 
     expected = xr.DataArray([disparity_min, disparity_max], coords=[("disparity", ["min", "max"])])
 
-    result = disparity.extract_disparity_extrema_from_cost_volume(cost_volume)
+    result = disparity.extract_disparity_interval_from_cost_volume(cost_volume)
 
     xr.testing.assert_identical(result, expected)
 
 
-def test_extract_extrema_from_disparity_map():
+def test_extract_interval_from_disparity_map():
     """
     We expect the return value to be a tuple of integers with disparity min and max as values.
     """
@@ -507,7 +507,7 @@ def test_extract_extrema_from_disparity_map():
     disparity_map = xr.Dataset(
         {
             "disparity_map": xr.DataArray(np.zeros((2, 2)), coords=[("row", range(0, 2)), ("col", range(0, 2))]),
-            "disparity_extrema": xr.DataArray([disparity_min, disparity_max], coords=[("disparity", ["min", "max"])]),
+            "disparity_interval": xr.DataArray([disparity_min, disparity_max], coords=[("disparity", ["min", "max"])]),
         },
         attrs={
             "measure": "sad",
@@ -522,7 +522,7 @@ def test_extract_extrema_from_disparity_map():
         },
     )
 
-    result_min, result_max = disparity.extract_extrema_from_disparity_map(disparity_map)
+    result_min, result_max = disparity.extract_interval_from_disparity_map(disparity_map)
 
     assert isinstance(result_min, int)
     assert result_min == disparity_min
@@ -540,7 +540,7 @@ def test_extract_disparity_range_from_disparity_map():
     disparity_map = xr.Dataset(
         {
             "disparity_map": xr.DataArray(np.zeros((2, 2)), coords=[("row", range(0, 2)), ("col", range(0, 2))]),
-            "disparity_extrema": xr.DataArray([disparity_min, disparity_max], coords=[("disparity", ["min", "max"])]),
+            "disparity_interval": xr.DataArray([disparity_min, disparity_max], coords=[("disparity", ["min", "max"])]),
         },
         attrs={
             "measure": "sad",

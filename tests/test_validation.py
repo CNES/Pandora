@@ -48,7 +48,7 @@ class TestValidation(unittest.TestCase):
         self.left = xr.Dataset(
             {
                 "disparity_map": (["row", "col"], np.array([[0, -1, 1, -2], [2, 2, -1, 0]], dtype=np.float32)),
-                "disparity_extrema": xr.DataArray([-2, 2], coords=[("disparity", ["min", "max"])]),
+                "disparity_interval": xr.DataArray([-2, 2], coords=[("disparity", ["min", "max"])]),
                 "confidence_measure": (["row", "col", "indicator"], np.full((2, 4, 1), np.nan)),
                 "validity_mask": (
                     ["row", "col"],
@@ -65,7 +65,7 @@ class TestValidation(unittest.TestCase):
         self.right = xr.Dataset(
             {
                 "disparity_map": (["row", "col"], np.array([[0, 2, -1, -1], [1, 1, -2, -1]], dtype=np.float32)),
-                "disparity_extrema": xr.DataArray([-2, 2], coords=[("disparity", ["min", "max"])]),
+                "disparity_interval": xr.DataArray([-2, 2], coords=[("disparity", ["min", "max"])]),
                 "confidence_measure": (["row", "col", "indicator"], np.full((2, 4, 1), np.nan)),
                 "validity_mask": (["row", "col"], np.array([[0, 0, 0, 0], [0, 0, 0, 0]], dtype=np.uint16)),
             },
@@ -125,7 +125,7 @@ class TestValidation(unittest.TestCase):
                         dtype=np.float32,
                     ),
                 ),
-                "disparity_extrema": xr.DataArray([-1, 1], coords=[("disparity", ["min", "max"])]),
+                "disparity_interval": xr.DataArray([-1, 1], coords=[("disparity", ["min", "max"])]),
                 "confidence_measure": (["row", "col", "indicator"], np.full((3, 4, 1), np.nan)),
                 "validity_mask": (
                     ["row", "col"],
@@ -166,7 +166,7 @@ class TestValidation(unittest.TestCase):
                         dtype=np.float32,
                     ),
                 ),
-                "disparity_extrema": xr.DataArray([-1, 1], coords=[("disparity", ["min", "max"])]),
+                "disparity_interval": xr.DataArray([-1, 1], coords=[("disparity", ["min", "max"])]),
                 "confidence_measure": (["row", "col", "indicator"], np.full((3, 4, 1), np.nan)),
                 "validity_mask": (
                     ["row", "col"],
@@ -231,7 +231,7 @@ class TestValidation(unittest.TestCase):
             {
                 "disparity_map": (["row", "col"], np.array([[0, -1.2, 1, -2], [2, 1.8, -1, 0]], dtype=np.float32)),
                 "confidence_measure": (["row", "col", "indicator"], np.full((2, 4, 1), np.nan)),
-                "disparity_extrema": xr.DataArray([-2, 2], coords=[("disparity", ["min", "max"])]),
+                "disparity_interval": xr.DataArray([-2, 2], coords=[("disparity", ["min", "max"])]),
                 "validity_mask": (
                     ["row", "col"],
                     np.array(
@@ -247,7 +247,7 @@ class TestValidation(unittest.TestCase):
         right = xr.Dataset(
             {
                 "disparity_map": (["row", "col"], np.array([[0, 2, -1.2, -1], [0.8, 1, -2, -1]], dtype=np.float32)),
-                "disparity_extrema": xr.DataArray([-2, 2], coords=[("disparity", ["min", "max"])]),
+                "disparity_interval": xr.DataArray([-2, 2], coords=[("disparity", ["min", "max"])]),
                 "confidence_measure": (["row", "col", "indicator"], np.full((2, 4, 1), np.nan)),
                 "validity_mask": (["row", "col"], np.array([[0, 0, 0, 0], [0, 0, 0, 0]], dtype=np.uint16)),
             },

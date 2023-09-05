@@ -216,7 +216,7 @@ class AbstractDisparity:
             dims=["row", "col"],
         )
 
-        disp_map["disparity_extrema"] = extract_disparity_extrema_from_cost_volume(cv)
+        disp_map["disparity_interval"] = extract_disparity_interval_from_cost_volume(cv)
 
         disp_map.attrs = cv.attrs
         offset = disp_map.attrs["offset_row_col"]
@@ -317,7 +317,7 @@ class AbstractDisparity:
             np.zeros(disp["disparity_map"].shape, dtype=np.uint16), dims=["row", "col"]
         )
 
-        d_min, d_max = extract_extrema_from_disparity_map(disp)
+        d_min, d_max = extract_interval_from_disparity_map(disp)
         col = disp.coords["col"].data
 
         # Since disparity map is full size (input images size)
@@ -487,7 +487,7 @@ class AbstractDisparity:
         offset = disp.attrs["offset_row_col"]
 
         _, r_mask = xr.align(disp["validity_mask"], img_right["msk"])
-        d_min, d_max = extract_extrema_from_disparity_map(disp)
+        d_min, d_max = extract_interval_from_disparity_map(disp)
         col = disp.coords["col"].data
         row = disp.coords["row"].data
 
@@ -539,7 +539,7 @@ class AbstractDisparity:
             ] += cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
 
 
-def extract_disparity_extrema_from_cost_volume(cost_volume: xr.Dataset) -> xr.DataArray:
+def extract_disparity_interval_from_cost_volume(cost_volume: xr.Dataset) -> xr.DataArray:
     """
     Return a DataArray with min and max disparity from `cost_volume`.
 
@@ -551,12 +551,12 @@ def extract_disparity_extrema_from_cost_volume(cost_volume: xr.Dataset) -> xr.Da
     :return: Disparity interval
     :rtype: xarray.DataArray (min, max)
     """
-    disparity_extrema = cost_volume.coords["disp"].data[[0, -1]]
-    result = xr.DataArray(disparity_extrema, coords=[("disparity", ["min", "max"])])
+    disparity_interval = cost_volume.coords["disp"].data[[0, -1]]
+    result = xr.DataArray(disparity_interval, coords=[("disparity", ["min", "max"])])
     return result
 
 
-def extract_extrema_from_disparity_map(disparity_map: xr.Dataset) -> Tuple[int, int]:
+def extract_interval_from_disparity_map(disparity_map: xr.Dataset) -> Tuple[int, int]:
     """
     Return a DataArray with min and max disparity from `disparity_map`.
 
@@ -568,7 +568,7 @@ def extract_extrema_from_disparity_map(disparity_map: xr.Dataset) -> Tuple[int, 
     :return: disparity interval
     :rtype: Tuple[int, int]
     """
-    disparity_min, disparity_max = disparity_map["disparity_extrema"]
+    disparity_min, disparity_max = disparity_map["disparity_interval"]
     return int(disparity_min), int(disparity_max)
 
 
@@ -584,7 +584,7 @@ def extract_disparity_range_from_disparity_map(disparity_map: xr.Dataset) -> np.
     :return: disparity range.
     :rtype: np.ndarray
     """
-    disparity_min, disparity_max = extract_extrema_from_disparity_map(disparity_map)
+    disparity_min, disparity_max = extract_interval_from_disparity_map(disparity_map)
     return np.arange(disparity_min, disparity_max + 1)
 
 
@@ -683,7 +683,7 @@ class WinnerTakesAll(AbstractDisparity):
         # Pixels where the disparity interval is missing in the right image, have a disparity value invalid_value
         invalid_pixel = np.where(invalid_mc)
         disp_map["disparity_map"].data[invalid_pixel] = self._invalid_disparity
-        disp_map["disparity_extrema"] = extract_disparity_extrema_from_cost_volume(cv)
+        disp_map["disparity_interval"] = extract_disparity_interval_from_cost_volume(cv)
 
         # Save the disparity map in the cost volume
         cv["disp_indices"] = disp_map["disparity_map"].copy(deep=True)

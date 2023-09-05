@@ -24,8 +24,8 @@ Init file for disparity module.
 """
 from .disparity import (
     AbstractDisparity,
-    extract_disparity_extrema_from_cost_volume,
-    extract_extrema_from_disparity_map,
+    extract_disparity_interval_from_cost_volume,
+    extract_interval_from_disparity_map,
     extract_disparity_range_from_disparity_map,
 )
 
