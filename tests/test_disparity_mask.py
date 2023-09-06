@@ -174,7 +174,7 @@ class TestDisparityMask(unittest.TestCase):
         matching_cost_plugin = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
-        dmin, dmax = matching_cost_plugin.dmin_dmax(disp_min_grid, disp_max_grid)
+        dmin, dmax = matching_cost_plugin.get_min_max_from_grid(disp_min_grid, disp_max_grid)
         cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, dmin, dmax)
         matching_cost_plugin.cv_masked(self.left, self.right, cv, disp_min_grid, disp_max_grid)
 
@@ -334,7 +334,7 @@ class TestDisparityMask(unittest.TestCase):
         matching_cost_plugin = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
-        dmin, dmax = matching_cost_plugin.dmin_dmax(disp_min_grid, disp_max_grid)
+        dmin, dmax = matching_cost_plugin.get_min_max_from_grid(disp_min_grid, disp_max_grid)
         cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, dmin, dmax)
         matching_cost_plugin.cv_masked(self.left, self.right, cv, disp_min_grid, disp_max_grid)
 

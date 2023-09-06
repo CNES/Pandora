@@ -178,7 +178,7 @@ class TestMatchingCostCensus(unittest.TestCase):
         )
 
         # compute the min disparity of disp_min and the max disparity of disp_max
-        dmin_int, dmax_int = matching_cost_.dmin_dmax(dmin_grid, dmax_grid)
+        dmin_int, dmax_int = matching_cost_.get_min_max_from_grid(dmin_grid, dmax_grid)
 
         # Compute the cost_volume
         cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin_int, disp_max=dmax_int)
@@ -473,7 +473,7 @@ class TestMatchingCostCensus(unittest.TestCase):
         np.testing.assert_array_equal(zncc_cmax.attrs["cmax"], 1)
         assert np.nanmax(zncc_cmax["cost_volume"].data) <= 1
 
-    def test_dmin_dmax(self):
+    def test_get_min_max_from_grid(self):
         """
         Test dmin_dmax function which returns the min disparity and the max disparity
 
@@ -491,22 +491,22 @@ class TestMatchingCostCensus(unittest.TestCase):
 
         # Case with dmin and dmax are fixed disparities
         gt_fixed_disp = (-2, 20)
-        compute_fixed_disp = matching_cost_matcher.dmin_dmax(dmin_int, dmax_int)
+        compute_fixed_disp = matching_cost_matcher.get_min_max_from_grid(dmin_int, dmax_int)
         self.assertEqual(gt_fixed_disp, compute_fixed_disp)
 
         # Case with dmin is a fixed disparity and dmax is a variable disparity
         gt_fixed_var_disp = (-2, 25)
-        compute_fixed_var_disp = matching_cost_matcher.dmin_dmax(dmin_int, dmax_grid)
+        compute_fixed_var_disp = matching_cost_matcher.get_min_max_from_grid(dmin_int, dmax_grid)
         self.assertEqual(gt_fixed_var_disp, compute_fixed_var_disp)
 
         # Case with dmin is a variable disparity and dmax is a fixed disparity
         gt_var_fixed_disp = (-5, 20)
-        compute_var_fixed_disp = matching_cost_matcher.dmin_dmax(dmin_grid, dmax_int)
+        compute_var_fixed_disp = matching_cost_matcher.get_min_max_from_grid(dmin_grid, dmax_int)
         self.assertEqual(gt_var_fixed_disp, compute_var_fixed_disp)
 
         # Case with dmin and dmax are variable disparities
         gt_variable_disp = (-5, 25)
-        compute_var_disp = matching_cost_matcher.dmin_dmax(dmin_grid, dmax_grid)
+        compute_var_disp = matching_cost_matcher.get_min_max_from_grid(dmin_grid, dmax_grid)
         self.assertEqual(gt_variable_disp, compute_var_disp)
 
     @staticmethod
@@ -573,7 +573,7 @@ class TestMatchingCostCensus(unittest.TestCase):
         )
 
         # compute the min disparity of disp_min and the max disparity of disp_max
-        dmin_int, dmax_int = matching_cost_.dmin_dmax(dmin_grid, dmax_grid)
+        dmin_int, dmax_int = matching_cost_.get_min_max_from_grid(dmin_grid, dmax_grid)
 
         # ------------ Test the method with disp_min as a grid and disp_max as a grid, subpixel = 1 ------------
         # Compute the cost_volume

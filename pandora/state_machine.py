@@ -323,7 +323,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         self.disp_min = self.disp_min * self.scale_factor
         self.disp_max = self.disp_max * self.scale_factor
         # Obtain absolute min and max disparities
-        dmin_min, dmax_max = matching_cost_.dmin_dmax(self.disp_min, self.disp_max)
+        dmin_min, dmax_max = matching_cost_.get_min_max_from_grid(self.disp_min, self.disp_max)
 
         # Compute cost volume and mask it
         self.left_cv = matching_cost_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max)
@@ -340,7 +340,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             self.right_disp_min = self.right_disp_min * self.scale_factor
             self.right_disp_max = self.right_disp_max * self.scale_factor
             # Obtain absolute min and max right disparities
-            dmin_min_right, dmax_max_right = matching_cost_.dmin_dmax(self.right_disp_min, self.right_disp_max)
+            dmin_min_right, dmax_max_right = matching_cost_.get_min_max_from_grid(
+                self.right_disp_min, self.right_disp_max
+            )
             # Compute right cost volume and mask it
             self.right_cv = matching_cost_.compute_cost_volume(
                 self.right_img, self.left_img, dmin_min_right, dmax_max_right

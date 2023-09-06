@@ -436,7 +436,7 @@ class AbstractMatchingCost:
         return dilatate_left_mask_xr, [dilatate_right_mask_xr, dilatate_right_mask_shift]
 
     @staticmethod
-    def dmin_dmax(disp_min: Union[int, np.ndarray], disp_max: Union[int, np.ndarray]) -> Tuple[int, int]:
+    def get_min_max_from_grid(disp_min: Union[int, np.ndarray], disp_max: Union[int, np.ndarray]) -> Tuple[int, int]:
         """
         Find the smallest disparity present in disp_min, and the highest disparity present in disp_max
 
@@ -504,7 +504,7 @@ class AbstractMatchingCost:
         """
         ny_, nx_, nd_ = cost_volume["cost_volume"].shape
 
-        dmin, _ = self.dmin_dmax(disp_min, disp_max)
+        dmin, _ = self.get_min_max_from_grid(disp_min, disp_max)
 
         # ----- Masking invalid pixels -----
 
