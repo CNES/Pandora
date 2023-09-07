@@ -27,7 +27,7 @@ from typing import Dict, Union
 
 import numpy as np
 import xarray as xr
-from json_checker import Checker, And, Or
+from json_checker import Checker, And
 
 from pandora.img_tools import shift_right_img, compute_mean_raster, compute_std_raster
 from pandora.matching_cost import matching_cost
@@ -59,12 +59,9 @@ class Zncc(matching_cost.AbstractMatchingCost):
         """
         cfg = super().check_conf(**cfg)
 
-        schema = {
-            "matching_cost_method": And(str, lambda input: "zncc"),
-            "window_size": And(int, lambda input: input > 0 and (input % 2) != 0),
-            "subpix": And(int, lambda input: input > 0 and ((input % 2) == 0) or input == 1),
-            "band": Or(str, lambda input: input is None),
-        }
+        schema = self.schema
+        schema["matching_cost_method"] = And(str, lambda input: "zncc")
+        schema["window_size"] = And(int, lambda input: input > 0 and (input % 2) != 0)
 
         checker = Checker(schema)
         checker.validate(cfg)
@@ -137,7 +134,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
             "band_correl": self._band,
         }
 
-        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
+        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix, self._step_col)
         cv = self.allocate_numpy_cost_volume(img_left, disparity_range)
         cv_crop = self.crop_cost_volume(cv, offset_row_col)
 
@@ -211,6 +208,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
             disp_max,
             self._window_size,
             metadata,
+            self._step_col,
             np.swapaxes(cv, 0, 2),
         )
 

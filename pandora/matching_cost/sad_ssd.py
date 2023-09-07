@@ -27,7 +27,7 @@ from typing import Dict, Union, Tuple, List
 
 import numpy as np
 import xarray as xr
-from json_checker import Checker, And, Or
+from json_checker import Checker, And
 
 from pandora.img_tools import shift_right_img
 from pandora import common
@@ -62,12 +62,9 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         """
         cfg = super().check_conf(**cfg)
 
-        schema = {
-            "matching_cost_method": And(str, lambda input: common.is_method(input, ["ssd", "sad"])),
-            "window_size": And(int, lambda input: input > 0 and (input % 2) != 0),
-            "subpix": And(int, lambda input: input > 0 and ((input % 2) == 0) or input == 1),
-            "band": Or(str, lambda input: input is None),
-        }
+        schema = self.schema
+        schema["matching_cost_method"] = And(str, lambda input: common.is_method(input, ["ssd", "sad"]))
+        schema["window_size"] = And(int, lambda input: input > 0 and (input % 2) != 0)
 
         checker = Checker(schema)
         checker.validate(cfg)
@@ -144,7 +141,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             "band_correl": self._band,
         }
 
-        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
+        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix, self._step_col)
         cv_enlarge = self.allocate_numpy_cost_volume(img_left, disparity_range, offset_row_col)
         cv = self.crop_cost_volume(cv_enlarge, offset_row_col)
 
@@ -203,7 +200,9 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             cv[:, -offset_row_col:, :] = np.nan
 
         # Create the xarray.DataSet that will contain the cv of dimensions (row, col, disp)
-        cv = self.allocate_costvolume(img_left, self._subpix, disp_min, disp_max, self._window_size, metadata, cv)
+        cv = self.allocate_costvolume(
+            img_left, self._subpix, disp_min, disp_max, self._window_size, metadata, self._step_col, cv
+        )
 
         return cv
 
