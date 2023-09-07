@@ -216,10 +216,9 @@ class AbstractDisparity:
             dims=["row", "col"],
         )
 
+        disp_map["disparity_interval"] = extract_disparity_interval_from_cost_volume(cv)
+
         disp_map.attrs = cv.attrs
-        d_range = cv.coords["disp"].data
-        disp_map.attrs["disp_min"] = d_range[0]
-        disp_map.attrs["disp_max"] = d_range[-1]
         offset = disp_map.attrs["offset_row_col"]
 
         indices_nan = np.isnan(cv["cost_volume"].data)
@@ -318,8 +317,7 @@ class AbstractDisparity:
             np.zeros(disp["disparity_map"].shape, dtype=np.uint16), dims=["row", "col"]
         )
 
-        d_min = int(disp.attrs["disp_min"])
-        d_max = int(disp.attrs["disp_max"])
+        d_min, d_max = extract_interval_from_disparity_map(disp)
         col = disp.coords["col"].data
 
         # Since disparity map is full size (input images size)
@@ -489,8 +487,7 @@ class AbstractDisparity:
         offset = disp.attrs["offset_row_col"]
 
         _, r_mask = xr.align(disp["validity_mask"], img_right["msk"])
-        d_min = int(disp.attrs["disp_min"])
-        d_max = int(disp.attrs["disp_max"])
+        d_min, d_max = extract_interval_from_disparity_map(disp)
         col = disp.coords["col"].data
         row = disp.coords["row"].data
 
@@ -540,6 +537,55 @@ class AbstractDisparity:
             disp["validity_mask"].data[
                 np.where(no_data_right == len(range(d_min, d_max + 1)))
             ] += cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
+
+
+def extract_disparity_interval_from_cost_volume(cost_volume: xr.Dataset) -> xr.DataArray:
+    """
+    Return a DataArray with min and max disparity from `cost_volume`.
+
+    :param cost_volume: cost volume dataset with the data variables:
+
+            - cost_volume 3D xarray.DataArray (row, col, disp)
+            - confidence_measure 3D xarray.DataArray (row, col, indicator)
+    :type cost_volume: xarray.Dataset
+    :return: Disparity interval
+    :rtype: xarray.DataArray (min, max)
+    """
+    disparity_interval = cost_volume.coords["disp"].data[[0, -1]]
+    result = xr.DataArray(disparity_interval, coords=[("disparity", ["min", "max"])])
+    return result
+
+
+def extract_interval_from_disparity_map(disparity_map: xr.Dataset) -> Tuple[int, int]:
+    """
+    Return a DataArray with min and max disparity from `disparity_map`.
+
+    :param disparity_map: dataset with the disparity map and the confidence measure
+    :type disparity_map: xarray.Dataset with the data variables :
+
+            - disparity_map 2D xarray.DataArray (row, col)
+            - confidence_measure 3D xarray.DataArray(row, col, indicator)
+    :return: disparity interval
+    :rtype: Tuple[int, int]
+    """
+    disparity_min, disparity_max = disparity_map["disparity_interval"]
+    return int(disparity_min), int(disparity_max)
+
+
+def extract_disparity_range_from_disparity_map(disparity_map: xr.Dataset) -> np.ndarray:
+    """
+    Return a numpy array of evenly spaced values within disparity min and disparity max.
+
+    :param disparity_map: dataset with the disparity map and the confidence measure
+    :type disparity_map: xarray.Dataset with the data variables :
+
+            - disparity_map 2D xarray.DataArray (row, col)
+            - confidence_measure 3D xarray.DataArray(row, col, indicator)
+    :return: disparity range.
+    :rtype: np.ndarray
+    """
+    disparity_min, disparity_max = extract_interval_from_disparity_map(disparity_map)
+    return np.arange(disparity_min, disparity_max + 1)
 
 
 @AbstractDisparity.register_subclass("wta")
@@ -637,14 +683,12 @@ class WinnerTakesAll(AbstractDisparity):
         # Pixels where the disparity interval is missing in the right image, have a disparity value invalid_value
         invalid_pixel = np.where(invalid_mc)
         disp_map["disparity_map"].data[invalid_pixel] = self._invalid_disparity
+        disp_map["disparity_interval"] = extract_disparity_interval_from_cost_volume(cv)
 
         # Save the disparity map in the cost volume
         cv["disp_indices"] = disp_map["disparity_map"].copy(deep=True)
 
         disp_map.attrs = cv.attrs
-        d_range = cv.coords["disp"].data
-        disp_map.attrs["disp_min"] = d_range[0]
-        disp_map.attrs["disp_max"] = d_range[-1]
 
         # ----- Confidence measure -----
         # Allocate the confidence measure in the disparity_map dataset
