@@ -513,8 +513,6 @@ class AbstractMatchingCost:
         :type disp_min: int or np.ndarray
         :param disp_max: maximum disparity
         :type disp_max: int or np.ndarray
-        :param cfg: images configuration containing the mask convention : valid_pixels, no_data
-        :type cfg: dict
         :return: None
         """
         ny_, nx_, nd_ = cost_volume["cost_volume"].shape
