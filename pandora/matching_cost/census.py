@@ -109,8 +109,8 @@ class Census(matching_cost.AbstractMatchingCost):
         img_right_shift = shift_right_img(img_right, self._subpix, self._band)  # type: ignore
 
         # Maximal cost of the cost volume with census measure
-        cmax = int(self._window_size**2)  # type: ignore
-        offset_row_col = int((self._window_size - 1) / 2)  # type: ignore
+        cmax = int(self._window_size**2)
+        offset_row_col = int((self._window_size - 1) / 2)
         metadata = {
             "measure": "census",
             "subpixel": self._subpix,
@@ -126,14 +126,9 @@ class Census(matching_cost.AbstractMatchingCost):
         for i, img in enumerate(img_right_shift):
             img_right_shift[i] = census_transform(img, self._window_size, self._band)  # type: ignore
 
-        # Disparity range # pylint: disable=undefined-variable
-        if self._subpix == 1:
-            disparity_range = np.arange(disp_min, disp_max + 1)
-        else:
-            disparity_range = np.arange(disp_min, disp_max, step=1 / float(self._subpix))  # type: ignore
-            disparity_range = np.append(disparity_range, [disp_max])
-
-        cv, cv_crop = self.allocate_numpy_cost_volume(img_left, disparity_range, offset_row_col)
+        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
+        cv = self.allocate_numpy_cost_volume(img_left, disparity_range)
+        cv_crop = self.crop_cost_volume(cv, offset_row_col)
 
         # Giving the 2 images, the matching cost will be calculated as :
         #                 1, 1, 1                2, 5, 6
@@ -165,22 +160,24 @@ class Census(matching_cost.AbstractMatchingCost):
         # Computes the matching cost
         # In the loop, cv is of shape (disp, col, row) and images / masks of shape (row, col)
         # np.swapaxes allow to interchange row and col in images and masks
-        for disp in disparity_range:
+        for disp_index, disp in enumerate(disparity_range):
             i_right = int((disp % 1) * self._subpix)
             point_p, point_q = self.point_interval(left, img_right_shift[i_right], disp)
-            dsp = int((disp - disp_min) * self._subpix)
 
-            cv_crop[dsp, point_p[0] : point_p[1], :] = np.swapaxes(
+            cv_crop[disp_index, point_p[0] : point_p[1], :] = np.swapaxes(
                 self.census_cost(point_p, point_q, left, img_right_shift[i_right]), 0, 1
             )
 
         # Create the xarray.DataSet that will contain the cv of dimensions (row, col, disp)
+        # Computations were optimized with a cost_volume of dimensions (disp, row, col)
+        # As we are expected to return a cost_volume of dimensions (row, col, disp),
+        # we swap axes.
         cv = self.allocate_costvolume(
             img_left,
-            self._subpix,  # type: ignore
+            self._subpix,
             disp_min,
             disp_max,
-            self._window_size,  # type: ignore
+            self._window_size,
             metadata,
             np.swapaxes(cv, 0, 2),
         )

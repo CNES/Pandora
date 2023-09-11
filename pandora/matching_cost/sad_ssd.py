@@ -23,7 +23,7 @@
 This module contains functions associated to SAD and SSD methods used in the cost volume measure step.
 """
 
-from typing import Dict, Union, Tuple
+from typing import Dict, Union, Tuple, List
 
 import numpy as np
 import xarray as xr
@@ -129,16 +129,11 @@ class SadSsd(matching_cost.AbstractMatchingCost):
 
         if self._method == "sad":
             # Maximal cost of the cost volume with sad measure
-            cmax = int(
-                max(abs(max_left - min_right), abs(max_right - min_left)) * (self._window_size**2)  # type: ignore
-            )
+            cmax = int(max(abs(max_left - min_right), abs(max_right - min_left)) * (self._window_size**2))
         if self._method == "ssd":
             # Maximal cost of the cost volume with ssd measure
-            cmax = int(
-                max(abs(max_left - min_right) ** 2, abs(max_right - min_left) ** 2)
-                * (self._window_size**2)  # type: ignore
-            )
-        offset_row_col = int((self._window_size - 1) / 2)  # type: ignore
+            cmax = int(max(abs(max_left - min_right) ** 2, abs(max_right - min_left) ** 2) * (self._window_size**2))
+        offset_row_col = int((self._window_size - 1) / 2)
         metadata = {
             "measure": self._method,
             "subpixel": self._subpix,
@@ -149,34 +144,9 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             "band_correl": self._band,
         }
 
-        # Disparity range # pylint: disable=undefined-variable
-        if self._subpix == 1:
-            disparity_range = np.arange(disp_min, disp_max + 1)
-        else:
-            disparity_range = np.arange(disp_min, disp_max, step=1 / float(self._subpix), dtype=np.float64)
-            disparity_range = np.append(disparity_range, [disp_max])
-
-        # Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
-        # If offset , over allocate the cost volume by adding 2 * offset on row and col dimension
-        # The following computation will reduce the dimension during the pixel wise aggregation so the final
-        # cv dimension will be equal to the correct one.
-        if offset_row_col != 0:
-            cv_enlarge = np.zeros(
-                (
-                    len(disparity_range),
-                    img_left.dims["col"] + 2 * offset_row_col,
-                    img_left.dims["row"] + 2 * offset_row_col,
-                ),
-                dtype=np.float32,
-            )
-            cv_enlarge += np.nan
-            cv = cv_enlarge[:, offset_row_col:-offset_row_col, offset_row_col:-offset_row_col]
-        else:
-            cv = np.zeros(
-                (len(disparity_range), img_left.dims["col"], img_left.dims["row"]),
-                dtype=np.float32,
-            )
-            cv += np.nan
+        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
+        cv_enlarge = self.allocate_numpy_cost_volume(img_left, disparity_range, offset_row_col)
+        cv = self.crop_cost_volume(cv_enlarge, offset_row_col)
 
         # Giving the 2 images, the matching cost will be calculated as :
         #                 1, 1, 1                2, 5, 6
@@ -208,38 +178,52 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         # Computes the matching cost
         # In the loop, cv is of shape (disp, col, row) and images / masks of shape (row, col)
         # np.swapaxes allow to interchange row and col in images and masks
-        for disp in disparity_range:
+        for disp_index, disp in enumerate(disparity_range):
             i_right = int((disp % 1) * self._subpix)
             point_p, point_q = self.point_interval(img_left, img_right_shift[i_right], disp)
-            dsp = int((disp - disp_min) * self._subpix)
 
-            cv[dsp, point_p[0] : point_p[1], :] = np.swapaxes(
+            cv[disp_index, point_p[0] : point_p[1], :] = np.swapaxes(
                 self._pixel_wise_methods[self._method](point_p, point_q, img_left, img_right_shift[i_right]),
                 0,
                 1,
             )
 
-        # Pixel wise aggregation modifies border values so it is important to reconvert to nan values
-        if offset_row_col != 0:
-            cv = self.pixel_wise_aggregation(cv_enlarge.data)  # type: ignore
-            cv = np.swapaxes(cv, 0, 2)
+        cv = self.pixel_wise_aggregation(cv_enlarge.data if offset_row_col else cv.data)  # type: ignore
+
+        # Computations were optimized with a cost_volume of dimensions (disp, row, col)
+        # As we are expected to return a cost_volume of dimensions (row, col, disp),
+        # we swap axes.
+        cv = np.swapaxes(cv, 0, 2)
+
+        if offset_row_col:
+            # Pixel wise aggregation modifies border values so it is important to reconvert to nan values
             cv[:offset_row_col, :, :] = np.nan
-            cv[
-                -offset_row_col:,
-                :,
-            ] = np.nan
+            cv[-offset_row_col:, :, :] = np.nan
             cv[:, :offset_row_col, :] = np.nan
             cv[:, -offset_row_col:, :] = np.nan
-        else:
-            cv = self.pixel_wise_aggregation(cv.data)  # type: ignore
-            cv = np.swapaxes(cv, 0, 2)
 
         # Create the xarray.DataSet that will contain the cv of dimensions (row, col, disp)
-        cv = self.allocate_costvolume(
-            img_left, self._subpix, disp_min, disp_max, self._window_size, metadata, cv  # type: ignore
-        )
+        cv = self.allocate_costvolume(img_left, self._subpix, disp_min, disp_max, self._window_size, metadata, cv)
 
-        return cv  # type: ignore
+        return cv
+
+    @staticmethod
+    def allocate_numpy_cost_volume(
+        img_left: xr.Dataset, disparity_range: Union[np.ndarray, List], offset_row_col: int = 0
+    ) -> np.ndarray:
+        # Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
+        # If offset , over allocate the cost volume by adding 2 * offset on row and col dimension
+        # The following computation will reduce the dimension during the pixel wise aggregation so the final
+        # cv dimension will be equal to the correct one.
+        return np.full(
+            (
+                len(disparity_range),
+                img_left.dims["col"] + 2 * offset_row_col,
+                img_left.dims["row"] + 2 * offset_row_col,
+            ),
+            np.nan,
+            dtype=np.float32,
+        )
 
     def ad_cost(
         self,
@@ -359,12 +343,12 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             self._window_size,
             self._window_size,
             nb_disp,
-            nx_ - (self._window_size - 1),  # type: ignore
-            ny_ - (self._window_size - 1),  # type: ignore
+            nx_ - (self._window_size - 1),
+            ny_ - (self._window_size - 1),
         )
         strides_windows = (str_row, str_col, str_disp, str_col, str_row)
         aggregation_window = np.lib.stride_tricks.as_strided(
-            cost_volume, shape_windows, strides_windows, writeable=False  # type: ignore
+            cost_volume, shape_windows, strides_windows, writeable=False
         )
         cost_volume = np.sum(aggregation_window, (0, 1))
         return cost_volume

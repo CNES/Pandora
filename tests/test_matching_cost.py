@@ -23,38 +23,38 @@
 """
 This module contains functions to test the matching cost step.
 """
-import unittest
+# pylint with pytest's fixtures compatibility:
+# pylint: disable=redefined-outer-name
 import numpy as np
+import pytest
 
 from pandora import matching_cost
 
 from tests import common
 
 
-class TestMatchingCost(unittest.TestCase):
+@pytest.fixture()
+def images():
+    return common.matching_cost_tests_setup()
+
+
+@pytest.fixture()
+def left(images):
+    return images[0]
+
+
+class TestMatchingCost:
     """
     TestMatchingCost class allows to test the methods in the class MatchingCost
     """
 
-    def setUp(self):
-        """
-        Method called to prepare the test fixture
-
-        """
-
-        self.left, self.right = common.matching_cost_tests_setup()
-
-    def test_allocate_numpy_cost_volume(self):
+    def test_allocate_numpy_cost_volume(self, left):
         """
         Test the allocate_numpy_cost_volume function
         """
 
         # compute ground truth cv for allocate
-        gt_cv = np.zeros((5, 6, 5), dtype=np.float32)
-        gt_cv += np.nan
-
-        gt_cv_cropped = np.zeros((5, 2, 1), dtype=np.float32)
-        gt_cv_cropped += np.nan
+        expected = np.full((5, 6, 5), np.nan, dtype=np.float32)
 
         # Create matching cost object
         matching_cost_ = matching_cost.AbstractMatchingCost(
@@ -62,13 +62,46 @@ class TestMatchingCost(unittest.TestCase):
         )
 
         # Function allocate_numpy_cost_volume
-        cv, cv_cropped = matching_cost_.allocate_numpy_cost_volume(self.left, [0, 0.5, 1, 1.5, 2], 2)
+        result = matching_cost_.allocate_numpy_cost_volume(left, [0, 0.5, 1, 1.5, 2])
 
         # Test that cv and cv_cropped are equal to the ground truth
-        np.testing.assert_array_equal(cv, gt_cv)
-        np.testing.assert_array_equal(cv_cropped, gt_cv_cropped)
+        np.testing.assert_array_equal(result, expected)
 
+    @pytest.mark.parametrize(
+        ["cost_volume", "expected", "offset"],
+        [
+            pytest.param(
+                np.full((5, 6, 5), np.nan, dtype=np.float32),
+                np.full((5, 6, 5), np.nan, dtype=np.float32),
+                0,
+                id="With null offset",
+            ),
+            pytest.param(
+                np.full((5, 6, 5), np.nan, dtype=np.float32),
+                np.full((5, 2, 1), np.nan, dtype=np.float32),
+                2,
+                id="With offset",
+            ),
+        ],
+    )
+    def test_crop_cost_volume(self, cost_volume, expected, offset):
+        """
+        Test the crop_cost_volume function
+        """
+        # Function allocate_numpy_cost_volume
+        result = matching_cost.AbstractMatchingCost.crop_cost_volume(cost_volume, offset)
 
-if __name__ == "__main__":
-    common.setup_logging()
-    unittest.main()
+        np.testing.assert_array_equal(result, expected)
+
+    @pytest.mark.parametrize(
+        ["disparity_min", "disparity_max", "subpix", "expected"],
+        [
+            [0, 2, 1, [0, 1, 2]],
+            [0, 2, 2, [0, 0.5, 1, 1.5, 2]],
+            [0, 2, 4, [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]],
+        ],
+    )
+    def test_get_disparity_range(self, disparity_min, disparity_max, subpix, expected):
+        """Test get_disparity_range."""
+        result = matching_cost.AbstractMatchingCost.get_disparity_range(disparity_min, disparity_max, subpix)
+        np.testing.assert_array_equal(result, expected)

@@ -126,7 +126,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
         cmax = 1
 
         # Cost volume metadata
-        offset_row_col = int((self._window_size - 1) / 2)  # type: ignore
+        offset_row_col = int((self._window_size - 1) / 2)
         metadata = {
             "measure": "zncc",
             "subpixel": self._subpix,
@@ -137,26 +137,20 @@ class Zncc(matching_cost.AbstractMatchingCost):
             "band_correl": self._band,
         }
 
-        # Disparity range
-        if self._subpix == 1:
-            disparity_range = np.arange(disp_min, disp_max + 1)
-        else:
-            disparity_range = np.arange(disp_min, disp_max, step=1 / float(self._subpix), dtype=np.float64)
-            disparity_range = np.append(disparity_range, [disp_max])
-
-        cv, cv_crop = self.allocate_numpy_cost_volume(img_left, disparity_range, offset_row_col)
+        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
+        cv = self.allocate_numpy_cost_volume(img_left, disparity_range)
+        cv_crop = self.crop_cost_volume(cv, offset_row_col)
 
         # Computes the matching cost
-        for disp in disparity_range:
+        for disp_index, disp in enumerate(disparity_range):
             i_right = int((disp % 1) * self._subpix)
             point_p, point_q = self.point_interval(img_left, img_right_shift[i_right], disp)
-            dsp = int((disp - disp_min) * self._subpix)
 
             # Point interval in the left standard deviation image
             # -  (win_radius * 2) because img_std is truncated for points that are not calculable
-            p_std = (point_p[0], point_p[1] - (int(self._window_size / 2) * 2))  # type: ignore
+            p_std = (point_p[0], point_p[1] - (int(self._window_size / 2) * 2))
             # Point interval in the right standard deviation image
-            q_std = (point_q[0], point_q[1] - (int(self._window_size / 2) * 2))  # type: ignore
+            q_std = (point_q[0], point_q[1] - (int(self._window_size / 2) * 2))
 
             if self._band is not None:
                 band_index_left = list(img_left.band_im.data).index(self._band)
@@ -204,15 +198,18 @@ class Zncc(matching_cost.AbstractMatchingCost):
             zncc_[np.where(divide_standard <= 0)] = 0
 
             # Places the result in the cost_volume
-            cv_crop[dsp, point_p[0] : p_std[1], :] = np.swapaxes(zncc_, 0, 1)
+            cv_crop[disp_index, point_p[0] : p_std[1], :] = np.swapaxes(zncc_, 0, 1)
 
         # Create the xarray.DataSet that will contain the cost_volume of dimensions (row, col, disp)
+        # Computations were optimized with a cost_volume of dimensions (disp, row, col)
+        # As we are expected to return a cost_volume of dimensions (row, col, disp),
+        # we swap axes.
         cv = self.allocate_costvolume(
             img_left,
-            self._subpix,  # type: ignore
+            self._subpix,
             disp_min,
             disp_max,
-            self._window_size,  # type: ignore
+            self._window_size,
             metadata,
             np.swapaxes(cv, 0, 2),
         )

@@ -123,8 +123,8 @@ class AbstractMatchingCost:
         :return: None
         """
         self.cfg = self.check_conf(**cfg)  # type: ignore
-        self._window_size = self.cfg["window_size"]
-        self._subpix = self.cfg["subpix"]
+        self._window_size = int(self.cfg["window_size"])
+        self._subpix = int(self.cfg["subpix"])
         self._band = self.cfg["band"]
 
     def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
@@ -259,12 +259,7 @@ class AbstractMatchingCost:
         row = np.arange(c_row[0], c_row[-1] + 1)  # type: np.ndarray
         col = np.arange(c_col[0], c_col[-1] + 1)  # type: np.ndarray
 
-        # Compute the disparity range
-        if subpix == 1:
-            disparity_range = np.arange(disp_min, disp_max + 1)
-        else:
-            disparity_range = np.arange(disp_min, disp_max, step=1 / float(subpix), dtype=np.float64)
-            disparity_range = np.append(disparity_range, [disp_max])
+        disparity_range = AbstractMatchingCost.get_disparity_range(disp_min, disp_max, subpix)
 
         # Create the cost volume
         if np_data is None:
@@ -282,6 +277,26 @@ class AbstractMatchingCost:
         cost_volume.attrs["window_size"] = window_size
 
         return cost_volume
+
+    @staticmethod
+    def get_disparity_range(disparity_min: int, disparity_max: int, subpix: int) -> np.ndarray:
+        """
+        Build disparity range and return it.
+
+        :param disparity_min: minimum disparity
+        :type disparity_min: int
+        :param disparity_max: maximum disparity
+        :type disparity_max: int
+        :param subpix: subpixel precision = (1 or 2 or 4)
+        :return: disparity range
+        :rtype: np.ndarray
+        """
+        if subpix == 1:
+            disparity_range = np.arange(disparity_min, disparity_max + 1)
+        else:
+            disparity_range = np.arange(disparity_min, disparity_max, step=1 / float(subpix), dtype=np.float64)
+            disparity_range = np.append(disparity_range, [disparity_max])
+        return disparity_range
 
     @staticmethod
     def point_interval(
@@ -513,9 +528,7 @@ class AbstractMatchingCost:
 
         # Computes the validity mask of the cost volume : invalid pixels or no_data are masked with the value nan.
         # Valid pixels are = 0
-        mask_left, mask_right = self.masks_dilatation(
-            img_left, img_right, self._window_size, self._subpix  # type: ignore
-        )
+        mask_left, mask_right = self.masks_dilatation(img_left, img_right, self._window_size, self._subpix)
 
         for disp in cost_volume.coords["disp"].data:
             i_right = int((disp % 1) * self._subpix)
@@ -557,9 +570,7 @@ class AbstractMatchingCost:
                 cost_volume["cost_volume"].data[masking[0], masking[1], dsp] = np.nan
 
     @staticmethod
-    def allocate_numpy_cost_volume(
-        img_left: xr.Dataset, disparity_range: np.ndarray, offset_row_col: int
-    ) -> Tuple[xr.Dataset, xr.Dataset]:
+    def allocate_numpy_cost_volume(img_left: xr.Dataset, disparity_range: Union[np.ndarray, List]) -> np.ndarray:
         """
         Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
 
@@ -575,20 +586,26 @@ class AbstractMatchingCost:
         :return: the cost volume dataset , with the data variables:
 
                 - cost_volume 3D xarray.DataArray (row, col, disp)
-                - a cropped cost volume dataset
-        :rtype: Tuple[xarray.Dataset, xarray.Dataset]
+        :rtype: xarray.Dataset
         """
 
-        cv = np.zeros(
+        return np.full(
             (len(disparity_range), img_left.dims["col"], img_left.dims["row"]),
+            np.nan,
             dtype=np.float32,
         )
-        cv += np.nan
 
-        # If offset, do not consider border position for cost computation
-        if offset_row_col != 0:
-            cv_crop = cv[:, offset_row_col:-offset_row_col, offset_row_col:-offset_row_col]
-        else:
-            cv_crop = cv
+    @staticmethod
+    def crop_cost_volume(cost_volume: np.ndarray, offset: int = 0) -> np.ndarray:
+        """
+        Return a cropped view of cost_volume.
 
-        return cv, cv_crop  # type: ignore
+        If offset, do not consider border position for cost computation.
+        :param cost_volume: cost volume to crop
+        :type cost_volume: np.ndarray
+        :param offset: offset used to crop cost volume
+        :type offset: int
+        :return: cropped view of cost_volume.
+        :rtype: np.ndarray
+        """
+        return cost_volume[:, offset:-offset, offset:-offset] if offset else cost_volume
