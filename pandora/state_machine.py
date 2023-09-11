@@ -717,25 +717,20 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         # Create matching_cost object to check its step configuration
         matching_cost_ = matching_cost.AbstractMatchingCost(**cfg[input_step])  # type: ignore
+        self.pipeline_cfg["pipeline"][input_step] = matching_cost_.cfg
 
         # Check the coherence between the band selected for the matching_cost step
         # and the bands present on left and right image
-        if not "band" in cfg["matching_cost"]:
-            band = None
-        else:
-            band = cfg["matching_cost"]["band"]
         self.check_band_pipeline(
             self.left_img.coords["band_im"].data,
             cfg["matching_cost"]["matching_cost_method"],
-            band,
+            matching_cost_.cfg["band"],  # type: ignore
         )
         self.check_band_pipeline(
             self.right_img.coords["band_im"].data,
             cfg["matching_cost"]["matching_cost_method"],
-            band,
+            matching_cost_.cfg["band"],  # type: ignore
         )
-
-        self.pipeline_cfg["pipeline"][input_step] = matching_cost_.cfg
 
     def disparity_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
