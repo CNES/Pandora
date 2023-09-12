@@ -398,7 +398,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
-        optimization_ = optimization.AbstractOptimization(**cfg["pipeline"][input_step])  # type: ignore
+        optimization_ = optimization.AbstractOptimization(self.left_img, **cfg["pipeline"][input_step])  # type: ignore
         logging.info("Cost optimization...")
 
         self.left_cv = optimization_.optimize_cv(self.left_cv, self.left_img, self.right_img)
@@ -852,7 +852,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        optimization_ = optimization.AbstractOptimization(**cfg[input_step])  # type: ignore
+        optimization_ = optimization.AbstractOptimization(self.left_img, **cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = optimization_.cfg
 
         # If geometric_prior is needed for the optimization step,
