@@ -488,7 +488,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         logging.info("Disparity range computation...")
 
-        multiscale_ = multiscale.AbstractMultiscale(**cfg["pipeline"][input_step])  # type: ignore
+        multiscale_ = multiscale.AbstractMultiscale(
+            self.left_img, self.right_img, **cfg["pipeline"][input_step]
+        )  # type: ignore
 
         # Update min and max user disparity according to the current scale
         self.dmin_user = self.dmin_user * self.scale_factor
@@ -934,18 +936,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return:
         """
-        multiscale_ = multiscale.AbstractMultiscale(**cfg[input_step])  # type: ignore
+        multiscale_ = multiscale.AbstractMultiscale(self.left_img, self.right_img, **cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = multiscale_.cfg
-
-        # If multiscale step is present, input disparities cannot be grids
-        if (
-            isinstance(self.left_img.attrs["disp_min"], str)
-            or isinstance(self.right_img.attrs["disp_min"], str)
-            or (isinstance(self.left_img.attrs["disp_max"], str))
-            or isinstance(self.right_img.attrs["disp_max"], str)
-        ) and ("multiscale" in cfg):
-            logging.error("Multiscale processing does not accept input disparity grids.")
-            sys.exit(1)
 
     def cost_volume_confidence_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
