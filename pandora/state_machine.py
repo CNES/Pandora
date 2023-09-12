@@ -379,7 +379,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :return: None
         """
         semantic_segmentation_ = semantic_segmentation.AbstractSemanticSegmentation(
-            **cfg["pipeline"][input_step]
+            self.left_img, **cfg["pipeline"][input_step]
         )  # type: ignore
         self.left_img = semantic_segmentation_.compute_semantic_segmentation(
             self.left_cv, self.left_img, self.right_img
@@ -794,7 +794,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        semantic_segmentation_ = semantic_segmentation.AbstractSemanticSegmentation(**cfg[input_step])  # type: ignore
+        semantic_segmentation_ = semantic_segmentation.AbstractSemanticSegmentation(
+            self.left_img, **cfg[input_step]
+        )  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = semantic_segmentation_.cfg
 
         # If semantic_segmentation is present, check that the necessary bands are present in the inputs
