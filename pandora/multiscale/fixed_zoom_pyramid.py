@@ -85,11 +85,8 @@ class FixedZoomPyramid(multiscale.AbstractMultiscale):
             cfg["marge"] = self._PYRAMID_MARGE
 
         # input disparities cannot be grids
-        if (
-            isinstance(left_img.attrs["disp_min"], str)
-            or isinstance(right_img.attrs["disp_min"], str)
-            or (isinstance(left_img.attrs["disp_max"], str))
-            or isinstance(right_img.attrs["disp_max"], str)
+        if isinstance(left_img.attrs["disparity_interval"], str) or isinstance(
+            right_img.attrs["disparity_interval"], str
         ):
             logging.error("Multiscale processing does not accept input disparity grids.")
             sys.exit(1)

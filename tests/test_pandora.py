@@ -314,8 +314,7 @@ class TestPandora(unittest.TestCase):
             "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
         }
-        user_cfg["input"]["disp_min"] = -2
-        user_cfg["input"]["disp_max"] = 2
+        user_cfg["input"]["disp_left"] = (-2, 2)
         user_cfg["pipeline"]["matching_cost"]["matching_cost_method"] = "census"
         user_cfg["pipeline"]["matching_cost"]["subpix"] = 1
         user_cfg["pipeline"]["disparity"]["invalid_disparity"] = -10
@@ -328,9 +327,8 @@ class TestPandora(unittest.TestCase):
         import_plugin()
 
         # Run the Pandora pipeline
-        left, right = pandora.run(
-            pandora_machine, img_left, img_right, cfg["input"]["disp_min"], cfg["input"]["disp_max"], cfg
-        )
+        disp_min, disp_max = cfg["input"]["disp_left"]
+        left, right = pandora.run(pandora_machine, img_left, img_right, disp_min, disp_max, cfg)
 
         # Ground truth confidence measure
         gt_left_indicator_stereo = np.array(
@@ -381,14 +379,22 @@ class TestPandora(unittest.TestCase):
 
         # Create temporary directory
         with TemporaryDirectory() as tmp_dir:
-            with open(os.path.join(tmp_dir, "config.json"), "w", encoding="utf-8") as file_:
+            config_path = os.path.join(tmp_dir, "config.json")
+            with open(config_path, "w", encoding="utf-8") as file_:
                 json.dump(cfg, file_, indent=2)
 
             # Run Pandora pipeline
-            pandora.main(tmp_dir + "/config.json", tmp_dir, verbose=False)
+            pandora.main(config_path, tmp_dir, verbose=False)
 
             # Check the left disparity map
-            if self.error(rasterio_open(tmp_dir + "/left_disparity.tif").read(1), self.disp_left, 1) > 0.20:
+            if (
+                self.error(
+                    rasterio_open(f"{tmp_dir}/left_disparity.tif").read(1),
+                    self.disp_left,
+                    1,
+                )
+                > 0.20
+            ):
                 raise AssertionError
 
             # Check the crs & transform properties

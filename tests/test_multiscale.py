@@ -42,15 +42,15 @@ class TestMultiScale(unittest.TestCase):
 
     def setUp(self):
         # img with int disparity
-        self.img_with_disp = xr.Dataset(data_vars={}, coords={}, attrs={"disp_min": -30, "disp_max": 0})
+        self.img_with_disp = xr.Dataset(data_vars={}, coords={}, attrs={"disparity_interval": [-30, 0]})
 
         # img with grid disparity
         self.img_with_grid_disp = xr.Dataset(
-            data_vars={}, coords={}, attrs={"disp_min": "grid_disp_min.tiff", "disp_max": "grid_disp_max.tiff"}
+            data_vars={}, coords={}, attrs={"disparity_interval": "not_relevant_name_for_disparity_grid.tiff"}
         )
 
         # img with None disparity
-        self.img_with_none_disp = xr.Dataset(data_vars={}, coords={}, attrs={"disp_min": None, "disp_max": None})
+        self.img_with_none_disp = xr.Dataset(data_vars={}, coords={}, attrs={"disparity_interval": [None, None]})
 
     def test_disparity_range(self):
         """

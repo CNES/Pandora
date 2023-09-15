@@ -188,31 +188,26 @@ multiscale_pipeline_cfg = {
 input_cfg_basic = {
     "img_left": "tests/pandora/left.png",
     "img_right": "tests/pandora/right.png",
-    "disp_min": -60,
-    "disp_max": 0,
+    "disp_left": [-60, 0],
 }
 
 input_multiband_cfg = {
     "img_left": "tests/pandora/left_rgb.tif",
     "img_right": "tests/pandora/right_rgb.tif",
-    "disp_min": -60,
-    "disp_max": 0,
+    "disp_left": [-60, 0],
 }
 
 input_cfg_left_grids = {
     "img_left": "tests/pandora/left.png",
     "img_right": "tests/pandora/right.png",
-    "disp_min": "tests/pandora/disp_min_grid.tif",
-    "disp_max": "tests/pandora/disp_max_grid.tif",
+    "disp_left": "tests/pandora/left_disparity_grid.tif",
 }
 
 input_cfg_left_right_grids = {
     "img_left": "tests/pandora/left.png",
     "img_right": "tests/pandora/right.png",
-    "disp_min": "tests/pandora/disp_min_grid.tif",
-    "disp_max": "tests/pandora/disp_max_grid.tif",
-    "disp_min_right": "tests/pandora/right_disp_min_grid.tif",
-    "disp_max_right": "tests/pandora/right_disp_max_grid.tif",
+    "disp_left": "tests/pandora/left_disparity_grid.tif",
+    "disp_right": "tests/pandora/right_disparity_grid.tif",
 }
 
 # Image common attributes for matching_cost_tests

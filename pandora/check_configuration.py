@@ -23,6 +23,7 @@
 """
 This module contains functions allowing to check the configuration given to Pandora pipeline.
 """
+from __future__ import annotations
 
 import copy
 import json
@@ -137,54 +138,42 @@ def check_band_names(img: str) -> None:
 
 
 def check_disparities(
-    disp_min: Union[int, str, None],
-    disp_max: Union[int, str, None],
+    disparity: list[int] | str | None,
     img_left: str,
 ) -> None:
     """
     Check left and right disparities.
 
-    :param disp_min: minimal disparity
-    :type disp_min: int or str or None
-    :param disp_max: maximal disparity
-    :type disp_max: int or str or None
+    :param disparity: disparity to check if list it is a list of two values: min and max.
+    :type disparity:  list[int] | str | None
     :param img_left: path to the left image
     :type img_left: str
     :return: None
     """
     # --- Check left disparities
     # left disparity are integers
-    if isinstance(disp_min, int) and isinstance(disp_max, int):
-        if disp_max < disp_min:
-            logging.error("Disp_max must be bigger than Disp_min")
-            sys.exit(1)
+    if isinstance(disparity, list) and disparity[1] < disparity[0]:
+        logging.error("Disp_max must be bigger than Disp_min")
+        sys.exit(1)
 
     # left disparity are grids
-    elif (isinstance(disp_min, str)) and (isinstance(disp_max, str)):
+    if isinstance(disparity, str):
         # Load an image to compare the grid size
         img_left_ = rasterio_open(img_left)
 
-        disp_min_ = rasterio_open(disp_min)
-        dmin = disp_min_.read(1)
-        disp_max_ = rasterio_open(disp_max)
-        dmax = disp_max_.read(1)
+        disparity_reader = rasterio_open(disparity)
 
-        # check that disparity grids is a 1-channel grid
-        if (disp_min_.count != 1) or (disp_max_.count != 1):
-            logging.error("Disparity grids must be a 1-channel grid")
+        # check that disparity grids is a 2-channel grid
+        if disparity_reader.count != 2:
+            logging.error("Disparity grids must be a 2-channel grid")
             sys.exit(1)
 
         # check that disp_min has the same size as the image
-        if (
-            (disp_min_.width != img_left_.width)
-            or (disp_min_.height != img_left_.height)
-            or (disp_max_.width != img_left_.width)
-            or (disp_max_.height != img_left_.height)
-        ):
+        if (disparity_reader.width != img_left_.width) or (disparity_reader.height != img_left_.height):
             logging.error("Disparity grids and image must have the same size")
             sys.exit(1)
 
-        if (dmax < dmin).any():
+        if (disparity_reader.read(1) > disparity_reader.read(2)).any():
             logging.error("Disp_max must be bigger than Disp_min")
             sys.exit(1)
 
@@ -226,17 +215,15 @@ def get_config_pipeline(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
 
 
 def get_metadata(
-    img: str, disp_min: Union[int, str, None], disp_max: Union[int, str, None], classif: str = None, segm: str = None
+    img: str, disparity: list[int] | str | None = None, classif: str = None, segm: str = None
 ) -> xr.Dataset:
     """
     Read metadata from image, and return the corresponding xarray.DataSet
 
     :param img: img_path
     :type img: str
-    :param disp_min: minimal disparity
-    :type disp_min: int or str or None
-    :param disp_max: maximal disparity
-    :type disp_max: int or str or None
+    :param disparity: disparity couple of ints or path to disparity grid file (optional)
+    :type disparity: list[int] | str | None
     :param classif: path to the classif (optional)
     :type classif: str
     :param segm: path to the segm (optional)
@@ -250,7 +237,7 @@ def get_metadata(
         "row": img_ds.height,
         "col": img_ds.width,
     }
-    attrs = {"disp_min": disp_min, "disp_max": disp_max}
+    attrs = {"disparity_interval": disparity}
     dataset = xr.Dataset(data_vars={}, coords=coords, attrs=attrs)
     default_dataarray = xr.DataArray(
         data=np.zeros([coords["row"], coords["col"]]),
@@ -297,18 +284,18 @@ def memory_consumption_estimation(
     """
     # If the input configuration is given as a dict
     if isinstance(user_input, dict):
-        dmin = user_input["input"]["disp_min"]
-        dmax = user_input["input"]["disp_max"]
+        disparity_interval = user_input["input"]["disp_left"]
         img_path = user_input["input"]["img_left"]
     else:
-        img_path, dmin, dmax = user_input
+        img_path, *disparity_interval = user_input
         # Since only the size is to be used for the memory computation, the same path is set on left and right
-        input_cfg = {"disp_min": dmin, "disp_max": dmax, "img_left": img_path, "img_right": img_path}
+        input_cfg = {"disparity_interval": disparity_interval, "img_left": img_path, "img_right": img_path}
         user_input = {"input": input_cfg}
 
     # Read input image
     img = rasterio_open(img_path)
     # Obtain cost volume size
+    dmin, dmax = disparity_interval
     cv_size = img.width * img.height * np.abs(dmax - dmin)
     if checked_cfg_flag:
         # Obtain pipeline cfg
@@ -316,7 +303,7 @@ def memory_consumption_estimation(
     else:
         # First, check if the configuration is valid
         cfg = {"pipeline": user_pipeline_cfg["pipeline"], "input": user_input["input"]}
-        img_left_metadata = get_metadata(cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"])
+        img_left_metadata = get_metadata(cfg["input"]["img_left"], disparity_interval)
         img_right_metadata = get_metadata(cfg["input"]["img_right"], None, None)
         checked_cfg = check_pipeline_section(cfg, img_left_metadata, img_right_metadata, pandora_machine)
         # Obtain pipeline cfg
@@ -392,14 +379,14 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     # Disparity can be integer type, or string type (path to the disparity grid)
     # If the left disparity is string type, right disparity must be string type or none
     # if the left disparity is integer type, right disparity must be none
-    if isinstance(cfg["input"]["disp_min"], int):
-        input_configuration_schema.update(input_configuration_schema_integer_disparity)
+    if isinstance(cfg["input"]["disp_left"], list):
+        base_input_configuration_schema = input_configuration_schema_integer_disparity
+    elif isinstance(cfg["input"]["disp_right"], str):
+        base_input_configuration_schema = input_configuration_schema_left_disparity_grids_right_grids
     else:
-        if isinstance(cfg["input"]["disp_min_right"], str):
-            input_configuration_schema.update(input_configuration_schema_left_disparity_grids_right_grids)
-        else:
-            input_configuration_schema.update(input_configuration_schema_left_disparity_grids_right_none)
+        base_input_configuration_schema = input_configuration_schema_left_disparity_grids_right_none
 
+    input_configuration_schema.update(base_input_configuration_schema)
     # check schema
     configuration_schema = {"input": input_configuration_schema}
 
@@ -410,14 +397,12 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
 
     # check left disparities
     check_disparities(
-        cfg["input"]["disp_min"],
-        cfg["input"]["disp_max"],
+        cfg["input"]["disp_left"],
         cfg["input"]["img_left"],
     )
     # check right disparities
     check_disparities(
-        cfg["input"]["disp_min_right"],
-        cfg["input"]["disp_max_right"],
+        cfg["input"]["disp_right"],
         cfg["input"]["img_right"],
     )
     # check bands
@@ -453,15 +438,13 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> di
     # read metadata from left and right images
     img_left_metadata = get_metadata(
         cfg_input["input"]["img_left"],
-        cfg_input["input"]["disp_min"],
-        cfg_input["input"]["disp_max"],
+        cfg_input["input"]["disp_left"],
         cfg_input["input"]["left_classif"],
         cfg_input["input"]["left_segm"],
     )
     img_right_metadata = get_metadata(
         cfg_input["input"]["img_right"],
-        cfg_input["input"]["disp_min_right"],
-        cfg_input["input"]["disp_max_right"],
+        cfg_input["input"]["disp_right"],
         cfg_input["input"]["right_classif"],
         cfg_input["input"]["right_segm"],
     )
@@ -533,26 +516,20 @@ input_configuration_schema = {
 
 # Input configuration when disparity is integer
 input_configuration_schema_integer_disparity = {
-    "disp_min": int,
-    "disp_max": int,
-    "disp_min_right": (lambda input: input is None),
-    "disp_max_right": (lambda input: input is None),
+    "disp_left": [int, int],
+    "disp_right": (lambda input: input is None),
 }
 
 # Input configuration when left disparity is a grid, and right not provided
 input_configuration_schema_left_disparity_grids_right_none = {
-    "disp_min": And(str, rasterio_can_open),
-    "disp_max": And(str, rasterio_can_open),
-    "disp_min_right": (lambda input: input is None),
-    "disp_max_right": (lambda input: input is None),
+    "disp_left": And(str, rasterio_can_open),
+    "disp_right": (lambda input: input is None),
 }
 
 # Input configuration when left and right disparity are grids
 input_configuration_schema_left_disparity_grids_right_grids = {
-    "disp_min": And(str, rasterio_can_open),
-    "disp_max": And(str, rasterio_can_open),
-    "disp_min_right": And(str, rasterio_can_open),
-    "disp_max_right": And(str, rasterio_can_open),
+    "disp_left": And(str, rasterio_can_open),
+    "disp_right": And(str, rasterio_can_open),
 }
 
 default_short_configuration_input = {
@@ -565,8 +542,7 @@ default_short_configuration_input = {
         "right_classif": None,
         "left_segm": None,
         "right_segm": None,
-        "disp_min_right": None,
-        "disp_max_right": None,
+        "disp_right": None,
     }
 }
 
