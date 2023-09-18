@@ -39,10 +39,12 @@ class AbstractOptimization:
     optimization_methods_avail: Dict = {}
     cfg = None
 
-    def __new__(cls, **cfg: Dict[str, dict]):
+    def __new__(cls, _img: xr.Dataset, **cfg: Dict[str, dict]):
         """
         Return the plugin associated with the optimization_method given in the configuration
 
+        :param img: xarray.Dataset of left image
+        :type img: xarray.Dataset
         :param cfg: configuration {'optimization_method': value}
         :type cfg: dictionary
         """

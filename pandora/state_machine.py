@@ -276,6 +276,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # right disparity map
         self.right_disparity: xr.Dataset = None
 
+        ## TEMPORARY - 328
+        self.multiscale_check_disp: xr.Dataset = None
+
         # Pandora's pipeline configuration
         self.pipeline_cfg: Dict = {"pipeline": {}}
         # Right disparity map computation information: Can be "none" or "accurate"
@@ -379,7 +382,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :return: None
         """
         semantic_segmentation_ = semantic_segmentation.AbstractSemanticSegmentation(
-            **cfg["pipeline"][input_step]
+            self.left_img, **cfg["pipeline"][input_step]
         )  # type: ignore
         self.left_img = semantic_segmentation_.compute_semantic_segmentation(
             self.left_cv, self.left_img, self.right_img
@@ -398,7 +401,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
-        optimization_ = optimization.AbstractOptimization(**cfg["pipeline"][input_step])  # type: ignore
+        optimization_ = optimization.AbstractOptimization(self.left_img, **cfg["pipeline"][input_step])  # type: ignore
         logging.info("Cost optimization...")
 
         self.left_cv = optimization_.optimize_cv(self.left_cv, self.left_img, self.right_img)
@@ -488,7 +491,13 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         logging.info("Disparity range computation...")
 
-        multiscale_ = multiscale.AbstractMultiscale(**cfg["pipeline"][input_step])  # type: ignore
+        ## TO UNCOMMENT WITH 328 TICKET
+        ##multiscale_ = multiscale.AbstractMultiscale(
+        ##    self.left_img, self.right_img, **cfg["pipeline"][input_step]
+        ##)  # type: ignore
+        multiscale_ = multiscale.AbstractMultiscale(
+            self.multiscale_check_disp, self.multiscale_check_disp, **cfg["pipeline"][input_step]
+        )  # type: ignore
 
         # Update min and max user disparity according to the current scale
         self.dmin_user = self.dmin_user * self.scale_factor
@@ -643,6 +652,11 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # Add transitions
         self.add_transitions(self._transitions_run)
 
+        # TO BE DELETED in the 328 ticket
+        self.multiscale_check_disp = xr.Dataset(
+            data_vars={}, coords={}, attrs={"disp_min": disp_min, "disp_max": disp_max}
+        )
+
     def run(self, input_step: str, cfg: Dict[str, dict]) -> None:
         """
         Run pandora step by triggering the corresponding machine transition
@@ -717,25 +731,20 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         # Create matching_cost object to check its step configuration
         matching_cost_ = matching_cost.AbstractMatchingCost(**cfg[input_step])  # type: ignore
+        self.pipeline_cfg["pipeline"][input_step] = matching_cost_.cfg
 
         # Check the coherence between the band selected for the matching_cost step
         # and the bands present on left and right image
-        if not "band" in cfg["matching_cost"]:
-            band = None
-        else:
-            band = cfg["matching_cost"]["band"]
         self.check_band_pipeline(
             self.left_img.coords["band_im"].data,
             cfg["matching_cost"]["matching_cost_method"],
-            band,
+            matching_cost_.cfg["band"],  # type: ignore
         )
         self.check_band_pipeline(
             self.right_img.coords["band_im"].data,
             cfg["matching_cost"]["matching_cost_method"],
-            band,
+            matching_cost_.cfg["band"],  # type: ignore
         )
-
-        self.pipeline_cfg["pipeline"][input_step] = matching_cost_.cfg
 
     def disparity_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -799,7 +808,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        semantic_segmentation_ = semantic_segmentation.AbstractSemanticSegmentation(**cfg[input_step])  # type: ignore
+        semantic_segmentation_ = semantic_segmentation.AbstractSemanticSegmentation(
+            self.left_img, **cfg[input_step]
+        )  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = semantic_segmentation_.cfg
 
         # If semantic_segmentation is present, check that the necessary bands are present in the inputs
@@ -855,7 +866,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        optimization_ = optimization.AbstractOptimization(**cfg[input_step])  # type: ignore
+        optimization_ = optimization.AbstractOptimization(self.left_img, **cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = optimization_.cfg
 
         # If geometric_prior is needed for the optimization step,
@@ -937,18 +948,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return:
         """
-        multiscale_ = multiscale.AbstractMultiscale(**cfg[input_step])  # type: ignore
+        multiscale_ = multiscale.AbstractMultiscale(self.left_img, self.right_img, **cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = multiscale_.cfg
-
-        # If multiscale step is present, input disparities cannot be grids
-        if (
-            isinstance(self.left_img.attrs["disp_min"], str)
-            or isinstance(self.right_img.attrs["disp_min"], str)
-            or (isinstance(self.left_img.attrs["disp_max"], str))
-            or isinstance(self.right_img.attrs["disp_max"], str)
-        ) and ("multiscale" in cfg):
-            logging.error("Multiscale processing does not accept input disparity grids.")
-            sys.exit(1)
 
     def cost_volume_confidence_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """

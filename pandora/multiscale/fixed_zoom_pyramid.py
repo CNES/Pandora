@@ -23,6 +23,8 @@
 This module contains functions associated to the multi-scale pyramid method.
 """
 
+import logging
+import sys
 import warnings
 from typing import Dict, Union, Tuple
 
@@ -45,20 +47,30 @@ class FixedZoomPyramid(multiscale.AbstractMultiscale):
     _PYRAMID_SCALE_FACTOR = 2
     _PYRAMID_MARGE = 1
 
-    def __init__(self, **cfg: dict):
+    def __init__(self, left_img: xr.Dataset, right_img: xr.Dataset, **cfg: dict):
         """
+        :param left_img: xarray.Dataset of left image
+        :type left_img: xarray.Dataset
+        :param right_img: xarray.Dataset of right image
+        :type right_img: xarray.Dataset
         :param cfg: optional configuration, {  "num_scales": int, "scale_factor": int, "marge" int}
         :type cfg: dict
         """
-        self.cfg = self.check_conf(**cfg)  # type: ignore
+        self.cfg = self.check_conf(left_img, right_img, **cfg)  # type: ignore
         self._num_scales = self.cfg["num_scales"]
         self._scale_factor = self.cfg["scale_factor"]
         self._marge = self.cfg["marge"]
 
-    def check_conf(self, **cfg: Union[str, float, int]) -> Dict[str, Union[str, float, int]]:
+    def check_conf(
+        self, left_img: xr.Dataset, right_img: xr.Dataset, **cfg: Union[str, float, int]
+    ) -> Dict[str, Union[str, float, int]]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
+        :param left_img: xarray.Dataset of left image
+        :type left_img: xarray.Dataset
+        :param right_img: xarray.Dataset of right image
+        :type right_img: xarray.Dataset
         :param cfg: aggregation configuration
         :type cfg: dict
         :return cfg: aggregation configuration updated
@@ -71,6 +83,16 @@ class FixedZoomPyramid(multiscale.AbstractMultiscale):
             cfg["scale_factor"] = self._PYRAMID_SCALE_FACTOR
         if "marge" not in cfg:
             cfg["marge"] = self._PYRAMID_MARGE
+
+        # input disparities cannot be grids
+        if (
+            isinstance(left_img.attrs["disp_min"], str)
+            or isinstance(right_img.attrs["disp_min"], str)
+            or (isinstance(left_img.attrs["disp_max"], str))
+            or isinstance(right_img.attrs["disp_max"], str)
+        ):
+            logging.error("Multiscale processing does not accept input disparity grids.")
+            sys.exit(1)
 
         schema = {
             "multiscale_method": And(str, lambda x: "fixed_zoom_pyramid"),

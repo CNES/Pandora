@@ -25,6 +25,7 @@ This module contains functions to test the pyramid class of the multiscale modul
 """
 
 import unittest
+import pytest
 
 import numpy as np
 import xarray as xr
@@ -39,14 +40,27 @@ class TestMultiScale(unittest.TestCase):
     Test multiscale class
     """
 
-    @staticmethod
-    def test_disparity_range():
+    def setUp(self):
+        # img with int disparity
+        self.img_with_disp = xr.Dataset(data_vars={}, coords={}, attrs={"disp_min": -30, "disp_max": 0})
+
+        # img with grid disparity
+        self.img_with_grid_disp = xr.Dataset(
+            data_vars={}, coords={}, attrs={"disp_min": "grid_disp_min.tiff", "disp_max": "grid_disp_max.tiff"}
+        )
+
+        # img with None disparity
+        self.img_with_none_disp = xr.Dataset(data_vars={}, coords={}, attrs={"disp_min": None, "disp_max": None})
+
+    def test_disparity_range(self):
         """
         Test the disparity range method
 
         """
 
         multiscale_ = multiscale.AbstractMultiscale(
+            self.img_with_disp,  # left img
+            self.img_with_disp,  # right img
             **{"multiscale_method": "fixed_zoom_pyramid", "num_scales": 2, "scale_factor": 2, "marge": 0}
         )
 
@@ -138,13 +152,15 @@ class TestMultiScale(unittest.TestCase):
         np.testing.assert_array_equal(disp_range_min, gt_range_min)
         np.testing.assert_array_equal(disp_range_max, gt_range_max)
 
-    @staticmethod
-    def test_mask_invalid_disparities():
+    def test_mask_invalid_disparities(self):
         """
         Test the mask invalid disparities method
 
         """
+
         multiscale_ = multiscale.AbstractMultiscale(
+            self.img_with_disp,  # left img
+            self.img_with_disp,  # right img
             **{"multiscale_method": "fixed_zoom_pyramid", "num_scales": 2, "scale_factor": 2, "marge": 0}
         )
 
@@ -218,6 +234,27 @@ class TestMultiScale(unittest.TestCase):
         )
 
         np.testing.assert_array_equal(filtered_disp, gt_filtered_disp)
+
+    def test_disparity_grid_with_multiscale(self):
+        """
+        Test the mask invalid disparities method
+
+        """
+
+        with pytest.raises(SystemExit):
+            _ = multiscale.AbstractMultiscale(
+                self.img_with_grid_disp,  # left img
+                self.img_with_grid_disp,  # right img
+                **{"multiscale_method": "fixed_zoom_pyramid", "num_scales": 2, "scale_factor": 2, "marge": 0}
+            )
+
+        # String for disp_min/disp_max for left img
+        with pytest.raises(SystemExit):
+            _ = multiscale.AbstractMultiscale(
+                self.img_with_grid_disp,
+                self.img_with_none_disp,
+                **{"multiscale_method": "fixed_zoom_pyramid", "num_scales": 2, "scale_factor": 2, "marge": 0}
+            )
 
 
 if __name__ == "__main__":

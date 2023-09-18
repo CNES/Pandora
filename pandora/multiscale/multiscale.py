@@ -42,10 +42,14 @@ class AbstractMultiscale:
     multiscale_methods_avail: Dict = {}
     cfg = None
 
-    def __new__(cls, **cfg: Union[str, int]):
+    def __new__(cls, _left_img: xr.Dataset, _right_img: xr.Dataset, **cfg: Union[str, int]):
         """
         Return the plugin associated with the multiscale method given in the configuration
 
+        :param left_img: xarray.Dataset of left image
+        :type left_img: xarray.Dataset
+        :param right_img: xarray.Dataset of right image
+        :type right_img: xarray.Dataset
         :param cfg: configuration {'multiscale_method': value, 'margin': value}
         :type cfg: dictionary
         """
