@@ -22,9 +22,11 @@
 """
 This module contains functions to run Pandora pipeline.
 """
+from __future__ import annotations
 
 import logging
 import logging.config
+from os import PathLike
 from typing import Dict, Tuple, Union
 
 import xarray as xr
@@ -147,7 +149,7 @@ def import_plugin() -> None:
         entry_point.load()
 
 
-def main(cfg_path: str, output: str, verbose: bool) -> None:
+def main(cfg_path: PathLike | str, output: str, verbose: bool) -> None:
     """
     Check config file and run pandora framework accordingly
 

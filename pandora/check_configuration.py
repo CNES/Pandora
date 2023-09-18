@@ -30,6 +30,7 @@ import json
 import logging
 import sys
 from collections.abc import Mapping
+from os import PathLike
 from typing import Dict, Union, List, Tuple
 import xarray as xr
 
@@ -571,12 +572,12 @@ default_short_configuration_pipeline = {"pipeline": {"right_disp_map": {"method"
 default_short_configuration = concat_conf([default_short_configuration_input, default_short_configuration_pipeline])
 
 
-def read_config_file(config_file: str) -> Dict[str, dict]:
+def read_config_file(config_file: PathLike | str) -> Dict[str, dict]:
     """
     Read a json configuration file
 
     :param config_file: path to a json file containing the algorithm parameters
-    :type config_file: string
+    :type config_file: PathLike | string
     :return user_cfg: configuration dictionary
     :rtype: dict
     """
