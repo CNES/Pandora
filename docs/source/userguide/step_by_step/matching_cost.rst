@@ -51,6 +51,7 @@ Configuration and parameters
     *window_size*,Window size for similarity measure,int,5,Must be >0 and For "census" : {3 5},No
     *subpix*,Cost volume upsampling factor,int,1, {1 2 4},No
     *band*, Band value on which to calculate the correlation, str, None, band in left and right image's metadata,No
+    *step*, Computing step for `pandora2d <https://pandora2d.readthedocs.io/en/latest/>`_, int, 1, 1, No
 
 - For *mc_cnn* similarity measure see :ref:`plugin_mccnn_conf` of :ref:`plugin_mccnn` for sub-parameters and configuration example.
 
