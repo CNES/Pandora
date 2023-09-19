@@ -28,6 +28,7 @@ import logging
 from abc import ABCMeta, abstractmethod
 from math import ceil, floor
 from typing import Tuple, List, Union, Dict
+from json_checker import And, Or
 
 import numpy as np
 import xarray as xr
@@ -48,11 +49,20 @@ class AbstractMatchingCost:
     _window_size = None
     cfg = None
     _band = None
+    _step_col = None
 
     # Default configuration, do not change these values
     _WINDOW_SIZE = 5
     _SUBPIX = 1
     _BAND = None
+    _STEP_COL = 1
+
+    # Matching cost schema confi
+    schema = {
+        "subpix": And(int, lambda input: input > 0 and ((input % 2) == 0) or input == 1),
+        "band": Or(str, lambda input: input is None),
+        "step": And(int, lambda y: y >= 1),
+    }
 
     def __new__(cls, **cfg: Union[str, int]):
         """
@@ -126,6 +136,7 @@ class AbstractMatchingCost:
         self._window_size = int(self.cfg["window_size"])
         self._subpix = int(self.cfg["subpix"])
         self._band = self.cfg["band"]
+        self._step_col = int(self.cfg["step"])
 
     def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
         """
@@ -144,6 +155,13 @@ class AbstractMatchingCost:
             cfg["subpix"] = self._SUBPIX  # type: ignore
         if "band" not in cfg:
             cfg["band"] = self._BAND
+
+        if __name__[:8] == "pandora.":
+            if "step" in cfg and cfg["step"] != 1:
+                logging.error("Step parameter cannot be different from 1")
+                sys.exit(1)
+        if "step" not in cfg:
+            cfg["step"] = self._STEP_COL  # type: ignore
 
         return cfg  # type: ignore
 
@@ -225,6 +243,7 @@ class AbstractMatchingCost:
         disp_max: int,
         window_size: int,
         metadata: dict,
+        step: int,
         np_data: np.ndarray = None,
     ) -> xr.Dataset:
         """
@@ -245,6 +264,8 @@ class AbstractMatchingCost:
         :type window_size: int, odd number
         :param metadata: dictionary storing arbitrary metadata
         :type metadata: dictionary
+        :param step: step
+        :type step: int
         :param np_data: the array’s data
         :type np_data: 3D numpy array, dtype=np.float32
         :return: the dataset cost volume with the cost_volume :
@@ -259,7 +280,7 @@ class AbstractMatchingCost:
         row = np.arange(c_row[0], c_row[-1] + 1)  # type: np.ndarray
         col = np.arange(c_col[0], c_col[-1] + 1)  # type: np.ndarray
 
-        disparity_range = AbstractMatchingCost.get_disparity_range(disp_min, disp_max, subpix)
+        disparity_range = AbstractMatchingCost.get_disparity_range(disp_min, disp_max, subpix, step)
 
         # Create the cost volume
         if np_data is None:
@@ -279,7 +300,7 @@ class AbstractMatchingCost:
         return cost_volume
 
     @staticmethod
-    def get_disparity_range(disparity_min: int, disparity_max: int, subpix: int) -> np.ndarray:
+    def get_disparity_range(disparity_min: int, disparity_max: int, subpix: int, step: int) -> np.ndarray:
         """
         Build disparity range and return it.
 
@@ -288,13 +309,15 @@ class AbstractMatchingCost:
         :param disparity_max: maximum disparity
         :type disparity_max: int
         :param subpix: subpixel precision = (1 or 2 or 4)
+        :param step: step
+        :type step: int
         :return: disparity range
         :rtype: np.ndarray
         """
         if subpix == 1:
-            disparity_range = np.arange(disparity_min, disparity_max + 1)
+            disparity_range = np.arange(disparity_min, disparity_max + 1, step=step)
         else:
-            disparity_range = np.arange(disparity_min, disparity_max, step=1 / float(subpix), dtype=np.float64)
+            disparity_range = np.arange(disparity_min, disparity_max, step=step / float(subpix), dtype=np.float64)
             disparity_range = np.append(disparity_range, [disparity_max])
         return disparity_range
 

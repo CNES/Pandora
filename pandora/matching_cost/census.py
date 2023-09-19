@@ -27,7 +27,7 @@ from typing import Dict, Union, Tuple, List
 
 import numpy as np
 import xarray as xr
-from json_checker import Checker, And, Or
+from json_checker import Checker, And
 
 from pandora.img_tools import shift_right_img, census_transform
 from pandora.matching_cost import matching_cost
@@ -59,12 +59,9 @@ class Census(matching_cost.AbstractMatchingCost):
         """
         cfg = super().check_conf(**cfg)
 
-        schema = {
-            "matching_cost_method": And(str, lambda input: "census"),
-            "window_size": And(int, lambda input: input in (3, 5)),
-            "subpix": And(int, lambda input: input > 0 and ((input % 2) == 0) or input == 1),
-            "band": Or(str, lambda input: input is None),
-        }
+        schema = self.schema
+        schema["matching_cost_method"] = And(str, lambda input: "census")
+        schema["window_size"] = And(int, lambda input: input in (3, 5))
 
         checker = Checker(schema)
         checker.validate(cfg)
@@ -126,7 +123,7 @@ class Census(matching_cost.AbstractMatchingCost):
         for i, img in enumerate(img_right_shift):
             img_right_shift[i] = census_transform(img, self._window_size, self._band)  # type: ignore
 
-        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
+        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix, self._step_col)
         cv = self.allocate_numpy_cost_volume(img_left, disparity_range)
         cv_crop = self.crop_cost_volume(cv, offset_row_col)
 
@@ -179,6 +176,7 @@ class Census(matching_cost.AbstractMatchingCost):
             disp_max,
             self._window_size,
             metadata,
+            self._step_col,
             np.swapaxes(cv, 0, 2),
         )
 

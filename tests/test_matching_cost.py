@@ -26,8 +26,8 @@ This module contains functions to test the matching cost step.
 # pylint with pytest's fixtures compatibility:
 # pylint: disable=redefined-outer-name
 import numpy as np
+import xarray as xr
 import pytest
-
 from pandora import matching_cost
 
 from tests import common
@@ -89,19 +89,57 @@ class TestMatchingCost:
         Test the crop_cost_volume function
         """
         # Function allocate_numpy_cost_volume
-        result = matching_cost.AbstractMatchingCost.crop_cost_volume(cost_volume, offset)
+        result = matching_cost.AbstractMatchingCost.crop_cost_volume(cost_volume, offset)  # type:ignore
 
         np.testing.assert_array_equal(result, expected)
 
+    def test_allocate_cost_volume(self, left):
+        """ "
+        Test the allocate_cost_volume function
+        """
+
+        # Create matching cost object
+        matching_cost_ = matching_cost.AbstractMatchingCost(
+            **{"matching_cost_method": "census", "window_size": 5, "subpix": 4, "band": "b"}
+        )
+
+        dataset_cv = matching_cost_.allocate_costvolume(left, 4, -2, 2, 5, {"metadata": "metadata"}, 1)
+
+        c_row = [0, 1, 2, 3, 4]
+        c_col = [0, 1, 2, 3, 4, 5]
+
+        # First pixel in the image that is fully computable (aggregation windows are complete)
+        row = np.arange(c_row[0], c_row[-1] + 1)  # type: np.ndarray
+        col = np.arange(c_col[0], c_col[-1] + 1)  # type: np.ndarray
+
+        disparity_range = np.arange(-2, 2, step=[1, 1][0] / float(4), dtype=np.float64)
+        disparity_range = np.append(disparity_range, [2])
+
+        np_data = np.zeros((len(row), len(col), len(disparity_range)), dtype=np.float32)
+
+        ground_truth = xr.Dataset(
+            {"cost_volume": (["row", "col", "disp"], np_data)},
+            coords={"row": row, "col": col, "disp": disparity_range},
+        )
+
+        ground_truth.attrs = {
+            "crs": left.attrs["crs"],
+            "transform": left.attrs["transform"],
+            "window_size": 5,
+        }
+
+        assert ground_truth.equals(dataset_cv)
+
     @pytest.mark.parametrize(
-        ["disparity_min", "disparity_max", "subpix", "expected"],
+        ["disparity_min", "disparity_max", "subpix", "step", "expected"],
         [
-            [0, 2, 1, [0, 1, 2]],
-            [0, 2, 2, [0, 0.5, 1, 1.5, 2]],
-            [0, 2, 4, [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]],
+            [0, 2, 1, 1, [0, 1, 2]],
+            [0, 2, 2, 1, [0, 0.5, 1, 1.5, 2]],
+            [0, 2, 2, 2, [0, 1, 2]],
+            [0, 2, 4, 1, [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]],
         ],
     )
-    def test_get_disparity_range(self, disparity_min, disparity_max, subpix, expected):
+    def test_get_disparity_range(self, disparity_min, disparity_max, subpix, step, expected):
         """Test get_disparity_range."""
-        result = matching_cost.AbstractMatchingCost.get_disparity_range(disparity_min, disparity_max, subpix)
+        result = matching_cost.AbstractMatchingCost.get_disparity_range(disparity_min, disparity_max, subpix, step)
         np.testing.assert_array_equal(result, expected)

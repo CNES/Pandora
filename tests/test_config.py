@@ -28,7 +28,6 @@ import copy
 import json_checker
 import pytest
 from transitions import MachineError
-
 import numpy as np
 import xarray as xr
 from tests import common
@@ -272,13 +271,12 @@ class TestConfig(unittest.TestCase):
             cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"]
         )
 
-        print("metadata_img", metadata_img)
         # Metadata ground truth
         metadata_gt = xr.Dataset(
             data_vars={}, coords={"band_im": [None], "row": 375, "col": 450}, attrs={"disp_min": -60, "disp_max": 0}
         )
 
-        # Check that the get_metadata function raises whitout error
+        # Check that the get_metadata function raises without error
         assert metadata_img.coords == metadata_gt.coords
         assert metadata_img.attrs == metadata_gt.attrs
 
@@ -538,6 +536,7 @@ class TestConfig(unittest.TestCase):
 
         del cfg_gt["pipeline"]["refinement"]
         del cfg_gt["pipeline"]["filter"]
+
         assert cfg_return == cfg_gt
 
         # Check the configuration returned with left and right disparity grids
@@ -787,6 +786,23 @@ class TestConfig(unittest.TestCase):
         self.assertRaises(
             MachineError, check_configuration.check_pipeline_section, cfg, img_left, img_right, pandora_machine
         )
+
+    def test_step_in_matching_cost(self):
+        """
+        Test that user get a warning if he instantiates a step parameter in matching cost configuration
+        """
+        # Check the configuration returned with left and right disparity grids
+        pandora_machine = PandoraMachine()
+        cfg = {
+            "input": copy.deepcopy(common.input_cfg_left_right_grids),
+            "pipeline": {
+                "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "step": 2},
+                "disparity": {"disparity_method": "wta"},
+            },
+        }
+
+        # When left disparities are grids and multiscale processing cannot be used : the program exits
+        self.assertRaises(SystemExit, check_configuration.check_conf, cfg, pandora_machine)
 
 
 if __name__ == "__main__":
