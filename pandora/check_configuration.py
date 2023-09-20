@@ -567,7 +567,7 @@ MEMORY_CONSUMPTION_LIST = [
 ]
 
 
-default_short_configuration_pipeline = {"pipeline": {"right_disp_map": {"method": "none"}}}
+default_short_configuration_pipeline: dict = {"pipeline": {}}
 
 default_short_configuration = concat_conf([default_short_configuration_input, default_short_configuration_pipeline])
 

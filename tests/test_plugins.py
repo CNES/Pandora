@@ -59,13 +59,12 @@ class TestPandora(unittest.TestCase):
         """
 
         pipeline_cfg = {
-            "right_disp_map": {"method": "accurate"},
             "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2},
             "semantic_segmentation": {"segmentation_method": "ARNN"},
             "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
             "refinement": {"refinement_method": "vfit"},
             "filter": {"filter_method": "median", "filter_size": 3},
-            "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1.0},
+            "validation": {"validation_method": "cross_checking_accurate", "cross_checking_threshold": 1.0},
         }
         user_cfg = {"input": copy.deepcopy(common.input_cfg_basic), "pipeline": pipeline_cfg}
 
@@ -85,7 +84,6 @@ class TestPandora(unittest.TestCase):
         """
 
         pipeline_cfg = {
-            "right_disp_map": {"method": "accurate"},
             "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2},
             "optimization": {
                 "optimization_method": "sgm",
@@ -94,7 +92,7 @@ class TestPandora(unittest.TestCase):
             "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
             "refinement": {"refinement_method": "vfit"},
             "filter": {"filter_method": "median", "filter_size": 3},
-            "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1.0},
+            "validation": {"validation_method": "cross_checking_accurate", "cross_checking_threshold": 1.0},
         }
         user_cfg = {"input": copy.deepcopy(common.input_cfg_basic), "pipeline": pipeline_cfg}
 
@@ -115,12 +113,11 @@ class TestPandora(unittest.TestCase):
         """
 
         pipeline_cfg = {
-            "right_disp_map": {"method": "accurate"},
             "matching_cost": {"matching_cost_method": "mc_cnn", "window_size": 11, "subpix": 1},
             "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
             "refinement": {"refinement_method": "vfit"},
             "filter": {"filter_method": "median", "filter_size": 3},
-            "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1.0},
+            "validation": {"validation_method": "cross_checking_accurate", "cross_checking_threshold": 1.0},
         }
         user_cfg = {"input": copy.deepcopy(common.input_cfg_basic), "pipeline": pipeline_cfg}
         pandora_machine = PandoraMachine()

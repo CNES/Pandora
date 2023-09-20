@@ -159,7 +159,6 @@ def matching_cost_tests_multiband_setup() -> Tuple[xr.Dataset, xr.Dataset]:
 
 
 basic_pipeline_cfg = {
-    "right_disp_map": {"method": "none"},
     "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": None, "step": 1},
     "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
     "refinement": {"refinement_method": "vfit"},
@@ -167,17 +166,15 @@ basic_pipeline_cfg = {
 }
 
 validation_pipeline_cfg = {
-    "right_disp_map": {"method": "accurate"},
     "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": None, "step": 1},
     "cost_volume_confidence": {"confidence_method": "std_intensity"},
     "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
     "refinement": {"refinement_method": "vfit"},
     "filter": {"filter_method": "median", "filter_size": 3},
-    "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1.0},
+    "validation": {"validation_method": "cross_checking_accurate", "cross_checking_threshold": 1.0},
 }
 
 multiscale_pipeline_cfg = {
-    "right_disp_map": {"method": "none"},
     "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": None, "step": 1},
     "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
     "refinement": {"refinement_method": "vfit"},

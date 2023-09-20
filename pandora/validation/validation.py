@@ -161,8 +161,8 @@ class AbstractValidation:
         """
 
 
-@AbstractValidation.register_subclass("cross_checking")
-class CrossChecking(AbstractValidation):
+@AbstractValidation.register_subclass("cross_checking_accurate")
+class CrossCheckingAccurate(AbstractValidation):
     """
     CrossChecking class allows to perform the validation step
     """
@@ -194,7 +194,7 @@ class CrossChecking(AbstractValidation):
             cfg["cross_checking_threshold"] = self._THRESHOLD
 
         schema = {
-            "validation_method": And(str, lambda input: "cross_checking"),
+            "validation_method": And(str, lambda input: "cross_checking_accurate"),
             "cross_checking_threshold": Or(int, float),
             OptionalKey("interpolated_disparity"): And(str, lambda input: common.is_method(input, ["mc-cnn", "sgm"])),
         }
@@ -336,7 +336,7 @@ class CrossChecking(AbstractValidation):
             outside_right = np.where((col_right < 0) & (col_right >= nb_col))
             dataset_left["validity_mask"].data[row, col_left[outside_right]] += cst.PANDORA_MSK_PIXEL_OCCLUSION
 
-        dataset_left.attrs["validation"] = "cross_checking"
+        dataset_left.attrs["validation"] = "cross_checking_accurate"
 
         dataset_left, _ = AbstractCostVolumeConfidence.allocate_confidence_map(
             "left_right_consistency", conf_measure, dataset_left, cv

@@ -560,11 +560,10 @@ class TestConfig(unittest.TestCase):
         cfg = {
             "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": {
-                "right_disp_map": {"method": "accurate"},
                 "matching_cost": {"matching_cost_method": "census", "window_size": 5, "subpix": 2},
                 "filter": {"filter_method": "median"},
                 "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
-                "validation": {"validation_method": "cross_checking"},
+                "validation": {"validation_method": "cross_checking_accurate"},
             },
         }
 
@@ -652,29 +651,6 @@ class TestConfig(unittest.TestCase):
             pipeline_cfg, input_cfg, pandora_machine, True
         )
         np.testing.assert_allclose((min_mem_consump, max_mem_consump), consumption_vt, rtol=1e-02)
-
-    def test_right_disp_map_none_with_validation(self):
-        """
-        Test that user can't implement validation with right_disp_map set to none
-        """
-
-        cfg = {
-            "input": copy.deepcopy(common.input_cfg_basic),
-            "pipeline": {
-                "right_disp_map": {"method": "none"},
-                "matching_cost": {"matching_cost_method": "census", "window_size": 5, "subpix": 2},
-                "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
-                "filter": {"filter_method": "median"},
-                "validation": {"validation_method": "cross_checking"},
-            },
-        }
-        img_left = check_configuration.get_metadata(cfg["input"]["img_left"], cfg["input"]["disp_left"])
-        img_right = check_configuration.get_metadata(cfg["input"]["img_right"], None, None)
-
-        pandora_machine = PandoraMachine()
-        self.assertRaises(
-            MachineError, check_configuration.check_pipeline_section, cfg, img_left, img_right, pandora_machine
-        )
 
     def test_step_in_matching_cost(self):
         """

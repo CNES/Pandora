@@ -295,7 +295,7 @@ class TestPandora(unittest.TestCase):
             "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": copy.deepcopy(common.multiscale_pipeline_cfg),
         }
-        user_cfg["pipeline"]["right_disp_map"]["method"] = "accurate"
+        user_cfg["pipeline"]["validation"] = {"validation_method": "cross_checking_accurate"}
 
         pandora_machine = PandoraMachine()
 
@@ -330,7 +330,7 @@ class TestPandora(unittest.TestCase):
             "pipeline": copy.deepcopy(common.multiscale_pipeline_cfg),
         }
         user_cfg["pipeline"]["multiscale"]["num_scales"] = 3
-        user_cfg["pipeline"]["right_disp_map"]["method"] = "accurate"
+        user_cfg["pipeline"]["validation"] = {"validation_method": "cross_checking_accurate"}
 
         pandora_machine = PandoraMachine()
 
@@ -362,7 +362,6 @@ class TestPandora(unittest.TestCase):
         user_cfg = {
             "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": {
-                "right_disp_map": {"method": "none"},
                 "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2},
                 "cost_volume_confidence": {"confidence_method": "ambiguity"},
                 "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
@@ -374,10 +373,9 @@ class TestPandora(unittest.TestCase):
                     "scale_factor": 2,
                     "marge": 1,
                 },
+                "validation": {"validation_method": "cross_checking_accurate"},
             },
         }
-        user_cfg["pipeline"]["right_disp_map"]["method"] = "accurate"
-        user_cfg["pipeline"]["cost_volume_confidence"]["confidence_method"] = "ambiguity"
 
         pandora_machine = PandoraMachine()
 
