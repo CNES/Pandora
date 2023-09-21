@@ -108,7 +108,7 @@ All configuration parameters are described in :ref:`inputs` and :ref:`step_by_st
 As shown on the diagram, stereo steps must respect on order of priority, and can be called multiple times as explain on :ref:`sequencing` chapter.
 
 .. note::
-    The right disparity map can be computed if *right_disp_map* parameter is activated. See :ref:`outputs`.
+    The right disparity map can be computed if the *validation* step is present in the configuration file. See :ref:`validation`.
 
 Example
 *******
@@ -133,10 +133,6 @@ Example
         ,
         "pipeline" :
         {
-            "right_disp_map":
-            {
-              "method": "accurate"
-            },
             "matching_cost" :
             {
               "matching_cost": "census",
@@ -149,7 +145,6 @@ Example
               "P1": 8,
               "P2": 32,
             },
-
             "disparity":
             {
               "disparity_method": "wta",
@@ -164,10 +159,9 @@ Example
               "filter_method": "median",
               "filter_size": 3
             },
-
             "validation" :
             {
-              "validation_method": "cross_checking",
+              "validation_method": "cross_checking_accurate",
               "cross_checking_threshold": 1
             },
             "filter.after.validation" :

@@ -42,38 +42,9 @@ Saved images
     The confidence bands will be named: *confidence_from_ambiguity* and *confidence_from_intensity_std.after*.
 
 .. note::
-    Right products are only available if a *right_disp_map* parameter is activated and not equal to none.
-    Must be the first key of *pipeline*.
 
-+-----------------+---------------------------------------------+--------+---------------+--------------------------------+----------+
-| Name            | Description                                 | Type   | Default value | Available value                | Required |
-+=================+=============================================+========+===============+================================+==========+
-| *method*        | Method to compute the right disparity map   | string |   none        | "none", "accurate"             | Yes      |
-+-----------------+---------------------------------------------+--------+---------------+--------------------------------+----------+
+    Right products are only available if the *validation* step is present in the configuration file.
 
-Method value meaning:
-
-- *none*: the right disparity map is not calculated.
-- *accurate*: the right disparity map is calculated following the same pipeline as for the left disparity map, by inverting input images. The left one becomes the right one, the right one becomes the left one.
-
-Example
-*******
-
-.. sourcecode:: text
-
-    {
-      "input" : {
-            ...
-      },
-      "pipeline" :
-       {
-            "right_disp_map":
-            {
-                "method": "accurate",
-            }
-            ...
-        }
-    }
 
 .. _validity_mask:
 
