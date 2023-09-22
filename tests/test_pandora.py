@@ -88,7 +88,7 @@ class TestMain:
 
         """
         cfg = {
-            "input": copy.deepcopy(common.input_cfg_left_right_grids),
+            "input": copy.deepcopy(common.input_cfg_left_grids),
             "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
         }
 
