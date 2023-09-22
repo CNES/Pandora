@@ -933,8 +933,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # If left disparities are grids of disparity and the right disparities are none, the cross-checking
         # method cannot be used
         if (
-            "validation" in cfg
-            and isinstance(self.left_img.attrs["disparity_interval"], str)
+            isinstance(self.left_img.attrs["disparity_interval"], str)
             and not self.right_img.attrs["disparity_interval"]
         ):
             logging.error(
