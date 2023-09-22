@@ -42,21 +42,31 @@ from pandora.img_tools import read_img, rasterio_open
 from pandora.state_machine import PandoraMachine
 
 
-def error(data, gt, threshold, unknown_disparity=0):
+def error(
+    data: np.ndarray,
+    ground_truth: np.ndarray,
+    threshold: int,
+    unknown_disparity: int = 0,
+) -> float:
     """
-    Percentage of bad pixels whose error is > 1
-
+    Ratio of bad pixels whose absolute sum with ground truth is above threshold.
+    :param data: data to test.
+    :type data: np.ndarray
+    :param ground_truth: ground_truth
+    :type ground_truth: np.ndarray
+    :param threshold: threshold
+    :type threshold: int
+    :param unknown_disparity: unknown disparity
+    :type unknown_disparity: int
+    :return: ratio
+    :rtype: float
     """
-    left_image = read_img("tests/pandora/left.png", no_data=np.nan, mask=None)
-    n_row, n_col = left_image["im"].shape
-    nb_error = 0
-    for row in range(n_row):
-        for col in range(n_col):
-            if gt[row, col] != unknown_disparity:
-                if abs((data[row, col] + gt[row, col])) > threshold:
-                    nb_error += 1
-
-    return nb_error / float(n_row * n_col)
+    mask = ground_truth != unknown_disparity
+    selected_data = data[mask]
+    selected_ground_truth = ground_truth[mask]
+    error_mask = abs(selected_data + selected_ground_truth) > threshold
+    nb_of_errors = error_mask.sum()
+    return nb_of_errors / data.size
 
 
 @pytest.fixture()
