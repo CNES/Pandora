@@ -128,8 +128,7 @@ Example
         {
             "img_left": "tests/pandora/left.png",
             "img_right": "tests/pandora/right.png",
-            "disp_min": -60,
-            "disp_max": 0
+            "disp_left": [-60, 0]
         }
         ,
         "pipeline" :
