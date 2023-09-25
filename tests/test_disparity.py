@@ -31,6 +31,7 @@ import numpy as np
 import xarray as xr
 from rasterio import Affine
 
+from pandora.common import split_inputs
 from tests import common
 import pandora
 from pandora import disparity
@@ -419,8 +420,9 @@ class TestDisparity(unittest.TestCase):
         # Build the default configuration
         default_cfg = pandora.check_configuration.default_short_configuration
 
-        pandora_left = read_img("tests/pandora/left.png", no_data=np.nan, mask=None)
-        pandora_right = read_img("tests/pandora/right.png", no_data=np.nan, mask=None)
+        inputs = split_inputs(common.input_cfg_basic)
+        pandora_left = read_img("tests/pandora/left.png", no_data=np.nan, mask=None, input_config=inputs["left"])
+        pandora_right = read_img("tests/pandora/right.png", no_data=np.nan, mask=None, input_config=inputs["right"])
 
         fast_cfg = {
             "input": copy.deepcopy(common.input_cfg_basic),

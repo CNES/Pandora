@@ -59,12 +59,19 @@ def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.Da
         return rasterio.open(*args, **kwargs)
 
 
-def read_img(  # pylint:disable=too-many-branches
-    img: str, no_data: float, mask: str = None, classif: str = None, segm: str = None
+def read_img(
+    img: str,
+    no_data: float,
+    mask: str = None,
+    classif: str = None,
+    segm: str = None,
+    input_config: dict = None,  # pylint:disable=unused-argument
 ) -> xr.Dataset:
     """
     Read image and mask, and return the corresponding xarray.DataSet
 
+    :param input_config: configuration used to create dataset.
+    :type input_config: dict
     :param img: Path to the image
     :type img: string
     :type no_data: no_data value in the image

@@ -47,8 +47,21 @@ class TestPandora(unittest.TestCase):
 
         """
 
-        self.left = read_img("tests/pandora/left.png", no_data=np.nan, mask=None)
-        self.right = read_img("tests/pandora/right.png", no_data=np.nan, mask=None)
+        input_config = {
+            "left": {
+                "img": "tests/pandora/left.png",
+                "nodata": np.nan,
+                "left": None,
+            },
+            "right": {
+                "img": "tests/pandora/right.png",
+                "nodata": np.nan,
+                "mask": None,
+            },
+        }
+
+        self.left = read_img("tests/pandora/left.png", no_data=np.nan, mask=None, input_config=input_config["left"])
+        self.right = read_img("tests/pandora/right.png", no_data=np.nan, mask=None, input_config=input_config["right"])
         self.disp_left = rasterio_open("tests/pandora/disp_left.tif").read(1)
         self.disp_right = rasterio_open("tests/pandora/disp_right.tif").read(1)
         self.occlusion = rasterio_open("tests/pandora/occlusion.png").read(1)
