@@ -22,9 +22,11 @@
 """
 This module contains functions to run Pandora pipeline.
 """
+from __future__ import annotations
 
 import logging
 import logging.config
+from os import PathLike
 from typing import Dict, Tuple, Union
 
 import xarray as xr
@@ -147,7 +149,7 @@ def import_plugin() -> None:
         entry_point.load()
 
 
-def main(cfg_path: str, output: str, verbose: bool) -> None:
+def main(cfg_path: PathLike | str, output: str, verbose: bool) -> None:
     """
     Check config file and run pandora framework accordingly
 
@@ -191,10 +193,9 @@ def main(cfg_path: str, output: str, verbose: bool) -> None:
     )
 
     # Read range of disparities
-    disp_min = read_disp(cfg["input"]["disp_min"])
-    disp_max = read_disp(cfg["input"]["disp_max"])
-    disp_min_right = read_disp(cfg["input"]["disp_min_right"])
-    disp_max_right = read_disp(cfg["input"]["disp_max_right"])
+    disp_min, disp_max = read_disp(cfg["input"]["disp_left"])
+    disp_right = cfg["input"]["disp_right"]
+    disp_min_right, disp_max_right = (None, None) if disp_right is None else read_disp(disp_right)
 
     # Run the Pandora pipeline
     left, right = run(

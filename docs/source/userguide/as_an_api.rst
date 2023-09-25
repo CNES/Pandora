@@ -51,10 +51,8 @@ Pandora provides a full python API which can be used to compute disparity maps a
                              segm=cfg['input']['right_segm'])
 
         # Read range of disparities
-        disp_min = read_disp(cfg['input']['disp_min'])
-        disp_max = read_disp(cfg['input']['disp_max'])
-        disp_min_right = read_disp(cfg['input']['disp_min_right'])
-        disp_max_right = read_disp(cfg['input']['disp_max_right'])
+        disp_min, disp_max = read_disp(cfg['input']['disp_left'])
+        disp_min_right, disp_max_right  = read_disp(cfg['input']['disp_right'])
 
         # Run the Pandora pipeline
         left, right = pandora.run(pandora_machine, img_left, img_right, disp_min, disp_max, cfg['pipeline'], disp_min_right,
@@ -200,13 +198,15 @@ This Dataset also has a :
 .. sourcecode:: text
 
     <xarray.Dataset>
-    Dimensions:             (col: 1000, indicator: 2, row: 1000)
+    Dimensions:             (row: 1000, col: 1000, disparity: 2, indicator: 2)
     Coordinates:
+      * disparity           (disparity) <U3 'min' 'max'
       * row                 (row) int64 0 1 2 3 4 5 6 ... 994 995 996 997 998 999
       * col                 (col) int64 0 1 2 3 4 5 6 ... 994 995 996 997 998 999
       * indicator           (indicator) object 'confidence_from_intensity_std' 'confidence_from_left_right_consistency'
     Data variables:
         disparity_map       (row, col) float32 0.0 0.0 0.0 0.0 ... 0.0 0.0 0.0 0.0
+        disparity_interval  (disparity) int64 -30 33
         validity_mask       (row, col) uint16 1 1 1 1 1 1 1 1 1 ... 1 1 1 1 1 1 1 1
         interpolated_coeff  (row, col) float64 nan nan nan nan ... nan nan nan nan
         confidence_measure  (row, col, indicator) float32 nan nan nan ... nan nan nan
@@ -218,8 +218,6 @@ This Dataset also has a :
         type_measure:           min
         cmax:                   24
         optimization:           sgm
-        disp_min:               -30
-        disp_max:               33
         refinement:             vfit
         filter:                 median
         validation:             cross_checking

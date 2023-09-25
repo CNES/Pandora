@@ -152,7 +152,7 @@ class TestConfidence(unittest.TestCase):
         }
 
         user_cfg = {
-            "input": {"disp_min": -1, "disp_max": 1},
+            "input": {"disp_left": (-1, 1)},
             "pipeline": {
                 "matching_cost": {"matching_cost_method": "sad", "window_size": 1, "subpix": 1},
                 "cost_volume_confidence": {"confidence_method": "std_intensity"},
@@ -261,7 +261,7 @@ class TestConfidence(unittest.TestCase):
         }
 
         user_cfg = {
-            "input": {"disp_min": -1, "disp_max": 1},
+            "input": {"disp_left": (-1, 1)},
             "pipeline": {
                 "matching_cost": {"matching_cost_method": "sad", "window_size": 1, "subpix": 1},
                 "cost_volume_confidence": {"confidence_method": "std_intensity"},

@@ -26,6 +26,8 @@
 This module contains class associated to the pandora state machine
 """
 
+from __future__ import annotations
+
 import warnings
 import logging
 import sys
@@ -654,7 +656,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         # TO BE DELETED in the 328 ticket
         self.multiscale_check_disp = xr.Dataset(
-            data_vars={}, coords={}, attrs={"disp_min": disp_min, "disp_max": disp_max}
+            data_vars={}, coords={}, attrs={"disparity_interval": [disp_min, disp_max]}
         )
 
     def run(self, input_step: str, cfg: Dict[str, dict]) -> None:
@@ -930,13 +932,15 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         # If left disparities are grids of disparity and the right disparities are none, the cross-checking
         # method cannot be used
-        if isinstance(self.left_img.attrs["disp_min"], str) and "validation" in cfg:
-            if not self.right_img.attrs["disp_min"]:
-                logging.error(
-                    "The cross-checking step cannot be processed if disp_min, disp_max are paths to the left "
-                    "disparity grids and disp_right_min, disp_right_max are none."
-                )
-                sys.exit(1)
+        if (
+            isinstance(self.left_img.attrs["disparity_interval"], str)
+            and not self.right_img.attrs["disparity_interval"]
+        ):
+            logging.error(
+                "The cross-checking step cannot be processed if disp_min, disp_max are paths to the left "
+                "disparity grids and disp_right_min, disp_right_max are none."
+            )
+            sys.exit(1)
 
     def multiscale_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """

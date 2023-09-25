@@ -23,9 +23,11 @@
 This module contains functions associated to raster images.
 """
 
+from __future__ import annotations
+
 import logging
 import warnings
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, cast
 import sys
 
 import numpy as np
@@ -752,24 +754,27 @@ def compute_std_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.n
     return np.sqrt(var)
 
 
-def read_disp(disparity: Union[None, int, str]) -> Union[None, int, np.ndarray]:
+def read_disp(disparity: tuple[int, int] | list[int] | str) -> tuple[int, int] | tuple[np.ndarray, np.ndarray]:
     """
     Read the disparity :
-        - if cfg_disp is the path of a disparity grid, read and return the grid (type numpy array)
+        - if cfg_disp is the path of a disparity grid, read and return the grids (type tuple of numpy arrays)
         - else return the value of cfg_disp
 
     :param disparity: disparity, or path to the disparity grid
-    :type disparity: None, int or str
+    :type disparity: tuple[int, int] or list[int] or str
     :return: the disparity
-    :rtype: int or np.ndarray
+    :rtype: tuple[int, int] | tuple[np.ndarray, np.ndarray]
     """
-    if isinstance(disparity, str):
-        disp_ = rasterio_open(disparity)
-        data_disp = disp_.read(1)
-    else:
-        data_disp = disparity
+    if disparity is None:
+        raise ValueError("disparity should not be None")
 
-    return data_disp
+    if not isinstance(disparity, str):
+        # cast because of mypy when we give list as input while it expects a tuple as output
+        # not sure it is the best solution
+        return cast(Tuple[int, int], tuple(disparity))
+
+    raster_disparity = rasterio_open(disparity)
+    return raster_disparity.read(1), raster_disparity.read(2)
 
 
 def fuse_classification_bands(img: xr.Dataset, class_names: List[str]) -> np.ndarray:

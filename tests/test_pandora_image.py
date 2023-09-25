@@ -23,18 +23,19 @@
 This module contains functions to test all the methods in img_tools module.
 """
 
-import unittest
 import copy
+import unittest
 from tempfile import TemporaryDirectory
-import rasterio
 
 import numpy as np
+import pytest
+import rasterio
 import xarray as xr
-
 from skimage.io import imsave
-from tests import common
+
 import pandora
 from pandora import img_tools
+from tests import common
 
 
 class TestImgTools(unittest.TestCase):
@@ -420,26 +421,6 @@ class TestImgTools(unittest.TestCase):
         # Check if the calculated mask is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(dst_left["segm"].data, segm_gt)
 
-    @staticmethod
-    def test_read_disp():
-        """
-        Test the method read_disp
-        """
-        # Ground truth (numpy array of pandora/tests/image/mask_left image)
-        gt = np.array([[0, 0, 1, 2, 0], [0, 0, 0, 0, 1], [3, 5, 0, 0, 1], [0, 0, 255, 0, 0]])
-
-        disp_ = img_tools.read_disp("tests/image/mask_left.tif")
-
-        # Check if the calculated disparity is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(disp_, gt)
-
-        # Check with integer disparity
-        gt = -60
-        disp_ = img_tools.read_disp(-60)
-
-        # Check if the calculated disparity is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(disp_, gt)
-
     def test_check_dataset(self):
         """
         Test the method check_dataset
@@ -604,6 +585,38 @@ class TestImgTools(unittest.TestCase):
 
         # Check that the obtained classification map is the same as ground truth
         np.testing.assert_array_equal(gt_monoband_classif, output_classif_array)
+
+
+class TestReadDisp:
+    """Test read_disp function."""
+
+    @pytest.mark.parametrize(
+        ["input_disparity", "expected"],
+        [
+            pytest.param(
+                "tests/pandora/tiny_left_disparity_grid.tif",
+                (np.full((4, 4), -27), np.full((4, 4), -7)),
+                id="Path to grid file",
+            ),
+            pytest.param((-60, 0), (-60, 0), id="Tuple of integers"),
+            pytest.param([-60, 0], (-60, 0), id="List of integers"),
+        ],
+    )
+    def test_nominal_case(self, input_disparity, expected):
+        """
+        Test the funtion read_disp with nominal inputs
+        """
+        result = img_tools.read_disp(input_disparity)
+
+        # Check if the calculated disparity is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(result, expected)
+
+    def test_with_none_as_input(self):
+        """
+        Test the funtion read_disp with bad input
+        """
+        with pytest.raises(ValueError, match="disparity should not be None"):
+            img_tools.read_disp(None)
 
 
 if __name__ == "__main__":

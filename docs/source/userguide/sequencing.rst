@@ -75,12 +75,10 @@ median filter method.
         {
             "left_mask": null,
             "right_mask": null,
-            "disp_min_right": null,
-            "disp_max_right": null,
+            "disp_right": null,
             "img_left": "img_left.png",
             "img_right": "img_left.png",
-            "disp_min": -100,
-            "disp_max": 100
+            "disp_left": [-100, 100]
         },
         "pipeline":
         {
@@ -119,12 +117,10 @@ The same configuration as the previous example but right disparity map is also c
         {
             "left_mask": null,
             "right_mask": null,
-            "disp_min_right": null,
-            "disp_max_right": null,
+            "disp_right": null,
             "img_left": "img_left.png",
             "img_right": "img_left.png",
-            "disp_min": -100,
-            "disp_max": 100
+            "disp_left": [-100, 100]
         },
         "pipeline":
         {
@@ -160,12 +156,10 @@ An impossible sequencing
         {
             "left_mask": null,
             "right_mask": null,
-            "disp_min_right": null,
-            "disp_max_right": null,
+            "disp_right": null,
             "img_left": "img_left.png",
             "img_right": "img_left.png",
-            "disp_min": -100,
-            "disp_max": 100
+            "disp_left": [-100, 100]
         },
         "pipeline":
         {
@@ -218,12 +212,10 @@ Same step, multiple times
         "input": {
             "left_mask": null,
             "right_mask": null,
-            "disp_min_right": null,
-            "disp_max_right": null,
+            "disp_right": null,
             "img_left": "img_left.png",
             "img_right": "img_left.png",
-            "disp_min": -100,
-            "disp_max": 100
+            "disp_left": [-100, 100]
         },
         "pipeline":
         {
@@ -264,12 +256,10 @@ Configuration to produce a disparity map, computed by SSD method with multiscale
         {
             "left_mask": null,
             "right_mask": null,
-            "disp_min_right": null,
-            "disp_max_right": null,
+            "disp_right": null,
             "img_left": "img_left.png",
             "img_right": "img_left.png",
-            "disp_min": -100,
-            "disp_max": 100
+            "disp_left": [-100, 100]
         },
         "pipeline":
         {
