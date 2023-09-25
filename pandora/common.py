@@ -237,3 +237,29 @@ def is_method(string_method: str, methods: List[str]) -> bool:
 
     logging.error("% is not in available methods : ", string_method + ", ".join(methods))
     return False
+
+
+def split_inputs(inputs: dict):
+    """Split inputs with two keys left and right."""
+    # TOBEREMOVED: Remove this function after ticket #314
+    return {"left": get_left_inputs(inputs), "right": get_right_inputs(inputs)}
+
+
+def get_left_inputs(inputs: dict):
+    """Create new dictionary with only left side keys."""
+    # TOBEREMOVED: Remove this function after ticket #314
+    prefix = "left_"
+    suffix = "_left"
+    prefixed = {k[len(prefix) :]: v for k, v in inputs.items() if k.startswith(prefix)}
+    suffixed = {k[: -len(suffix)]: v for k, v in inputs.items() if k.endswith(suffix)}
+    return {**prefixed, **suffixed}
+
+
+def get_right_inputs(inputs: dict):
+    """Create new dictionary with only right side keys."""
+    # TOBEREMOVED: Remove this function after ticket #314
+    prefix = "right_"
+    suffix = "_right"
+    prefixed = {k[len(prefix) :]: v for k, v in inputs.items() if k.startswith(prefix)}
+    suffixed = {k[: -len(suffix)]: v for k, v in inputs.items() if k.endswith(suffix)}
+    return {**prefixed, **suffixed}
