@@ -289,7 +289,7 @@ class TestImgTools(unittest.TestCase):
                 "mask": "tests/image/mask_left.tif",
             }
         }
-        dst_left = img_tools.read_img(mask="tests/image/mask_left.tif", input_config=input_config["left"])
+        dst_left = img_tools.read_img(input_config=input_config["left"])
 
         # Mask ground truth
         mask_gt = np.array([[1, 0, 2, 2, 1], [0, 0, 0, 0, 2], [1, 1, 0, 0, 2], [0, 0, 2, 0, 1]])
@@ -335,7 +335,7 @@ class TestImgTools(unittest.TestCase):
                 "mask": "tests/image/mask_left.tif",
             }
         }
-        dst_left = img_tools.read_img(mask="tests/image/mask_left.tif", input_config=input_config["left"])
+        dst_left = img_tools.read_img(input_config=input_config["left"])
 
         # Mask ground truth
         mask_gt = np.array([[1, 0, 2, 2, 1], [0, 0, 0, 0, 2], [1, 1, 0, 0, 2], [0, 0, 2, 0, 1]])

@@ -60,8 +60,8 @@ class TestPandora(unittest.TestCase):
             },
         }
 
-        self.left = read_img(mask=None, input_config=input_config["left"])
-        self.right = read_img(mask=None, input_config=input_config["right"])
+        self.left = read_img(input_config=input_config["left"])
+        self.right = read_img(input_config=input_config["right"])
         self.disp_left = rasterio_open("tests/pandora/disp_left.tif").read(1)
         self.disp_right = rasterio_open("tests/pandora/disp_right.tif").read(1)
         self.occlusion = rasterio_open("tests/pandora/occlusion.png").read(1)

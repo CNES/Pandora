@@ -202,8 +202,8 @@ class TestPandora(unittest.TestCase):
                 "nodata": np.nan,
             },
         }
-        self.left = read_img(mask=None, input_config=input_config["left"])
-        self.right = read_img(mask=None, input_config=input_config["right"])
+        self.left = read_img(input_config=input_config["left"])
+        self.right = read_img(input_config=input_config["right"])
         self.disp_left = rasterio_open("tests/pandora/disp_left.tif").read(1)
         self.disp_right = rasterio_open("tests/pandora/disp_right.tif").read(1)
         self.occlusion = rasterio_open("tests/pandora/occlusion.png").read(1)
@@ -536,8 +536,8 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         input_config = split_inputs(user_cfg["input"])
-        left_img = read_img(mask=None, input_config=input_config["left"])
-        right_img = read_img(mask=None, input_config=input_config["right"])
+        left_img = read_img(input_config=input_config["left"])
+        right_img = read_img(input_config=input_config["right"])
 
         # Run the pandora pipeline on images without modified coordinates
         left_origin, right_origin = pandora.run(pandora_machine, left_img, right_img, -60, 0, cfg)
@@ -572,8 +572,8 @@ class TestPandora(unittest.TestCase):
         user_cfg["pipeline"]["matching_cost"]["band"] = "g"
 
         input_config = split_inputs(user_cfg["input"])
-        left_rgb = read_img(mask=None, input_config=input_config["left"])
-        right_rgb = read_img(mask=None, input_config=input_config["right"])
+        left_rgb = read_img(input_config=input_config["left"])
+        right_rgb = read_img(input_config=input_config["right"])
 
         pandora_machine = PandoraMachine()
         # Update the user configuration with default values
@@ -606,8 +606,8 @@ class TestPandora(unittest.TestCase):
         input_config["right"]["mask"] = None
         input_config["left"]["nodata"] = np.nan
         input_config["right"]["nodata"] = np.nan
-        left_rgb = read_img(mask=None, input_config=input_config["left"])
-        right_rgb = read_img(mask=None, input_config=input_config["right"])
+        left_rgb = read_img(input_config=input_config["left"])
+        right_rgb = read_img(input_config=input_config["right"])
 
         pandora_machine = PandoraMachine()
         # Update the user configuration with default values
@@ -640,8 +640,8 @@ class TestPandora(unittest.TestCase):
         input_config["right"]["mask"] = None
         input_config["left"]["nodata"] = np.nan
         input_config["right"]["nodata"] = np.nan
-        left_rgb = read_img(mask=None, input_config=input_config["left"])
-        right_rgb = read_img(mask=None, input_config=input_config["right"])
+        left_rgb = read_img(input_config=input_config["left"])
+        right_rgb = read_img(input_config=input_config["right"])
 
         pandora_machine = PandoraMachine()
         # Update the user configuration with default values
@@ -668,16 +668,18 @@ class TestPandora(unittest.TestCase):
 
         # working on green band
         user_cfg["pipeline"]["matching_cost"]["band"] = "g"
-
-        input_config = split_inputs(user_cfg["input"])
-        input_config["left"]["nodata"] = np.nan
-        input_config["right"]["nodata"] = np.nan
-        left_rgb = read_img(mask=None, input_config=input_config["left"])
-        right_rgb = read_img(mask=None, input_config=input_config["right"])
-
-        pandora_machine = PandoraMachine()
+        user_cfg["input"]["nodata_left"] = np.nan
+        user_cfg["input"]["nodata_right"] = np.nan
         # Update the user configuration with default values
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
+
+        input_config = split_inputs(cfg["input"])
+        new_input_config = copy.deepcopy(input_config)
+        new_input_config["left"]["mask"] = None
+        left_rgb = read_img(input_config=new_input_config["left"])
+        right_rgb = read_img(input_config=new_input_config["right"])
+
+        pandora_machine = PandoraMachine()
 
         # Run the pandora pipeline
         left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg)

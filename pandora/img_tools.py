@@ -59,14 +59,12 @@ def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.Da
         return rasterio.open(*args, **kwargs)
 
 
-def read_img(mask: str = None, classif: str = None, segm: str = None, input_config: dict = None) -> xr.Dataset:
+def read_img(classif: str = None, segm: str = None, input_config: dict = None) -> xr.Dataset:
     """
     Read image and mask, and return the corresponding xarray.DataSet
 
     :param input_config: configuration used to create dataset.
     :type input_config: dict
-    :param mask: Path to the mask (optional): 0 value for valid pixels, !=0 value for invalid pixels
-    :type mask: string
     :param classif: Path to the classif (optional)
     :type classif: string
     :param segm: Path to the mask (optional)
@@ -79,15 +77,18 @@ def read_img(mask: str = None, classif: str = None, segm: str = None, input_conf
 
     :rtype: xarray.DataSet
     """
+    # Set default values
+    input_parameters = {"mask": None}
+    input_parameters.update(input_config)
     # Select correct band
-    img_ds = rasterio_open(input_config["img"])
+    img_ds = rasterio_open(input_parameters["img"])
     nx_, ny_ = img_ds.width, img_ds.height
     data = img_ds.read()
     # If only one band is present, consider data as 2 dimensional
     if data.shape[0] == 1:
         data = data[0, :, :]
 
-    no_data = input_config["nodata"]
+    no_data = input_parameters["nodata"]
     if np.isnan(no_data):
         no_data_pixels = np.where(np.isnan(data))
     elif np.isinf(no_data):
@@ -161,6 +162,7 @@ def read_img(mask: str = None, classif: str = None, segm: str = None, input_conf
         dataset["segm"].data = input_segm
 
     # If there is no mask, and no data in the images, do not create the mask to minimize calculation time
+    mask = input_parameters["mask"]
     if mask is None and no_data_pixels[0].size == 0:
         return dataset
 

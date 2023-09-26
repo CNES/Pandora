@@ -424,8 +424,8 @@ class TestDisparity(unittest.TestCase):
         input_config["left"]["nodata"] = np.nan
         input_config["right"]["nodata"] = np.nan
 
-        pandora_left = read_img(mask=None, input_config=input_config["left"])
-        pandora_right = read_img(mask=None, input_config=input_config["right"])
+        pandora_left = read_img(input_config=input_config["left"])
+        pandora_right = read_img(input_config=input_config["right"])
 
         fast_cfg = {
             "input": copy.deepcopy(common.input_cfg_basic),
