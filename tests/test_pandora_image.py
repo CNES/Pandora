@@ -374,7 +374,7 @@ class TestImgTools(unittest.TestCase):
                 "classif": "tests/pandora/left_classif.tif",
             }
         }
-        dst_left = img_tools.read_img(classif="tests/pandora/left_classif.tif", input_config=input_config["left"])
+        dst_left = img_tools.read_img(input_config=input_config["left"])
 
         # The classes present in left_classif are "cornfields", "olive tree", "forest"
         gt_classes = ["cornfields", "olive tree", "forest"]
@@ -400,7 +400,7 @@ class TestImgTools(unittest.TestCase):
                 "classif": "tests/pandora/left_classif.tif",
             }
         }
-        dst_left = img_tools.read_img(classif="tests/pandora/left_classif.tif", input_config=input_config["left"])
+        dst_left = img_tools.read_img(input_config=input_config["left"])
 
         # The bands present in left_rgb are "r", "g", "b"
         gt_bands = ["r", "g", "b"]
@@ -597,7 +597,7 @@ class TestImgTools(unittest.TestCase):
                 "classif": "tests/pandora/left_classif.tif",
             }
         }
-        img = img_tools.read_img(classif="tests/pandora/left_classif.tif", input_config=input_config["left"])
+        img = img_tools.read_img(input_config=input_config["left"])
 
         # Create ground truth monoband classification map
         gt_monoband_classif = np.zeros((len(img.coords["row"]), len(img.coords["col"])))

@@ -59,14 +59,12 @@ def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.Da
         return rasterio.open(*args, **kwargs)
 
 
-def read_img(classif: str = None, segm: str = None, input_config: dict = None) -> xr.Dataset:
+def read_img(segm: str = None, input_config: dict = None) -> xr.Dataset:
     """
     Read image and mask, and return the corresponding xarray.DataSet
 
     :param input_config: configuration used to create dataset.
     :type input_config: dict
-    :param classif: Path to the classif (optional)
-    :type classif: string
     :param segm: Path to the mask (optional)
     :type segm: string
     :return: xarray.DataSet containing the variables :
@@ -78,7 +76,7 @@ def read_img(classif: str = None, segm: str = None, input_config: dict = None) -
     :rtype: xarray.DataSet
     """
     # Set default values
-    input_parameters = {"mask": None}
+    input_parameters = {"mask": None, "classif": None}
     input_parameters.update(input_config)
     # Select correct band
     img_ds = rasterio_open(input_parameters["img"])
@@ -139,6 +137,7 @@ def read_img(classif: str = None, segm: str = None, input_config: dict = None) -
         "no_data_mask": 1,
     }  # arbitrary default value
 
+    classif = input_parameters["classif"]
     if classif is not None:
         classif_ds = rasterio_open(classif)
         classif_data = classif_ds.read()
