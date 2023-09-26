@@ -178,8 +178,8 @@ def main(cfg_path: PathLike | str, output: str, verbose: bool) -> None:
 
     # Read images and masks
     input_config = common.split_inputs(cfg["input"])
-    img_left = read_img(segm=cfg["input"]["left_segm"], input_config=input_config["left"])
-    img_right = read_img(segm=cfg["input"]["right_segm"], input_config=input_config["right"])
+    img_left = read_img(input_config=input_config["left"])
+    img_right = read_img(input_config=input_config["right"])
 
     # Read range of disparities
     disp_min, disp_max = read_disp(cfg["input"]["disp_left"])

@@ -429,7 +429,7 @@ class TestImgTools(unittest.TestCase):
                 "segm": "tests/image/mask_left.tif",
             }
         }
-        dst_left = img_tools.read_img(segm="tests/image/mask_left.tif", input_config=input_config["left"])
+        dst_left = img_tools.read_img(input_config=input_config["left"])
 
         # Segmentation ground truth
         segm_gt = np.array(
