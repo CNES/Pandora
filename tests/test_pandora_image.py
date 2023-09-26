@@ -289,11 +289,7 @@ class TestImgTools(unittest.TestCase):
                 "mask": "tests/image/mask_left.tif",
             }
         }
-        dst_left = img_tools.read_img(
-            no_data=default_cfg["input"]["nodata_left"],
-            mask="tests/image/mask_left.tif",
-            input_config=input_config["left"],
-        )
+        dst_left = img_tools.read_img(mask="tests/image/mask_left.tif", input_config=input_config["left"])
 
         # Mask ground truth
         mask_gt = np.array([[1, 0, 2, 2, 1], [0, 0, 0, 0, 2], [1, 1, 0, 0, 2], [0, 0, 2, 0, 1]])
@@ -339,9 +335,7 @@ class TestImgTools(unittest.TestCase):
                 "mask": "tests/image/mask_left.tif",
             }
         }
-        dst_left = img_tools.read_img(
-            no_data=np.nan, mask="tests/image/mask_left.tif", input_config=input_config["left"]
-        )
+        dst_left = img_tools.read_img(mask="tests/image/mask_left.tif", input_config=input_config["left"])
 
         # Mask ground truth
         mask_gt = np.array([[1, 0, 2, 2, 1], [0, 0, 0, 0, 2], [1, 1, 0, 0, 2], [0, 0, 2, 0, 1]])
@@ -380,11 +374,7 @@ class TestImgTools(unittest.TestCase):
                 "classif": "tests/pandora/left_classif.tif",
             }
         }
-        dst_left = img_tools.read_img(
-            no_data=default_cfg["input"]["nodata_left"],
-            classif="tests/pandora/left_classif.tif",
-            input_config=input_config["left"],
-        )
+        dst_left = img_tools.read_img(classif="tests/pandora/left_classif.tif", input_config=input_config["left"])
 
         # The classes present in left_classif are "cornfields", "olive tree", "forest"
         gt_classes = ["cornfields", "olive tree", "forest"]
@@ -410,11 +400,7 @@ class TestImgTools(unittest.TestCase):
                 "classif": "tests/pandora/left_classif.tif",
             }
         }
-        dst_left = img_tools.read_img(
-            no_data=default_cfg["input"]["nodata_left"],
-            classif="tests/pandora/left_classif.tif",
-            input_config=input_config["left"],
-        )
+        dst_left = img_tools.read_img(classif="tests/pandora/left_classif.tif", input_config=input_config["left"])
 
         # The bands present in left_rgb are "r", "g", "b"
         gt_bands = ["r", "g", "b"]
@@ -443,11 +429,7 @@ class TestImgTools(unittest.TestCase):
                 "segm": "tests/image/mask_left.tif",
             }
         }
-        dst_left = img_tools.read_img(
-            no_data=default_cfg["input"]["nodata_left"],
-            segm="tests/image/mask_left.tif",
-            input_config=input_config["left"],
-        )
+        dst_left = img_tools.read_img(segm="tests/image/mask_left.tif", input_config=input_config["left"])
 
         # Segmentation ground truth
         segm_gt = np.array(
@@ -468,9 +450,7 @@ class TestImgTools(unittest.TestCase):
         input_config["left"]["img"] = "tests/image/left_img.tif"
 
         # Computes the dataset image
-        dst__correct = img_tools.read_img(
-            no_data=default_cfg["input"]["nodata_left"], input_config=input_config["left"]
-        )
+        dst__correct = img_tools.read_img(input_config=input_config["left"])
 
         # Test if a correct dataset returns no errors
         try:
@@ -519,7 +499,7 @@ class TestImgTools(unittest.TestCase):
 
         # Computes the dataset image
         input_config = {"left": {"img": "tests/pandora/left.png", "nodata": default_cfg["input"]["nodata_left"]}}
-        dst_left = img_tools.read_img(no_data=default_cfg["input"]["nodata_left"], input_config=input_config["left"])
+        dst_left = img_tools.read_img(input_config=input_config["left"])
 
         gt_crs = rasterio.crs.CRS.from_epsg(32631)
         gt_transform = rasterio.Affine(0.5, 0.0, 573083.5, 0.0, -0.5, 4825333.5)
@@ -539,7 +519,7 @@ class TestImgTools(unittest.TestCase):
 
         # Computes the dataset image
         input_config = {"left": {"img": "tests/image/left_img.tif", "nodata": default_cfg["input"]["nodata_left"]}}
-        dst_left = img_tools.read_img(no_data=default_cfg["input"]["nodata_left"], input_config=input_config["left"])
+        dst_left = img_tools.read_img(input_config=input_config["left"])
 
         gt_crs = None
         gt_transform = None
@@ -568,7 +548,7 @@ class TestImgTools(unittest.TestCase):
 
             # Computes the dataset image
             input_config = {"left": {"img": f"{tmp_dir}/left_img.tif", "nodata": np.inf}}
-            dst_left = img_tools.read_img(no_data=np.inf, input_config=input_config["left"])
+            dst_left = img_tools.read_img(input_config=input_config["left"])
 
         # The inf values should be set as -9999
         dst_img_correct = np.array(
@@ -617,9 +597,7 @@ class TestImgTools(unittest.TestCase):
                 "classif": "tests/pandora/left_classif.tif",
             }
         }
-        img = img_tools.read_img(
-            no_data=np.nan, classif="tests/pandora/left_classif.tif", input_config=input_config["left"]
-        )
+        img = img_tools.read_img(classif="tests/pandora/left_classif.tif", input_config=input_config["left"])
 
         # Create ground truth monoband classification map
         gt_monoband_classif = np.zeros((len(img.coords["row"]), len(img.coords["col"])))

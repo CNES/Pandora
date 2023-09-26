@@ -420,9 +420,12 @@ class TestDisparity(unittest.TestCase):
         # Build the default configuration
         default_cfg = pandora.check_configuration.default_short_configuration
 
-        inputs = split_inputs(common.input_cfg_basic)
-        pandora_left = read_img(no_data=np.nan, mask=None, input_config=inputs["left"])
-        pandora_right = read_img(no_data=np.nan, mask=None, input_config=inputs["right"])
+        input_config = split_inputs(common.input_cfg_basic)
+        input_config["left"]["nodata"] = np.nan
+        input_config["right"]["nodata"] = np.nan
+
+        pandora_left = read_img(mask=None, input_config=input_config["left"])
+        pandora_right = read_img(mask=None, input_config=input_config["right"])
 
         fast_cfg = {
             "input": copy.deepcopy(common.input_cfg_basic),

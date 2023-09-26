@@ -59,16 +59,12 @@ def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.Da
         return rasterio.open(*args, **kwargs)
 
 
-def read_img(
-    no_data: float, mask: str = None, classif: str = None, segm: str = None, input_config: dict = None
-) -> xr.Dataset:
+def read_img(mask: str = None, classif: str = None, segm: str = None, input_config: dict = None) -> xr.Dataset:
     """
     Read image and mask, and return the corresponding xarray.DataSet
 
     :param input_config: configuration used to create dataset.
     :type input_config: dict
-    :type no_data: no_data value in the image
-    :type no_data: float
     :param mask: Path to the mask (optional): 0 value for valid pixels, !=0 value for invalid pixels
     :type mask: string
     :param classif: Path to the classif (optional)
@@ -91,6 +87,7 @@ def read_img(
     if data.shape[0] == 1:
         data = data[0, :, :]
 
+    no_data = input_config["nodata"]
     if np.isnan(no_data):
         no_data_pixels = np.where(np.isnan(data))
     elif np.isinf(no_data):
