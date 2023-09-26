@@ -60,20 +60,13 @@ def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.Da
 
 
 def read_img(
-    img: str,
-    no_data: float,
-    mask: str = None,
-    classif: str = None,
-    segm: str = None,
-    input_config: dict = None,  # pylint:disable=unused-argument
+    no_data: float, mask: str = None, classif: str = None, segm: str = None, input_config: dict = None
 ) -> xr.Dataset:
     """
     Read image and mask, and return the corresponding xarray.DataSet
 
     :param input_config: configuration used to create dataset.
     :type input_config: dict
-    :param img: Path to the image
-    :type img: string
     :type no_data: no_data value in the image
     :type no_data: float
     :param mask: Path to the mask (optional): 0 value for valid pixels, !=0 value for invalid pixels
@@ -91,7 +84,7 @@ def read_img(
     :rtype: xarray.DataSet
     """
     # Select correct band
-    img_ds = rasterio_open(img)
+    img_ds = rasterio_open(input_config["img"])
     nx_, ny_ = img_ds.width, img_ds.height
     data = img_ds.read()
     # If only one band is present, consider data as 2 dimensional
