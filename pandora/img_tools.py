@@ -133,26 +133,19 @@ def read_img(input_config: dict = None) -> xr.Dataset:
     classif = input_parameters["classif"]
     if classif is not None:
         classif_ds = rasterio_open(classif)
-        classif_data = classif_ds.read()
-        # Band names are in the image metadata
-        band_classif = list(classif_ds.descriptions)
-
-        # Add extra dataset coordinate for classification bands
-        dataset.coords["band_classif"] = band_classif
+        # Add extra dataset coordinate for classification bands with band names from image metadat
+        dataset.coords["band_classif"] = list(classif_ds.descriptions)
         dataset["classif"] = xr.DataArray(
-            np.full((classif_data.shape[0], classif_data.shape[1], classif_data.shape[2]), 0).astype(np.int16),
+            classif_ds.read(out_dtype=np.int16),
             dims=["band_classif", "row", "col"],
         )
-        dataset["classif"].data = classif_data
 
     segm = input_parameters["segm"]
     if segm is not None:
-        input_segm = rasterio_open(segm).read(1)
         dataset["segm"] = xr.DataArray(
-            np.full((data.shape[0], data.shape[1]), 0).astype(np.int16),
+            rasterio_open(segm).read(1, out_dtype=np.int16),
             dims=["row", "col"],
         )
-        dataset["segm"].data = input_segm
 
     # If there is no mask, and no data in the images, do not create the mask to minimize calculation time
     mask = input_parameters["mask"]
