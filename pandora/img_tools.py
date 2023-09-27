@@ -114,22 +114,6 @@ def read_img(input_config: dict = None) -> xr.Dataset:
         attrs=attributes,
     )
 
-    no_data = input_parameters["nodata"]
-    if np.isnan(no_data):
-        no_data_pixels = np.where(np.isnan(dataset["im"].data))
-    elif np.isinf(no_data):
-        no_data_pixels = np.where(np.isinf(dataset["im"].data))
-    else:
-        no_data_pixels = np.where(dataset["im"].data == no_data)
-
-    # We accept nan values as no data on input image but to not disturb cost volume processing as stereo computation
-    # step,nan as no_data must be converted. We choose -9999 (can be another value). No_data position aren't erased
-    # because stored in 'msk'
-    if no_data_pixels[0].size != 0 and (np.isnan(no_data) or np.isinf(no_data)):
-        dataset["im"].data[no_data_pixels] = -9999
-        no_data = -9999
-    dataset.attrs.update({"no_data_img": no_data})
-
     classif = input_parameters["classif"]
     if classif is not None:
         classif_ds = rasterio_open(classif)
@@ -146,6 +130,22 @@ def read_img(input_config: dict = None) -> xr.Dataset:
             rasterio_open(segm).read(1, out_dtype=np.int16),
             dims=["row", "col"],
         )
+
+    no_data = input_parameters["nodata"]
+    if np.isnan(no_data):
+        no_data_pixels = np.where(np.isnan(dataset["im"].data))
+    elif np.isinf(no_data):
+        no_data_pixels = np.where(np.isinf(dataset["im"].data))
+    else:
+        no_data_pixels = np.where(dataset["im"].data == no_data)
+
+    # We accept nan values as no data on input image but to not disturb cost volume processing as stereo computation
+    # step,nan as no_data must be converted. We choose -9999 (can be another value). No_data position aren't erased
+    # because stored in 'msk'
+    if no_data_pixels[0].size != 0 and (np.isnan(no_data) or np.isinf(no_data)):
+        dataset["im"].data[no_data_pixels] = -9999
+        no_data = -9999
+    dataset.attrs.update({"no_data_img": no_data})
 
     # If there is no mask, and no data in the images, do not create the mask to minimize calculation time
     mask = input_parameters["mask"]
