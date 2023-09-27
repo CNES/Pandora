@@ -96,9 +96,22 @@ def read_img(input_config: dict = None) -> xr.Dataset:
             "col": np.arange(data.shape[2]),
         }
 
+    crs = img_ds.profile["crs"]
+    # If the image has no geotransform, its transform is the identity matrix, which may not be compatible with QGIS
+    # To make it compatible, the attributes are set to None
+    transform = img_ds.profile["transform"] if crs is not None else None
+
+    # Add image conf to the attributes of the dataset
+    attributes = {
+        "crs": crs,
+        "transform": transform,
+        "valid_pixels": 0,  # arbitrary default value
+        "no_data_mask": 1,  # arbitrary default value
+    }
     dataset = xr.Dataset(
         image,
         coords=coords,
+        attrs=attributes,
     )
 
     no_data = input_parameters["nodata"]
@@ -115,23 +128,7 @@ def read_img(input_config: dict = None) -> xr.Dataset:
     if no_data_pixels[0].size != 0 and (np.isnan(no_data) or np.isinf(no_data)):
         dataset["im"].data[no_data_pixels] = -9999
         no_data = -9999
-
-    transform = img_ds.profile["transform"]
-    crs = img_ds.profile["crs"]
-    # If the image has no geotransform, its transform is the identity matrix, which may not be compatible with QGIS
-    # To make it compatible, the attributes are set to None
-    if crs is None:
-        transform = None
-        crs = None
-
-    # Add image conf to the image dataset
-    dataset.attrs = {
-        "no_data_img": no_data,
-        "crs": crs,
-        "transform": transform,
-        "valid_pixels": 0,  # arbitrary default value
-        "no_data_mask": 1,
-    }  # arbitrary default value
+    dataset.attrs.update({"no_data_img": no_data})
 
     classif = input_parameters["classif"]
     if classif is not None:
