@@ -79,33 +79,16 @@ def read_img(input_config: dict = None) -> xr.Dataset:
     # Select correct band
     img_ds = rasterio_open(input_parameters["img"])
     nx_, ny_ = img_ds.width, img_ds.height
-    data = img_ds.read()
+
     # If only one band is present, consider data as 2 dimensional
-    if data.shape[0] == 1:
-        data = data[0, :, :]
-
-    no_data = input_parameters["nodata"]
-    if np.isnan(no_data):
-        no_data_pixels = np.where(np.isnan(data))
-    elif np.isinf(no_data):
-        no_data_pixels = np.where(np.isinf(data))
-    else:
-        no_data_pixels = np.where(data == no_data)
-
-    # We accept nan values as no data on input image but to not disturb cost volume processing as stereo computation
-    # step,nan as no_data must be converted. We choose -9999 (can be another value). No_data position aren't erased
-    # because stored in 'msk'
-    if no_data_pixels[0].size != 0 and (np.isnan(no_data) or np.isinf(no_data)):
-        data[no_data_pixels] = -9999
-        no_data = -9999
-
-    # If only one band is present
-    if len(data.shape) == 2:
-        image = {"im": (["row", "col"], data.astype(np.float32))}
+    if img_ds.count == 1:
+        data = img_ds.read(1, out_dtype=np.float32)
+        image = {"im": (["row", "col"], data)}
         coords = {"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
     # if image is 3 dimensions we create a dataset with [band row col] dims for dataArray
     else:
-        image = {"im": (["band_im", "row", "col"], data.astype(np.float32))}
+        data = img_ds.read(out_dtype=np.float32)
+        image = {"im": (["band_im", "row", "col"], data)}
         # Band names are in the image metadata
         coords = {
             "band_im": list(img_ds.descriptions),  # type: ignore
@@ -117,6 +100,21 @@ def read_img(input_config: dict = None) -> xr.Dataset:
         image,
         coords=coords,
     )
+
+    no_data = input_parameters["nodata"]
+    if np.isnan(no_data):
+        no_data_pixels = np.where(np.isnan(dataset["im"].data))
+    elif np.isinf(no_data):
+        no_data_pixels = np.where(np.isinf(dataset["im"].data))
+    else:
+        no_data_pixels = np.where(dataset["im"].data == no_data)
+
+    # We accept nan values as no data on input image but to not disturb cost volume processing as stereo computation
+    # step,nan as no_data must be converted. We choose -9999 (can be another value). No_data position aren't erased
+    # because stored in 'msk'
+    if no_data_pixels[0].size != 0 and (np.isnan(no_data) or np.isinf(no_data)):
+        dataset["im"].data[no_data_pixels] = -9999
+        no_data = -9999
 
     transform = img_ds.profile["transform"]
     crs = img_ds.profile["crs"]
