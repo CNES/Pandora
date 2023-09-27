@@ -59,7 +59,7 @@ def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.Da
         return rasterio.open(*args, **kwargs)
 
 
-def read_img(input_config: dict = None) -> xr.Dataset:
+def create_dataset_from_inputs(input_config: dict = None) -> xr.Dataset:
     """
     Read image and mask, and return the corresponding xarray.DataSet
 

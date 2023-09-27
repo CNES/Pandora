@@ -32,7 +32,7 @@ import numpy as np
 
 from tests import common
 import pandora
-from pandora.img_tools import read_img, rasterio_open
+from pandora.img_tools import create_dataset_from_inputs, rasterio_open
 from pandora.state_machine import PandoraMachine
 
 
@@ -60,8 +60,8 @@ class TestPandora(unittest.TestCase):
             },
         }
 
-        self.left = read_img(input_config=input_config["left"])
-        self.right = read_img(input_config=input_config["right"])
+        self.left = create_dataset_from_inputs(input_config=input_config["left"])
+        self.right = create_dataset_from_inputs(input_config=input_config["right"])
         self.disp_left = rasterio_open("tests/pandora/disp_left.tif").read(1)
         self.disp_right = rasterio_open("tests/pandora/disp_right.tif").read(1)
         self.occlusion = rasterio_open("tests/pandora/occlusion.png").read(1)

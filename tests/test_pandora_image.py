@@ -250,8 +250,8 @@ class TestStdRaster:
         np.testing.assert_allclose(std_r, std_ground_truth, rtol=1e-07)
 
 
-class TestReadImg:
-    """Test read_img function."""
+class TestBuildDatasetFromInputs:
+    """Test create_dataset_from_inputs function."""
 
     @pytest.fixture()
     def default_cfg(self):
@@ -259,9 +259,9 @@ class TestReadImg:
         return pandora.check_configuration.default_short_configuration
 
     @staticmethod
-    def test_read_img(default_cfg):
+    def test_create_dataset_from_inputs(default_cfg):
         """
-        Test the method read_img
+        Test the method create_dataset_from_inputs
 
         """
         # left_img = array([[ -9999.,  1.,  2.,  3.,  -9999.],
@@ -283,7 +283,7 @@ class TestReadImg:
                 "mask": "tests/image/mask_left.tif",
             }
         }
-        dst_left = img_tools.read_img(input_config=input_config["left"])
+        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
 
         # Mask ground truth
         mask_gt = np.array([[1, 0, 2, 2, 1], [0, 0, 0, 0, 2], [1, 1, 0, 0, 2], [0, 0, 2, 0, 1]])
@@ -307,7 +307,7 @@ class TestReadImg:
     @staticmethod
     def test_with_nan():
         """
-        Test the method read_img
+        Test the method create_dataset_from_inputs
 
         """
         # left_img = array([[ NaN,  1.,  2.,  3.,  NaN],
@@ -329,7 +329,7 @@ class TestReadImg:
                 "mask": "tests/image/mask_left.tif",
             }
         }
-        dst_left = img_tools.read_img(input_config=input_config["left"])
+        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
 
         # Mask ground truth
         mask_gt = np.array([[1, 0, 2, 2, 1], [0, 0, 0, 0, 2], [1, 1, 0, 0, 2], [0, 0, 2, 0, 1]])
@@ -353,7 +353,7 @@ class TestReadImg:
     @staticmethod
     def test_with_classif(default_cfg):
         """
-        Test the method read_img for the classif
+        Test the method create_dataset_from_inputs for the classif
 
         """
         # Computes the dataset image
@@ -365,7 +365,7 @@ class TestReadImg:
                 "classif": "tests/pandora/left_classif.tif",
             }
         }
-        dst_left = img_tools.read_img(input_config=input_config["left"])
+        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
 
         # The classes present in left_classif are "cornfields", "olive tree", "forest"
         gt_classes = ["cornfields", "olive tree", "forest"]
@@ -376,7 +376,7 @@ class TestReadImg:
     @staticmethod
     def test_rgb_image_with_classif(default_cfg):
         """
-        Test the method read_img for the multiband image and classif
+        Test the method create_dataset_from_inputs for the multiband image and classif
 
         """
         # Computes the dataset image
@@ -388,7 +388,7 @@ class TestReadImg:
                 "classif": "tests/pandora/left_classif.tif",
             }
         }
-        dst_left = img_tools.read_img(input_config=input_config["left"])
+        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
 
         # The bands present in left_rgb are "r", "g", "b"
         gt_bands = ["r", "g", "b"]
@@ -403,7 +403,7 @@ class TestReadImg:
     @staticmethod
     def test_with_segm(default_cfg):
         """
-        Test the method read_img for the segmentation
+        Test the method create_dataset_from_inputs for the segmentation
 
         """
         # Computes the dataset image
@@ -414,7 +414,7 @@ class TestReadImg:
                 "segm": "tests/image/mask_left.tif",
             }
         }
-        dst_left = img_tools.read_img(input_config=input_config["left"])
+        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
 
         # Segmentation ground truth
         segm_gt = np.array(
@@ -427,12 +427,12 @@ class TestReadImg:
     @staticmethod
     def test_with_geotransform(default_cfg):
         """
-        Test the method read_img with an image with geotransform
+        Test the method create_dataset_from_inputs with an image with geotransform
 
         """
         # Computes the dataset image
         input_config = {"left": {"img": "tests/pandora/left.png", "nodata": default_cfg["input"]["nodata_left"]}}
-        dst_left = img_tools.read_img(input_config=input_config["left"])
+        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
 
         gt_crs = rasterio.crs.CRS.from_epsg(32631)
         gt_transform = rasterio.Affine(0.5, 0.0, 573083.5, 0.0, -0.5, 4825333.5)
@@ -444,12 +444,12 @@ class TestReadImg:
     @staticmethod
     def test_without_geotransform(default_cfg):
         """
-        Test the method read_img with an image without geotransform
+        Test the method create_dataset_from_inputs with an image without geotransform
 
         """
         # Computes the dataset image
         input_config = {"left": {"img": "tests/image/left_img.tif", "nodata": default_cfg["input"]["nodata_left"]}}
-        dst_left = img_tools.read_img(input_config=input_config["left"])
+        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
 
         gt_crs = None
         gt_transform = None
@@ -461,7 +461,7 @@ class TestReadImg:
     @staticmethod
     def test_inf_handling(tmp_path):
         """
-        Test the read_img method when the image has input inf values
+        Test the create_dataset_from_inputs method when the image has input inf values
 
         """
         image_path = tmp_path / "left_img.tif"
@@ -477,7 +477,7 @@ class TestReadImg:
 
         # Computes the dataset image
         input_config = {"left": {"img": str(image_path), "nodata": np.inf}}
-        dst_left = img_tools.read_img(input_config=input_config["left"])
+        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
 
         # The inf values should be set as -9999
         dst_img_correct = np.array(
@@ -504,7 +504,7 @@ class TestCheckDataset:
         input_config["left"]["img"] = "tests/image/left_img.tif"
 
         # Computes the dataset image
-        return img_tools.read_img(input_config=input_config["left"])
+        return img_tools.create_dataset_from_inputs(input_config=input_config["left"])
 
     def test_nominal_case(self, dataset):
         """Should not raise error."""
@@ -556,7 +556,7 @@ def test_fuse_classification_bands():
             "classif": "tests/pandora/left_classif.tif",
         }
     }
-    img = img_tools.read_img(input_config=input_config["left"])
+    img = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
 
     # Create ground truth monoband classification map
     gt_monoband_classif = np.zeros((len(img.coords["row"]), len(img.coords["col"])))

@@ -36,7 +36,7 @@ from tests import common
 import pandora
 from pandora import disparity
 from pandora import matching_cost
-from pandora.img_tools import read_img
+from pandora.img_tools import create_dataset_from_inputs
 from pandora.state_machine import PandoraMachine
 
 
@@ -424,8 +424,8 @@ class TestDisparity(unittest.TestCase):
         input_config["left"]["nodata"] = np.nan
         input_config["right"]["nodata"] = np.nan
 
-        pandora_left = read_img(input_config=input_config["left"])
-        pandora_right = read_img(input_config=input_config["right"])
+        pandora_left = create_dataset_from_inputs(input_config=input_config["left"])
+        pandora_right = create_dataset_from_inputs(input_config=input_config["right"])
 
         fast_cfg = {
             "input": copy.deepcopy(common.input_cfg_basic),
