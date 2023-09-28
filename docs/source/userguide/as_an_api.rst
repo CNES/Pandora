@@ -220,7 +220,7 @@ This Dataset also has a :
         optimization:           sgm
         refinement:             vfit
         filter:                 median
-        validation:             cross_checking
+        validation:             cross_checking_accurate
         interpolated_disparity: none
         crs:                    None
         transform:              | 1.00, 0.00, 0.00|\n| 0.00, 1.00, 0.00|\n| 0.00, 0.00, 1.00|

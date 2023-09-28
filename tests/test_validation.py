@@ -81,7 +81,7 @@ class TestValidation(unittest.TestCase):
         """
         # Compute the cross checking confidence measure and validity mask
         validation_matcher = validation.AbstractValidation(
-            **{"validation_method": "cross_checking", "cross_checking_threshold": 0.0}
+            **{"validation_method": "cross_checking_accurate", "cross_checking_threshold": 0.0}
         )
 
         left = validation_matcher.disparity_checking(self.left, self.right)
@@ -200,7 +200,7 @@ class TestValidation(unittest.TestCase):
 
         # Compute the confidence measure
         validation_matcher = validation.AbstractValidation(
-            **{"validation_method": "cross_checking", "cross_checking_threshold": 0.0}
+            **{"validation_method": "cross_checking_accurate", "cross_checking_threshold": 0.0}
         )
         left = validation_matcher.disparity_checking(left, right)
 
@@ -257,7 +257,7 @@ class TestValidation(unittest.TestCase):
 
         # Compute the cross checking confidence measure and validity mask
         validation_matcher = validation.AbstractValidation(
-            **{"validation_method": "cross_checking", "cross_checking_threshold": 0.0}
+            **{"validation_method": "cross_checking_accurate", "cross_checking_threshold": 0.0}
         )
 
         left = validation_matcher.disparity_checking(left, right)

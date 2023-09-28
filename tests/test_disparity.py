@@ -425,11 +425,10 @@ class TestDisparity(unittest.TestCase):
         fast_cfg = {
             "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": {
-                "right_disp_map": {"method": "accurate"},
                 "matching_cost": {"matching_cost_method": "census"},
                 "disparity": {"disparity_method": "wta"},
                 "refinement": {"refinement_method": "vfit"},
-                "validation": {"validation_method": "cross_checking"},
+                "validation": {"validation_method": "cross_checking_accurate"},
             },
         }
 
@@ -442,11 +441,10 @@ class TestDisparity(unittest.TestCase):
         acc_cfg = {
             "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": {
-                "right_disp_map": {"method": "accurate"},
                 "matching_cost": {"matching_cost_method": "census"},
                 "disparity": {"disparity_method": "wta"},
                 "refinement": {"refinement_method": "vfit"},
-                "validation": {"validation_method": "cross_checking"},
+                "validation": {"validation_method": "cross_checking_accurate"},
             },
         }
 

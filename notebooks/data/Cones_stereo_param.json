@@ -31,7 +31,7 @@
     "filter_size": 3
   },
   "validation": {
-    "validation_method": "cross_checking",
+    "validation_method": "cross_checking_accurate",
     "cross_checking_threshold": 1,
     "right_left_mode": "accurate"
   },

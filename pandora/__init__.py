@@ -114,7 +114,7 @@ def run(
     # and the machine will store the necessary parameters for the following scale
     for scale in range(pandora_machine.num_scales):  # pylint:disable=unused-variable
         # Trigger the machine step by step
-        for elem in list(cfg["pipeline"])[1:]:
+        for elem in list(cfg["pipeline"]):
             pandora_machine.run(elem, cfg)
             # If the machine gets to the begin state, pass to next scale
             if pandora_machine.state == "begin":

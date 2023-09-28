@@ -5,9 +5,6 @@
     "disp_left": [-60, 0]
   },
   "pipeline": {
-    "right_disp_map": {
-      "method": "accurate"
-    },
     "matching_cost": {
       "matching_cost_method": "zncc",
       "band": "r",
@@ -20,6 +17,9 @@
     },
     "refinement": {
       "refinement_method": "quadratic"
+    },
+    "validation" : {
+      "validation_method": "cross_checking_accurate"
     }
   }
 }
