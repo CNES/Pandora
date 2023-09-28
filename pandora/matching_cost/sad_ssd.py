@@ -204,9 +204,8 @@ class SadSsd(matching_cost.AbstractMatchingCost):
 
         return cv
 
-    @staticmethod
     def allocate_numpy_cost_volume(
-        img_left: xr.Dataset, disparity_range: Union[np.ndarray, List], offset_row_col: int = 0
+        self, img_left: xr.Dataset, disparity_range: Union[np.ndarray, List], offset_row_col: int = 0
     ) -> np.ndarray:
         # Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
         # If offset , over allocate the cost volume by adding 2 * offset on row and col dimension
@@ -215,8 +214,8 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         return np.full(
             (
                 len(disparity_range),
-                img_left.dims["col"] + 2 * offset_row_col,
-                img_left.dims["row"] + 2 * offset_row_col,
+                int((img_left.dims["col"] + 2 * offset_row_col) / self._step_col),
+                int((img_left.dims["row"] + 2 * offset_row_col) / self._step_col),
             ),
             np.nan,
             dtype=np.float32,

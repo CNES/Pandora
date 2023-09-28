@@ -235,8 +235,8 @@ class AbstractMatchingCost:
         :rtype: xarray.Dataset
         """
 
-    @staticmethod
     def allocate_costvolume(
+        self,
         img_left: xr.Dataset,
         subpix: int,
         disp_min: int,
@@ -277,7 +277,7 @@ class AbstractMatchingCost:
 
         # First pixel in the image that is fully computable (aggregation windows are complete)
         row = np.arange(c_row[0], c_row[-1] + 1)  # type: np.ndarray
-        col = np.arange(c_col[0], c_col[-1] + 1)  # type: np.ndarray
+        col = np.arange(c_col[0], c_col[-1] + 1, self._step_col)  # type: np.ndarray
 
         disparity_range = AbstractMatchingCost.get_disparity_range(disp_min, disp_max, subpix)
 
@@ -318,9 +318,8 @@ class AbstractMatchingCost:
             disparity_range = np.append(disparity_range, [disparity_max])
         return disparity_range
 
-    @staticmethod
     def point_interval(
-        img_left: xr.Dataset, img_right: xr.Dataset, disp: float
+        self, img_left: xr.Dataset, img_right: xr.Dataset, disp: float
     ) -> Tuple[Tuple[int, int], Tuple[int, int]]:
         """
         Computes the range of points over which the similarity measure will be applied
@@ -340,8 +339,8 @@ class AbstractMatchingCost:
         :return: the range of the left and right image over which the similarity measure will be applied
         :rtype: tuple
         """
-        nx_left = img_left.dims["col"]
-        nx_right = img_right.dims["col"]
+        nx_left = int(img_left.dims["col"] / self._step_col)
+        nx_right = int(img_right.dims["col"] / self._step_col)
 
         # range in the left image
         point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))
@@ -587,8 +586,7 @@ class AbstractMatchingCost:
                 )
                 cost_volume["cost_volume"].data[masking[0], masking[1], dsp] = np.nan
 
-    @staticmethod
-    def allocate_numpy_cost_volume(img_left: xr.Dataset, disparity_range: Union[np.ndarray, List]) -> np.ndarray:
+    def allocate_numpy_cost_volume(self, img_left: xr.Dataset, disparity_range: Union[np.ndarray, List]) -> np.ndarray:
         """
         Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
 
@@ -608,7 +606,7 @@ class AbstractMatchingCost:
         """
 
         return np.full(
-            (len(disparity_range), img_left.dims["col"], img_left.dims["row"]),
+            (len(disparity_range), int(img_left.dims["col"] / self._step_col), int(img_left.dims["row"])),
             np.nan,
             dtype=np.float32,
         )
