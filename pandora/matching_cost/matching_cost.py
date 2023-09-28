@@ -156,7 +156,7 @@ class AbstractMatchingCost:
         if "band" not in cfg:
             cfg["band"] = self._BAND
 
-        if __name__[:8] == "pandora.":
+        if "pandora2d" not in sys.modules:
             if "step" in cfg and cfg["step"] != 1:
                 logging.error("Step parameter cannot be different from 1")
                 sys.exit(1)
@@ -243,7 +243,6 @@ class AbstractMatchingCost:
         disp_max: int,
         window_size: int,
         metadata: dict,
-        step: int,
         np_data: np.ndarray = None,
     ) -> xr.Dataset:
         """
@@ -280,7 +279,7 @@ class AbstractMatchingCost:
         row = np.arange(c_row[0], c_row[-1] + 1)  # type: np.ndarray
         col = np.arange(c_col[0], c_col[-1] + 1)  # type: np.ndarray
 
-        disparity_range = AbstractMatchingCost.get_disparity_range(disp_min, disp_max, subpix, step)
+        disparity_range = AbstractMatchingCost.get_disparity_range(disp_min, disp_max, subpix)
 
         # Create the cost volume
         if np_data is None:
@@ -300,7 +299,7 @@ class AbstractMatchingCost:
         return cost_volume
 
     @staticmethod
-    def get_disparity_range(disparity_min: int, disparity_max: int, subpix: int, step: int) -> np.ndarray:
+    def get_disparity_range(disparity_min: int, disparity_max: int, subpix: int) -> np.ndarray:
         """
         Build disparity range and return it.
 
@@ -309,15 +308,13 @@ class AbstractMatchingCost:
         :param disparity_max: maximum disparity
         :type disparity_max: int
         :param subpix: subpixel precision = (1 or 2 or 4)
-        :param step: step
-        :type step: int
         :return: disparity range
         :rtype: np.ndarray
         """
         if subpix == 1:
-            disparity_range = np.arange(disparity_min, disparity_max + 1, step=step)
+            disparity_range = np.arange(disparity_min, disparity_max + 1)
         else:
-            disparity_range = np.arange(disparity_min, disparity_max, step=step / float(subpix), dtype=np.float64)
+            disparity_range = np.arange(disparity_min, disparity_max, 1 / float(subpix), dtype=np.float64)
             disparity_range = np.append(disparity_range, [disparity_max])
         return disparity_range
 

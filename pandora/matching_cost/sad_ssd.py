@@ -141,7 +141,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             "band_correl": self._band,
         }
 
-        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix, self._step_col)
+        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
         cv_enlarge = self.allocate_numpy_cost_volume(img_left, disparity_range, offset_row_col)
         cv = self.crop_cost_volume(cv_enlarge, offset_row_col)
 
@@ -200,9 +200,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             cv[:, -offset_row_col:, :] = np.nan
 
         # Create the xarray.DataSet that will contain the cv of dimensions (row, col, disp)
-        cv = self.allocate_costvolume(
-            img_left, self._subpix, disp_min, disp_max, self._window_size, metadata, self._step_col, cv
-        )
+        cv = self.allocate_costvolume(img_left, self._subpix, disp_min, disp_max, self._window_size, metadata, cv)
 
         return cv
 
