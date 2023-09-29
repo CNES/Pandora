@@ -12,7 +12,7 @@ Pandora provides a full python API which can be used to compute disparity maps a
 
     import pandora
     from pandora import common
-    from pandora.img_tools import read_img, read_disp
+    from pandora.img_tools import create_dataset_from_inputs, read_disp
     from pandora.check_configuration import check_conf, read_config_file
     from pandora.state_machine import PandoraMachine
 
@@ -44,11 +44,9 @@ Pandora provides a full python API which can be used to compute disparity maps a
         pandora.setup_logging(verbose)
 
         # Read images and masks
-        img_left = read_img(cfg['input']['img_left'], no_data=cfg['input']['nodata_left'],mask=cfg['input']['left_mask'],
-                            classif=cfg['input']['left_classif'], segm=cfg['input']['left_segm'])
-        img_right = read_img(cfg['input']['img_right'], no_data=cfg['input']['nodata_right'],
-                             mask=cfg['input']['right_mask'], classif=cfg['input']['right_classif'],
-                             segm=cfg['input']['right_segm'])
+        cfg_input = common.split_inputs(cfg['input'])
+        img_left = create_dataset_from_inputs(cfg_input['left'])
+        img_right = create_dataset_from_inputs(cfg_input['right'])
 
         # Read range of disparities
         disp_min, disp_max = read_disp(cfg['input']['disp_left'])

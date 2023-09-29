@@ -59,22 +59,12 @@ def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.Da
         return rasterio.open(*args, **kwargs)
 
 
-def read_img(  # pylint:disable=too-many-branches
-    img: str, no_data: float, mask: str = None, classif: str = None, segm: str = None
-) -> xr.Dataset:
+def create_dataset_from_inputs(input_config: dict = None) -> xr.Dataset:
     """
     Read image and mask, and return the corresponding xarray.DataSet
 
-    :param img: Path to the image
-    :type img: string
-    :type no_data: no_data value in the image
-    :type no_data: float
-    :param mask: Path to the mask (optional): 0 value for valid pixels, !=0 value for invalid pixels
-    :type mask: string
-    :param classif: Path to the classif (optional)
-    :type classif: string
-    :param segm: Path to the mask (optional)
-    :type segm: string
+    :param input_config: configuration used to create dataset.
+    :type input_config: dict
     :return: xarray.DataSet containing the variables :
 
             - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
@@ -83,35 +73,22 @@ def read_img(  # pylint:disable=too-many-branches
 
     :rtype: xarray.DataSet
     """
+    # Set default values
+    input_parameters = {"mask": None, "classif": None, "segm": None}
+    input_parameters.update(input_config)
     # Select correct band
-    img_ds = rasterio_open(img)
+    img_ds = rasterio_open(input_parameters["img"])
     nx_, ny_ = img_ds.width, img_ds.height
-    data = img_ds.read()
+
     # If only one band is present, consider data as 2 dimensional
-    if data.shape[0] == 1:
-        data = data[0, :, :]
-
-    if np.isnan(no_data):
-        no_data_pixels = np.where(np.isnan(data))
-    elif np.isinf(no_data):
-        no_data_pixels = np.where(np.isinf(data))
-    else:
-        no_data_pixels = np.where(data == no_data)
-
-    # We accept nan values as no data on input image but to not disturb cost volume processing as stereo computation
-    # step,nan as no_data must be converted. We choose -9999 (can be another value). No_data position aren't erased
-    # because stored in 'msk'
-    if no_data_pixels[0].size != 0 and (np.isnan(no_data) or np.isinf(no_data)):
-        data[no_data_pixels] = -9999
-        no_data = -9999
-
-    # If only one band is present
-    if len(data.shape) == 2:
-        image = {"im": (["row", "col"], data.astype(np.float32))}
+    if img_ds.count == 1:
+        data = img_ds.read(1, out_dtype=np.float32)
+        image = {"im": (["row", "col"], data)}
         coords = {"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
     # if image is 3 dimensions we create a dataset with [band row col] dims for dataArray
     else:
-        image = {"im": (["band_im", "row", "col"], data.astype(np.float32))}
+        data = img_ds.read(out_dtype=np.float32)
+        image = {"im": (["band_im", "row", "col"], data)}
         # Band names are in the image metadata
         coords = {
             "band_im": list(img_ds.descriptions),  # type: ignore
@@ -119,51 +96,59 @@ def read_img(  # pylint:disable=too-many-branches
             "col": np.arange(data.shape[2]),
         }
 
-    dataset = xr.Dataset(
-        image,
-        coords=coords,
-    )
-
-    transform = img_ds.profile["transform"]
     crs = img_ds.profile["crs"]
     # If the image has no geotransform, its transform is the identity matrix, which may not be compatible with QGIS
     # To make it compatible, the attributes are set to None
-    if crs is None:
-        transform = None
-        crs = None
+    transform = img_ds.profile["transform"] if crs is not None else None
 
-    # Add image conf to the image dataset
-    dataset.attrs = {
-        "no_data_img": no_data,
+    # Add image conf to the attributes of the dataset
+    attributes = {
         "crs": crs,
         "transform": transform,
         "valid_pixels": 0,  # arbitrary default value
-        "no_data_mask": 1,
-    }  # arbitrary default value
+        "no_data_mask": 1,  # arbitrary default value
+    }
+    dataset = xr.Dataset(
+        image,
+        coords=coords,
+        attrs=attributes,
+    )
 
+    classif = input_parameters["classif"]
     if classif is not None:
         classif_ds = rasterio_open(classif)
-        classif_data = classif_ds.read()
-        # Band names are in the image metadata
-        band_classif = list(classif_ds.descriptions)
-
-        # Add extra dataset coordinate for classification bands
-        dataset.coords["band_classif"] = band_classif
+        # Add extra dataset coordinate for classification bands with band names from image metadat
+        dataset.coords["band_classif"] = list(classif_ds.descriptions)
         dataset["classif"] = xr.DataArray(
-            np.full((classif_data.shape[0], classif_data.shape[1], classif_data.shape[2]), 0).astype(np.int16),
+            classif_ds.read(out_dtype=np.int16),
             dims=["band_classif", "row", "col"],
         )
-        dataset["classif"].data = classif_data
 
+    segm = input_parameters["segm"]
     if segm is not None:
-        input_segm = rasterio_open(segm).read(1)
         dataset["segm"] = xr.DataArray(
-            np.full((data.shape[0], data.shape[1]), 0).astype(np.int16),
+            rasterio_open(segm).read(1, out_dtype=np.int16),
             dims=["row", "col"],
         )
-        dataset["segm"].data = input_segm
+
+    no_data = input_parameters["nodata"]
+    if np.isnan(no_data):
+        no_data_pixels = np.where(np.isnan(dataset["im"].data))
+    elif np.isinf(no_data):
+        no_data_pixels = np.where(np.isinf(dataset["im"].data))
+    else:
+        no_data_pixels = np.where(dataset["im"].data == no_data)
+
+    # We accept nan values as no data on input image but to not disturb cost volume processing as stereo computation
+    # step,nan as no_data must be converted. We choose -9999 (can be another value). No_data position aren't erased
+    # because stored in 'msk'
+    if no_data_pixels[0].size != 0 and (np.isnan(no_data) or np.isinf(no_data)):
+        dataset["im"].data[no_data_pixels] = -9999
+        no_data = -9999
+    dataset.attrs.update({"no_data_img": no_data})
 
     # If there is no mask, and no data in the images, do not create the mask to minimize calculation time
+    mask = input_parameters["mask"]
     if mask is None and no_data_pixels[0].size == 0:
         return dataset
 

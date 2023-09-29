@@ -34,7 +34,7 @@ import numpy as np
 from pkg_resources import iter_entry_points
 
 from . import common
-from .img_tools import read_img, read_disp
+from .img_tools import create_dataset_from_inputs, read_disp
 from .check_configuration import check_conf, read_config_file, read_multiscale_params
 from .state_machine import PandoraMachine
 
@@ -177,20 +177,9 @@ def main(cfg_path: PathLike | str, output: str, verbose: bool) -> None:
     setup_logging(verbose)
 
     # Read images and masks
-    img_left = read_img(
-        cfg["input"]["img_left"],
-        no_data=cfg["input"]["nodata_left"],
-        mask=cfg["input"]["left_mask"],
-        classif=cfg["input"]["left_classif"],
-        segm=cfg["input"]["left_segm"],
-    )
-    img_right = read_img(
-        cfg["input"]["img_right"],
-        no_data=cfg["input"]["nodata_right"],
-        mask=cfg["input"]["right_mask"],
-        classif=cfg["input"]["right_classif"],
-        segm=cfg["input"]["right_segm"],
-    )
+    input_config = common.split_inputs(cfg["input"])
+    img_left = create_dataset_from_inputs(input_config=input_config["left"])
+    img_right = create_dataset_from_inputs(input_config=input_config["right"])
 
     # Read range of disparities
     disp_min, disp_max = read_disp(cfg["input"]["disp_left"])
