@@ -141,7 +141,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             "band_correl": self._band,
         }
 
-        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix, self._step_col)
+        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
         cv_enlarge = self.allocate_numpy_cost_volume(img_left, disparity_range, offset_row_col)
         cv = self.crop_cost_volume(cv_enlarge, offset_row_col)
 
@@ -200,15 +200,12 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             cv[:, -offset_row_col:, :] = np.nan
 
         # Create the xarray.DataSet that will contain the cv of dimensions (row, col, disp)
-        cv = self.allocate_costvolume(
-            img_left, self._subpix, disp_min, disp_max, self._window_size, metadata, self._step_col, cv
-        )
+        cv = self.allocate_costvolume(img_left, self._subpix, disp_min, disp_max, self._window_size, metadata, cv)
 
         return cv
 
-    @staticmethod
     def allocate_numpy_cost_volume(
-        img_left: xr.Dataset, disparity_range: Union[np.ndarray, List], offset_row_col: int = 0
+        self, img_left: xr.Dataset, disparity_range: Union[np.ndarray, List], offset_row_col: int = 0
     ) -> np.ndarray:
         # Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
         # If offset , over allocate the cost volume by adding 2 * offset on row and col dimension
@@ -217,8 +214,8 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         return np.full(
             (
                 len(disparity_range),
-                img_left.dims["col"] + 2 * offset_row_col,
-                img_left.dims["row"] + 2 * offset_row_col,
+                int((img_left.dims["col"] + 2 * offset_row_col) / self._step_col),
+                int((img_left.dims["row"] + 2 * offset_row_col) / self._step_col),
             ),
             np.nan,
             dtype=np.float32,

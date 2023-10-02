@@ -156,7 +156,7 @@ class AbstractMatchingCost:
         if "band" not in cfg:
             cfg["band"] = self._BAND
 
-        if __name__[:8] == "pandora.":
+        if "pandora2d" not in sys.modules:
             if "step" in cfg and cfg["step"] != 1:
                 logging.error("Step parameter cannot be different from 1")
                 sys.exit(1)
@@ -235,15 +235,14 @@ class AbstractMatchingCost:
         :rtype: xarray.Dataset
         """
 
-    @staticmethod
     def allocate_costvolume(
+        self,
         img_left: xr.Dataset,
         subpix: int,
         disp_min: int,
         disp_max: int,
         window_size: int,
         metadata: dict,
-        step: int,
         np_data: np.ndarray = None,
     ) -> xr.Dataset:
         """
@@ -278,9 +277,9 @@ class AbstractMatchingCost:
 
         # First pixel in the image that is fully computable (aggregation windows are complete)
         row = np.arange(c_row[0], c_row[-1] + 1)  # type: np.ndarray
-        col = np.arange(c_col[0], c_col[-1] + 1)  # type: np.ndarray
+        col = np.arange(c_col[0], c_col[-1] + 1, self._step_col)  # type: np.ndarray
 
-        disparity_range = AbstractMatchingCost.get_disparity_range(disp_min, disp_max, subpix, step)
+        disparity_range = AbstractMatchingCost.get_disparity_range(disp_min, disp_max, subpix)
 
         # Create the cost volume
         if np_data is None:
@@ -300,7 +299,7 @@ class AbstractMatchingCost:
         return cost_volume
 
     @staticmethod
-    def get_disparity_range(disparity_min: int, disparity_max: int, subpix: int, step: int) -> np.ndarray:
+    def get_disparity_range(disparity_min: int, disparity_max: int, subpix: int) -> np.ndarray:
         """
         Build disparity range and return it.
 
@@ -309,21 +308,18 @@ class AbstractMatchingCost:
         :param disparity_max: maximum disparity
         :type disparity_max: int
         :param subpix: subpixel precision = (1 or 2 or 4)
-        :param step: step
-        :type step: int
         :return: disparity range
         :rtype: np.ndarray
         """
         if subpix == 1:
-            disparity_range = np.arange(disparity_min, disparity_max + 1, step=step)
+            disparity_range = np.arange(disparity_min, disparity_max + 1)
         else:
-            disparity_range = np.arange(disparity_min, disparity_max, step=step / float(subpix), dtype=np.float64)
+            disparity_range = np.arange(disparity_min, disparity_max, 1 / float(subpix), dtype=np.float64)
             disparity_range = np.append(disparity_range, [disparity_max])
         return disparity_range
 
-    @staticmethod
     def point_interval(
-        img_left: xr.Dataset, img_right: xr.Dataset, disp: float
+        self, img_left: xr.Dataset, img_right: xr.Dataset, disp: float
     ) -> Tuple[Tuple[int, int], Tuple[int, int]]:
         """
         Computes the range of points over which the similarity measure will be applied
@@ -343,8 +339,8 @@ class AbstractMatchingCost:
         :return: the range of the left and right image over which the similarity measure will be applied
         :rtype: tuple
         """
-        nx_left = img_left.dims["col"]
-        nx_right = img_right.dims["col"]
+        nx_left = int(img_left.dims["col"] / self._step_col)
+        nx_right = int(img_right.dims["col"] / self._step_col)
 
         # range in the left image
         point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))
@@ -590,8 +586,7 @@ class AbstractMatchingCost:
                 )
                 cost_volume["cost_volume"].data[masking[0], masking[1], dsp] = np.nan
 
-    @staticmethod
-    def allocate_numpy_cost_volume(img_left: xr.Dataset, disparity_range: Union[np.ndarray, List]) -> np.ndarray:
+    def allocate_numpy_cost_volume(self, img_left: xr.Dataset, disparity_range: Union[np.ndarray, List]) -> np.ndarray:
         """
         Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
 
@@ -611,7 +606,7 @@ class AbstractMatchingCost:
         """
 
         return np.full(
-            (len(disparity_range), img_left.dims["col"], img_left.dims["row"]),
+            (len(disparity_range), int(img_left.dims["col"] / self._step_col), int(img_left.dims["row"])),
             np.nan,
             dtype=np.float32,
         )

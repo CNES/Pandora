@@ -123,7 +123,7 @@ class Census(matching_cost.AbstractMatchingCost):
         for i, img in enumerate(img_right_shift):
             img_right_shift[i] = census_transform(img, self._window_size, self._band)  # type: ignore
 
-        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix, self._step_col)
+        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
         cv = self.allocate_numpy_cost_volume(img_left, disparity_range)
         cv_crop = self.crop_cost_volume(cv, offset_row_col)
 
@@ -170,14 +170,7 @@ class Census(matching_cost.AbstractMatchingCost):
         # As we are expected to return a cost_volume of dimensions (row, col, disp),
         # we swap axes.
         cv = self.allocate_costvolume(
-            img_left,
-            self._subpix,
-            disp_min,
-            disp_max,
-            self._window_size,
-            metadata,
-            self._step_col,
-            np.swapaxes(cv, 0, 2),
+            img_left, self._subpix, disp_min, disp_max, self._window_size, metadata, np.swapaxes(cv, 0, 2)
         )
 
         # Remove temporary values

@@ -103,7 +103,7 @@ class TestMatchingCost:
             **{"matching_cost_method": "census", "window_size": 5, "subpix": 4, "band": "b"}
         )
 
-        dataset_cv = matching_cost_.allocate_costvolume(left, 4, -2, 2, 5, {"metadata": "metadata"}, 1)
+        dataset_cv = matching_cost_.allocate_costvolume(left, 4, -2, 2, 5, {"metadata": "metadata"})
 
         c_row = [0, 1, 2, 3, 4]
         c_col = [0, 1, 2, 3, 4, 5]
@@ -112,7 +112,7 @@ class TestMatchingCost:
         row = np.arange(c_row[0], c_row[-1] + 1)  # type: np.ndarray
         col = np.arange(c_col[0], c_col[-1] + 1)  # type: np.ndarray
 
-        disparity_range = np.arange(-2, 2, step=[1, 1][0] / float(4), dtype=np.float64)
+        disparity_range = np.arange(-2, 2, step=1 / float(4), dtype=np.float64)
         disparity_range = np.append(disparity_range, [2])
 
         np_data = np.zeros((len(row), len(col), len(disparity_range)), dtype=np.float32)
@@ -131,15 +131,14 @@ class TestMatchingCost:
         assert ground_truth.equals(dataset_cv)
 
     @pytest.mark.parametrize(
-        ["disparity_min", "disparity_max", "subpix", "step", "expected"],
+        ["disparity_min", "disparity_max", "subpix", "expected"],
         [
-            [0, 2, 1, 1, [0, 1, 2]],
-            [0, 2, 2, 1, [0, 0.5, 1, 1.5, 2]],
-            [0, 2, 2, 2, [0, 1, 2]],
-            [0, 2, 4, 1, [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]],
+            [0, 2, 1, [0, 1, 2]],
+            [0, 2, 2, [0, 0.5, 1, 1.5, 2]],
+            [0, 2, 4, [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]],
         ],
     )
-    def test_get_disparity_range(self, disparity_min, disparity_max, subpix, step, expected):
+    def test_get_disparity_range(self, disparity_min, disparity_max, subpix, expected):
         """Test get_disparity_range."""
-        result = matching_cost.AbstractMatchingCost.get_disparity_range(disparity_min, disparity_max, subpix, step)
+        result = matching_cost.AbstractMatchingCost.get_disparity_range(disparity_min, disparity_max, subpix)
         np.testing.assert_array_equal(result, expected)
