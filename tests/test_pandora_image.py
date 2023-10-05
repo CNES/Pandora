@@ -28,6 +28,7 @@ This module contains functions to test all the methods in img_tools module.
 import numpy as np
 import pytest
 import rasterio
+from rasterio.windows import Window
 import xarray as xr
 from skimage.io import imsave
 
@@ -250,7 +251,110 @@ class TestStdRaster:
         np.testing.assert_allclose(std_r, std_ground_truth, rtol=1e-07)
 
 
-class TestBuildDatasetFromInputs:
+class TestGetWindow:
+    """Test get_window function."""
+
+    @pytest.fixture()
+    def default_image_shape(self):
+        """
+        Create a fake image to test roi configuration
+        """
+        imarray = np.array(
+            (
+                [0, 1, 2, 5, 1, 3, 6, 4, 9, 7, 8],
+                [5, 1, 2, 7, 1, 4, 7, 8, 5, 8, 0],
+                [1, 2, 0, 3, 0, 4, 0, 6, 7, 4, 9],
+                [4, 9, 4, 0, 1, 3, 7, 4, 6, 9, 2],
+                [2, 3, 5, 0, 1, 5, 9, 2, 8, 6, 7],
+                [1, 2, 4, 5, 2, 6, 7, 7, 3, 7, 0],
+                [1, 2, 0, 3, 0, 4, 0, 6, 7, 4, 9],
+                [4, 9, 4, 0, 1, 3, 7, 4, 6, 9, 2],
+            )
+        )
+        return imarray.shape
+
+    @staticmethod
+    def test_roi_inside(default_image_shape):
+        """
+        Test the get_window method when the config has a roi inside the image
+
+        """
+        img_height, img_width = default_image_shape
+
+        # Roi
+        roi = {"col": {"first": 3, "last": 5}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]}
+
+        # get_window
+        window = img_tools.get_window(roi, img_width, img_height)
+        assert Window(col_off=1, row_off=1, width=7, height=7) == window
+
+    @pytest.mark.parametrize(
+        ["roi", "expected"],
+        [
+            pytest.param(
+                {"col": {"first": 0, "last": 2}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]},
+                Window(col_off=0, row_off=1, width=5, height=7),
+                id="Overlap on left side",
+            ),
+            pytest.param(
+                {"col": {"first": 10, "last": 12}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]},
+                Window(col_off=8, row_off=1, width=3, height=7),
+                id="Overlap on right side",
+            ),
+            pytest.param(
+                {"col": {"first": 3, "last": 5}, "row": {"first": -1, "last": 5}, "margins": [2, 2, 2, 2]},
+                Window(col_off=1, row_off=0, width=7, height=8),
+                id="Overlap on up side",
+            ),
+            pytest.param(
+                {"col": {"first": 3, "last": 5}, "row": {"first": 9, "last": 11}, "margins": [2, 2, 2, 2]},
+                Window(col_off=1, row_off=7, width=7, height=1),
+                id="Overlap on down side",
+            ),
+        ],
+    )
+    def test_overlap_roi(self, default_image_shape, roi, expected):
+        """
+        Test the get_window method when the config has a roi overlaped with image
+
+        """
+        img_height, img_width = default_image_shape
+
+        assert img_tools.get_window(roi, img_width, img_height) == expected
+
+    @pytest.mark.parametrize(
+        ["roi"],
+        [
+            pytest.param(
+                {"col": {"first": -10, "last": -12}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]},
+                id="Outside on left side",
+            ),
+            pytest.param(
+                {"col": {"first": 100, "last": 120}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]},
+                id="Outside on right side",
+            ),
+            pytest.param(
+                {"col": {"first": 3, "last": 5}, "row": {"first": -6, "last": -5}, "margins": [2, 2, 2, 2]},
+                id="Outside on up side",
+            ),
+            pytest.param(
+                {"col": {"first": 3, "last": 5}, "row": {"first": 11, "last": 111}, "margins": [2, 2, 2, 2]},
+                id="Outside on down side",
+            ),
+        ],
+    )
+    def test_fails_when_roi_is_outside_image(self, default_image_shape, roi):
+        """
+        Test the get_window method when the config has a roi outside an image
+
+        """
+        img_height, img_width = default_image_shape
+
+        with pytest.raises(SystemExit):
+            img_tools.get_window(roi, img_width, img_height)
+
+
+class TestCreateDatasetFromInputs:
     """Test create_dataset_from_inputs function."""
 
     @pytest.fixture()
@@ -490,6 +594,59 @@ class TestBuildDatasetFromInputs:
         )
 
         np.testing.assert_array_equal(dst_img_correct, dst_left["im"].values)
+
+    @staticmethod
+    def test_with_full_roi(default_cfg, tmp_path):
+        """
+        Test the get_window and create_dataset_from_inputs method when the config has a roi
+
+        """
+        image_path = tmp_path / "left_img.tif"
+        imarray = np.array(
+            (
+                [np.inf, 1, 2, 5, 1, 3, 6, 4, 9, 7, 8],
+                [5, 1, 2, 7, 1, 4, 7, 8, 5, 8, 0],
+                [1, 2, 0, 3, 0, 4, 0, 6, 7, 4, 9],
+                [4, 9, 4, 0, 1, 3, 7, 4, 6, 9, 2],
+                [2, 3, 5, 0, 1, 5, 9, 2, 8, 6, 7],
+                [1, 2, 4, 5, 2, 6, 7, 7, 3, 7, 0],
+                [1, 2, 0, 3, 0, 4, 0, 6, 7, 4, 9],
+                [np.inf, 9, 4, 0, 1, 3, 7, 4, 6, 9, 2],
+            )
+        )
+        imsave(image_path, imarray, plugin="tifffile", photometric="MINISBLACK")
+
+        # Roi
+        roi = {"col": {"first": 3, "last": 5}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]}
+        roi_gt = imarray[1:8, 1:8]
+
+        # Check create_dataset_from_inputs
+        input_config = {"left": {"img": image_path, "nodata": default_cfg["input"]["nodata_left"]}}
+        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"], roi=roi)
+
+        np.testing.assert_array_equal(dst_left["im"].data, roi_gt)
+
+    @staticmethod
+    def test_with_none_roi(tmp_path, default_cfg):
+        """
+        Test the create_dataset_from_inputs method when the config hasn't roi
+
+        """
+        image_path = tmp_path / "left_img.tif"
+        imarray = np.array(
+            (
+                [np.inf, 1, 2, 5],
+                [5, np.inf, 2, 7],
+                [1, 2, np.inf, 3],
+            )
+        )
+        imsave(image_path, imarray, plugin="tifffile", photometric="MINISBLACK")
+
+        # Check create_dataset_from_inputs
+        input_config = {"left": {"img": image_path, "nodata": default_cfg["input"]["nodata_left"]}}
+        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"], roi=None)
+
+        np.testing.assert_array_equal(dst_left["im"].data, imarray)
 
 
 class TestCheckDataset:

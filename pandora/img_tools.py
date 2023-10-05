@@ -27,11 +27,12 @@ from __future__ import annotations
 
 import logging
 import warnings
-from typing import List, Union, Tuple, cast
+from typing import List, Union, Tuple, cast, Dict
 import sys
 
 import numpy as np
 import rasterio
+from rasterio.windows import Window
 import xarray as xr
 from scipy.ndimage import zoom
 from skimage.transform.pyramids import pyramid_gaussian
@@ -59,12 +60,61 @@ def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.Da
         return rasterio.open(*args, **kwargs)
 
 
-def create_dataset_from_inputs(input_config: dict = None) -> xr.Dataset:
+def get_window(roi: Dict, width: int, height: int) -> Window:
+    """
+    Get window from image size and roi
+
+    :param roi: dictionnary with a roi
+
+        "col": {"first": <value - int>, "last": <value - int>},
+        "row": {"first": <value - int>, "last": <value - int>},
+        "margins": [<value - int>, <value - int>, <value - int>, <value - int>]
+
+    with margins : left, up, right, down
+    :type roi: dict
+    :param width: image width
+    :type width: int
+    :param height: image height
+    :type height: int
+    :return: Window : Windowed reading with rasterio
+    :rtype: Window
+    """
+    # Window(col_off, row_off, width, height)
+    col_off = max(roi["col"]["first"] - roi["margins"][0], 0)  # if overlapping on left side
+    row_off = max(roi["row"]["first"] - roi["margins"][1], 0)  # if overlapping on up side
+    roi_width = roi["col"]["last"] - col_off + roi["margins"][2] + 1
+    roi_height = roi["row"]["last"] - row_off + roi["margins"][3] + 1
+
+    # check roi outside
+    if col_off > width or row_off > height or (col_off + roi_width) < 0 or (row_off + roi_height) < 0:
+        logging.error("Roi specified is outside the image")
+        sys.exit(1)
+
+    # overlap roi and image
+    # right side
+    if (col_off + roi_width) > width:
+        roi_width = width - col_off
+    # down side
+    if (row_off + roi_height) > height:
+        roi_height = height - row_off
+
+    return Window(col_off, row_off, roi_width, roi_height)
+
+
+def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Dataset:
     """
     Read image and mask, and return the corresponding xarray.DataSet
 
     :param input_config: configuration used to create dataset.
     :type input_config: dict
+    :param roi: dictionnary with a roi
+
+            "col": {"first": <value - int>, "last": <value - int>},
+            "row": {"first": <value - int>, "last": <value - int>},
+            "margins": [<value - int>, <value - int>, <value - int>, <value - int>]
+
+            with margins : left, up, right, down
+    :type roi: dict
     :return: xarray.DataSet containing the variables :
 
             - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
@@ -76,18 +126,21 @@ def create_dataset_from_inputs(input_config: dict = None) -> xr.Dataset:
     # Set default values
     input_parameters = {"mask": None, "classif": None, "segm": None}
     input_parameters.update(input_config)
-    # Select correct band
+
     img_ds = rasterio_open(input_parameters["img"])
     nx_, ny_ = img_ds.width, img_ds.height
 
+    # ROI
+    window = get_window(roi, nx_, ny_) if roi else None
+
     # If only one band is present, consider data as 2 dimensional
     if img_ds.count == 1:
-        data = img_ds.read(1, out_dtype=np.float32)
+        data = img_ds.read(1, out_dtype=np.float32, window=window)
         image = {"im": (["row", "col"], data)}
         coords = {"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
     # if image is 3 dimensions we create a dataset with [band row col] dims for dataArray
     else:
-        data = img_ds.read(out_dtype=np.float32)
+        data = img_ds.read(out_dtype=np.float32, window=window)
         image = {"im": (["band_im", "row", "col"], data)}
         # Band names are in the image metadata
         coords = {
@@ -114,6 +167,7 @@ def create_dataset_from_inputs(input_config: dict = None) -> xr.Dataset:
         attrs=attributes,
     )
 
+    # Add classif
     classif = input_parameters["classif"]
     if classif is not None:
         classif_ds = rasterio_open(classif)
@@ -124,6 +178,7 @@ def create_dataset_from_inputs(input_config: dict = None) -> xr.Dataset:
             dims=["band_classif", "row", "col"],
         )
 
+    # Add segm
     segm = input_parameters["segm"]
     if segm is not None:
         dataset["segm"] = xr.DataArray(
@@ -131,6 +186,7 @@ def create_dataset_from_inputs(input_config: dict = None) -> xr.Dataset:
             dims=["row", "col"],
         )
 
+    # Add no_data
     no_data = input_parameters["nodata"]
     if np.isnan(no_data):
         no_data_pixels = np.where(np.isnan(dataset["im"].data))
