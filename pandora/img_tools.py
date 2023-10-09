@@ -101,6 +101,123 @@ def get_window(roi: Dict, width: int, height: int) -> Window:
     return Window(col_off, row_off, roi_width, roi_height)
 
 
+def add_classif(dataset: xr.Dataset, classif: Union[str, None]) -> xr.Dataset:
+    """
+    Add classification informations and image to datasaet
+
+    :param dataset: xarray dataset without classification
+    :type dataset: xr.Dataset
+    :param classif: classification image path
+    :type classif: str or None
+    :return: dataset : updated dataset
+    :rtype: xr.Dataset
+    """
+    if classif is not None:
+        classif_ds = rasterio_open(classif)
+        # Add extra dataset coordinate for classification bands with band names from image metadat
+        dataset.coords["band_classif"] = list(classif_ds.descriptions)
+        dataset["classif"] = xr.DataArray(
+            classif_ds.read(out_dtype=np.int16),
+            dims=["band_classif", "row", "col"],
+        )
+    return dataset
+
+
+def add_segm(dataset: xr.Dataset, segm: Union[str, None]) -> xr.Dataset:
+    """
+    Add Segmentation informations and image to datasaet
+
+    :param dataset: xarray dataset without segmentation
+    :type dataset: xr.Dataset
+    :param segm: segmentation image path
+    :type segm: str or None
+    :return: dataset : updated dataset
+    :rtype: xr.Dataset
+    """
+    if segm is not None:
+        dataset["segm"] = xr.DataArray(
+            rasterio_open(segm).read(1, out_dtype=np.int16),
+            dims=["row", "col"],
+        )
+    return dataset
+
+
+def add_no_data(dataset: xr.Dataset, no_data: Union[int, float], no_data_pixels: np.ndarray) -> xr.Dataset:
+    """
+    Add no data informations to datasaet
+
+    :param dataset: xarray dataset without no_data informations
+    :type dataset: xr.Dataset
+    :param no_data: value
+    :type no_data: int or float
+    :param no_data_pixels: matrix with no_data value
+    :type no_data_pixels: np.ndarray
+    :return: dataset : updated dataset
+    :rtype: xr.Dataset
+    """
+    # We accept nan values as no data on input image but to not disturb cost volume processing as stereo computation
+    # step,nan as no_data must be converted. We choose -9999 (can be another value). No_data position aren't erased
+    # because stored in 'msk'
+    if no_data_pixels[0].size != 0 and (np.isnan(no_data) or np.isinf(no_data)):
+        dataset["im"].data[no_data_pixels] = -9999
+        no_data = -9999
+    dataset.attrs.update({"no_data_img": no_data})
+    return dataset
+
+
+def add_mask(
+    dataset: xr.Dataset, mask: Union[str, None], no_data_pixels: np.ndarray, width: int, height: int
+) -> xr.Dataset:
+    """
+    Add mask informations and image to datasaet
+
+    :param dataset: xarray dataset without mask
+    :type dataset: xr.Dataset
+    :param mask: mask image path
+    :type mask: str or None
+    :param no_data_pixels: matrix with no_data value
+    :type no_data_pixels: np.ndarray
+    :param width: nb columns
+    :type width: int
+    :param height: nb rows
+    :type height: int
+    :return: dataset : updated dataset
+    :rtype: xr.Dataset
+    """
+    # If there is no mask, and no data in the images, do not create the mask to minimize calculation time
+    if mask is None and no_data_pixels[0].size == 0:
+        return dataset
+
+    # Allocate the internal mask (!= input_mask)
+    # Mask convention:
+    # value : meaning
+    # dataset.attrs['valid_pixels'] : a valid pixel
+    # dataset.attrs['no_data_mask'] : a no_data_pixel
+    # other value : an invalid_pixel
+    dataset["msk"] = xr.DataArray(
+        np.full((height, width), dataset.attrs["valid_pixels"]).astype(np.int16),
+        dims=["row", "col"],
+    )
+
+    # Mask invalid pixels if needed
+    # convention: input_mask contains information to identify valid / invalid pixels.
+    # Value == 0 on input_mask represents a valid pixel
+    # Value != 0 on input_mask represents an invalid pixel
+    if mask is not None:
+        input_mask = rasterio_open(mask).read(1)
+        # Masks invalid pixels
+        # All pixels that are not valid_pixels, on the input mask, are considered as invalid pixels
+        dataset["msk"].data[np.where(input_mask > 0)] = (
+            dataset.attrs["valid_pixels"] + dataset.attrs["no_data_mask"] + 1
+        )
+
+    # Masks no_data pixels
+    # If a pixel is invalid due to the input mask, and it is also no_data, then the value of this pixel in the
+    # generated mask will be = no_data
+    dataset["msk"].data[(no_data_pixels[0], no_data_pixels[1])] = int(dataset.attrs["no_data_mask"])
+    return dataset
+
+
 def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Dataset:
     """
     Read image and mask, and return the corresponding xarray.DataSet
@@ -167,26 +284,7 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
         attrs=attributes,
     )
 
-    # Add classif
-    classif = input_parameters["classif"]
-    if classif is not None:
-        classif_ds = rasterio_open(classif)
-        # Add extra dataset coordinate for classification bands with band names from image metadat
-        dataset.coords["band_classif"] = list(classif_ds.descriptions)
-        dataset["classif"] = xr.DataArray(
-            classif_ds.read(out_dtype=np.int16),
-            dims=["band_classif", "row", "col"],
-        )
-
-    # Add segm
-    segm = input_parameters["segm"]
-    if segm is not None:
-        dataset["segm"] = xr.DataArray(
-            rasterio_open(segm).read(1, out_dtype=np.int16),
-            dims=["row", "col"],
-        )
-
-    # Add no_data
+    # No data
     no_data = input_parameters["nodata"]
     if np.isnan(no_data):
         no_data_pixels = np.where(np.isnan(dataset["im"].data))
@@ -195,48 +293,12 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
     else:
         no_data_pixels = np.where(dataset["im"].data == no_data)
 
-    # We accept nan values as no data on input image but to not disturb cost volume processing as stereo computation
-    # step,nan as no_data must be converted. We choose -9999 (can be another value). No_data position aren't erased
-    # because stored in 'msk'
-    if no_data_pixels[0].size != 0 and (np.isnan(no_data) or np.isinf(no_data)):
-        dataset["im"].data[no_data_pixels] = -9999
-        no_data = -9999
-    dataset.attrs.update({"no_data_img": no_data})
-
-    # If there is no mask, and no data in the images, do not create the mask to minimize calculation time
-    mask = input_parameters["mask"]
-    if mask is None and no_data_pixels[0].size == 0:
-        return dataset
-
-    # Allocate the internal mask (!= input_mask)
-    # Mask convention:
-    # value : meaning
-    # dataset.attrs['valid_pixels'] : a valid pixel
-    # dataset.attrs['no_data_mask'] : a no_data_pixel
-    # other value : an invalid_pixel
-
-    dataset["msk"] = xr.DataArray(
-        np.full((ny_, nx_), dataset.attrs["valid_pixels"]).astype(np.int16),
-        dims=["row", "col"],
+    return (
+        dataset.pipe(add_classif, input_parameters["classif"])
+        .pipe(add_segm, input_parameters["segm"])
+        .pipe(add_no_data, no_data, no_data_pixels)
+        .pipe(add_mask, input_parameters["mask"], no_data_pixels, nx_, ny_)
     )
-
-    # Mask invalid pixels if needed
-    # convention: input_mask contains information to identify valid / invalid pixels.
-    # Value == 0 on input_mask represents a valid pixel
-    # Value != 0 on input_mask represents an invalid pixel
-    if mask is not None:
-        input_mask = rasterio_open(mask).read(1)
-        # Masks invalid pixels
-        # All pixels that are not valid_pixels, on the input mask, are considered as invalid pixels
-        dataset["msk"].data[np.where(input_mask > 0)] = (
-            dataset.attrs["valid_pixels"] + dataset.attrs["no_data_mask"] + 1
-        )
-
-    # Masks no_data pixels
-    # If a pixel is invalid due to the input mask, and it is also no_data, then the value of this pixel in the
-    # generated mask will be = no_data
-    dataset["msk"].data[(no_data_pixels[0], no_data_pixels[1])] = int(dataset.attrs["no_data_mask"])
-    return dataset
 
 
 def check_dataset(dataset: xr.Dataset) -> None:
