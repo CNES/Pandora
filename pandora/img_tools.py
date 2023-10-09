@@ -101,7 +101,7 @@ def get_window(roi: Dict, width: int, height: int) -> Window:
     return Window(col_off, row_off, roi_width, roi_height)
 
 
-def add_classif(dataset: xr.Dataset, classif: Union[str, None]) -> xr.Dataset:
+def add_classif(dataset: xr.Dataset, classif: Union[str, None], to_read: bool = True) -> xr.Dataset:
     """
     Add classification informations and image to datasaet
 
@@ -116,14 +116,17 @@ def add_classif(dataset: xr.Dataset, classif: Union[str, None]) -> xr.Dataset:
         classif_ds = rasterio_open(classif)
         # Add extra dataset coordinate for classification bands with band names from image metadat
         dataset.coords["band_classif"] = list(classif_ds.descriptions)
-        dataset["classif"] = xr.DataArray(
-            classif_ds.read(out_dtype=np.int16),
-            dims=["band_classif", "row", "col"],
-        )
+        if to_read:
+            dataset["classif"] = xr.DataArray(
+                classif_ds.read(out_dtype=np.int16),
+                dims=["band_classif", "row", "col"],
+            )
+        else:
+            dataset.attrs.update({"classif": True})
     return dataset
 
 
-def add_segm(dataset: xr.Dataset, segm: Union[str, None]) -> xr.Dataset:
+def add_segm(dataset: xr.Dataset, segm: Union[str, None], to_read: bool = True) -> xr.Dataset:
     """
     Add Segmentation informations and image to datasaet
 
@@ -135,10 +138,13 @@ def add_segm(dataset: xr.Dataset, segm: Union[str, None]) -> xr.Dataset:
     :rtype: xr.Dataset
     """
     if segm is not None:
-        dataset["segm"] = xr.DataArray(
-            rasterio_open(segm).read(1, out_dtype=np.int16),
-            dims=["row", "col"],
-        )
+        if to_read:
+            dataset["segm"] = xr.DataArray(
+                rasterio_open(segm).read(1, out_dtype=np.int16),
+                dims=["row", "col"],
+            )
+        else:
+            dataset.attrs.update({"segm": True})
     return dataset
 
 
@@ -299,6 +305,39 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
         .pipe(add_no_data, no_data, no_data_pixels)
         .pipe(add_mask, input_parameters["mask"], no_data_pixels, nx_, ny_)
     )
+
+
+def get_metadata(
+    img: str, disparity: list[int] | str | None = None, classif: str = None, segm: str = None
+) -> xr.Dataset:
+    """
+    Read metadata from image, and return the corresponding xarray.DataSet
+
+    :param img: img_path
+    :type img: str
+    :param disparity: disparity couple of ints or path to disparity grid file (optional)
+    :type disparity: list[int] | str | None
+    :param classif: path to the classif (optional)
+    :type classif: str
+    :param segm: path to the segm (optional)
+    :type segm: str
+    :return: partial xarray.DataSet (attributes and coordinates)
+    :rtype: xarray.DataSet
+    """
+    img_ds = rasterio_open(img)
+
+    # create the dataset
+    dataset = xr.Dataset(
+        data_vars={},
+        coords={
+            "band_im": list(img_ds.descriptions),
+            "row": img_ds.height,
+            "col": img_ds.width,
+        },
+        attrs={"disparity_interval": disparity},
+    )
+
+    return dataset.pipe(add_classif, classif, to_read=False).pipe(add_segm, segm, to_read=False)
 
 
 def check_dataset(dataset: xr.Dataset) -> None:
