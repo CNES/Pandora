@@ -423,6 +423,7 @@ class TestDisparity(unittest.TestCase):
         input_config = split_inputs(common.input_cfg_basic)
         input_config["left"]["nodata"] = np.nan
         input_config["right"]["nodata"] = np.nan
+        input_config["right"]["disp"] = (None, None)
 
         pandora_left = create_dataset_from_inputs(input_config=input_config["left"])
         pandora_right = create_dataset_from_inputs(input_config=input_config["right"])

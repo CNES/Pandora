@@ -188,6 +188,13 @@ input_cfg_basic = {
     "disp_left": [-60, 0],
 }
 
+input_cfg_basic_with_none_right_disp = {
+    "img_left": "tests/pandora/left.png",
+    "img_right": "tests/pandora/right.png",
+    "disp_left": [-60, 0],
+    "disp_right": None,
+}
+
 input_multiband_cfg = {
     "img_left": "tests/pandora/left_rgb.tif",
     "img_right": "tests/pandora/right_rgb.tif",

@@ -1,3 +1,4 @@
+# type:ignore
 #!/usr/bin/env python
 # coding: utf8
 #
@@ -25,10 +26,12 @@ This module contains functions to test all the methods in img_tools module.
 
 # pylint: disable=redefined-outer-name
 
+import copy
 import numpy as np
 import pytest
 import rasterio
 from rasterio.windows import Window
+from rasterio.errors import RasterioIOError
 import xarray as xr
 from skimage.io import imsave
 
@@ -385,6 +388,7 @@ class TestCreateDatasetFromInputs:
                 "img": "tests/image/left_img.tif",
                 "nodata": default_cfg["input"]["nodata_left"],
                 "mask": "tests/image/mask_left.tif",
+                "disp": [-60, 0],
             }
         }
         dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
@@ -431,6 +435,7 @@ class TestCreateDatasetFromInputs:
                 "img": "tests/image/left_img_nan.tif",
                 "nodata": np.nan,
                 "mask": "tests/image/mask_left.tif",
+                "disp": [-60, 0],
             }
         }
         dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
@@ -467,6 +472,7 @@ class TestCreateDatasetFromInputs:
                 "img": "tests/pandora/left.png",
                 "nodata": default_cfg["input"]["nodata_left"],
                 "classif": "tests/pandora/left_classif.tif",
+                "disp": [-60, 0],
             }
         }
         dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
@@ -490,6 +496,7 @@ class TestCreateDatasetFromInputs:
                 "img": "tests/pandora/left_rgb.tif",
                 "nodata": default_cfg["input"]["nodata_left"],
                 "classif": "tests/pandora/left_classif.tif",
+                "disp": [-60, 0],
             }
         }
         dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
@@ -516,6 +523,7 @@ class TestCreateDatasetFromInputs:
                 "img": "tests/image/left_img.tif",
                 "nodata": default_cfg["input"]["nodata_left"],
                 "segm": "tests/image/mask_left.tif",
+                "disp": [-60, 0],
             }
         }
         dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
@@ -535,7 +543,13 @@ class TestCreateDatasetFromInputs:
 
         """
         # Computes the dataset image
-        input_config = {"left": {"img": "tests/pandora/left.png", "nodata": default_cfg["input"]["nodata_left"]}}
+        input_config = {
+            "left": {
+                "img": "tests/pandora/left.png",
+                "nodata": default_cfg["input"]["nodata_left"],
+                "disp": [-60, 0],
+            }
+        }
         dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
 
         gt_crs = rasterio.crs.CRS.from_epsg(32631)
@@ -552,7 +566,13 @@ class TestCreateDatasetFromInputs:
 
         """
         # Computes the dataset image
-        input_config = {"left": {"img": "tests/image/left_img.tif", "nodata": default_cfg["input"]["nodata_left"]}}
+        input_config = {
+            "left": {
+                "img": "tests/image/left_img.tif",
+                "nodata": default_cfg["input"]["nodata_left"],
+                "disp": [-60, 0],
+            }
+        }
         dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
 
         gt_crs = None
@@ -580,7 +600,13 @@ class TestCreateDatasetFromInputs:
         imsave(str(image_path), imarray, plugin="tifffile", photometric="MINISBLACK")
 
         # Computes the dataset image
-        input_config = {"left": {"img": str(image_path), "nodata": np.inf}}
+        input_config = {
+            "left": {
+                "img": str(image_path),
+                "nodata": np.inf,
+                "disp": [-60, 0],
+            }
+        }
         dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
 
         # The inf values should be set as -9999
@@ -621,7 +647,13 @@ class TestCreateDatasetFromInputs:
         roi_gt = imarray[1:8, 1:8]
 
         # Check create_dataset_from_inputs
-        input_config = {"left": {"img": image_path, "nodata": default_cfg["input"]["nodata_left"]}}
+        input_config = {
+            "left": {
+                "img": image_path,
+                "nodata": default_cfg["input"]["nodata_left"],
+                "disp": [-60, 0],
+            }
+        }
         dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"], roi=roi)
 
         np.testing.assert_array_equal(dst_left["im"].data, roi_gt)
@@ -643,7 +675,13 @@ class TestCreateDatasetFromInputs:
         imsave(image_path, imarray, plugin="tifffile", photometric="MINISBLACK")
 
         # Check create_dataset_from_inputs
-        input_config = {"left": {"img": image_path, "nodata": default_cfg["input"]["nodata_left"]}}
+        input_config = {
+            "left": {
+                "img": image_path,
+                "nodata": default_cfg["input"]["nodata_left"],
+                "disp": [-60, 0],
+            }
+        }
         dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"], roi=None)
 
         np.testing.assert_array_equal(dst_left["im"].data, imarray)
@@ -659,6 +697,7 @@ class TestCheckDataset:
         default_cfg = pandora.check_configuration.default_short_configuration
         input_config = split_inputs(default_cfg["input"])
         input_config["left"]["img"] = "tests/image/left_img.tif"
+        input_config["left"]["disp"] = [-60, 0]
 
         # Computes the dataset image
         return img_tools.create_dataset_from_inputs(input_config=input_config["left"])
@@ -711,6 +750,7 @@ def test_fuse_classification_bands():
             "img": "tests/pandora/left.png",
             "nodata": np.nan,
             "classif": "tests/pandora/left_classif.tif",
+            "disp": [-60, 0],
         }
     }
     img = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
@@ -759,3 +799,62 @@ class TestReadDisp:
         """
         with pytest.raises(ValueError, match="disparity should not be None"):
             img_tools.read_disp(None)
+
+
+class TestGetMetadata:
+    """Test get_metadata function."""
+
+    @pytest.fixture()
+    def input_cfg(self):
+        """Input configuration"""
+        return {"input": copy.deepcopy(common.input_cfg_basic)}
+
+    def test_get_metadata_succeed(self, input_cfg):
+        """
+        Test the method get_metadata with all good informations
+
+        """
+        # Metadata ground truth
+        metadata_gt = xr.Dataset(
+            coords={"band_im": [None], "row": 375, "col": 450}, attrs={"disparity_interval": [-60, 0]}
+        )
+
+        # get metadata without classif and mask
+        metadata_img = img_tools.get_metadata(input_cfg["input"]["img_left"], input_cfg["input"]["disp_left"])
+
+        # Check that the get_metadata function run whitout error
+        assert metadata_img.coords == metadata_gt.coords
+        assert metadata_img.attrs == metadata_gt.attrs
+
+    @pytest.mark.parametrize(
+        ["img_path"],
+        [
+            pytest.param("tests/pandora/left_fake.png", id="Wrong image path"),
+            pytest.param(1, id="Integer for image path"),
+            pytest.param(True, id="Boolean for image path"),
+        ],
+    )
+    def test_fail_with_wrong_img_path(self, input_cfg, img_path):
+        """
+        Test the method get_metadata with wrong informations for img param
+
+        """
+        with pytest.raises((TypeError, RasterioIOError)):
+            img_tools.get_metadata(img=img_path, disparity=input_cfg["input"]["disp_left"])
+
+    @pytest.mark.parametrize(
+        ["classif"],
+        [
+            pytest.param(True, id="Boolean for classification path"),
+            pytest.param(1, id="Integer for classification path"),
+        ],
+    )
+    def test_fail_with_wrong_classification_param(self, input_cfg, classif):
+        """
+        Test the method get_metadata with wrong informations for classif param
+
+        """
+        with pytest.raises(TypeError):
+            img_tools.get_metadata(
+                img=input_cfg["input"]["img_left"], disparity=input_cfg["input"]["disp_left"], classif=classif
+            )
