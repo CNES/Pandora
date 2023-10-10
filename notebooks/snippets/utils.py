@@ -17,7 +17,7 @@ from bokeh.colors import RGB
 import bokeh.plotting as bpl
 from bokeh.plotting import figure
 from bokeh.layouts import row, column
-from bokeh.models import ColorBar, BasicTicker, LinearColorMapper, Legend  # type: ignore
+from bokeh.models import ColorBar, BasicTicker, LinearColorMapper, Legend
 from bokeh.io import show, output_notebook
 from bokeh.embed import file_html  # Those two imports are necessary for the notebooks_tests
 from bokeh.resources import CDN
@@ -81,84 +81,84 @@ def plot_disparity(input_disparity_map: xr.Dataset) -> None:
     y = dh - np.where(disparity_map["nodata_border_left_mask"].data != 0)[0]
     nodata_border_left_mask = fig.circle(x=x, y=y, size=size, color="black")
     nodata_border_left_mask.visible = False
-    if x != []:
+    if len(x):
         legend_items.append(("Nodata border left_mask (invalid)", [nodata_border_left_mask]))
 
     x = np.where(disparity_map["nodata_border_right_mask"].data != 0)[1]
     y = dh - np.where(disparity_map["nodata_border_right_mask"].data != 0)[0]
     nodata_border_right_mask = fig.circle(x=x, y=y, size=size, color="black")
     nodata_border_right_mask.visible = False
-    if x != []:
+    if len(x):
         legend_items.append(("Nodata border right_mask (invalid)", [nodata_border_right_mask]))
 
     x = np.where(disparity_map["incomplete_right_mask"].data != 0)[1]
     y = dh - np.where(disparity_map["incomplete_right_mask"].data != 0)[0]
     incomplete_right_mask = fig.circle(x=x, y=y, size=size, color="black")
     incomplete_right_mask.visible = False
-    if x != []:
+    if len(x):
         legend_items.append(("Incomplete right mask", [incomplete_right_mask]))
 
     x = np.where(disparity_map["stopped_interp_mask"].data != 0)[1]
     y = dh - np.where(disparity_map["stopped_interp_mask"].data != 0)[0]
     stopped_interp_mask = fig.circle(x=x, y=y, size=size, color="black")
     stopped_interp_mask.visible = False
-    if x != []:
+    if len(x):
         legend_items.append(("Stopped interp mask", [stopped_interp_mask]))
 
     x = np.where(disparity_map["filled_occlusion_mask"].data != 0)[1]
     y = dh - np.where(disparity_map["filled_occlusion_mask"].data != 0)[0]
     filled_occlusion_mask = fig.circle(x=x, y=y, size=size, color="black")
     filled_occlusion_mask.visible = False
-    if x != []:
+    if len(x):
         legend_items.append(("Filled occlusion mask", [filled_occlusion_mask]))
 
     x = np.where(disparity_map["filled_mismatch_mask"].data != 0)[1]
     y = dh - np.where(disparity_map["filled_mismatch_mask"].data != 0)[0]
     filled_mismatch_mask = fig.circle(x=x, y=y, size=size, color="black")
     filled_mismatch_mask.visible = False
-    if x != []:
+    if len(x):
         legend_items.append(("Filled mismatch mask", [filled_mismatch_mask]))
 
     x = np.where(disparity_map["masked_left_mask"].data != 0)[1]
     y = dh - np.where(disparity_map["masked_left_mask"].data != 0)[0]
     masked_left_mask = fig.circle(x=x, y=y, size=size, color="black")
     masked_left_mask.visible = False
-    if x != []:
+    if len(x):
         legend_items.append(("Masked left mask (invalid)", [masked_left_mask]))
 
     x = np.where(disparity_map["masked_right_mask"].data != 0)[1]
     y = dh - np.where(disparity_map["masked_right_mask"].data != 0)[0]
     masked_right_mask = fig.circle(x=x, y=y, size=size, color="black")
     masked_right_mask.visible = False
-    if x != []:
+    if len(x):
         legend_items.append(("Masked right mask (invalid)", [masked_right_mask]))
 
     x = np.where(disparity_map["occlusion_mask"].data != 0)[1]
     y = dh - np.where(disparity_map["occlusion_mask"].data != 0)[0]
     occlusion_mask = fig.circle(x=x, y=y, size=size, color="black")
     occlusion_mask.visible = False
-    if x != []:
+    if len(x):
         legend_items.append(("Occlusion mask (invalid)", [occlusion_mask]))
 
     x = np.where(disparity_map["mismatch_mask"].data != 0)[1]
     y = dh - np.where(disparity_map["mismatch_mask"].data != 0)[0]
     mismatch_mask = fig.circle(x=x, y=y, size=size, color="black")
     mismatch_mask.visible = False
-    if x != []:
+    if len(x):
         legend_items.append(("Mismatch mask (invalid)", [mismatch_mask]))
 
     x = np.where(disparity_map["filled_nodata"].data != 0)[1]
     y = dh - np.where(disparity_map["filled_nodata"].data != 0)[0]
     filled_nodata = fig.circle(x=x, y=y, size=size, color="black")
     filled_nodata.visible = False
-    if x != []:
+    if len(x):
         legend_items.append(("Filled nodata", [filled_nodata]))
 
     x = np.where(disparity_map["invalid_mask"].data != 0)[1]
     y = dh - np.where(disparity_map["invalid_mask"].data != 0)[0]
     invalid_mask = fig.circle(x=x, y=y, size=size, color="black")
     invalid_mask.visible = True
-    if x != []:
+    if len(x):
         legend_items.append(("All invalid types", [invalid_mask]))
 
     legend = Legend(items=legend_items, location="center", click_policy="hide")
@@ -279,7 +279,7 @@ def compare_2_disparities(
     second_fig.add_layout(legend, "below")
     second_fig.add_layout(color_bar, "right")
 
-    layout = column(row(first_fig, second_fig))  # type: ignore
+    layout = column(row(first_fig, second_fig))
 
     show(layout)
 
@@ -420,7 +420,7 @@ def compare_3_disparities_and_error(
     error_fig.image(image=[np.flip(error_map, 0)], x=1, y=0, dw=dw, dh=dh, color_mapper=mapper_avec_opti)
     error_fig.add_layout(color_bar, "right")
 
-    layout = column(row(first_fig, second_fig), row(third_fig, error_fig))  # type: ignore
+    layout = column(row(first_fig, second_fig), row(third_fig, error_fig))
 
     show(layout)
 
@@ -509,7 +509,7 @@ def compare_disparity_and_error(
     error_fig.add_layout(legend, "below")
     error_fig.add_layout(color_bar, "right")
 
-    layout = column(row(first_fig, error_fig))  # type: ignore
+    layout = column(row(first_fig, error_fig))
     show(layout)
 
 
@@ -568,7 +568,7 @@ def show_input_images(img_left: xr.Dataset, img_right: xr.Dataset) -> None:
         title="Anaglyph", width=width, height=height, x_range=left_fig.x_range, y_range=left_fig.y_range
     )
     anaglyph_fig.image_rgba(image=[np.flip(img, 0)], x=1, y=0, dw=dw, dh=dh)
-    layout = column(row(left_fig, right_fig, anaglyph_fig))  # type: ignore
+    layout = column(row(left_fig, right_fig, anaglyph_fig))
     show(layout)
 
 
