@@ -101,7 +101,9 @@ def get_window(roi: Dict, width: int, height: int) -> Window:
     return Window(col_off, row_off, roi_width, roi_height)
 
 
-def add_classif(dataset: xr.Dataset, classif: Union[str, None], to_read: bool = True) -> xr.Dataset:
+def add_classif(
+    dataset: xr.Dataset, classif: Union[str, None], window: Window, *, with_data: bool = True
+) -> xr.Dataset:
     """
     Add classification informations and image to datasaet
 
@@ -109,6 +111,10 @@ def add_classif(dataset: xr.Dataset, classif: Union[str, None], to_read: bool = 
     :type dataset: xr.Dataset
     :param classif: classification image path
     :type classif: str or None
+    :param window : Windowed reading with rasterio
+    :type window: Window
+    :param with_data : option to read data
+    :type with_data: bool
     :return: dataset : updated dataset
     :rtype: xr.Dataset
     """
@@ -116,9 +122,9 @@ def add_classif(dataset: xr.Dataset, classif: Union[str, None], to_read: bool = 
         classif_ds = rasterio_open(classif)
         # Add extra dataset coordinate for classification bands with band names from image metadat
         dataset.coords["band_classif"] = list(classif_ds.descriptions)
-        if to_read:
+        if with_data:
             dataset["classif"] = xr.DataArray(
-                classif_ds.read(out_dtype=np.int16),
+                classif_ds.read(out_dtype=np.int16, window=window),
                 dims=["band_classif", "row", "col"],
             )
         else:
@@ -126,7 +132,7 @@ def add_classif(dataset: xr.Dataset, classif: Union[str, None], to_read: bool = 
     return dataset
 
 
-def add_segm(dataset: xr.Dataset, segm: Union[str, None], to_read: bool = True) -> xr.Dataset:
+def add_segm(dataset: xr.Dataset, segm: Union[str, None], window: Window, *, with_data: bool = True) -> xr.Dataset:
     """
     Add Segmentation informations and image to datasaet
 
@@ -134,13 +140,17 @@ def add_segm(dataset: xr.Dataset, segm: Union[str, None], to_read: bool = True) 
     :type dataset: xr.Dataset
     :param segm: segmentation image path
     :type segm: str or None
+    :param window : Windowed reading with rasterio
+    :type window: Window
+    :param with_data : option to read data
+    :type with_data: bool
     :return: dataset : updated dataset
     :rtype: xr.Dataset
     """
     if segm is not None:
-        if to_read:
+        if with_data:
             dataset["segm"] = xr.DataArray(
-                rasterio_open(segm).read(1, out_dtype=np.int16),
+                rasterio_open(segm).read(1, out_dtype=np.int16, window=window),
                 dims=["row", "col"],
             )
         else:
@@ -172,7 +182,7 @@ def add_no_data(dataset: xr.Dataset, no_data: Union[int, float], no_data_pixels:
 
 
 def add_mask(
-    dataset: xr.Dataset, mask: Union[str, None], no_data_pixels: np.ndarray, width: int, height: int
+    dataset: xr.Dataset, mask: Union[str, None], no_data_pixels: np.ndarray, width: int, height: int, window: Window
 ) -> xr.Dataset:
     """
     Add mask informations and image to datasaet
@@ -210,7 +220,7 @@ def add_mask(
     # Value == 0 on input_mask represents a valid pixel
     # Value != 0 on input_mask represents an invalid pixel
     if mask is not None:
-        input_mask = rasterio_open(mask).read(1)
+        input_mask = rasterio_open(mask).read(1, window=window)
         # Masks invalid pixels
         # All pixels that are not valid_pixels, on the input mask, are considered as invalid pixels
         dataset["msk"].data[np.where(input_mask > 0)] = (
@@ -300,10 +310,10 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
         no_data_pixels = np.where(dataset["im"].data == no_data)
 
     return (
-        dataset.pipe(add_classif, input_parameters["classif"])
-        .pipe(add_segm, input_parameters["segm"])
+        dataset.pipe(add_classif, input_parameters["classif"], window)
+        .pipe(add_segm, input_parameters["segm"], window)
         .pipe(add_no_data, no_data, no_data_pixels)
-        .pipe(add_mask, input_parameters["mask"], no_data_pixels, nx_, ny_)
+        .pipe(add_mask, input_parameters["mask"], no_data_pixels, nx_, ny_, window)
     )
 
 
@@ -337,7 +347,9 @@ def get_metadata(
         attrs={"disparity_interval": disparity},
     )
 
-    return dataset.pipe(add_classif, classif, to_read=False).pipe(add_segm, segm, to_read=False)
+    return dataset.pipe(add_classif, classif, window=None, with_data=False).pipe(
+        add_segm, segm, window=None, with_data=False
+    )
 
 
 def check_dataset(dataset: xr.Dataset) -> None:
