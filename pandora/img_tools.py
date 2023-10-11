@@ -232,7 +232,7 @@ def add_mask(
     # Masks no_data pixels
     # If a pixel is invalid due to the input mask, and it is also no_data, then the value of this pixel in the
     # generated mask will be = no_data
-    dataset["msk"].data[(no_data_pixels[0], no_data_pixels[1])] = int(dataset.attrs["no_data_mask"])
+    dataset["msk"].data[(no_data_pixels[-2], no_data_pixels[-1])] = int(dataset.attrs["no_data_mask"])
     return dataset
 
 
@@ -273,6 +273,7 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
         data = img_ds.read(1, out_dtype=np.float32, window=window)
         image = {"im": (["row", "col"], data)}
         coords = {"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
+        nx_, ny_ = data.shape[1], data.shape[0]
     # if image is 3 dimensions we create a dataset with [band row col] dims for dataArray
     else:
         data = img_ds.read(out_dtype=np.float32, window=window)
@@ -283,6 +284,7 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
             "row": np.arange(data.shape[1]),
             "col": np.arange(data.shape[2]),
         }
+        nx_, ny_ = data.shape[2], data.shape[1]
 
     crs = img_ds.profile["crs"]
     # If the image has no geotransform, its transform is the identity matrix, which may not be compatible with QGIS

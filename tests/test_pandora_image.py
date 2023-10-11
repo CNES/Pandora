@@ -512,6 +512,50 @@ class TestCreateDatasetFromInputs:
         np.testing.assert_array_equal(list(dst_left.band_classif.data), gt_classes)
 
     @staticmethod
+    def test_rgb_image_with_mask():
+        """
+        Test the method create_dataset_from_inputs for the multiband image and mask
+
+        """
+        # img_left = array([[[ 181.   182.   178.]
+        #                    [ 169.   175.   176.]
+        #                    [ 176.   166.   162.]]
+        #
+        #                   [[  49.    44.    44.]
+        #                    [  37.    34.    44.]
+        #                    [  77.    68.    48.]]
+        #
+        #                   [[  49.    46.    43.]
+        #                    [  38.    37.    41.]
+        #                    [ 109.    75.    39.]]]
+        # mask_left = array([[0  0  1],
+        #                   [ 0  0  0],
+        #                   [ 3  5  0]])
+
+        # Computes the dataset image
+        input_config = {
+            "left": {
+                "img": "tests/pandora/left_rgb.tif",
+                "nodata": 37.0,
+                "mask": "tests/image/mask_left.tif",
+                "disp": [-60, 0],
+            }
+        }
+
+        roi = {"col": {"first": 0, "last": 2}, "row": {"first": 0, "last": 2}, "margins": [0, 0, 0, 0]}
+        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"], roi=roi)
+
+        # Mask ground truth
+        mask_gt = np.array(
+            [[0, 0, 2], [1, 1, 0], [2, 2, 0]],
+        )
+
+        # Check if the calculated mask is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(dst_left["msk"].data, mask_gt)
+        assert dst_left["msk"].shape == (3, 3)
+        assert dst_left["im"].shape == (3, 3, 3)
+
+    @staticmethod
     def test_with_segm(default_cfg):
         """
         Test the method create_dataset_from_inputs for the segmentation
@@ -685,6 +729,69 @@ class TestCreateDatasetFromInputs:
         dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"], roi=None)
 
         np.testing.assert_array_equal(dst_left["im"].data, imarray)
+
+    @staticmethod
+    def test_with_classif_and_roi(default_cfg):
+        """
+        Test the method create_dataset_from_inputs for the classif and roi
+
+        """
+        # Computes the dataset image
+        # The classes present in left_classif are "cornfields", "olive tree", "forest"
+        input_config = {
+            "left": {
+                "img": "tests/pandora/left.png",
+                "nodata": default_cfg["input"]["nodata_left"],
+                "classif": "tests/pandora/left_classif.tif",
+                "disp": [-60, 0],
+            }
+        }
+        roi = {"col": {"first": 3, "last": 5}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]}
+        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"], roi=roi)
+
+        # Classif ground truth
+        classif_gt = np.zeros((3, 7, 7))
+
+        # Check the shape
+        assert dst_left["im"].shape == (7, 7)
+        assert dst_left["classif"].shape == (
+            3,
+            7,
+            7,
+        )  # The classes present in left_classif are "cornfields", "olive tree", "forest"
+
+        # Check the data
+        np.testing.assert_array_equal(dst_left["classif"].data, classif_gt)
+
+    @staticmethod
+    def test_with_segm_and_roi(default_cfg):
+        """
+        Test the method create_dataset_from_inputs for the segm and roi
+
+        """
+        # Computes the dataset image
+        input_config = {
+            "left": {
+                "img": "tests/image/left_img.tif",
+                "nodata": default_cfg["input"]["nodata_left"],
+                "segm": "tests/image/mask_left.tif",
+                "disp": [-60, 0],
+            }
+        }
+        roi = {"col": {"first": 1, "last": 3}, "row": {"first": 1, "last": 3}, "margins": [0, 0, 0, 0]}
+        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"], roi=roi)
+
+        # Segmentation ground truth
+        segm_gt = np.array(
+            [[0, 0, 0], [5, 0, 0], [0, 255, 0]],
+        )
+
+        # Check the shape
+        assert dst_left["im"].shape == (3, 3)
+        assert dst_left["segm"].shape == (3, 3)
+
+        # Check the data
+        np.testing.assert_array_equal(dst_left["segm"].data, segm_gt)
 
 
 class TestCheckDataset:
