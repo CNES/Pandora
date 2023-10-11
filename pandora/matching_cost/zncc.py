@@ -23,7 +23,7 @@
 This module contains functions associated to ZNCC method used in the cost volume measure step.
 """
 
-from typing import Dict, Union
+from typing import Dict, Union, Tuple, List
 
 import numpy as np
 import xarray as xr
@@ -75,7 +75,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
         print("zncc similarity measure")
 
     def compute_cost_volume(
-        self, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: int, disp_max: int
+        self, img_left: xr.Dataset, img_right: xr.Dataset, grid_disp_min: np.ndarray, grid_disp_max: np.ndarray
     ) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
@@ -83,22 +83,31 @@ class Zncc(matching_cost.AbstractMatchingCost):
         :param img_left: left Dataset image
         :type img_left:
             xarray.Dataset containing :
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray int16
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :param img_right: right Dataset image
         :type img_right:
             xarray.Dataset containing :
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
-        :param disp_min: minimum disparity
-        :type disp_min: int
-        :param disp_max: maximum disparity
-        :type disp_max: int
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray int16
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
+        :param grid_disp_min: minimum disparity
+        :type grid_disp_min: np.ndarray
+        :param grid_disp_max: maximum disparity
+        :type grid_disp_max: np.ndarray
         :return: the cost volume dataset
         :rtype:
             xarray.Dataset, with the data variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
         """
+        # Obtain absolute min and max disparities
+        disp_min, disp_max = self.get_min_max_from_grid(grid_disp_min, grid_disp_max)
+
         # check band parameter
         self.check_band_input_mc(img_left, img_right)
 
@@ -119,9 +128,6 @@ class Zncc(matching_cost.AbstractMatchingCost):
         for i, img in enumerate(img_right_shift):
             img_right_mean.append(compute_mean_raster(img, self._window_size, self._band))  # type: ignore
 
-        # Maximal cost of the cost volume with zncc measure
-        cmax = 1
-
         # Cost volume metadata
         offset_row_col = int((self._window_size - 1) / 2)
         metadata = {
@@ -130,7 +136,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
             "offset_row_col": offset_row_col,
             "window_size": self._window_size,
             "type_measure": "max",
-            "cmax": cmax,
+            "cmax": 1,  # Maximal cost of the cost volume with zncc measure
             "band_correl": self._band,
         }
 
@@ -182,17 +188,8 @@ class Zncc(matching_cost.AbstractMatchingCost):
             # Subtracting  the  local mean  value  of  intensities
             zncc_ -= img_left_mean[:, p_std[0] : p_std[1]] * img_right_mean[i_right][:, q_std[0] : q_std[1]]
 
-            # Divide by the standard deviation of the intensities of the images :
-            # If the standard deviation of the intensities of the images is greater than 0
-            divide_standard = np.multiply(
-                img_left_std[:, p_std[0] : p_std[1]],
-                img_right_std[i_right][:, q_std[0] : q_std[1]],
-            )
-            valid = np.where(divide_standard > 0)
-            zncc_[valid] /= divide_standard[valid]
-
-            # Otherwise zncc is equal to 0
-            zncc_[np.where(divide_standard <= 0)] = 0
+            # Divide by the standard deviation of the intensities of the images
+            apply_divide_standard(zncc_, img_left_std, img_right_std, p_std, q_std, i_right)
 
             # Places the result in the cost_volume
             cv_crop[disp_index, point_p[0] : p_std[1], :] = np.swapaxes(zncc_, 0, 1)
@@ -206,3 +203,39 @@ class Zncc(matching_cost.AbstractMatchingCost):
         )
 
         return cv
+
+
+def apply_divide_standard(
+    zncc: xr.Dataset,
+    img_left: np.ndarray,
+    img_right: List[np.ndarray],
+    p_std: Tuple[int, int],
+    q_std: Tuple[int, int],
+    i_right: int,
+):
+    """
+    Divide by the standard deviation of the intensities of the images
+
+    :param zncc:
+    :type zncc: xr.Dataset
+    :param img_left: standard deviation raster of left image
+    :type img_left: np.ndarray
+    :param img_right: standard deviation raster list of right image (for each subpix)
+    :type img_right: List[np.ndarray]
+    :param p_std: point interval in the left standard deviation image
+    :type p_std: Tuple[int, int]
+    :param q_std: Point interval in the right standard deviation image
+    :type q_std: Tuple[int, int]
+    :param i_right: ith image
+    :type i_right: int
+    """
+    # If the standard deviation of the intensities of the images is greater than 0
+    divide_standard = np.multiply(
+        img_left[:, p_std[0] : p_std[1]],
+        img_right[i_right][:, q_std[0] : q_std[1]],
+    )
+    valid = np.where(divide_standard > 0)
+    zncc[valid] /= divide_standard[valid]
+
+    # Otherwise zncc is equal to 0
+    zncc[np.where(divide_standard <= 0)] = 0

@@ -69,8 +69,12 @@ class TestMatchingCostSSD(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "ssd", "window_size": 1, "subpix": 1}
         )
+
         ssd = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
+            img_left=self.left,
+            img_right=self.right,
+            grid_disp_min=self.left["disparity"].sel(band_disp="min"),
+            grid_disp_max=self.left["disparity"].sel(band_disp="max"),
         )
 
         # Check if the calculated sd cost is equal to the ground truth (same shape and all elements equals)
@@ -94,7 +98,17 @@ class TestMatchingCostSSD(unittest.TestCase):
             **{"matching_cost_method": "ssd", "window_size": 5, "subpix": 1}
         )
         ssd = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
+            img_left=self.left,
+            img_right=self.right,
+            grid_disp_min=self.left["disparity"].sel(band_disp="min"),
+            grid_disp_max=self.left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_matcher.cv_masked(
+            self.left,
+            self.right,
+            ssd,
+            self.left["disparity"].sel(band_disp="min"),
+            self.left["disparity"].sel(band_disp="max"),
         )
         matching_cost_matcher.cv_masked(self.left, self.right, ssd, -1, 1)
 
@@ -120,8 +134,12 @@ class TestMatchingCostSSD(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "ssd", "window_size": 1, "subpix": 1, "band": "r"}
         )
+
         ssd = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left_multiband, img_right=self.right_multiband, disp_min=-1, disp_max=1
+            img_left=self.left_multiband,
+            img_right=self.right_multiband,
+            grid_disp_min=self.left_multiband["disparity"].sel(band_disp="min"),
+            grid_disp_max=self.left_multiband["disparity"].sel(band_disp="max"),
         )
 
         # Check if the calculated sd cost is equal to the ground truth (same shape and all elements equals)
@@ -148,7 +166,17 @@ class TestMatchingCostSSD(unittest.TestCase):
             **{"matching_cost_method": "ssd", "window_size": 5, "subpix": 1, "band": "r"}
         )
         ssd = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left_multiband, img_right=self.right_multiband, disp_min=-1, disp_max=1
+            img_left=self.left_multiband,
+            img_right=self.right_multiband,
+            grid_disp_min=self.left_multiband["disparity"].sel(band_disp="min"),
+            grid_disp_max=self.left_multiband["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_matcher.cv_masked(
+            self.left_multiband,
+            self.right_multiband,
+            ssd,
+            self.left_multiband["disparity"].sel(band_disp="min"),
+            self.left_multiband["disparity"].sel(band_disp="max"),
         )
         matching_cost_matcher.cv_masked(self.left_multiband, self.right_multiband, ssd, -1, 1)
 
@@ -237,7 +265,7 @@ class TestMatchingCostSSD(unittest.TestCase):
 
         # Compute the cost_volume
         with pytest.raises(SystemExit):
-            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
 
         # Initialization of matching_cost plugin with no band
         matching_cost_ = matching_cost.AbstractMatchingCost(
@@ -246,7 +274,7 @@ class TestMatchingCostSSD(unittest.TestCase):
 
         # Compute the cost_volume
         with pytest.raises(SystemExit):
-            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
 
 
 if __name__ == "__main__":

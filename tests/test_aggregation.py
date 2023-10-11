@@ -92,8 +92,19 @@ class TestAggregation(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 2}
         )
+
         sad = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
+            img_left=self.left,
+            img_right=self.right,
+            grid_disp_min=self.left["disparity"].sel(band_disp="min"),
+            grid_disp_max=self.left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_matcher.cv_masked(
+            self.left,
+            self.right,
+            sad,
+            self.left["disparity"].sel(band_disp="min"),
+            self.left["disparity"].sel(band_disp="max"),
         )
         matching_cost_matcher.cv_masked(self.left, self.right, sad, -1, 1)
 
@@ -325,8 +336,20 @@ class TestAggregation(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
-        sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        matching_cost_matcher.cv_masked(left, right, sad, -1, 1)
+
+        sad = matching_cost_matcher.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_matcher.cv_masked(
+            left,
+            right,
+            sad,
+            left["disparity"].sel(band_disp="min"),
+            left["disparity"].sel(band_disp="max"),
+        )
 
         cbca_obj = aggregation.AbstractAggregation(
             **{"aggregation_method": "cbca", "cbca_intensity": 5.0, "cbca_distance": 3}
@@ -385,8 +408,20 @@ class TestAggregation(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
-        sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        matching_cost_matcher.cv_masked(left, right, sad, -1, 1)
+
+        sad = matching_cost_matcher.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_matcher.cv_masked(
+            left,
+            right,
+            sad,
+            left["disparity"].sel(band_disp="min"),
+            left["disparity"].sel(band_disp="max"),
+        )
 
         cbca_obj = aggregation.AbstractAggregation(
             **{"aggregation_method": "cbca", "cbca_intensity": 5.0, "cbca_distance": 3}
@@ -465,8 +500,20 @@ class TestAggregation(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
-        sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        matching_cost_matcher.cv_masked(left, right, sad, -1, 1)
+
+        sad = matching_cost_matcher.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_matcher.cv_masked(
+            left,
+            right,
+            sad,
+            left["disparity"].sel(band_disp="min"),
+            left["disparity"].sel(band_disp="max"),
+        )
 
         cbca_obj = aggregation.AbstractAggregation(
             **{"aggregation_method": "cbca", "cbca_intensity": 5.0, "cbca_distance": 3}
@@ -540,8 +587,20 @@ class TestAggregation(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
-        sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        matching_cost_matcher.cv_masked(left, right, sad, -1, 1)
+
+        sad = matching_cost_matcher.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_matcher.cv_masked(
+            left,
+            right,
+            sad,
+            left["disparity"].sel(band_disp="min"),
+            left["disparity"].sel(band_disp="max"),
+        )
 
         cbca_obj = aggregation.AbstractAggregation(
             **{"aggregation_method": "cbca", "cbca_intensity": 6.0, "cbca_distance": 3}
@@ -617,8 +676,20 @@ class TestAggregation(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 2}
         )
-        sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        matching_cost_matcher.cv_masked(left, right, sad, -1, 1)
+
+        sad = matching_cost_matcher.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_matcher.cv_masked(
+            left,
+            right,
+            sad,
+            left["disparity"].sel(band_disp="min"),
+            left["disparity"].sel(band_disp="max"),
+        )
 
         cbca_obj = aggregation.AbstractAggregation(
             **{"aggregation_method": "cbca", "cbca_intensity": 5.0, "cbca_distance": 3}
@@ -674,8 +745,20 @@ class TestAggregation(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 2}
         )
-        sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        matching_cost_matcher.cv_masked(left, right, sad, -1, 1)
+
+        sad = matching_cost_matcher.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_matcher.cv_masked(
+            left,
+            right,
+            sad,
+            left["disparity"].sel(band_disp="min"),
+            left["disparity"].sel(band_disp="max"),
+        )
 
         cbca_obj = aggregation.AbstractAggregation(
             **{"aggregation_method": "cbca", "cbca_intensity": 6.0, "cbca_distance": 3}
@@ -731,8 +814,20 @@ class TestAggregation(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
-        sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        matching_cost_matcher.cv_masked(left, right, sad, -1, 1)
+
+        sad = matching_cost_matcher.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_matcher.cv_masked(
+            left,
+            right,
+            sad,
+            left["disparity"].sel(band_disp="min"),
+            left["disparity"].sel(band_disp="max"),
+        )
 
         cbca_obj = aggregation.AbstractAggregation(
             **{"aggregation_method": "cbca", "cbca_intensity": 5.0, "cbca_distance": 3}

@@ -71,8 +71,12 @@ class TestMatchingCostSAD(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
+
         sad = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
+            img_left=self.left,
+            img_right=self.right,
+            grid_disp_min=self.left["disparity"].sel(band_disp="min"),
+            grid_disp_max=self.left["disparity"].sel(band_disp="max"),
         )
 
         # Check if the calculated ad cost is equal to the ground truth (same shape and all elements equals)
@@ -96,7 +100,17 @@ class TestMatchingCostSAD(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 5, "subpix": 1}
         )
         sad = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
+            img_left=self.left,
+            img_right=self.right,
+            grid_disp_min=self.left["disparity"].sel(band_disp="min"),
+            grid_disp_max=self.left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_matcher.cv_masked(
+            self.left,
+            self.right,
+            sad,
+            self.left["disparity"].sel(band_disp="min"),
+            self.left["disparity"].sel(band_disp="max"),
         )
         matching_cost_matcher.cv_masked(self.left, self.right, sad, -1, 1)
 
@@ -123,8 +137,12 @@ class TestMatchingCostSAD(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1, "band": "r"}
         )
+
         sad = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left_multiband, img_right=self.right_multiband, disp_min=-1, disp_max=1
+            img_left=self.left_multiband,
+            img_right=self.right_multiband,
+            grid_disp_min=self.left_multiband["disparity"].sel(band_disp="min"),
+            grid_disp_max=self.left_multiband["disparity"].sel(band_disp="max"),
         )
 
         # Check if the calculated ad cost is equal to the ground truth (same shape and all elements equals)
@@ -147,7 +165,17 @@ class TestMatchingCostSAD(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 5, "subpix": 1, "band": "r"}
         )
         sad = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left_multiband, img_right=self.right_multiband, disp_min=-1, disp_max=1
+            img_left=self.left_multiband,
+            img_right=self.right_multiband,
+            grid_disp_min=self.left_multiband["disparity"].sel(band_disp="min"),
+            grid_disp_max=self.left_multiband["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_matcher.cv_masked(
+            self.left_multiband,
+            self.right_multiband,
+            sad,
+            self.left_multiband["disparity"].sel(band_disp="min"),
+            self.left_multiband["disparity"].sel(band_disp="max"),
         )
         matching_cost_matcher.cv_masked(self.left_multiband, self.right_multiband, sad, -1, 1)
 
@@ -211,8 +239,20 @@ class TestMatchingCostSAD(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
-        cv = matching_cost_matcher.compute_cost_volume(left, right, disp_min=-2, disp_max=1)
-        matching_cost_matcher.cv_masked(left, right, cv, -2, 1)
+
+        cv = matching_cost_matcher.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_matcher.cv_masked(
+            left,
+            right,
+            cv,
+            left["disparity"].sel(band_disp="min"),
+            left["disparity"].sel(band_disp="max"),
+        )
 
         # Check if the calculated mean is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv["cost_volume"].data, ground_truth)
@@ -252,7 +292,21 @@ class TestMatchingCostSAD(unittest.TestCase):
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
+
         # Compute the cost volume and invalidate pixels if need
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_.cv_masked(
+            img_left=left,
+            img_right=right,
+            cost_volume=cv,
+            disp_min=left["disparity"].sel(band_disp="min"),
+            disp_max=left["disparity"].sel(band_disp="max"),
+        )
 
         cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
         matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=-1, disp_max=1)
@@ -331,9 +385,22 @@ class TestMatchingCostSAD(unittest.TestCase):
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
+
         # Compute the cost volume and invalidate pixels if need
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=-1, disp_max=1)
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_.cv_masked(
+            img_left=left,
+            img_right=right,
+            cost_volume=cv,
+            disp_min=left["disparity"].sel(band_disp="min"),
+            disp_max=left["disparity"].sel(band_disp="max"),
+        )
+
         # Cost volume before invalidation
         #  disp       -1    0   1
         # col 1    [[[nan, 6., 8.],
@@ -409,9 +476,22 @@ class TestMatchingCostSAD(unittest.TestCase):
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
+
         # Compute the cost volume and invalidate pixels if need
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=-1, disp_max=1)
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_.cv_masked(
+            img_left=left,
+            img_right=right,
+            cost_volume=cv,
+            disp_min=left["disparity"].sel(band_disp="min"),
+            disp_max=left["disparity"].sel(band_disp="max"),
+        )
+
         # Cost volume before invalidation
         #  disp       -1    0   1
         # col 1    [[[nan, 6., 8.],
@@ -525,9 +605,21 @@ class TestMatchingCostSAD(unittest.TestCase):
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 5, "subpix": 1}
         )
+
         # Compute the cost volume and invalidate pixels if need
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=-1, disp_max=1)
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_.cv_masked(
+            img_left=left,
+            img_right=right,
+            cost_volume=cv,
+            disp_min=left["disparity"].sel(band_disp="min"),
+            disp_max=left["disparity"].sel(band_disp="max"),
+        )
 
         # Cost volume ground truth after invalidation
 
@@ -620,9 +712,21 @@ class TestMatchingCostSAD(unittest.TestCase):
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
+
         # Compute the cost volume and invalidate pixels if need
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=-1, disp_max=1)
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_.cv_masked(
+            img_left=left,
+            img_right=right,
+            cost_volume=cv,
+            disp_min=left["disparity"].sel(band_disp="min"),
+            disp_max=left["disparity"].sel(band_disp="max"),
+        )
 
         # Cost volume ground truth after invalidation
         cv_ground_truth = np.array(
@@ -685,9 +789,21 @@ class TestMatchingCostSAD(unittest.TestCase):
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 2}
         )
+
         # Compute the cost volume and invalidate pixels if need
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
-        matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_.cv_masked(
+            img_left=left,
+            img_right=right,
+            cost_volume=cv,
+            disp_min=left["disparity"].sel(band_disp="min"),
+            disp_max=left["disparity"].sel(band_disp="max"),
+        )
 
         # The cost volume before invalidation
         # <xarray.DataArray 'cost_volume' (row: 2, col: 5, disp: 5)>
@@ -771,9 +887,21 @@ class TestMatchingCostSAD(unittest.TestCase):
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 4}
         )
+
         # Compute the cost volume and invalidate pixels if need
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
-        matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_.cv_masked(
+            img_left=left,
+            img_right=right,
+            cost_volume=cv,
+            disp_min=left["disparity"].sel(band_disp="min"),
+            disp_max=left["disparity"].sel(band_disp="max"),
+        )
 
         # The cost volume before invalidation
         # <xarray.DataArray 'cost_volume' (row: 2, col: 5, disp: 5)>
@@ -848,9 +976,21 @@ class TestMatchingCostSAD(unittest.TestCase):
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 2}
         )
+
         # Compute the cost volume and invalidate pixels if need
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
-        matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_.cv_masked(
+            img_left=left,
+            img_right=right,
+            cost_volume=cv,
+            disp_min=left["disparity"].sel(band_disp="min"),
+            disp_max=left["disparity"].sel(band_disp="max"),
+        )
 
         # Cost volume before invalidation
         # array([[[ nan,  nan,  6. ,  6. ,  8. ],
@@ -982,7 +1122,7 @@ class TestMatchingCostSAD(unittest.TestCase):
 
         # Compute the cost_volume
         with pytest.raises(SystemExit):
-            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
 
         # Initialization of matching_cost plugin with no band
         matching_cost_ = matching_cost.AbstractMatchingCost(
@@ -991,7 +1131,7 @@ class TestMatchingCostSAD(unittest.TestCase):
 
         # Compute the cost_volume
         with pytest.raises(SystemExit):
-            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
 
 
 if __name__ == "__main__":

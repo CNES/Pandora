@@ -101,38 +101,44 @@ def get_window(roi: Dict, width: int, height: int) -> Window:
     return Window(col_off, row_off, roi_width, roi_height)
 
 
-def add_disparity(dataset: xr.Dataset, disparity: Union[tuple[int, int], list[int], str], window: Window) -> xr.Dataset:
+def add_disparity(
+    dataset: xr.Dataset, disparity: Union[tuple[int, int], list[int], str, None], window: Window
+) -> xr.Dataset:
     """
     Add disparity to dataset
 
     :param dataset: xarray dataset without classification
     :type dataset: xr.Dataset
     :param disparity: disparity, or path to the disparity grid
-    :type disparity: tuple[int, int] or list[int] or str
+    :type disparity: tuple[int, int] or list[int] or str or None
 
     :param window : Windowed reading with rasterio
     :type window: Window
     :return: dataset : updated dataset
     :rtype: xr.Dataset
     """
-    dataset.coords["disp"] = ["min", "max"]
+    if disparity is not None:
+        dataset.coords["band_disp"] = ["min", "max"]
+        # disparity is a grid
+        if isinstance(disparity, str):
+            disparity_ds = rasterio_open(disparity)
+            dataset["disparity"] = xr.DataArray(
+                disparity_ds.read(out_dtype=np.float32, window=window),
+                dims=["band_disp", "row", "col"],
+            )
+        # tuple or list
+        else:
+            dataset["disparity"] = xr.DataArray(
+                np.array(
+                    [
+                        np.full((dataset.dims["row"], dataset.dims["col"]), disparity[0]),
+                        np.full((dataset.dims["row"], dataset.dims["col"]), disparity[1]),
+                    ]
+                ),
+                dims=["band_disp", "row", "col"],
+            )
 
-    # disparity is a grid
-    if isinstance(disparity, str):
-        disparity_ds = rasterio_open(disparity)
-        dataset["disparity"] = xr.DataArray(
-            disparity_ds.read(out_dtype=np.int16, window=window),
-            dims=["disp", "row", "col"],
-        )
-    # tuple or list
-    else:
-        n_row = dataset["im"].shape[-2]
-        n_col = dataset["im"].shape[-1]
-        dataset["disparity"] = xr.DataArray(
-            np.array([np.full((n_row, n_col), disparity[0]), np.full((n_row, n_col), disparity[1])]),
-            dims=["disp", "row", "col"],
-        )
-
+    dataset.attrs["disparity_source"] = disparity
     return dataset
 
 
@@ -341,7 +347,6 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
 
     # disparities
     if "disp" in input_parameters:
-        dataset.attrs["disparity"] = input_config["disp"]  # for the validation step
         dataset.pipe(add_disparity, disparity=input_config["disp"], window=window)
 
     # No data
@@ -390,12 +395,10 @@ def get_metadata(
         },
     )
 
-    if disparity is not None:
-        dataset.attrs["disparity"] = disparity  # for the validation step
+    return (
         dataset.pipe(add_disparity, disparity=disparity, window=None)
-
-    return dataset.pipe(add_classif, classif, window=None, with_data=False).pipe(
-        add_segm, segm, window=None, with_data=False
+        .pipe(add_classif, classif, window=None, with_data=False)
+        .pipe(add_segm, segm, window=None, with_data=False)
     )
 
 

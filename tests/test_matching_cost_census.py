@@ -103,8 +103,20 @@ class TestMatchingCostCensus(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "census", "window_size": 3, "subpix": 1}
         )
-        census = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        matching_cost_matcher.cv_masked(left, right, census, -1, 1)
+
+        census = matching_cost_matcher.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_matcher.cv_masked(
+            left,
+            right,
+            census,
+            left["disparity"].sel(band_disp="min"),
+            left["disparity"].sel(band_disp="max"),
+        )
 
         # Check if the calculated census cost is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(census["cost_volume"].sel(disp=-1), census_ground_truth_d1)
@@ -177,11 +189,10 @@ class TestMatchingCostCensus(unittest.TestCase):
             **{"matching_cost_method": "census", "window_size": 3, "subpix": 2}
         )
 
-        # compute the min disparity of disp_min and the max disparity of disp_max
-        dmin_int, dmax_int = matching_cost_.get_min_max_from_grid(dmin_grid, dmax_grid)
-
         # Compute the cost_volume
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin_int, disp_max=dmax_int)
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left, img_right=right, grid_disp_min=dmin_grid, grid_disp_max=dmax_grid
+        )
 
         # Compute the masked cost volume
         matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin_grid, disp_max=dmax_grid)
@@ -404,7 +415,7 @@ class TestMatchingCostCensus(unittest.TestCase):
             **{"matching_cost_method": "census", "window_size": 3, "subpix": 1}
         )
         census_cmax_w3 = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
+            img_left=self.left, img_right=self.right, grid_disp_min=-1, grid_disp_max=1
         )
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(census_cmax_w3.attrs["cmax"], 9)
@@ -414,7 +425,7 @@ class TestMatchingCostCensus(unittest.TestCase):
             **{"matching_cost_method": "census", "window_size": 5, "subpix": 1}
         )
         census_cmax_w5 = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
+            img_left=self.left, img_right=self.right, grid_disp_min=-1, grid_disp_max=1
         )
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(census_cmax_w5.attrs["cmax"], 25)
@@ -425,7 +436,7 @@ class TestMatchingCostCensus(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
         sad_cmax_w3 = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
+            img_left=self.left, img_right=self.right, grid_disp_min=-1, grid_disp_max=1
         )
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(sad_cmax_w3.attrs["cmax"], int(abs(4 - 1) * (3**2)))
@@ -435,7 +446,7 @@ class TestMatchingCostCensus(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 5, "subpix": 1}
         )
         sad_cmax_w5 = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
+            img_left=self.left, img_right=self.right, grid_disp_min=-1, grid_disp_max=1
         )
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(sad_cmax_w5.attrs["cmax"], int(abs(4 - 1) * (5**2)))
@@ -446,7 +457,7 @@ class TestMatchingCostCensus(unittest.TestCase):
             **{"matching_cost_method": "ssd", "window_size": 3, "subpix": 1}
         )
         ssd_cmax_w3 = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
+            img_left=self.left, img_right=self.right, grid_disp_min=-1, grid_disp_max=1
         )
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(ssd_cmax_w3.attrs["cmax"], int(abs(4 - 1) ** 2 * (3**2)))
@@ -456,7 +467,7 @@ class TestMatchingCostCensus(unittest.TestCase):
             **{"matching_cost_method": "ssd", "window_size": 5, "subpix": 1}
         )
         ssd_cmax_w5 = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
+            img_left=self.left, img_right=self.right, grid_disp_min=-1, grid_disp_max=1
         )
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(ssd_cmax_w5.attrs["cmax"], int(abs(4 - 1) ** 2 * (5**2)))
@@ -467,7 +478,7 @@ class TestMatchingCostCensus(unittest.TestCase):
             **{"matching_cost_method": "zncc", "window_size": 3, "subpix": 1}
         )
         zncc_cmax = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
+            img_left=self.left, img_right=self.right, grid_disp_min=-1, grid_disp_max=1
         )
         # Check if the calculated maximal cost is equal to the ground truth
         np.testing.assert_array_equal(zncc_cmax.attrs["cmax"], 1)
@@ -572,13 +583,11 @@ class TestMatchingCostCensus(unittest.TestCase):
             **{"matching_cost_method": "census", "window_size": 3, "subpix": 1}
         )
 
-        # compute the min disparity of disp_min and the max disparity of disp_max
-        dmin_int, dmax_int = matching_cost_.get_min_max_from_grid(dmin_grid, dmax_grid)
-
         # ------------ Test the method with disp_min as a grid and disp_max as a grid, subpixel = 1 ------------
         # Compute the cost_volume
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin_int, disp_max=dmax_int)
-
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left, img_right=right, grid_disp_min=dmin_grid, grid_disp_max=dmax_grid
+        )
         # Compute the masked cost volume
         matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin_grid, disp_max=dmax_grid)
 
@@ -723,7 +732,7 @@ class TestMatchingCostCensus(unittest.TestCase):
 
         # Compute the cost_volume
         with pytest.raises(SystemExit):
-            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
 
         # Initialization of matching_cost plugin with no band
         matching_cost_ = matching_cost.AbstractMatchingCost(
@@ -732,7 +741,7 @@ class TestMatchingCostCensus(unittest.TestCase):
 
         # Compute the cost_volume
         with pytest.raises(SystemExit):
-            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
 
     @staticmethod
     def test_instantiate_band_with_monoband():
@@ -780,7 +789,7 @@ class TestMatchingCostCensus(unittest.TestCase):
 
         # Compute the cost_volume
         with pytest.raises(SystemExit):
-            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
 
 
 if __name__ == "__main__":

@@ -174,8 +174,9 @@ class TestDisparityMask(unittest.TestCase):
         matching_cost_plugin = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
-        dmin, dmax = matching_cost_plugin.get_min_max_from_grid(disp_min_grid, disp_max_grid)
-        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, dmin, dmax)
+        cv = matching_cost_plugin.compute_cost_volume(
+            img_left=self.left, img_right=self.right, grid_disp_min=disp_min_grid, grid_disp_max=disp_max_grid
+        )
         matching_cost_plugin.cv_masked(self.left, self.right, cv, disp_min_grid, disp_max_grid)
 
         # Compute the disparity map and validity mask
@@ -334,8 +335,10 @@ class TestDisparityMask(unittest.TestCase):
         matching_cost_plugin = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
-        dmin, dmax = matching_cost_plugin.get_min_max_from_grid(disp_min_grid, disp_max_grid)
-        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, dmin, dmax)
+
+        cv = matching_cost_plugin.compute_cost_volume(
+            img_left=self.left, img_right=self.right, grid_disp_min=disp_min_grid, grid_disp_max=disp_max_grid
+        )
         matching_cost_plugin.cv_masked(self.left, self.right, cv, disp_min_grid, disp_max_grid)
 
         # Compute the disparity map and validity mask
@@ -948,7 +951,13 @@ class TestDisparityMask(unittest.TestCase):
         matching_cost_plugin = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
-        cv = matching_cost_plugin.compute_cost_volume(right, left, -1, 1)
+
+        cv = matching_cost_plugin.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
         matching_cost_plugin.cv_masked(
             left,
             right,

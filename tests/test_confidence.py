@@ -386,8 +386,19 @@ class TestConfidence(unittest.TestCase):
         std_bright_ground_truth = std_bright_ground_truth.reshape((5, 6, 1))
 
         # compute with compute_cost_volume
-        cv = stereo_matcher.compute_cost_volume(left, right, disp_min=-2, disp_max=1)
-        stereo_matcher.cv_masked(left, right, cv, -2, 1)
+        cv = stereo_matcher.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        stereo_matcher.cv_masked(
+            left,
+            right,
+            cv,
+            left["disparity"].sel(band_disp="min"),
+            left["disparity"].sel(band_disp="max"),
+        )
 
         std_intensity = confidence.AbstractCostVolumeConfidence(**{"confidence_method": "std_intensity"})
 
@@ -472,8 +483,19 @@ class TestConfidence(unittest.TestCase):
         std_bright_ground_truth = std_bright_ground_truth.reshape((5, 6, 1))
 
         # compute with compute_cost_volume
-        cv = stereo_matcher.compute_cost_volume(left, right, disp_min=-2, disp_max=1)
-        stereo_matcher.cv_masked(left, right, cv, -2, 1)
+        cv = stereo_matcher.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        stereo_matcher.cv_masked(
+            left,
+            right,
+            cv,
+            left["disparity"].sel(band_disp="min"),
+            left["disparity"].sel(band_disp="max"),
+        )
 
         std_intensity = confidence.AbstractCostVolumeConfidence(**{"confidence_method": "std_intensity"})
 

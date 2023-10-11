@@ -58,8 +58,20 @@ class TestMatchingCostZncc(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "zncc", "window_size": 5, "subpix": 1}
         )
-        cost_volume_zncc = matching_cost_matcher.compute_cost_volume(self.left, self.right, disp_min=-1, disp_max=1)
-        matching_cost_matcher.cv_masked(self.left, self.right, cost_volume_zncc, -1, 1)
+
+        cost_volume_zncc = matching_cost_matcher.compute_cost_volume(
+            img_left=self.left,
+            img_right=self.right,
+            grid_disp_min=self.left["disparity"].sel(band_disp="min"),
+            grid_disp_max=self.left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_matcher.cv_masked(
+            self.left,
+            self.right,
+            cost_volume_zncc,
+            self.left["disparity"].sel(band_disp="min"),
+            self.left["disparity"].sel(band_disp="max"),
+        )
 
         # Ground truth zncc cost for the disparity -1
         row = self.left["im"].data[:, 1:]
@@ -120,8 +132,21 @@ class TestMatchingCostZncc(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 2}
         )
-        cv_zncc_subpixel = matching_cost_matcher.compute_cost_volume(left, right, disp_min=-2, disp_max=2)
-        matching_cost_matcher.cv_masked(left, right, cv_zncc_subpixel, -2, 1)
+
+        cv_zncc_subpixel = matching_cost_matcher.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_matcher.cv_masked(
+            left,
+            right,
+            cv_zncc_subpixel,
+            left["disparity"].sel(band_disp="min"),
+            left["disparity"].sel(band_disp="max"),
+        )
+
         # Test the disparity range
         disparity_range_compute = cv_zncc_subpixel.coords["disp"].data
         disparity_range_ground_truth = [-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]
@@ -217,9 +242,20 @@ class TestMatchingCostZncc(unittest.TestCase):
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "zncc", "window_size": 3, "subpix": 1}
         )
-        # Compute the cost volume and invalidate pixels if need
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=-1, disp_max=1)
+
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_.cv_masked(
+            left,
+            right,
+            cv,
+            left["disparity"].sel(band_disp="min"),
+            left["disparity"].sel(band_disp="max"),
+        )
 
         # Cost volume ground truth after invalidation
         cv_ground_truth = np.array(
@@ -321,8 +357,19 @@ class TestMatchingCostZncc(unittest.TestCase):
             **{"matching_cost_method": "zncc", "window_size": 3, "subpix": 2}
         )
         # Compute the cost volume and invalidate pixels if need
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
-        matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_.cv_masked(
+            left,
+            right,
+            cv,
+            left["disparity"].sel(band_disp="min"),
+            left["disparity"].sel(band_disp="max"),
+        )
 
         # Cost volume ground truth after invalidation
         cv_ground_truth = np.array(
@@ -441,7 +488,7 @@ class TestMatchingCostZncc(unittest.TestCase):
 
         # Compute the cost_volume
         with pytest.raises(SystemExit):
-            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
 
         # Initialization of matching_cost plugin with no band
         matching_cost_ = matching_cost.AbstractMatchingCost(
@@ -450,7 +497,7 @@ class TestMatchingCostZncc(unittest.TestCase):
 
         # Compute the cost_volume
         with pytest.raises(SystemExit):
-            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
 
 
 if __name__ == "__main__":
