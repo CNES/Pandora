@@ -101,6 +101,41 @@ def get_window(roi: Dict, width: int, height: int) -> Window:
     return Window(col_off, row_off, roi_width, roi_height)
 
 
+def add_disparity(dataset: xr.Dataset, disparity: Union[tuple[int, int], list[int], str], window: Window) -> xr.Dataset:
+    """
+    Add disparity to dataset
+
+    :param dataset: xarray dataset without classification
+    :type dataset: xr.Dataset
+    :param disparity: disparity, or path to the disparity grid
+    :type disparity: tuple[int, int] or list[int] or str
+
+    :param window : Windowed reading with rasterio
+    :type window: Window
+    :return: dataset : updated dataset
+    :rtype: xr.Dataset
+    """
+    dataset.coords["disp"] = ["min", "max"]
+
+    # disparity is a grid
+    if isinstance(disparity, str):
+        disparity_ds = rasterio_open(disparity)
+        dataset["disparity"] = xr.DataArray(
+            disparity_ds.read(out_dtype=np.int16, window=window),
+            dims=["disp", "row", "col"],
+        )
+    # tuple or list
+    else:
+        n_row = dataset["im"].shape[-2]
+        n_col = dataset["im"].shape[-1]
+        dataset["disparity"] = xr.DataArray(
+            np.array([np.full((n_row, n_col), disparity[0]), np.full((n_row, n_col), disparity[1])]),
+            dims=["disp", "row", "col"],
+        )
+
+    return dataset
+
+
 def add_classif(
     dataset: xr.Dataset, classif: Union[str, None], window: Window, *, with_data: bool = True
 ) -> xr.Dataset:
@@ -250,9 +285,11 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
     :type roi: dict
     :return: xarray.DataSet containing the variables :
 
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
-            - msk : 2D (row, col) xarray.DataArray int16, with the convention defined in the configuration file
-            - classif : 3D (band_classif, row, col) xarray.DataArray float32
+            - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+            - disparity (optional): 3D (disp, row, col) xarray.DataArray int16
+            - msk (optional): 2D (row, col) xarray.DataArray int16
+            - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+            - segm (optional): 2D (row, col) xarray.DataArray int16
 
     :rtype: xarray.DataSet
     """
@@ -304,7 +341,8 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
 
     # disparities
     if "disp" in input_parameters:
-        dataset.attrs["disparity_interval"] = input_parameters["disp"]
+        dataset.attrs["disparity"] = input_config["disp"]  # for the validation step
+        dataset.pipe(add_disparity, disparity=input_config["disp"], window=window)
 
     # No data
     no_data = input_parameters["nodata"]
@@ -350,8 +388,11 @@ def get_metadata(
             "row": img_ds.height,
             "col": img_ds.width,
         },
-        attrs={"disparity_interval": disparity},
     )
+
+    if disparity is not None:
+        dataset.attrs["disparity"] = disparity  # for the validation step
+        dataset.pipe(add_disparity, disparity=disparity, window=None)
 
     return dataset.pipe(add_classif, classif, window=None, with_data=False).pipe(
         add_segm, segm, window=None, with_data=False
