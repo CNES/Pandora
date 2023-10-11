@@ -111,6 +111,7 @@ def add_classif(
     :type dataset: xr.Dataset
     :param classif: classification image path
     :type classif: str or None
+
     :param window : Windowed reading with rasterio
     :type window: Window
     :param with_data : option to read data
@@ -140,6 +141,7 @@ def add_segm(dataset: xr.Dataset, segm: Union[str, None], window: Window, *, wit
     :type dataset: xr.Dataset
     :param segm: segmentation image path
     :type segm: str or None
+
     :param window : Windowed reading with rasterio
     :type window: Window
     :param with_data : option to read data
