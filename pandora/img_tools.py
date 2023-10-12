@@ -114,7 +114,7 @@ def add_classif(
 
     :param window : Windowed reading with rasterio
     :type window: Window
-    :param with_data : option to read data
+    :param with_data : option to read classification and add it to dataset
     :type with_data: bool
     :return: dataset : updated dataset
     :rtype: xr.Dataset
@@ -128,8 +128,7 @@ def add_classif(
                 classif_ds.read(out_dtype=np.int16, window=window),
                 dims=["band_classif", "row", "col"],
             )
-        else:
-            dataset.attrs.update({"classif": True})
+        dataset.attrs.update({"classif": True})
     return dataset
 
 
@@ -144,7 +143,7 @@ def add_segm(dataset: xr.Dataset, segm: Union[str, None], window: Window, *, wit
 
     :param window : Windowed reading with rasterio
     :type window: Window
-    :param with_data : option to read data
+    :param with_data : option to read segmentation and add it to dataset
     :type with_data: bool
     :return: dataset : updated dataset
     :rtype: xr.Dataset
@@ -155,8 +154,7 @@ def add_segm(dataset: xr.Dataset, segm: Union[str, None], window: Window, *, wit
                 rasterio_open(segm).read(1, out_dtype=np.int16, window=window),
                 dims=["row", "col"],
             )
-        else:
-            dataset.attrs.update({"segm": True})
+        dataset.attrs.update({"segm": True})
     return dataset
 
 
@@ -271,20 +269,20 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
     # If only one band is present, consider data as 2 dimensional
     if img_ds.count == 1:
         data = img_ds.read(1, out_dtype=np.float32, window=window)
-        image = {"im": (["row", "col"], data)}
-        coords = {"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
         nx_, ny_ = data.shape[1], data.shape[0]
+        image = {"im": (["row", "col"], data)}
+        coords = {"row": np.arange(ny_), "col": np.arange(nx_)}
     # if image is 3 dimensions we create a dataset with [band row col] dims for dataArray
     else:
         data = img_ds.read(out_dtype=np.float32, window=window)
+        nx_, ny_ = data.shape[2], data.shape[1]
         image = {"im": (["band_im", "row", "col"], data)}
         # Band names are in the image metadata
         coords = {
             "band_im": list(img_ds.descriptions),  # type: ignore
-            "row": np.arange(data.shape[1]),
-            "col": np.arange(data.shape[2]),
+            "row": np.arange(ny_),
+            "col": np.arange(nx_),
         }
-        nx_, ny_ = data.shape[2], data.shape[1]
 
     crs = img_ds.profile["crs"]
     # If the image has no geotransform, its transform is the identity matrix, which may not be compatible with QGIS
