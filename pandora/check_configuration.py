@@ -38,7 +38,7 @@ import numpy as np
 from json_checker import Checker, Or, And
 
 from pandora.state_machine import PandoraMachine
-from pandora.img_tools import rasterio_open
+from pandora.img_tools import rasterio_open, get_metadata
 
 from pandora import multiscale
 
@@ -213,54 +213,6 @@ def get_config_pipeline(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
         cfg["pipeline"] = user_cfg["pipeline"]
 
     return cfg
-
-
-def get_metadata(
-    img: str, disparity: list[int] | str | None = None, classif: str = None, segm: str = None
-) -> xr.Dataset:
-    """
-    Read metadata from image, and return the corresponding xarray.DataSet
-
-    :param img: img_path
-    :type img: str
-    :param disparity: disparity couple of ints or path to disparity grid file (optional)
-    :type disparity: list[int] | str | None
-    :param classif: path to the classif (optional)
-    :type classif: str
-    :param segm: path to the segm (optional)
-    :type segm: str
-    :return: partial xarray.DataSet (attributes and coordinates)
-    :rtype: xarray.DataSet
-    """
-    img_ds = rasterio_open(img)
-    coords = {
-        "band_im": list(img_ds.descriptions),
-        "row": img_ds.height,
-        "col": img_ds.width,
-    }
-    attrs = {"disparity_interval": disparity}
-    dataset = xr.Dataset(data_vars={}, coords=coords, attrs=attrs)
-    default_dataarray = xr.DataArray(
-        data=np.zeros([coords["row"], coords["col"]]),
-        coords={
-            "row": np.arange(coords["row"]),
-            "col": np.arange(coords["col"]),
-        },
-        dims=["row", "col"],
-    )
-
-    if classif is not None:
-        classif_ds = rasterio_open(classif)
-        band_classif = list(classif_ds.descriptions)
-        dataset.coords["band_classif"] = band_classif
-        dataset.attrs["classif"] = True
-        dataset["classif"] = default_dataarray
-
-    if segm is not None:
-        dataset.attrs["segm"] = True
-        dataset["segm"] = default_dataarray
-
-    return dataset
 
 
 def memory_consumption_estimation(

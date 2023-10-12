@@ -276,9 +276,6 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # right disparity map
         self.right_disparity: xr.Dataset = None
 
-        ## TEMPORARY - 328
-        self.multiscale_check_disp: xr.Dataset = None
-
         # Pandora's pipeline configuration
         self.pipeline_cfg: Dict = {"pipeline": {}}
         # Right disparity map computation information: Can be None or "cross_checking_accurate"
@@ -491,12 +488,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         logging.info("Disparity range computation...")
 
-        ## TO UNCOMMENT WITH 328 TICKET
-        ##multiscale_ = multiscale.AbstractMultiscale(
-        ##    self.left_img, self.right_img, **cfg["pipeline"][input_step]
-        ##)  # type: ignore
         multiscale_ = multiscale.AbstractMultiscale(
-            self.multiscale_check_disp, self.multiscale_check_disp, **cfg["pipeline"][input_step]
+            self.left_img, self.right_img, **cfg["pipeline"][input_step]
         )  # type: ignore
 
         # Update min and max user disparity according to the current scale
@@ -652,11 +645,6 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             self.right_disp_map = cfg["pipeline"]["validation"]["validation_method"]
         # Add transitions
         self.add_transitions(self._transitions_run)
-
-        # TO BE DELETED in the 328 ticket
-        self.multiscale_check_disp = xr.Dataset(
-            data_vars={}, coords={}, attrs={"disparity_interval": [disp_min, disp_max]}
-        )
 
     def run(self, input_step: str, cfg: Dict[str, dict]) -> None:
         """

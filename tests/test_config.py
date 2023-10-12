@@ -29,7 +29,6 @@ import json_checker
 import pytest
 from transitions import MachineError
 import numpy as np
-import xarray as xr
 from tests import common
 from pandora import check_configuration
 from pandora.state_machine import PandoraMachine
@@ -174,26 +173,6 @@ class TestConfig(unittest.TestCase):
         }
         # Json checker must raise an error
         self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
-
-    def test_get_metadata(self):
-        """
-        Test the method get_metadata
-
-        """
-
-        cfg = {"input": copy.deepcopy(common.input_cfg_basic)}
-
-        # Metadata ground truth
-        metadata_gt = xr.Dataset(
-            coords={"band_im": [None], "row": 375, "col": 450}, attrs={"disparity_interval": [-60, 0]}
-        )
-
-        # get metadata without classif and mask
-        metadata_img = check_configuration.get_metadata(cfg["input"]["img_left"], cfg["input"]["disp_left"])
-
-        # Check that the get_metadata function raises whitout error
-        assert metadata_img.coords == metadata_gt.coords
-        assert metadata_img.attrs == metadata_gt.attrs
 
     def test_multiband_pipeline(self):
         """

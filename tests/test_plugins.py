@@ -47,23 +47,25 @@ class TestPandora(unittest.TestCase):
 
         """
 
+        self.disp_left = rasterio_open("tests/pandora/disp_left.tif").read(1)
+        self.disp_right = rasterio_open("tests/pandora/disp_right.tif").read(1)
         input_config = {
             "left": {
                 "img": "tests/pandora/left.png",
                 "nodata": np.nan,
-                "left": None,
+                "mask": None,
+                "disp": self.disp_left,
             },
             "right": {
                 "img": "tests/pandora/right.png",
                 "nodata": np.nan,
                 "mask": None,
+                "disp": self.disp_right,
             },
         }
 
         self.left = create_dataset_from_inputs(input_config=input_config["left"])
         self.right = create_dataset_from_inputs(input_config=input_config["right"])
-        self.disp_left = rasterio_open("tests/pandora/disp_left.tif").read(1)
-        self.disp_right = rasterio_open("tests/pandora/disp_right.tif").read(1)
         self.occlusion = rasterio_open("tests/pandora/occlusion.png").read(1)
 
     def test_run_with_semantic_segmentation(self):

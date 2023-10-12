@@ -192,20 +192,22 @@ class TestPandora(unittest.TestCase):
 
         """
 
+        self.disp_left = rasterio_open("tests/pandora/disp_left.tif").read(1)
+        self.disp_right = rasterio_open("tests/pandora/disp_right.tif").read(1)
         input_config = {
             "left": {
                 "img": "tests/pandora/left.png",
                 "nodata": np.nan,
+                "disp": self.disp_left,
             },
             "right": {
                 "img": "tests/pandora/right.png",
                 "nodata": np.nan,
+                "disp": self.disp_right,
             },
         }
         self.left = create_dataset_from_inputs(input_config=input_config["left"])
         self.right = create_dataset_from_inputs(input_config=input_config["right"])
-        self.disp_left = rasterio_open("tests/pandora/disp_left.tif").read(1)
-        self.disp_right = rasterio_open("tests/pandora/disp_right.tif").read(1)
         self.occlusion = rasterio_open("tests/pandora/occlusion.png").read(1)
 
     def error(self, data, gt, threshold, unknown_disparity=0):
@@ -459,7 +461,7 @@ class TestPandora(unittest.TestCase):
 
         # Load a configuration
         user_cfg = {
-            "input": copy.deepcopy(common.input_cfg_basic),
+            "input": copy.deepcopy(common.input_cfg_basic_with_none_right_disp),
             "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
         }
         user_cfg["input"]["disp_left"] = (-2, 2)
@@ -523,7 +525,7 @@ class TestPandora(unittest.TestCase):
         """
 
         user_cfg = {
-            "input": copy.deepcopy(common.input_cfg_basic),
+            "input": copy.deepcopy(common.input_cfg_basic_with_none_right_disp),
             "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
         }
         user_cfg["input"]["nodata_left"] = np.nan
@@ -568,6 +570,7 @@ class TestPandora(unittest.TestCase):
         }
         user_cfg["input"]["nodata_left"] = np.nan
         user_cfg["input"]["nodata_right"] = np.nan
+        user_cfg["input"]["disp_right"] = None
         # working on green band
         user_cfg["pipeline"]["matching_cost"]["band"] = "g"
 
@@ -606,6 +609,7 @@ class TestPandora(unittest.TestCase):
         input_config["right"]["mask"] = None
         input_config["left"]["nodata"] = np.nan
         input_config["right"]["nodata"] = np.nan
+        input_config["right"]["disp"] = None
         left_rgb = create_dataset_from_inputs(input_config=input_config["left"])
         right_rgb = create_dataset_from_inputs(input_config=input_config["right"])
 
@@ -640,6 +644,7 @@ class TestPandora(unittest.TestCase):
         input_config["right"]["mask"] = None
         input_config["left"]["nodata"] = np.nan
         input_config["right"]["nodata"] = np.nan
+        input_config["right"]["disp"] = None
         left_rgb = create_dataset_from_inputs(input_config=input_config["left"])
         right_rgb = create_dataset_from_inputs(input_config=input_config["right"])
 
