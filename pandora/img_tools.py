@@ -291,7 +291,6 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
 
     # Add image conf to the attributes of the dataset
     attributes = {
-        "disparity_interval": input_parameters["disp"],
         "crs": crs,
         "transform": transform,
         "valid_pixels": 0,  # arbitrary default value
@@ -302,6 +301,10 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
         coords=coords,
         attrs=attributes,
     )
+
+    # disparities
+    if "disp" in input_parameters:
+        dataset.attrs["disparity_interval"] = input_parameters["disp"]
 
     # No data
     no_data = input_parameters["nodata"]
