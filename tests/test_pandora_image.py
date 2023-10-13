@@ -39,6 +39,7 @@ from skimage.io import imsave
 import pandora
 from pandora.common import split_inputs
 from pandora import img_tools
+from pandora.img_tools import rasterio_open
 from tests import common
 
 
@@ -793,6 +794,48 @@ class TestCreateDatasetFromInputs:
 
         # Check the data
         np.testing.assert_array_equal(dst_left["segm"].data, segm_gt)
+
+    @pytest.mark.parametrize(
+        ["input_disparity", "expected"],
+        [
+            pytest.param(
+                "tests/pandora/left_disparity_grid.tif",
+                np.array(
+                    [
+                        rasterio_open("tests/pandora/left_disparity_grid.tif").read(1),
+                        rasterio_open("tests/pandora/left_disparity_grid.tif").read(2),
+                    ],
+                ),
+                id="Path to grid file",
+            ),
+            pytest.param(
+                (-60, 0), np.array([np.full((375, 450), -60), np.full((375, 450), 0)]), id="Tuple of integers"
+            ),
+            pytest.param([-60, 0], np.array([np.full((375, 450), -60), np.full((375, 450), 0)]), id="List of integers"),
+        ],
+    )
+    def test_with_disparity(self, input_disparity, expected):
+        """
+        Test the method create_dataset_from_inputs with the disparity
+
+        """
+        # Computes the dataset image
+        input_config = {
+            "left": {
+                "img": "tests/pandora/left.png",
+                "nodata": -9999,
+                "disp": input_disparity,
+            }
+        }
+
+        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
+
+        # Check the shape
+        assert dst_left["im"].shape == (375, 450)
+        assert dst_left["disparity"].shape == (2, 375, 450)
+
+        # Check if the calculated disparity is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(dst_left["disparity"].data, expected)
 
 
 class TestCheckDataset:
