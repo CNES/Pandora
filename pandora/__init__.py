@@ -54,7 +54,7 @@ def run(
     :param img_left: left Dataset image containing :
 
             - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
-            - disparity (optional): 3D (disp, row, col) xarray.DataArray int16
+            - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
             - msk (optional): 2D (row, col) xarray.DataArray int16
             - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
             - segm (optional): 2D (row, col) xarray.DataArray int16
@@ -62,7 +62,7 @@ def run(
     :param img_right: right Dataset image containing :
 
             - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
-            - disparity (optional): 3D (disp, row, col) xarray.DataArray int16
+            - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
             - msk (optional): 2D (row, col) xarray.DataArray int16
             - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
             - segm (optional): 2D (row, col) xarray.DataArray int16

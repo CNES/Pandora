@@ -85,24 +85,28 @@ Example of a monoband image dataset
 
 ::
 
-    Dimensions:  (col: 450, row: 375)
+    Dimensions:   (col: 450, row: 375)
     Coordinates:
-      * col      (col) int64 0 1 2 3 4 5 6 7 8 ... 442 443 444 445 446 447 448 449
-      * row      (row) int64 0 1 2 3 4 5 6 7 8 ... 367 368 369 370 371 372 373 374
+      * col       (col) int64 0 1 2 3 4 5 6 7 8 ... 442 443 444 445 446 447 448 449
+      * row       (row) int64 0 1 2 3 4 5 6 7 8 ... 367 368 369 370 371 372 373 374
+      * band_disp (band_disp) <U3 'min' 'max'
     Data variables:
-        im       (row, col) float32 88.0 85.0 84.0 83.0 ... 176.0 180.0 165.0 172.0
-        msk      (row, col) int16 0 0 0 0 0 0 0 0 0 0 0 0 ... 0 0 0 0 0 0 0 0 0 0 0
+        im        (row, col) float32 88.0 85.0 84.0 83.0 ... 176.0 180.0 165.0 172.0
+        msk       (row, col) int16 0 0 0 0 0 0 0 0 0 0 0 0 ... 0 0 0 0 0 0 0 0 0 0 0
+        disparity (band_disp, row, col) int16 -60.0 -60.0 -60.0 -60.0 -60.0 -60.0 ... -60.0 -60.0 -60.0 -60.0 -60.0
     Attributes:
         no_data_img:   0
         crs:           None
         transform:     | 1.00, 0.00, 0.00|\n| 0.00, 1.00, 0.00|\n| 0.00, 0.00, 1.00|
         valid_pixels:  0
         no_data_mask:  1
+        disparity_source <disparity in config file>
 
 Two data variables are created in this dataset:
 
  * *im*: contains input image data
  * *msk*: contains input mask data + no_data of input image
+ * *disparity*: contains input disparity data with two bands (min and max)
 
 Example of a multiband image dataset
 
@@ -113,13 +117,16 @@ Example of a multiband image dataset
       * band_im     (band_im) <U1 'r' 'g'
       * row      (row) int64 0 1 2 3 4
       * col      (col) int64 0 1 2 3 4 5
+      * band_disp (band_disp) <U3 'min' 'max'
     Data variables:
         im       (band_im, row, col) float64 1.0 1.0 1.0 1.0 1.0 ... 1.0 1.0 1.0 1.0
+        disparity (band_disp, row, col) int16 -60.0 -60.0 -60.0 -60.0 -60.0 -60.0 ... -60.0 -60.0 -60.0 -60.0 -60.0
     Attributes:
         valid_pixels:  0
         no_data_mask:  1
         crs:           None
         transform:     | 1.00, 0.00, 0.00|\n| 0.00, 1.00, 0.00|\n| 0.00, 0.00, 1.00|
+        disparity_source <disparity in config file>
 
 
 .. note::

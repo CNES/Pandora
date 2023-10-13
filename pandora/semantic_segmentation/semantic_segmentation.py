@@ -115,7 +115,7 @@ class AbstractSemanticSegmentation:
         :param img_left: left Dataset image containing :
 
                 - im: 3D (band_im, row, col) xarray.DataArray float32
-                - disparity (optional): 3D (disp, row, col) xarray.DataArray int16
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
@@ -123,7 +123,7 @@ class AbstractSemanticSegmentation:
         :param img_right: right Dataset image containing :
 
                 - im: 3D (band_im, row, col) xarray.DataArray float32
-                - disparity (optional): 3D (disp, row, col) xarray.DataArray int16
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
@@ -131,7 +131,7 @@ class AbstractSemanticSegmentation:
         :return: The semantic segmentation in the left image dataset with the data variables:
 
                 - im: 3D (band_im, row, col) xarray.DataArray float32
-                - disparity (optional): 3D (disp, row, col) xarray.DataArray int16
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
