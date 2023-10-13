@@ -423,7 +423,7 @@ class TestDisparity(unittest.TestCase):
         input_config = split_inputs(common.input_cfg_basic)
         input_config["left"]["nodata"] = np.nan
         input_config["right"]["nodata"] = np.nan
-        input_config["right"]["disp"] = (None, None)
+        input_config["right"]["disp"] = [-input_config["left"]["disp"][1], -input_config["left"]["disp"][0]]
 
         pandora_left = create_dataset_from_inputs(input_config=input_config["left"])
         pandora_right = create_dataset_from_inputs(input_config=input_config["right"])
@@ -441,7 +441,7 @@ class TestDisparity(unittest.TestCase):
         pandora_machine_fast = PandoraMachine()
         cfg = pandora.check_configuration.update_conf(default_cfg, fast_cfg)
         left, right_fast = pandora.run(  # pylint: disable=unused-variable
-            pandora_machine_fast, pandora_left, pandora_right, -60, 0, cfg
+            pandora_machine_fast, pandora_left, pandora_right, cfg
         )
 
         acc_cfg = {
@@ -456,7 +456,7 @@ class TestDisparity(unittest.TestCase):
 
         pandora_machine_acc = PandoraMachine()
         cfg = pandora.check_configuration.update_conf(default_cfg, acc_cfg)
-        left, right_acc = pandora.run(pandora_machine_acc, pandora_left, pandora_right, -60, 0, cfg)
+        left, right_acc = pandora.run(pandora_machine_acc, pandora_left, pandora_right, cfg)
         # Check if the calculated disparity map in fast mode is equal to the disparity map in accurate mode
         np.testing.assert_array_equal(right_fast["disparity_map"].data, right_acc["disparity_map"].data)
 

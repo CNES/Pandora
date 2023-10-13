@@ -34,6 +34,7 @@ import pandora
 import pandora.cost_volume_confidence as confidence
 from pandora import matching_cost
 from pandora.state_machine import PandoraMachine
+from pandora.img_tools import add_disparity
 
 
 class TestConfidence(unittest.TestCase):
@@ -116,16 +117,13 @@ class TestConfidence(unittest.TestCase):
 
         """
         # Create left and right images
-        left_im = np.array([[2, 5, 3, 1], [5, 3, 2, 1], [4, 2, 3, 2], [4, 5, 3, 2]], dtype=np.float32)
-
+        left_data = np.array([[2, 5, 3, 1], [5, 3, 2, 1], [4, 2, 3, 2], [4, 5, 3, 2]], dtype=np.float32)
         mask_ = np.array([[0, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 0], [0, 0, 0, 1]], dtype=np.int16)
-
         left_im = xr.Dataset(
-            {"im": (["row", "col"], left_im), "msk": (["row", "col"], mask_)},
-            coords={"row": np.arange(left_im.shape[0]), "col": np.arange(left_im.shape[1])},
+            {"im": (["row", "col"], left_data), "msk": (["row", "col"], mask_)},
+            coords={"row": np.arange(left_data.shape[0]), "col": np.arange(left_data.shape[1])},
         )
         # Add image conf to the image dataset
-
         left_im.attrs = {
             "no_data_img": 0,
             "valid_pixels": 0,
@@ -133,14 +131,13 @@ class TestConfidence(unittest.TestCase):
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
+        left_im.pipe(add_disparity, disparity=[-1, 1], window=None)
 
-        right_im = np.array([[1, 2, 1, 2], [2, 3, 5, 3], [0, 2, 4, 2], [5, 3, 1, 4]], dtype=np.float32)
-
+        right_data = np.array([[1, 2, 1, 2], [2, 3, 5, 3], [0, 2, 4, 2], [5, 3, 1, 4]], dtype=np.float32)
         mask_ = np.array([[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], dtype=np.int16)
-
         right_im = xr.Dataset(
-            {"im": (["row", "col"], right_im), "msk": (["row", "col"], mask_)},
-            coords={"row": np.arange(right_im.shape[0]), "col": np.arange(right_im.shape[1])},
+            {"im": (["row", "col"], right_data), "msk": (["row", "col"], mask_)},
+            coords={"row": np.arange(right_data.shape[0]), "col": np.arange(right_data.shape[1])},
         )
         # Add image conf to the image dataset
         right_im.attrs = {
@@ -150,6 +147,7 @@ class TestConfidence(unittest.TestCase):
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
+        right_im.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         user_cfg = {
             "input": {"disp_left": (-1, 1)},
@@ -167,7 +165,7 @@ class TestConfidence(unittest.TestCase):
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, _ = pandora.run(pandora_machine, left_im, right_im, -1, 1, cfg)
+        left, _ = pandora.run(pandora_machine, left_im, right_im, cfg)
 
         assert (
             np.sum(left.coords["indicator"].data != ["confidence_from_intensity_std", "confidence_from_ambiguity.2"])
@@ -225,16 +223,13 @@ class TestConfidence(unittest.TestCase):
 
         """
         # Create left and right images
-        left_im = np.array([[2, 5, 3, 1], [5, 3, 2, 1], [4, 2, 3, 2], [4, 5, 3, 2]], dtype=np.float32)
-
+        left_data = np.array([[2, 5, 3, 1], [5, 3, 2, 1], [4, 2, 3, 2], [4, 5, 3, 2]], dtype=np.float32)
         mask_ = np.array([[0, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 0], [0, 0, 0, 1]], dtype=np.int16)
-
         left_im = xr.Dataset(
-            {"im": (["row", "col"], left_im), "msk": (["row", "col"], mask_)},
-            coords={"row": np.arange(left_im.shape[0]), "col": np.arange(left_im.shape[1])},
+            {"im": (["row", "col"], left_data), "msk": (["row", "col"], mask_)},
+            coords={"row": np.arange(left_data.shape[0]), "col": np.arange(left_data.shape[1])},
         )
         # Add image conf to the image dataset
-
         left_im.attrs = {
             "no_data_img": 0,
             "valid_pixels": 0,
@@ -242,14 +237,13 @@ class TestConfidence(unittest.TestCase):
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
+        left_im.pipe(add_disparity, disparity=[-1, 1], window=None)
 
-        right_im = np.array([[1, 2, 1, 2], [2, 3, 5, 3], [0, 2, 4, 2], [5, 3, 1, 4]], dtype=np.float32)
-
+        right_data = np.array([[1, 2, 1, 2], [2, 3, 5, 3], [0, 2, 4, 2], [5, 3, 1, 4]], dtype=np.float32)
         mask_ = np.array([[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], dtype=np.int16)
-
         right_im = xr.Dataset(
-            {"im": (["row", "col"], right_im), "msk": (["row", "col"], mask_)},
-            coords={"row": np.arange(right_im.shape[0]), "col": np.arange(right_im.shape[1])},
+            {"im": (["row", "col"], right_data), "msk": (["row", "col"], mask_)},
+            coords={"row": np.arange(right_data.shape[0]), "col": np.arange(right_data.shape[1])},
         )
         # Add image conf to the image dataset
         right_im.attrs = {
@@ -259,6 +253,7 @@ class TestConfidence(unittest.TestCase):
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
+        right_im.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         user_cfg = {
             "input": {"disp_left": (-1, 1)},
@@ -281,7 +276,7 @@ class TestConfidence(unittest.TestCase):
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, _ = pandora.run(pandora_machine, left_im, right_im, -1, 1, cfg)
+        left, _ = pandora.run(pandora_machine, left_im, right_im, cfg)
 
         assert (
             np.sum(left.coords["indicator"].data != ["confidence_from_intensity_std", "confidence_from_ambiguity.2"])
@@ -340,7 +335,6 @@ class TestConfidence(unittest.TestCase):
             {"im": (["row", "col"], left_data)},
             coords={"row": np.arange(left_data.shape[0]), "col": np.arange(left_data.shape[1])},
         )
-
         left.attrs = {
             "no_data_img": 0,
             "valid_pixels": 0,
@@ -348,6 +342,7 @@ class TestConfidence(unittest.TestCase):
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
+        left.pipe(add_disparity, disparity=[-2, 1], window=None)
 
         right_data = np.array(
             ([1, 1, 1, 2, 2, 2], [1, 1, 1, 4, 2, 4], [1, 1, 1, 4, 4, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1]),
@@ -357,7 +352,6 @@ class TestConfidence(unittest.TestCase):
             {"im": (["row", "col"], right_data)},
             coords={"row": np.arange(right_data.shape[0]), "col": np.arange(right_data.shape[1])},
         )
-
         right.attrs = {
             "no_data_img": 0,
             "valid_pixels": 0,
@@ -430,7 +424,6 @@ class TestConfidence(unittest.TestCase):
                 "col": np.arange(left_data.shape[2]),
             },
         )
-
         left.attrs = {
             "no_data_img": 0,
             "valid_pixels": 0,
@@ -438,6 +431,7 @@ class TestConfidence(unittest.TestCase):
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
+        left.pipe(add_disparity, disparity=[-2, 1], window=None)
 
         right_data = np.array(
             [

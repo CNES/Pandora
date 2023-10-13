@@ -31,6 +31,7 @@ import xarray as xr
 from rasterio import Affine
 
 from pandora import matching_cost
+from pandora.img_tools import add_disparity
 
 from tests import common
 
@@ -61,6 +62,7 @@ class TestMatchingCostCensus(unittest.TestCase):
         )
         left.attrs["crs"] = None
         left.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         data = np.array(([5, 1, 2, 3], [1, 2, 1, 0], [2, 2, 0, 1], [1, 1, 1, 1]), dtype=np.float64)
         right = xr.Dataset(

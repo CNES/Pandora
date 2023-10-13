@@ -169,7 +169,7 @@ def main(cfg_path: PathLike | str, output: str, verbose: bool) -> None:
     img_left = create_dataset_from_inputs(input_config=input_config["left"])
     # If input_config["right"]["disp"] is None then "disp_right_min" = - "disp_left_max"
     # and "disp_right_max" = - "disp_left_min"
-    if input_config["right"]["disp"] is None:
+    if input_config["right"]["disp"] is None and not isinstance(input_config["left"]["disp"], str):
         input_config["right"]["disp"] = [-input_config["left"]["disp"][1], -input_config["left"]["disp"][0]]
     img_right = create_dataset_from_inputs(input_config=input_config["right"])
 

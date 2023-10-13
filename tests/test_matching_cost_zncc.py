@@ -31,6 +31,7 @@ import numpy as np
 import xarray as xr
 
 from pandora import matching_cost
+from pandora.img_tools import add_disparity
 from tests import common
 
 
@@ -47,6 +48,7 @@ class TestMatchingCostZncc(unittest.TestCase):
         """
 
         self.left, self.right = common.matching_cost_tests_setup()
+        self.left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
     def test_zncc_cost(self):
         """
@@ -123,11 +125,14 @@ class TestMatchingCostZncc(unittest.TestCase):
             {"im": (["row", "col"], data)}, coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
         )
         left.attrs = common.img_attrs
+        left.pipe(add_disparity, disparity=[-2, 2], window=None)
+
         data = np.array(([1, 5, 6, 3, 4], [2, 5, 10, 6, 9], [0, 7, 5, 3, 1]), dtype=np.float64)
         right = xr.Dataset(
             {"im": (["row", "col"], data)}, coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
         )
         right.attrs = common.img_attrs
+
         # Computes the cost volume for disp min -2 disp max 2 and subpix = 2
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 2}
@@ -195,15 +200,13 @@ class TestMatchingCostZncc(unittest.TestCase):
         # cfg['image']['no_data'] = 1
         # invalid_pixels all other values
         data = np.array(([1, 1, 1, 3, 4], [1, 2, 1, 0, 2], [2, 1, 0, 1, 2], [1, 1, 1, 1, 4]), dtype=np.float64)
-
         mask = np.array(([0, 0, 2, 0, 1], [0, 2, 0, 0, 0], [0, 0, 0, 0, 0], [1, 0, 0, 0, 2]), dtype=np.int16)
-
         left = xr.Dataset(
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         left.attrs = common.img_attrs
+
         data = np.array(([5, 1, 2, 3, 4], [1, 2, 1, 0, 2], [2, 2, 0, 1, 4], [1, 1, 1, 1, 2]), dtype=np.float64)
         # right mask contains valid pixels
         mask = np.zeros((4, 5), dtype=np.int16)
@@ -211,7 +214,6 @@ class TestMatchingCostZncc(unittest.TestCase):
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         right.attrs = common.img_attrs
 
         # ------------ Test the method with a left and right mask with window size 3 and ZNCC ------------
@@ -222,13 +224,12 @@ class TestMatchingCostZncc(unittest.TestCase):
         data = np.array(([1, 1, 1, 3, 4], [1, 2, 1, 0, 2], [2, 1, 0, 1, 2], [1, 1, 1, 1, 4]), dtype=np.float64)
         # left mask contains valid pixels
         mask = np.array(([1, 0, 0, 2, 0], [0, 0, 0, 0, 0], [0, 0, 2, 0, 0], [2, 0, 0, 0, 1]), dtype=np.int16)
-
         left = xr.Dataset(
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         left.attrs = common.img_attrs
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         data = np.array(([5, 1, 2, 3, 4], [1, 2, 1, 0, 2], [2, 2, 0, 1, 4], [1, 1, 1, 1, 2]), dtype=np.float64)
         mask = np.array(([0, 2, 0, 0, 1], [0, 0, 0, 0, 0], [0, 0, 0, 2, 0], [1, 0, 2, 0, 0]), dtype=np.int16)
@@ -236,7 +237,6 @@ class TestMatchingCostZncc(unittest.TestCase):
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         right.attrs = common.img_attrs
 
         matching_cost_ = matching_cost.AbstractMatchingCost(
@@ -309,12 +309,10 @@ class TestMatchingCostZncc(unittest.TestCase):
         data = np.array(([1, 1, 1, 3, 4], [1, 1, 1, 1, 4]), dtype=np.float64)
         # left mask contains valid pixels
         mask = np.array(([0, 0, 0, 0, 0], [0, 0, 0, 0, 0]), dtype=np.int16)
-
         left = xr.Dataset(
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         left.attrs = common.img_attrs
 
         data = np.array(([5, 1, 2, 3, 4], [1, 1, 1, 1, 2]), dtype=np.float64)
@@ -323,23 +321,18 @@ class TestMatchingCostZncc(unittest.TestCase):
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         right.attrs = common.img_attrs
-
-        dmin = -1
-        dmax = 1
 
         # ------------ Test the method with a left and right mask with window size 3 and ZNCC ------------
         data = np.array(([1, 1, 1, 3, 4], [1, 2, 1, 0, 2], [2, 1, 0, 1, 2], [1, 1, 1, 1, 4]), dtype=np.float64)
         # left mask contains valid pixels
         mask = np.array(([1, 0, 0, 2, 0], [0, 0, 0, 0, 0], [0, 0, 2, 0, 0], [2, 0, 0, 0, 1]), dtype=np.int16)
-
         left = xr.Dataset(
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         left.attrs = common.img_attrs
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         data = np.array(([5, 1, 2, 3, 4], [1, 2, 1, 0, 2], [2, 2, 0, 1, 4], [1, 1, 1, 1, 2]), dtype=np.float64)
         mask = np.array(([0, 2, 0, 0, 1], [0, 0, 0, 0, 0], [0, 0, 0, 2, 0], [1, 0, 2, 0, 0]), dtype=np.int16)
@@ -347,11 +340,7 @@ class TestMatchingCostZncc(unittest.TestCase):
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         right.attrs = common.img_attrs
-
-        dmin = -1
-        dmax = 1
 
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "zncc", "window_size": 3, "subpix": 2}
@@ -426,7 +415,6 @@ class TestMatchingCostZncc(unittest.TestCase):
             ),
             dtype=np.float64,
         )
-
         data[1, :, :] = np.array(
             (
                 [2, 3, 4, 6],
@@ -436,7 +424,6 @@ class TestMatchingCostZncc(unittest.TestCase):
             ),
             dtype=np.float64,
         )
-
         left = xr.Dataset(
             {"im": (["band_im", "row", "col"], data)},
             coords={
@@ -445,7 +432,6 @@ class TestMatchingCostZncc(unittest.TestCase):
                 "col": np.arange(data.shape[2]),
             },
         )
-
         left.attrs = common.img_attrs
 
         # Initialize multiband data
@@ -459,7 +445,6 @@ class TestMatchingCostZncc(unittest.TestCase):
             ),
             dtype=np.float64,
         )
-
         data[1, :, :] = np.array(
             (
                 [6, 5, 2, 7],
@@ -469,7 +454,6 @@ class TestMatchingCostZncc(unittest.TestCase):
             ),
             dtype=np.float64,
         )
-
         right = xr.Dataset(
             {"im": (["band_im", "row", "col"], data)},
             coords={
@@ -478,7 +462,6 @@ class TestMatchingCostZncc(unittest.TestCase):
                 "col": np.arange(data.shape[2]),
             },
         )
-
         right.attrs = common.img_attrs
 
         # Initialization of matching_cost plugin with wrong band

@@ -32,6 +32,7 @@ import xarray as xr
 from rasterio import Affine
 
 from tests import common
+from pandora.img_tools import add_disparity
 from pandora import aggregation
 from pandora.aggregation import cbca
 from pandora import matching_cost
@@ -58,6 +59,7 @@ class TestAggregation(unittest.TestCase):
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
+        self.left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         data = np.array(([[1, 5, 1, 15, 7], [2, 10, 9, 11, 9], [3, 1, 18, 4, 5]]), dtype=np.float32)
         self.right = xr.Dataset(
@@ -106,7 +108,6 @@ class TestAggregation(unittest.TestCase):
             self.left["disparity"].sel(band_disp="min"),
             self.left["disparity"].sel(band_disp="max"),
         )
-        matching_cost_matcher.cv_masked(self.left, self.right, sad, -1, 1)
 
         # Computes the cost aggregation with the cross-based cost aggregation method,
         # with cbca_intensity=5 and cbca_distance=3
@@ -319,6 +320,7 @@ class TestAggregation(unittest.TestCase):
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         data = np.array(([[1, 5, 1, 15, 7], [2, 10, 9, 11, 9], [3, 1, 18, 4, 5], [1, 5, 1, 15, 7]]), dtype=np.float32)
         mask = np.array(([[0, 0, 0, 0, 0], [0, 0, 5, 1, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]]))
@@ -393,6 +395,7 @@ class TestAggregation(unittest.TestCase):
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         data = np.array(([[1, 5, 1, 15, 7], [2, 10, 9, 11, 9], [3, 1, 18, 4, 5], [1, 5, 1, 15, 7]]), dtype=np.float32)
         right = xr.Dataset(
@@ -484,9 +487,9 @@ class TestAggregation(unittest.TestCase):
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         data = np.array(([[1, 5, 1, 15, 7], [2, 10, 9, 11, 9], [3, 1, 18, 4, 5]]), dtype=np.float32)
-
         right = xr.Dataset(
             {"im": (["row", "col"], data)}, coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
         )
@@ -570,6 +573,7 @@ class TestAggregation(unittest.TestCase):
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         data = np.array(([[1, 5, 1, 15, 7], [2, 10, 9, 11, 9], [3, 1, 18, 4, 5]]), dtype=np.float32)
         mask = np.array(([[0, 0, 0, 0, 0], [0, 1, 0, 3, 0], [0, 0, 0, 0, 0]]))
@@ -662,9 +666,9 @@ class TestAggregation(unittest.TestCase):
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         data = np.array(([[1, 5, 1, 15, 7], [2, 10, 9, 11, 9], [3, 1, 18, 4, 5]]), dtype=np.float32)
-
         right = xr.Dataset(
             {"im": (["row", "col"], data)}, coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
         )
@@ -727,10 +731,10 @@ class TestAggregation(unittest.TestCase):
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         data = np.array(([[1, 5, 1, 15, 7], [2, 10, 9, 11, 9], [3, 1, 18, 4, 5]]), dtype=np.float32)
         mask = np.array(([[2, 0, 0, 0, 0], [0, 0, 0, 1, 0], [0, 3, 0, 0, 0]]))
-
         right = xr.Dataset(
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
@@ -800,9 +804,9 @@ class TestAggregation(unittest.TestCase):
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         data = np.array(([[1, 5, 1, 15, 7], [2, 10, 9, 11, 9], [3, 1, 18, 4, 5], [1, 5, 1, 15, 7]]), dtype=np.float32)
-
         right = xr.Dataset(
             {"im": (["row", "col"], data)}, coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
         )

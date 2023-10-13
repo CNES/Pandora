@@ -924,14 +924,17 @@ class TestGetMetadata:
         """
         # Metadata ground truth
         metadata_gt = xr.Dataset(
-            coords={"band_im": [None], "row": 375, "col": 450}, attrs={"disparity_interval": [-60, 0]}
+            coords={"band_im": [None], "row": np.arange(375), "col": np.arange(450)},
+            attrs={"disparity_source": [-60, 0]},
         )
 
         # get metadata without classif and mask
         metadata_img = img_tools.get_metadata(input_cfg["input"]["img_left"], input_cfg["input"]["disp_left"])
 
         # Check that the get_metadata function run whitout error
-        assert metadata_img.coords == metadata_gt.coords
+        assert metadata_img.coords["band_im"] == metadata_gt.coords["band_im"]
+        assert (metadata_img.coords["row"] == metadata_gt.coords["row"]).all()
+        assert (metadata_img.coords["col"] == metadata_gt.coords["col"]).all()
         assert metadata_img.attrs == metadata_gt.attrs
 
     @pytest.mark.parametrize(

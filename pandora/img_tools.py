@@ -271,6 +271,8 @@ def add_mask(
     # Masks no_data pixels
     # If a pixel is invalid due to the input mask, and it is also no_data, then the value of this pixel in the
     # generated mask will be = no_data
+    # In 3D, the coordinates of dataset["im"] are [band_im, row, col] and in 2D are [row, col]. To be sure to always
+    # having no_data_pixels[row], take the "-2" dimension, and no_data_pixel[col], take the last dimension.
     dataset["msk"].data[(no_data_pixels[-2], no_data_pixels[-1])] = int(dataset.attrs["no_data_mask"])
     return dataset
 
@@ -390,8 +392,8 @@ def get_metadata(
         data_vars={},
         coords={
             "band_im": list(img_ds.descriptions),
-            "row": img_ds.height,
-            "col": img_ds.width,
+            "row": np.arange(img_ds.height),
+            "col": np.arange(img_ds.width),
         },
     )
 
@@ -453,13 +455,9 @@ def prepare_pyramid(
     """
     Return a List with the datasets at the different scales
 
-    :param img_left: left Dataset image containing :
-
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img_left: left Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img_left: xarray.Dataset
-    :param img_right: right Dataset containing :
-
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img_right: right Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img_right: xarray.Dataset
     :param num_scales: number of scales
     :type num_scales: int
@@ -517,10 +515,8 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
     """
     Interpolate no data values in image. If no mask was given, create all valid masks
 
-    :param dataset: Dataset image
-    :type dataset: xarray.Dataset containing :
-
-        - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param dataset: Dataset image containing the image im : 2D (row, col) xarray.Dataset
+    :type dataset: xarray.Dataset
     :return: a Tuple that contains the filled image and mask
     :rtype: Tuple of np.ndarray
     """
@@ -616,9 +612,7 @@ def convert_pyramid_to_dataset(
     """
     Return a List with the datasets at the different scales
 
-    :param img_orig: Dataset image containing :
-
-        - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img_orig: Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img_orig: xarray.Dataset
     :param images: list of images for the pyramid
     :type images: list[np.ndarray]
@@ -672,9 +666,7 @@ def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None) -> Lis
     """
     Return an array that contains the shifted right images
 
-    :param img_right: right Dataset image containing :
-
-        - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img_right: Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img_right: xarray.Dataset
     :param subpix: subpixel precision = (1 or pair number)
     :type subpix: int
@@ -714,9 +706,7 @@ def check_inside_image(img: xr.Dataset, row: int, col: int) -> bool:
     """
     Check if the coordinates row,col are inside the image
 
-    :param img: Dataset image containing :
-
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img: Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img: xarray.Dataset
     :param row: row coordinates
     :type row: int
@@ -795,9 +785,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.
     """
     Compute the mean within a sliding window for the whole image
 
-    :param img: Dataset image containing :
-
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img: Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img: xarray.Dataset
     :param win_size: window size
     :type win_size: int
@@ -887,9 +875,7 @@ def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np
     """
     Compute the mean within a window centered at position row,col
 
-    :param img: Dataset image containing :
-
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img: Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img: xarray.Dataset
     :param row: row coordinates
     :type row: int
@@ -921,9 +907,7 @@ def compute_std_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.n
     Compute the standard deviation within a sliding window for the whole image
     with the formula : std = sqrt( E[row^2] - E[row]^2 )
 
-    :param img: Dataset image containing :
-
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img: Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img: xarray.Dataset
     :param win_size: window size
     :type win_size: int
