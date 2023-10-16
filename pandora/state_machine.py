@@ -203,64 +203,28 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         },
     ]
 
-    def __init__(
-        self,
-        img_left_pyramid: xr.Dataset = None,
-        img_right_pyramid: xr.Dataset = None,
-    ) -> None:
+    def __init__(self) -> None:
         """
         Initialize Pandora Machine
 
-        :param img_left_pyramid: left Dataset image containing :
-
-                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
-                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
-                - msk (optional): 2D (row, col) xarray.DataArray int16
-                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
-                - segm (optional): 2D (row, col) xarray.DataArray int16
-        :type img_left_pyramid: xarray.Dataset
-        :param img_right_pyramid: right Dataset image containing :
-
-                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
-                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
-                - msk (optional): 2D (row, col) xarray.DataArray int16
-                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
-                - segm (optional): 2D (row, col) xarray.DataArray int16
-        :type img_right_pyramid: xarray.Dataset
         :return: None
         """
         # Left image scale pyramid
-        self.img_left_pyramid: List[xr.Dataset] = [img_left_pyramid]
+        self.img_left_pyramid: List[xr.Dataset] = [None]
         # Right image scale pyramid
-        self.img_right_pyramid: List[xr.Dataset] = [img_right_pyramid]
+        self.img_right_pyramid: List[xr.Dataset] = [None]
         # Left image
         self.left_img: xr.Dataset = None
         # Right image
         self.right_img: xr.Dataset = None
         # Minimum disparity
-        self.disp_min: np.ndarray = (
-            img_left_pyramid["disparity"].sel(band_disp="min").data
-            if img_left_pyramid and "disparity" in img_left_pyramid.data_vars
-            else None
-        )
+        self.disp_min: np.ndarray = None
         # Maximum disparity
-        self.disp_max: np.ndarray = (
-            img_left_pyramid["disparity"].sel(band_disp="max").data
-            if img_left_pyramid and "disparity" in img_left_pyramid.data_vars
-            else None
-        )
+        self.disp_max: np.ndarray = None
         # Maximum disparity for the right image
-        self.right_disp_min: np.ndarray = (
-            img_right_pyramid["disparity"].sel(band_disp="min").data
-            if img_right_pyramid and "disparity" in img_right_pyramid.data_vars
-            else None
-        )
+        self.right_disp_min: np.ndarray = None
         # Minimum disparity for the right image
-        self.right_disp_max: np.ndarray = (
-            img_right_pyramid["disparity"].sel(band_disp="max").data
-            if img_right_pyramid and "disparity" in img_right_pyramid.data_vars
-            else None
-        )
+        self.right_disp_max: np.ndarray = None
         # User minimum disparity
         self.dmin_user: np.ndarray = None
         # User maximum disparity
