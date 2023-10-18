@@ -142,9 +142,7 @@ def add_disparity(
     return dataset
 
 
-def add_classif(
-    dataset: xr.Dataset, classif: Union[str, None], window: Window, *, with_data: bool = True
-) -> xr.Dataset:
+def add_classif(dataset: xr.Dataset, classif: Union[str, None], window: Window) -> xr.Dataset:
     """
     Add classification informations and image to datasaet
 
@@ -155,8 +153,6 @@ def add_classif(
 
     :param window : Windowed reading with rasterio
     :type window: Window
-    :param with_data : option to read classification and add it to dataset
-    :type with_data: bool
     :return: dataset : updated dataset
     :rtype: xr.Dataset
     """
@@ -164,16 +160,14 @@ def add_classif(
         classif_ds = rasterio_open(classif)
         # Add extra dataset coordinate for classification bands with band names from image metadat
         dataset.coords["band_classif"] = list(classif_ds.descriptions)
-        if with_data:
-            dataset["classif"] = xr.DataArray(
-                classif_ds.read(out_dtype=np.int16, window=window),
-                dims=["band_classif", "row", "col"],
-            )
-        dataset.attrs.update({"classif": True})
+        dataset["classif"] = xr.DataArray(
+            classif_ds.read(out_dtype=np.int16, window=window),
+            dims=["band_classif", "row", "col"],
+        )
     return dataset
 
 
-def add_segm(dataset: xr.Dataset, segm: Union[str, None], window: Window, *, with_data: bool = True) -> xr.Dataset:
+def add_segm(dataset: xr.Dataset, segm: Union[str, None], window: Window) -> xr.Dataset:
     """
     Add Segmentation informations and image to datasaet
 
@@ -184,18 +178,14 @@ def add_segm(dataset: xr.Dataset, segm: Union[str, None], window: Window, *, wit
 
     :param window : Windowed reading with rasterio
     :type window: Window
-    :param with_data : option to read segmentation and add it to dataset
-    :type with_data: bool
     :return: dataset : updated dataset
     :rtype: xr.Dataset
     """
     if segm is not None:
-        if with_data:
-            dataset["segm"] = xr.DataArray(
-                rasterio_open(segm).read(1, out_dtype=np.int16, window=window),
-                dims=["row", "col"],
-            )
-        dataset.attrs.update({"segm": True})
+        dataset["segm"] = xr.DataArray(
+            rasterio_open(segm).read(1, out_dtype=np.int16, window=window),
+            dims=["row", "col"],
+        )
     return dataset
 
 
@@ -399,8 +389,8 @@ def get_metadata(
 
     return (
         dataset.pipe(add_disparity, disparity=disparity, window=None)
-        .pipe(add_classif, classif, window=None, with_data=False)
-        .pipe(add_segm, segm, window=None, with_data=False)
+        .pipe(add_classif, classif, window=None)
+        .pipe(add_segm, segm, window=None)
     )
 
 
