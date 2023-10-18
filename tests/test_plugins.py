@@ -89,7 +89,7 @@ class TestPandora(unittest.TestCase):
 
         # Run the pandora pipeline
         with self.assertRaises(KeyError) as error:
-            pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
+            pandora.run(pandora_machine, self.left, self.right, cfg)
         self.assertEqual(str(error.exception), "'No semantic segmentation method named ARNN supported'")
 
     def test_run_with_sgm_optimization(self):
@@ -118,7 +118,7 @@ class TestPandora(unittest.TestCase):
 
         # Run the pandora pipeline
         with self.assertRaises(KeyError) as error:
-            pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
+            pandora.run(pandora_machine, self.left, self.right, cfg)
         self.assertEqual(str(error.exception), "'No optimization method named sgm supported'")
 
     def test_run_with_mc_cnn_matching_cost(self):
@@ -142,5 +142,5 @@ class TestPandora(unittest.TestCase):
 
         # Run the pandora pipeline
         with self.assertRaises(KeyError) as error:
-            pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
+            pandora.run(pandora_machine, self.left, self.right, cfg)
         self.assertEqual(str(error.exception), "'No matching cost method named mc_cnn supported'")

@@ -39,7 +39,7 @@ from pandora.common import split_inputs
 from tests import common
 import pandora
 from pandora import import_plugin
-from pandora.img_tools import create_dataset_from_inputs, rasterio_open
+from pandora.img_tools import create_dataset_from_inputs, rasterio_open, add_disparity
 from pandora.state_machine import PandoraMachine
 
 
@@ -192,22 +192,22 @@ class TestPandora(unittest.TestCase):
 
         """
 
-        self.disp_left = rasterio_open("tests/pandora/disp_left.tif").read(1)
-        self.disp_right = rasterio_open("tests/pandora/disp_right.tif").read(1)
         input_config = {
             "left": {
                 "img": "tests/pandora/left.png",
                 "nodata": np.nan,
-                "disp": self.disp_left,
+                "disp": [-60, 0],
             },
             "right": {
                 "img": "tests/pandora/right.png",
                 "nodata": np.nan,
-                "disp": self.disp_right,
+                "disp": [0, 60],
             },
         }
         self.left = create_dataset_from_inputs(input_config=input_config["left"])
         self.right = create_dataset_from_inputs(input_config=input_config["right"])
+        self.disp_left = rasterio_open("tests/pandora/disp_left.tif").read(1)
+        self.disp_right = rasterio_open("tests/pandora/disp_right.tif").read(1)
         self.occlusion = rasterio_open("tests/pandora/occlusion.png").read(1)
 
     def error(self, data, gt, threshold, unknown_disparity=0):
@@ -252,7 +252,7 @@ class TestPandora(unittest.TestCase):
         # Update the user configuration with default values
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
         # Run the pandora pipeline
-        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
+        left, right = pandora.run(pandora_machine, self.left, self.right, cfg)
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.20:
@@ -284,9 +284,7 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, right = pandora.run(  # pylint: disable = unused-variable
-            pandora_machine, self.left, self.right, -60, 0, cfg
-        )
+        left, right = pandora.run(pandora_machine, self.left, self.right, cfg)  # pylint: disable = unused-variable
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.20:
@@ -316,7 +314,7 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
+        left, right = pandora.run(pandora_machine, self.left, self.right, cfg)
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.20:
@@ -351,7 +349,7 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
+        left, right = pandora.run(pandora_machine, self.left, self.right, cfg)
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.20:
             raise AssertionError
@@ -396,9 +394,10 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
+        left, right = pandora.run(pandora_machine, self.left, self.right, cfg)
 
         # Check the left disparity map
+        print("error", self.error(left["disparity_map"].data, self.disp_left, 1))
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.20:
             raise AssertionError
 
@@ -432,13 +431,13 @@ class TestPandora(unittest.TestCase):
             ],
             dtype=np.float32,
         )
-
         img_left = xr.Dataset(
             {"im": (["row", "col"], data_left)},
             coords={"row": np.arange(data_left.shape[0]), "col": np.arange(data_left.shape[1])},
         )
         img_left.attrs["crs"] = None
         img_left.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+        img_left.pipe(add_disparity, disparity=[-2, 2], window=None)
 
         data_right = np.array(
             [
@@ -477,8 +476,7 @@ class TestPandora(unittest.TestCase):
         import_plugin()
 
         # Run the Pandora pipeline
-        disp_min, disp_max = cfg["input"]["disp_left"]
-        left, right = pandora.run(pandora_machine, img_left, img_right, disp_min, disp_max, cfg)
+        left, right = pandora.run(pandora_machine, img_left, img_right, cfg)
 
         # Ground truth confidence measure
         gt_left_indicator_stereo = np.array(
@@ -542,7 +540,7 @@ class TestPandora(unittest.TestCase):
         right_img = create_dataset_from_inputs(input_config=input_config["right"])
 
         # Run the pandora pipeline on images without modified coordinates
-        left_origin, right_origin = pandora.run(pandora_machine, left_img, right_img, -60, 0, cfg)
+        left_origin, right_origin = pandora.run(pandora_machine, left_img, right_img, cfg)
 
         row_c = left_img.coords["row"].data
         row_c += 41
@@ -553,7 +551,7 @@ class TestPandora(unittest.TestCase):
         right_img.assign_coords(row=row_c, col=col_c)
 
         # Run the pandora pipeline on images with modified coordinates
-        left_modified, right_modified = pandora.run(pandora_machine, left_img, right_img, -60, 0, cfg)
+        left_modified, right_modified = pandora.run(pandora_machine, left_img, right_img, cfg)
 
         # check if the disparity maps are equals
         np.testing.assert_array_equal(left_origin["disparity_map"].values, left_modified["disparity_map"].values)
@@ -583,7 +581,7 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg)
+        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, cfg)
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.25:
@@ -618,7 +616,7 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg)
+        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, cfg)
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.25:
@@ -653,7 +651,7 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg)
+        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, cfg)
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.25:
@@ -687,7 +685,7 @@ class TestPandora(unittest.TestCase):
         pandora_machine = PandoraMachine()
 
         # Run the pandora pipeline
-        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg)
+        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, cfg)
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.25:

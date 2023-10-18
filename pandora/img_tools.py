@@ -101,6 +101,47 @@ def get_window(roi: Dict, width: int, height: int) -> Window:
     return Window(col_off, row_off, roi_width, roi_height)
 
 
+def add_disparity(
+    dataset: xr.Dataset, disparity: Union[tuple[int, int], list[int], str, None], window: Window
+) -> xr.Dataset:
+    """
+    Add disparity to dataset
+
+    :param dataset: xarray dataset without classification
+    :type dataset: xr.Dataset
+    :param disparity: disparity, or path to the disparity grid
+    :type disparity: tuple[int, int] or list[int] or str or None
+
+    :param window : Windowed reading with rasterio
+    :type window: Window
+    :return: dataset : updated dataset
+    :rtype: xr.Dataset
+    """
+    if disparity is not None:
+        dataset.coords["band_disp"] = ["min", "max"]
+        # disparity is a grid
+        if isinstance(disparity, str):
+            disparity_ds = rasterio_open(disparity)
+            dataset["disparity"] = xr.DataArray(
+                disparity_ds.read(out_dtype=np.float32, window=window),
+                dims=["band_disp", "row", "col"],
+            )
+        # tuple or list
+        else:
+            dataset["disparity"] = xr.DataArray(
+                np.array(
+                    [
+                        np.full((dataset.dims["row"], dataset.dims["col"]), disparity[0]),
+                        np.full((dataset.dims["row"], dataset.dims["col"]), disparity[1]),
+                    ]
+                ),
+                dims=["band_disp", "row", "col"],
+            )
+
+    dataset.attrs["disparity_source"] = disparity
+    return dataset
+
+
 def add_classif(
     dataset: xr.Dataset, classif: Union[str, None], window: Window, *, with_data: bool = True
 ) -> xr.Dataset:
@@ -230,6 +271,8 @@ def add_mask(
     # Masks no_data pixels
     # If a pixel is invalid due to the input mask, and it is also no_data, then the value of this pixel in the
     # generated mask will be = no_data
+    # In 3D, the coordinates of dataset["im"] are [band_im, row, col] and in 2D are [row, col]. To be sure to always
+    # having no_data_pixels[row], take the "-2" dimension, and no_data_pixel[col], take the last dimension.
     dataset["msk"].data[(no_data_pixels[-2], no_data_pixels[-1])] = int(dataset.attrs["no_data_mask"])
     return dataset
 
@@ -250,9 +293,11 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
     :type roi: dict
     :return: xarray.DataSet containing the variables :
 
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
-            - msk : 2D (row, col) xarray.DataArray int16, with the convention defined in the configuration file
-            - classif : 3D (band_classif, row, col) xarray.DataArray float32
+            - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+            - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+            - msk (optional): 2D (row, col) xarray.DataArray int16
+            - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+            - segm (optional): 2D (row, col) xarray.DataArray int16
 
     :rtype: xarray.DataSet
     """
@@ -304,7 +349,7 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
 
     # disparities
     if "disp" in input_parameters:
-        dataset.attrs["disparity_interval"] = input_parameters["disp"]
+        dataset.pipe(add_disparity, disparity=input_config["disp"], window=window)
 
     # No data
     no_data = input_parameters["nodata"]
@@ -347,14 +392,15 @@ def get_metadata(
         data_vars={},
         coords={
             "band_im": list(img_ds.descriptions),
-            "row": img_ds.height,
-            "col": img_ds.width,
+            "row": np.arange(img_ds.height),
+            "col": np.arange(img_ds.width),
         },
-        attrs={"disparity_interval": disparity},
     )
 
-    return dataset.pipe(add_classif, classif, window=None, with_data=False).pipe(
-        add_segm, segm, window=None, with_data=False
+    return (
+        dataset.pipe(add_disparity, disparity=disparity, window=None)
+        .pipe(add_classif, classif, window=None, with_data=False)
+        .pipe(add_segm, segm, window=None, with_data=False)
     )
 
 
@@ -409,13 +455,9 @@ def prepare_pyramid(
     """
     Return a List with the datasets at the different scales
 
-    :param img_left: left Dataset image containing :
-
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img_left: left Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img_left: xarray.Dataset
-    :param img_right: right Dataset containing :
-
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img_right: right Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img_right: xarray.Dataset
     :param num_scales: number of scales
     :type num_scales: int
@@ -473,10 +515,8 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
     """
     Interpolate no data values in image. If no mask was given, create all valid masks
 
-    :param dataset: Dataset image
-    :type dataset: xarray.Dataset containing :
-
-        - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param dataset: Dataset image containing the image im : 2D (row, col) xarray.Dataset
+    :type dataset: xarray.Dataset
     :return: a Tuple that contains the filled image and mask
     :rtype: Tuple of np.ndarray
     """
@@ -572,9 +612,7 @@ def convert_pyramid_to_dataset(
     """
     Return a List with the datasets at the different scales
 
-    :param img_orig: Dataset image containing :
-
-        - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img_orig: Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img_orig: xarray.Dataset
     :param images: list of images for the pyramid
     :type images: list[np.ndarray]
@@ -628,9 +666,7 @@ def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None) -> Lis
     """
     Return an array that contains the shifted right images
 
-    :param img_right: right Dataset image containing :
-
-        - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img_right: Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img_right: xarray.Dataset
     :param subpix: subpixel precision = (1 or pair number)
     :type subpix: int
@@ -670,9 +706,7 @@ def check_inside_image(img: xr.Dataset, row: int, col: int) -> bool:
     """
     Check if the coordinates row,col are inside the image
 
-    :param img: Dataset image containing :
-
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img: Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img: xarray.Dataset
     :param row: row coordinates
     :type row: int
@@ -751,9 +785,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.
     """
     Compute the mean within a sliding window for the whole image
 
-    :param img: Dataset image containing :
-
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img: Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img: xarray.Dataset
     :param win_size: window size
     :type win_size: int
@@ -843,9 +875,7 @@ def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np
     """
     Compute the mean within a window centered at position row,col
 
-    :param img: Dataset image containing :
-
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img: Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img: xarray.Dataset
     :param row: row coordinates
     :type row: int
@@ -877,9 +907,7 @@ def compute_std_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.n
     Compute the standard deviation within a sliding window for the whole image
     with the formula : std = sqrt( E[row^2] - E[row]^2 )
 
-    :param img: Dataset image containing :
-
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img: Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img: xarray.Dataset
     :param win_size: window size
     :type win_size: int

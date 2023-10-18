@@ -34,7 +34,7 @@ import numpy as np
 from pkg_resources import iter_entry_points
 
 from . import common
-from .img_tools import create_dataset_from_inputs, read_disp
+from .img_tools import create_dataset_from_inputs
 from .check_configuration import check_conf, read_config_file, read_multiscale_params
 from .state_machine import PandoraMachine
 
@@ -44,11 +44,7 @@ def run(
     pandora_machine: PandoraMachine,
     img_left: xr.Dataset,
     img_right: xr.Dataset,
-    disp_min: Union[np.ndarray, int],
-    disp_max: Union[np.ndarray, int],
     cfg: Dict[str, dict],
-    disp_min_right: Union[None, np.ndarray] = None,
-    disp_max_right: Union[None, np.ndarray] = None,
 ) -> Tuple[xr.Dataset, xr.Dataset]:
     """
     Run the pandora pipeline
@@ -57,24 +53,22 @@ def run(
     :type pandora_machine: PandoraMachine
     :param img_left: left Dataset image containing :
 
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-            - msk (optional): 2D (row, col) xarray.DataArray
+            - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+            - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+            - msk (optional): 2D (row, col) xarray.DataArray int16
+            - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+            - segm (optional): 2D (row, col) xarray.DataArray int16
     :type img_left: xarray.Dataset
     :param img_right: right Dataset image containing :
 
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-            - msk (optional): 2D (row, col) xarray.DataArray
+            - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+            - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+            - msk (optional): 2D (row, col) xarray.DataArray int16
+            - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+            - segm (optional): 2D (row, col) xarray.DataArray int16
     :type img_right: xarray.Dataset
-    :param disp_min: minimal disparity
-    :type disp_min: int or np.ndarray
-    :param disp_max: maximal disparity
-    :type disp_max: int or np.ndarray
     :param cfg: pipeline configuration
     :type cfg: Dict[str, dict]
-    :param disp_min_right: minimal disparity of the right image
-    :type disp_min_right: np.ndarray or None
-    :param disp_max_right: maximal disparity of the right image
-    :type disp_max_right: np.ndarray or None
     :return: Two xarray.Dataset :
 
 
@@ -83,6 +77,8 @@ def run(
                 - confidence_measure : the confidence measure in the geometry of the left image 3D DataArray \
                     (row, col, indicator)
                 - validity_mask : the validity mask in the geometry of the left image 2D DataArray (row, col)
+                - classif_mask : information about a classification
+                - segm_mask : information about a segmentation
 
             - right : the right dataset. If there is no validation step, the right Dataset will be empty.If a \
             validation step is configured, the dataset will contain the variables :
@@ -90,6 +86,8 @@ def run(
                 - confidence_measure : the confidence measure in the geometry of the left image 3D DataArray \
                     (row, col, indicator)
                 - validity_mask : the validity mask in the geometry of the left image 2D DataArray (row, col)
+                - classif_mask : information about a classification
+                - segm_mask : information about a segmentation
 
     :rtype: tuple (xarray.Dataset, xarray.Dataset)
     """
@@ -98,21 +96,11 @@ def run(
     num_scales, scale_factor = read_multiscale_params(cfg)
 
     # Prepare the machine before running, including the image pyramid creation
-    pandora_machine.run_prepare(
-        cfg,
-        img_left,
-        img_right,
-        disp_min,
-        disp_max,
-        scale_factor,
-        num_scales,
-        disp_min_right,
-        disp_max_right,
-    )
+    pandora_machine.run_prepare(cfg, img_left, img_right, scale_factor, num_scales)
 
     # For each scale we run the whole pipeline, the scales will be executed from coarse to fine,
     # and the machine will store the necessary parameters for the following scale
-    for scale in range(pandora_machine.num_scales):  # pylint:disable=unused-variable
+    for _ in range(pandora_machine.num_scales):
         # Trigger the machine step by step
         for elem in list(cfg["pipeline"]):
             pandora_machine.run(elem, cfg)
@@ -179,24 +167,14 @@ def main(cfg_path: PathLike | str, output: str, verbose: bool) -> None:
     # Read images and masks
     input_config = common.split_inputs(cfg["input"])
     img_left = create_dataset_from_inputs(input_config=input_config["left"])
+    # If input_config["right"]["disp"] is None then "disp_right_min" = - "disp_left_max"
+    # and "disp_right_max" = - "disp_left_min"
+    if input_config["right"]["disp"] is None and not isinstance(input_config["left"]["disp"], str):
+        input_config["right"]["disp"] = [-input_config["left"]["disp"][1], -input_config["left"]["disp"][0]]
     img_right = create_dataset_from_inputs(input_config=input_config["right"])
 
-    # Read range of disparities
-    disp_min, disp_max = read_disp(cfg["input"]["disp_left"])
-    disp_right = cfg["input"]["disp_right"]
-    disp_min_right, disp_max_right = (None, None) if disp_right is None else read_disp(disp_right)
-
     # Run the Pandora pipeline
-    left, right = run(
-        pandora_machine,
-        img_left,
-        img_right,
-        disp_min,
-        disp_max,
-        cfg,
-        disp_min_right,  # type: ignore
-        disp_max_right,  # type: ignore
-    )
+    left, right = run(pandora_machine, img_left, img_right, cfg)
 
     # Save the left and right DataArray in tiff files
     common.save_results(left, right, output)

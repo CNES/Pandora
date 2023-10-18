@@ -42,15 +42,15 @@ class TestMultiScale(unittest.TestCase):
 
     def setUp(self):
         # img with int disparity
-        self.img_with_disp = xr.Dataset(data_vars={}, coords={}, attrs={"disparity_interval": [-30, 0]})
+        self.img_with_disp = xr.Dataset(data_vars={}, coords={}, attrs={"disparity_source": [-30, 0]})
 
         # img with grid disparity
         self.img_with_grid_disp = xr.Dataset(
-            data_vars={}, coords={}, attrs={"disparity_interval": "not_relevant_name_for_disparity_grid.tiff"}
+            data_vars={}, coords={}, attrs={"disparity_source": "not_relevant_name_for_disparity_grid.tiff"}
         )
 
         # img with None disparity
-        self.img_with_none_disp = xr.Dataset(data_vars={}, coords={}, attrs={"disparity_interval": [None, None]})
+        self.img_with_none_disp = xr.Dataset(data_vars={}, coords={}, attrs={"disparity_source": [None, None]})
 
     def test_disparity_range(self):
         """
@@ -68,8 +68,8 @@ class TestMultiScale(unittest.TestCase):
         multiscale_._scale_factor = 1  # pylint:disable=protected-access
         multiscale_._num_scales = 1  # pylint:disable=protected-access
 
-        disp_min = -30
-        disp_max = 0
+        disp_min = np.array([np.full((5, 6), -30)])
+        disp_max = np.array([np.full((5, 6), 0)])
 
         # Disparity map ground truth with the size of the input images
         gt_disp = np.array(

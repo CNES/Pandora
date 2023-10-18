@@ -1,3 +1,4 @@
+# pylint:disable=too-many-lines
 # type:ignore
 #!/usr/bin/env python
 # coding: utf8
@@ -38,6 +39,7 @@ from skimage.io import imsave
 import pandora
 from pandora.common import split_inputs
 from pandora import img_tools
+from pandora.img_tools import rasterio_open
 from tests import common
 
 
@@ -793,6 +795,48 @@ class TestCreateDatasetFromInputs:
         # Check the data
         np.testing.assert_array_equal(dst_left["segm"].data, segm_gt)
 
+    @pytest.mark.parametrize(
+        ["input_disparity", "expected"],
+        [
+            pytest.param(
+                "tests/pandora/left_disparity_grid.tif",
+                np.array(
+                    [
+                        rasterio_open("tests/pandora/left_disparity_grid.tif").read(1),
+                        rasterio_open("tests/pandora/left_disparity_grid.tif").read(2),
+                    ],
+                ),
+                id="Path to grid file",
+            ),
+            pytest.param(
+                (-60, 0), np.array([np.full((375, 450), -60), np.full((375, 450), 0)]), id="Tuple of integers"
+            ),
+            pytest.param([-60, 0], np.array([np.full((375, 450), -60), np.full((375, 450), 0)]), id="List of integers"),
+        ],
+    )
+    def test_with_disparity(self, input_disparity, expected):
+        """
+        Test the method create_dataset_from_inputs with the disparity
+
+        """
+        # Computes the dataset image
+        input_config = {
+            "left": {
+                "img": "tests/pandora/left.png",
+                "nodata": -9999,
+                "disp": input_disparity,
+            }
+        }
+
+        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
+
+        # Check the shape
+        assert dst_left["im"].shape == (375, 450)
+        assert dst_left["disparity"].shape == (2, 375, 450)
+
+        # Check if the calculated disparity is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(dst_left["disparity"].data, expected)
+
 
 class TestCheckDataset:
     """Test check_dataset function."""
@@ -923,14 +967,17 @@ class TestGetMetadata:
         """
         # Metadata ground truth
         metadata_gt = xr.Dataset(
-            coords={"band_im": [None], "row": 375, "col": 450}, attrs={"disparity_interval": [-60, 0]}
+            coords={"band_im": [None], "row": np.arange(375), "col": np.arange(450)},
+            attrs={"disparity_source": [-60, 0]},
         )
 
         # get metadata without classif and mask
         metadata_img = img_tools.get_metadata(input_cfg["input"]["img_left"], input_cfg["input"]["disp_left"])
 
         # Check that the get_metadata function run whitout error
-        assert metadata_img.coords == metadata_gt.coords
+        assert metadata_img.coords["band_im"] == metadata_gt.coords["band_im"]
+        assert (metadata_img.coords["row"] == metadata_gt.coords["row"]).all()
+        assert (metadata_img.coords["col"] == metadata_gt.coords["col"]).all()
         assert metadata_img.attrs == metadata_gt.attrs
 
     @pytest.mark.parametrize(

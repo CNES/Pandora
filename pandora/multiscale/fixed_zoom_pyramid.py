@@ -85,9 +85,7 @@ class FixedZoomPyramid(multiscale.AbstractMultiscale):
             cfg["marge"] = self._PYRAMID_MARGE
 
         # input disparities cannot be grids
-        if isinstance(left_img.attrs["disparity_interval"], str) or isinstance(
-            right_img.attrs["disparity_interval"], str
-        ):
+        if isinstance(left_img.attrs["disparity_source"], str) or isinstance(right_img.attrs["disparity_source"], str):
             logging.error("Multiscale processing does not accept input disparity grids.")
             sys.exit(1)
 
@@ -108,7 +106,9 @@ class FixedZoomPyramid(multiscale.AbstractMultiscale):
         """
         print("FixedZoomPyramid method")
 
-    def disparity_range(self, disp: xr.Dataset, disp_min: int, disp_max: int) -> Tuple[np.ndarray, np.ndarray]:
+    def disparity_range(
+        self, disp: xr.Dataset, disp_min: np.ndarray, disp_max: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Disparity range computation by seeking the max and min values in the window.
         Invalid disparities are given the full disparity range
@@ -118,9 +118,9 @@ class FixedZoomPyramid(multiscale.AbstractMultiscale):
                 - disparity_map 2D xarray.DataArray (row, col)
                 - confidence_measure 3D xarray.DataArray(row, col, indicator)
         :param disp_min: absolute min disparity
-        :type disp_min: int
+        :type disp_min: np.ndarray
         :param disp_max: absolute max disparity
-        :type disp_max: int
+        :type disp_max: np.ndarray
         :return: Two np.darray :
                 - disp_min_range : minimum disparity value for all pixels.
                 - disp_max_range : maximum disparity value for all pixels.
@@ -131,8 +131,8 @@ class FixedZoomPyramid(multiscale.AbstractMultiscale):
         offset = int((disp.attrs["window_size"] - 1) / 2)
 
         # Initialize ranges on max and min disparity values
-        disp_max_range = np.ones((ncol, nrow), dtype=np.float32) * disp_max
-        disp_min_range = np.ones((ncol, nrow), dtype=np.float32) * disp_min
+        disp_max_range = np.full_like(disp["disparity_map"].data, int(np.nanmax(disp_max)))
+        disp_min_range = np.full_like(disp["disparity_map"].data, int(np.nanmin(disp_min)))
 
         # Set invalid disparities as nan and store its indices
         tmp_disp_map = self.mask_invalid_disparities(disp)
@@ -174,8 +174,8 @@ class FixedZoomPyramid(multiscale.AbstractMultiscale):
         del disparity_windows
 
         # Indices where disparity was invalid are set the max/min absolute value
-        disp_min_range[invalid_ind] = disp_min
-        disp_max_range[invalid_ind] = disp_max
+        disp_min_range[invalid_ind] = int(np.nanmin(disp_min))
+        disp_max_range[invalid_ind] = int(np.nanmax(disp_max))
 
         if self._scale_factor == 1:
             return disp_min_range, disp_max_range

@@ -31,6 +31,7 @@ import numpy as np
 import xarray as xr
 
 from pandora import matching_cost
+from pandora.img_tools import add_disparity
 from tests import common
 
 
@@ -47,7 +48,9 @@ class TestMatchingCostSSD(unittest.TestCase):
         """
 
         self.left, self.right = common.matching_cost_tests_setup()
+        self.left.pipe(add_disparity, disparity=[-1, 1], window=None)
         self.left_multiband, self.right_multiband = common.matching_cost_tests_multiband_setup()
+        self.left_multiband.pipe(add_disparity, disparity=[-1, 1], window=None)
 
     def test_ssd_cost(self):
         """
@@ -69,8 +72,12 @@ class TestMatchingCostSSD(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "ssd", "window_size": 1, "subpix": 1}
         )
+
         ssd = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
+            img_left=self.left,
+            img_right=self.right,
+            grid_disp_min=self.left["disparity"].sel(band_disp="min"),
+            grid_disp_max=self.left["disparity"].sel(band_disp="max"),
         )
 
         # Check if the calculated sd cost is equal to the ground truth (same shape and all elements equals)
@@ -94,9 +101,18 @@ class TestMatchingCostSSD(unittest.TestCase):
             **{"matching_cost_method": "ssd", "window_size": 5, "subpix": 1}
         )
         ssd = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
+            img_left=self.left,
+            img_right=self.right,
+            grid_disp_min=self.left["disparity"].sel(band_disp="min"),
+            grid_disp_max=self.left["disparity"].sel(band_disp="max"),
         )
-        matching_cost_matcher.cv_masked(self.left, self.right, ssd, -1, 1)
+        matching_cost_matcher.cv_masked(
+            self.left,
+            self.right,
+            ssd,
+            self.left["disparity"].sel(band_disp="min"),
+            self.left["disparity"].sel(band_disp="max"),
+        )
 
         # Check if the calculated sd cost is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(ssd["cost_volume"].sel(disp=0), ssd_ground_truth)
@@ -120,8 +136,12 @@ class TestMatchingCostSSD(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "ssd", "window_size": 1, "subpix": 1, "band": "r"}
         )
+
         ssd = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left_multiband, img_right=self.right_multiband, disp_min=-1, disp_max=1
+            img_left=self.left_multiband,
+            img_right=self.right_multiband,
+            grid_disp_min=self.left_multiband["disparity"].sel(band_disp="min"),
+            grid_disp_max=self.left_multiband["disparity"].sel(band_disp="max"),
         )
 
         # Check if the calculated sd cost is equal to the ground truth (same shape and all elements equals)
@@ -148,9 +168,18 @@ class TestMatchingCostSSD(unittest.TestCase):
             **{"matching_cost_method": "ssd", "window_size": 5, "subpix": 1, "band": "r"}
         )
         ssd = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left_multiband, img_right=self.right_multiband, disp_min=-1, disp_max=1
+            img_left=self.left_multiband,
+            img_right=self.right_multiband,
+            grid_disp_min=self.left_multiband["disparity"].sel(band_disp="min"),
+            grid_disp_max=self.left_multiband["disparity"].sel(band_disp="max"),
         )
-        matching_cost_matcher.cv_masked(self.left_multiband, self.right_multiband, ssd, -1, 1)
+        matching_cost_matcher.cv_masked(
+            self.left_multiband,
+            self.right_multiband,
+            ssd,
+            self.left_multiband["disparity"].sel(band_disp="min"),
+            self.left_multiband["disparity"].sel(band_disp="max"),
+        )
 
         # Check if the calculated sd cost is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(ssd["cost_volume"].sel(disp=0), ssd_ground_truth)
@@ -175,7 +204,6 @@ class TestMatchingCostSSD(unittest.TestCase):
             ),
             dtype=np.float64,
         )
-
         data[1, :, :] = np.array(
             (
                 [2, 3, 4, 6],
@@ -185,7 +213,6 @@ class TestMatchingCostSSD(unittest.TestCase):
             ),
             dtype=np.float64,
         )
-
         left = xr.Dataset(
             {"im": (["band_im", "row", "col"], data)},
             coords={
@@ -194,7 +221,6 @@ class TestMatchingCostSSD(unittest.TestCase):
                 "col": np.arange(data.shape[2]),
             },
         )
-
         left.attrs = common.img_attrs
 
         # Initialize multiband data
@@ -208,7 +234,6 @@ class TestMatchingCostSSD(unittest.TestCase):
             ),
             dtype=np.float64,
         )
-
         data[1, :, :] = np.array(
             (
                 [6, 5, 2, 7],
@@ -218,7 +243,6 @@ class TestMatchingCostSSD(unittest.TestCase):
             ),
             dtype=np.float64,
         )
-
         right = xr.Dataset(
             {"im": (["band_im", "row", "col"], data)},
             coords={
@@ -227,7 +251,6 @@ class TestMatchingCostSSD(unittest.TestCase):
                 "col": np.arange(data.shape[2]),
             },
         )
-
         right.attrs = common.img_attrs
 
         # Initialization of matching_cost plugin with wrong band
@@ -237,7 +260,7 @@ class TestMatchingCostSSD(unittest.TestCase):
 
         # Compute the cost_volume
         with pytest.raises(SystemExit):
-            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
 
         # Initialization of matching_cost plugin with no band
         matching_cost_ = matching_cost.AbstractMatchingCost(
@@ -246,7 +269,7 @@ class TestMatchingCostSSD(unittest.TestCase):
 
         # Compute the cost_volume
         with pytest.raises(SystemExit):
-            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
 
 
 if __name__ == "__main__":
