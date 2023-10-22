@@ -77,6 +77,78 @@ def rasterio_can_open(file_: str) -> bool:
     return rasterio_can_open_mandatory(file_)
 
 
+def check_dimension(dataset: xr.Dataset, ref: str, test: str) -> None:
+    """
+    Check if two data_vars are the same dimensions
+
+    :param dataset: dataset
+    :type dataset: xr.Dataset
+    :param ref: the reference image
+    :type str: name of image
+    :param test: the tested image
+    :type str: name of image
+    """
+    # check only the rows and columns, the last two elements of the shape
+    if dataset[ref].data.shape[-2:] != dataset[test].data.shape[-2:]:
+        logging.error("%s and %s must have the same shape", ref, test)
+        sys.exit(1)
+
+
+def check_attribute(dataset: xr.Dataset, attribute: str) -> None:
+    """
+    Check if an attribute is in the dataset
+
+    :param dataset: dataset
+    :type dataset: xr.Dataset
+    :param attribute: the atribute to test
+    :type str: name of attribute
+    """
+    if attribute not in dataset.attrs:
+        logging.error("User must provide the % attribute", attribute)
+        sys.exit(1)
+
+
+def check_dataset(dataset: xr.Dataset) -> None:
+    """
+    Check if input dataset is correct, and return the corresponding xarray.DataSet
+
+    :param dataset: dataset
+    :type dataset: xr.Dataset
+    """
+
+    # Check image
+    if "im" not in dataset:
+        logging.error("User must provide an image im")
+        sys.exit(1)
+
+    # Check band in "band_im" coordinates
+    check_band_names(dataset)
+
+    # Check not empty image (all nan values)
+    if np.isnan(dataset["im"].data).all():
+        logging.error("Image contains lony nan values")
+        sys.exit(1)
+
+    # Check data_vars
+    if "msk" not in dataset:
+        logging.warning("User should provide a mask msk")
+    else:
+        check_dimension(dataset=dataset, ref="im", test="msk")
+
+    if "classif" in dataset:
+        check_dimension(dataset=dataset, ref="im", test="classif")
+
+    if "segm" in dataset:
+        check_dimension(dataset=dataset, ref="im", test="segm")
+
+    # Check attributes
+    check_attribute(dataset=dataset, attribute="no_data_img")
+    check_attribute(dataset=dataset, attribute="valid_pixels")
+    check_attribute(dataset=dataset, attribute="no_data_mask")
+    check_attribute(dataset=dataset, attribute="crs")
+    check_attribute(dataset=dataset, attribute="transform")
+
+
 def check_images(img_left: str, img_right: str, msk_left: str, msk_right: str) -> None:
     """
     Check the images
@@ -115,7 +187,7 @@ def check_images(img_left: str, img_right: str, msk_left: str, msk_right: str) -
             sys.exit(1)
 
 
-def check_band_names(img: str) -> None:
+def check_band_names(img: str | xr.Dataset) -> None:
     """
     Check that band names have the correct format
 
@@ -124,18 +196,25 @@ def check_band_names(img: str) -> None:
     :return: None
     """
 
-    # open image
-    img_ds = rasterio_open(img)
-    img_array = img_ds.read()
+    bands = []
+    if isinstance(img, str):
+        # open image
+        img_ds = rasterio_open(img)
+        # check that the image have the band names
+        if img_ds.count != 1:
+            if not img_ds.descriptions:
+                logging.error("Image is missing band names metadata")
+                sys.exit(1)
+            bands = list(img_ds.descriptions)
+            logging.info("Image has not band")
+    else:
+        if "band_im" in img.coords:
+            bands = list(img.coords["band_im"].data)
 
-    # check that the image have the band names
-    if img_array.shape[0] != 1:
-        if not img_ds.descriptions:
-            logging.error("Image is missing band names metadata")
-            sys.exit(1)
-        if not all(isinstance(band, str) for band in list(img_ds.descriptions)):
-            logging.error("Band value must be str")
-            sys.exit(1)
+    # Check type
+    if not all(isinstance(band, str) for band in bands):
+        logging.error("Band value must be str")
+        sys.exit(1)
 
 
 def check_disparities(

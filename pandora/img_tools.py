@@ -394,51 +394,6 @@ def get_metadata(
     )
 
 
-def check_dataset(dataset: xr.Dataset) -> None:
-    """
-    Check if input dataset is correct, and return the corresponding xarray.DataSet
-
-    :param dataset: dataset
-    :type dataset: xr.Dataset
-    """
-
-    # Check image
-    if "im" not in dataset:
-        logging.error("User must provide an image im")
-        sys.exit(1)
-
-    # Check mask
-    if "msk" not in dataset:
-        logging.warning("User should provide a mask msk")
-    else:
-        if dataset["im"].data.shape != dataset["msk"].data.shape:
-            logging.error("image and mask must have the same shape")
-            sys.exit(1)
-
-    # Check no_data_img
-    if "no_data_img" not in dataset.attrs:
-        logging.error("User must provide the image nodata value ")
-        sys.exit(1)
-
-    # Check valid_pixels
-    if "valid_pixels" not in dataset.attrs:
-        logging.error("User must provide the valid pixels value")
-        sys.exit(1)
-
-    # Check valid_pixels
-    if "no_data_mask" not in dataset.attrs:
-        logging.error("User must provide the no_data_mask pixels value")
-        sys.exit(1)
-
-    # Check georef
-    if "crs" not in dataset.attrs:
-        logging.error("User must provide image crs")
-        sys.exit(1)
-    if "transform" not in dataset.attrs:
-        logging.error("User must provide image transform")
-        sys.exit(1)
-
-
 def prepare_pyramid(
     img_left: xr.Dataset, img_right: xr.Dataset, num_scales: int, scale_factor: int
 ) -> Tuple[List[xr.Dataset], List[xr.Dataset]]:
