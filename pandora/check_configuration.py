@@ -33,12 +33,14 @@ from collections.abc import Mapping
 from os import PathLike
 from typing import Dict, Union, List, Tuple
 import xarray as xr
+import rasterio
 
 import numpy as np
 from json_checker import Checker, Or, And
 
 from pandora.state_machine import PandoraMachine
 from pandora.img_tools import rasterio_open, get_metadata
+from pandora.common import split_inputs
 
 from pandora import multiscale
 
@@ -77,7 +79,7 @@ def rasterio_can_open(file_: str) -> bool:
     return rasterio_can_open_mandatory(file_)
 
 
-def check_dimension(dataset: xr.Dataset, ref: str, test: str) -> None:
+def check_shape(dataset: xr.Dataset, ref: str, test: str) -> None:
     """
     Check if two data_vars are the same dimensions
 
@@ -133,13 +135,13 @@ def check_dataset(dataset: xr.Dataset) -> None:
     if "msk" not in dataset:
         logging.warning("User should provide a mask msk")
     else:
-        check_dimension(dataset=dataset, ref="im", test="msk")
+        check_shape(dataset=dataset, ref="im", test="msk")
 
     if "classif" in dataset:
-        check_dimension(dataset=dataset, ref="im", test="classif")
+        check_shape(dataset=dataset, ref="im", test="classif")
 
     if "segm" in dataset:
-        check_dimension(dataset=dataset, ref="im", test="segm")
+        check_shape(dataset=dataset, ref="im", test="segm")
 
     # Check attributes
     check_attribute(dataset=dataset, attribute="no_data_img")
@@ -149,42 +151,43 @@ def check_dataset(dataset: xr.Dataset) -> None:
     check_attribute(dataset=dataset, attribute="transform")
 
 
-def check_images(img_left: str, img_right: str, msk_left: str, msk_right: str) -> None:
+def check_image_dimension(img1: rasterio.io.DatasetReader, img2: rasterio.io.DatasetReader) -> None:
     """
-    Check the images
+    Check width and height are the same between two images
 
-    :param img_left: path to the left image
-    :type img_left: string
-    :param img_right: path to the right image
-    :type img_right: string
-    :param msk_left: path to the mask of the left image
-    :type msk_left: string
-    :param msk_right: path to the mask of the right image
-    :type msk_right: string
+    :param img1: image DatasetReader with width and height
+    :type img1: rasterio.io.DatasetReader
+    :param img2: image DatasetReader with width and height
+    :type img2: rasterio.io.DatasetReader
     :return: None
     """
-    left_ = rasterio_open(img_left)
-    right_ = rasterio_open(img_right)
-
-    # verify that the images have the same size
-    if (left_.width != right_.width) or (left_.height != right_.height):
+    if (img1.width != img2.width) or (img1.height != img2.height):
         logging.error("Images must have the same size")
         sys.exit(1)
 
-    # verify that image and mask have the same size
-    if msk_left is not None:
-        msk_ = rasterio_open(msk_left)
-        if (left_.width != msk_.width) or (left_.height != msk_.height):
-            logging.error("Image and masks must have the same size")
-            sys.exit(1)
 
-    # verify that image and mask have the same size
-    if msk_right is not None:
-        msk_ = rasterio_open(msk_right)
-        # verify that the image and mask have the same size
-        if (right_.width != msk_.width) or (right_.height != msk_.height):
-            logging.error("Image and masks must have the same size")
-            sys.exit(1)
+def check_images(user_cfg: Dict[str, dict]) -> None:
+    """
+    Check the images
+
+    :param user_cfg: user configuration
+    :type user_cfg: dict
+    :return: None
+    """
+
+    left_ = rasterio_open(user_cfg["left"]["img"])
+    right_ = rasterio_open(user_cfg["right"]["img"])
+
+    # verify that the images left and right have the same size
+    check_image_dimension(left_, right_)
+
+    # verify others images
+    images = ["mask", "classif", "segm"]
+    for img in images:
+        if img in user_cfg["left"] and user_cfg["left"][img] is not None:
+            check_image_dimension(left_, rasterio_open(user_cfg["left"][img]))
+        if img in user_cfg["right"] and user_cfg["right"][img] is not None:
+            check_image_dimension(right_, rasterio_open(user_cfg["right"][img]))
 
 
 def check_band_names(img: str | xr.Dataset) -> None:
@@ -441,12 +444,7 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     check_band_names(cfg["input"]["img_left"])
     check_band_names(cfg["input"]["img_right"])
 
-    check_images(
-        cfg["input"]["img_left"],
-        cfg["input"]["img_right"],
-        cfg["input"]["left_mask"],
-        cfg["input"]["right_mask"],
-    )
+    check_images(split_inputs(cfg["input"]))
 
     return cfg
 
