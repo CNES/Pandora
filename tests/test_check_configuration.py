@@ -37,6 +37,7 @@ from pandora.check_configuration import (
     check_band_names,
     check_image_dimension,
     check_disparities,
+    check_attributes,
 )
 from tests import common
 
@@ -250,7 +251,7 @@ class TestCheckShape:
             check_shape(dataset=dataset, ref="im", test="occlusion")
 
 
-class TestCheckAttribute:
+class TestCheckAttributes:
     """Test check_attribute function."""
 
     @pytest.fixture()
@@ -270,9 +271,10 @@ class TestCheckAttribute:
         """
         Test attributes missing in dataset
         """
+        mandatory_attributes = {"no_data_img", "valid_pixels", "no_data_mask", "crs", "transform"}
         del dataset.attrs[missing_attribute]
         with pytest.raises(SystemExit):
-            check_dataset(dataset)
+            check_attributes(dataset, mandatory_attributes)
 
 
 class TestCheckImageDimension:

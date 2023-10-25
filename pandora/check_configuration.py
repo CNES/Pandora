@@ -96,17 +96,18 @@ def check_shape(dataset: xr.Dataset, ref: str, test: str) -> None:
         sys.exit(1)
 
 
-def check_attribute(dataset: xr.Dataset, attribute: str) -> None:
+def check_attributes(dataset: xr.Dataset, attribute_list: set) -> None:
     """
-    Check if an attribute is in the dataset
+    Check if attributes are in the dataset
 
     :param dataset: dataset
     :type dataset: xr.Dataset
     :param attribute: the atribute to test
-    :type str: name of attribute
+    :type set: list of attribute names
     """
-    if attribute not in dataset.attrs:
-        logging.error("User must provide the % attribute", attribute)
+    attribute = attribute_list - set(dataset.attrs)
+    if attribute:
+        logging.error("User must provide the % attribute(s)", attribute)
         sys.exit(1)
 
 
@@ -144,11 +145,8 @@ def check_dataset(dataset: xr.Dataset) -> None:
         check_shape(dataset=dataset, ref="im", test="segm")
 
     # Check attributes
-    check_attribute(dataset=dataset, attribute="no_data_img")
-    check_attribute(dataset=dataset, attribute="valid_pixels")
-    check_attribute(dataset=dataset, attribute="no_data_mask")
-    check_attribute(dataset=dataset, attribute="crs")
-    check_attribute(dataset=dataset, attribute="transform")
+    mandatory_attributes = {"no_data_img", "valid_pixels", "no_data_mask", "crs", "transform"}
+    check_attributes(dataset=dataset, attribute_list=mandatory_attributes)
 
 
 def check_image_dimension(img1: rasterio.io.DatasetReader, img2: rasterio.io.DatasetReader) -> None:
@@ -210,7 +208,7 @@ def check_band_names(img: str | xr.Dataset) -> None:
                 sys.exit(1)
             bands = list(img_ds.descriptions)
             logging.info("Image has not band")
-    else:
+    else:  # img is a dataset
         if "band_im" in img.coords:
             bands = list(img.coords["band_im"].data)
 
