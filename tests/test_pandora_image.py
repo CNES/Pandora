@@ -37,9 +37,8 @@ import xarray as xr
 from skimage.io import imsave
 
 import pandora
-from pandora.common import split_inputs
 from pandora import img_tools
-from pandora.img_tools import rasterio_open
+from pandora.img_tools import rasterio_open, create_dataset_from_inputs
 from tests import common
 
 
@@ -58,7 +57,7 @@ def monoband_image():
 @pytest.fixture()
 def multiband_image():
     """Create multiband image"""
-    return common.matching_cost_tests_multiband_setup()[0]  # type: ignore
+    return common.matching_cost_tests_multiband_setup()[0]
 
 
 @pytest.mark.parametrize(
@@ -837,31 +836,39 @@ class TestCreateDatasetFromInputs:
         # Check if the calculated disparity is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(dst_left["disparity"].data, expected)
 
+    @pytest.mark.parametrize(
+        ["img_path", "classif_path", "segm_path"],
+        [
+            pytest.param(
+                "tests/image/left_img.tif",
+                "tests/pandora/left_classif.tif",
+                None,
+                id="between img and classif",
+            ),
+            pytest.param(
+                "tests/pandora/left.png",
+                None,
+                "tests/image/mask_left.tif",
+                id="between img and segm",
+            ),
+        ],
+    )
+    def test_fails_with_different_shape(self, img_path, classif_path, segm_path):
+        """
+        Test with wrong image shapes
+        """
+        # create dataset
+        input_config = {
+            "img": img_path,
+            "disp": [-60, 0],
+            "nodata": -9999,
+            "mask": None,
+            "classif": classif_path,
+            "segm": segm_path,
+        }
 
-class TestCheckDataset:
-    """Test check_dataset function."""
-
-    @pytest.fixture()
-    def dataset(self):
-        """Build dataset."""
-        # Build the default configuration
-        default_cfg = pandora.check_configuration.default_short_configuration
-        input_config = split_inputs(default_cfg["input"])
-        input_config["left"]["img"] = "tests/image/left_img.tif"
-        input_config["left"]["disp"] = [-60, 0]
-
-        # Computes the dataset image
-        return img_tools.create_dataset_from_inputs(input_config=input_config["left"])
-
-    def test_nominal_case(self, dataset):
-        """Should not raise error."""
-        img_tools.check_dataset(dataset)
-
-    @pytest.mark.parametrize("missing_attribute", ["no_data_img", "valid_pixels", "no_data_mask", "crs", "transform"])
-    def test_failing_when_given_dateset_with_missing_attribute(self, dataset, missing_attribute):
-        del dataset.attrs[missing_attribute]
-        with pytest.raises(SystemExit):
-            img_tools.check_dataset(dataset)
+        with pytest.raises((ValueError, SystemExit)):
+            create_dataset_from_inputs(input_config=input_config)
 
 
 class TestShiftRightImg:
