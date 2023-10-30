@@ -36,7 +36,8 @@ from pandora.check_configuration import (
     check_shape,
     check_band_names,
     check_image_dimension,
-    check_disparities,
+    check_disparities_from_input,
+    check_disparities_from_dataset,
     check_attributes,
 )
 from tests import common
@@ -298,8 +299,8 @@ class TestCheckImageDimension:
             check_image_dimension(img1_, img2_)
 
 
-class TestCheckDisparities:
-    """Test check_disparities function."""
+class TestCheckDisparitiesFromInput:
+    """Test check_disparities_from_input function."""
 
     @pytest.mark.parametrize(
         ["disparity"],
@@ -307,24 +308,6 @@ class TestCheckDisparities:
             pytest.param([-60, 0], id="int list disparities"),
             pytest.param(None, id="None disparity"),
             pytest.param("tests/pandora/left_disparity_grid.tif", id="image path disparities"),
-            pytest.param(
-                xr.DataArray(
-                    data=np.array(
-                        [
-                            np.full((3, 4), -60),
-                            np.full((3, 4), 0),
-                        ],
-                        dtype=np.float32,
-                    ),
-                    dims=["band_disp", "row", "col"],
-                    coords={
-                        "band_disp": ["min", "max"],
-                        "row": np.arange(3),
-                        "col": np.arange(4),
-                    },
-                ),
-                id="xarray DataArray disparities",
-            ),
         ],
     )
     def test_nominal_case(self, disparity):
@@ -332,7 +315,7 @@ class TestCheckDisparities:
         Test the nominal case with list[int], str, None disparities
         """
         img_left_path_ = "tests/pandora/left.png"
-        check_disparities(disparity, img_left_path_)
+        check_disparities_from_input(disparity, img_left_path_)
 
     @pytest.mark.parametrize(
         ["disparity", "img_path"],
@@ -346,6 +329,43 @@ class TestCheckDisparities:
                 "tests/pandora/left.png",
                 id="image disparity with wrong dimension",
             ),
+        ],
+    )
+    def test_fails_with_wrong_disparities(self, disparity, img_path):
+        """
+        Test with wrong disparities
+        """
+        with pytest.raises(SystemExit):
+            check_disparities_from_input(disparity, img_path)
+
+
+class TestCheckDisparitiesFromDataset:
+    """Test check_disparities_from_dataset function."""
+
+    def test_nominal_case(self):
+        """
+        Test the nominal case with xarray DataArray disparities
+        """
+        disparity = xr.DataArray(
+            data=np.array(
+                [
+                    np.full((3, 4), -60),
+                    np.full((3, 4), 0),
+                ],
+                dtype=np.float32,
+            ),
+            dims=["band_disp", "row", "col"],
+            coords={
+                "band_disp": ["min", "max"],
+                "row": np.arange(3),
+                "col": np.arange(4),
+            },
+        )
+        check_disparities_from_dataset(disparity)
+
+    @pytest.mark.parametrize(
+        ["disparity"],
+        [
             pytest.param(
                 xr.DataArray(
                     data=np.array(
@@ -358,7 +378,6 @@ class TestCheckDisparities:
                         "col": np.arange(4),
                     },
                 ),
-                None,
                 id="xarray DataArray with one band",
             ),
             pytest.param(
@@ -377,7 +396,6 @@ class TestCheckDisparities:
                         "col": np.arange(4),
                     },
                 ),
-                None,
                 id="xarray DataArray disparities with max < min",
             ),
             pytest.param(
@@ -396,14 +414,13 @@ class TestCheckDisparities:
                         "col": np.arange(4),
                     },
                 ),
-                None,
                 id="xarray DataArray disparities with wrong band names",
             ),
         ],
     )
-    def test_fails_with_wrong_disparities(self, disparity, img_path):
+    def test_fails_with_wrong_disparities(self, disparity):
         """
         Test with wrong disparities
         """
         with pytest.raises(SystemExit):
-            check_disparities(disparity, img_path)
+            check_disparities_from_dataset(disparity)
