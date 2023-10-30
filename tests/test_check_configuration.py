@@ -307,6 +307,24 @@ class TestCheckDisparities:
             pytest.param([-60, 0], id="int list disparities"),
             pytest.param(None, id="None disparity"),
             pytest.param("tests/pandora/left_disparity_grid.tif", id="image path disparities"),
+            pytest.param(
+                xr.DataArray(
+                    data=np.array(
+                        [
+                            np.full((3, 4), -60),
+                            np.full((3, 4), 0),
+                        ],
+                        dtype=np.float32,
+                    ),
+                    dims=["band_disp", "row", "col"],
+                    coords={
+                        "band_disp": ["min", "max"],
+                        "row": np.arange(3),
+                        "col": np.arange(4),
+                    },
+                ),
+                id="xarray DataArray disparities",
+            ),
         ],
     )
     def test_nominal_case(self, disparity):
@@ -327,6 +345,59 @@ class TestCheckDisparities:
                 "tests/pandora/tiny_left_disparity_grid.tif",
                 "tests/pandora/left.png",
                 id="image disparity with wrong dimension",
+            ),
+            pytest.param(
+                xr.DataArray(
+                    data=np.array(
+                        np.full((3, 4), -60),
+                        dtype=np.float32,
+                    ),
+                    dims=["row", "col"],
+                    coords={
+                        "row": np.arange(3),
+                        "col": np.arange(4),
+                    },
+                ),
+                None,
+                id="xarray DataArray with one band",
+            ),
+            pytest.param(
+                xr.DataArray(
+                    data=np.array(
+                        [
+                            np.full((3, 4), -60),
+                            np.full((3, 4), 0),
+                        ],
+                        dtype=np.float32,
+                    ),
+                    dims=["band_disp", "row", "col"],
+                    coords={
+                        "band_disp": ["max", "min"],
+                        "row": np.arange(3),
+                        "col": np.arange(4),
+                    },
+                ),
+                None,
+                id="xarray DataArray disparities with max < min",
+            ),
+            pytest.param(
+                xr.DataArray(
+                    data=np.array(
+                        [
+                            np.full((3, 4), -60),
+                            np.full((3, 4), 0),
+                        ],
+                        dtype=np.float32,
+                    ),
+                    dims=["band_disp", "row", "col"],
+                    coords={
+                        "band_disp": ["a", "b"],
+                        "row": np.arange(3),
+                        "col": np.arange(4),
+                    },
+                ),
+                None,
+                id="xarray DataArray disparities with wrong band names",
             ),
         ],
     )
