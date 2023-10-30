@@ -31,6 +31,7 @@ from pandora.common import split_inputs
 from pandora.img_tools import create_dataset_from_inputs, add_disparity, rasterio_open
 from pandora.check_configuration import (
     check_dataset,
+    check_datasets,
     default_short_configuration,
     update_conf,
     check_shape,
@@ -123,6 +124,54 @@ class TestCheckDataset:
 
         with pytest.raises(SystemExit):
             check_dataset(dataset)
+
+
+class TestCheckDatasets:
+    """Test check_datasets function."""
+
+    def dataset(self, img_path, disparity):
+        """Build dataset."""
+        input_cfg = {
+            "img": img_path,
+            "disp": disparity,
+            "nodata": -9999,
+            "mask": None,
+            "classif": None,
+            "segm": None,
+        }
+        return create_dataset_from_inputs(input_cfg)
+
+    @pytest.fixture()
+    def datasets(self, request):
+        """Build left/right dataset."""
+        left_params = request.param[0]
+        right_params = request.param[1]
+        return self.dataset(*left_params), self.dataset(*right_params)
+
+    @pytest.mark.parametrize(
+        "datasets",
+        [(["tests/pandora/left.png", [-60, 0]], ["tests/pandora/right.png", [0, 60]])],
+        indirect=["datasets"],
+    )
+    def test_nominal(self, datasets):
+        """
+        Test the nominal case with image dataset
+        """
+        dataset_left, dataset_right = datasets
+        check_datasets(dataset_left, dataset_right)
+
+    @pytest.mark.parametrize(
+        "datasets",
+        [(["tests/image/left_img.tif", [-60, 0]], ["tests/pandora/right.png", [0, 60]])],
+        indirect=["datasets"],
+    )
+    def test_fails_with_wrong_dimension(self, datasets):
+        """
+        Test the nominal case with image dataset
+        """
+        dataset_left, dataset_right = datasets
+        with pytest.raises(SystemExit):
+            check_datasets(dataset_left, dataset_right)
 
 
 class TestCheckBandNames:
