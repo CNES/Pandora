@@ -113,7 +113,7 @@ def check_attributes(dataset: xr.Dataset, attribute_list: set) -> None:
 
 def check_dataset(dataset: xr.Dataset) -> None:
     """
-    Check if input dataset is correct, and return the corresponding xarray.DataSet
+    Check if input dataset is correct
 
     :param dataset: dataset
     :type dataset: xr.Dataset
@@ -133,7 +133,7 @@ def check_dataset(dataset: xr.Dataset) -> None:
         sys.exit(1)
 
     # Check disparities
-    check_disparities(dataset["disparity"], None)
+    check_disparities_from_dataset(dataset["disparity"])
 
     # Check others data_vars : mask, classif and segm
     for data_var in filter(lambda i: i != "im", dataset):
@@ -142,6 +142,27 @@ def check_dataset(dataset: xr.Dataset) -> None:
     # Check attributes
     mandatory_attributes = {"no_data_img", "valid_pixels", "no_data_mask", "crs", "transform"}
     check_attributes(dataset=dataset, attribute_list=mandatory_attributes)
+
+
+def check_datasets(left: xr.Dataset, right: xr.Dataset) -> None:
+    """
+    Check that left and right datasets are correct
+
+    :param left: dataset
+    :type dataset: xr.Dataset
+    :param right: dataset
+    :type dataset: xr.Dataset
+    """
+
+    # Check the dataset content
+    check_dataset(left)
+    check_dataset(right)
+
+    # Check shape
+    # check only the rows and columns, the last two elements of the shape
+    if left["im"].data.shape[-2:] != right["im"].data.shape[-2:]:
+        logging.error("left and right datasets must have the same shape")
+        sys.exit(1)
 
 
 def check_image_dimension(img1: rasterio.io.DatasetReader, img2: rasterio.io.DatasetReader) -> None:
@@ -213,15 +234,15 @@ def check_band_names(img: str | xr.Dataset) -> None:
         sys.exit(1)
 
 
-def check_disparities(
-    disparity: list[int] | str | None | xr.DataArray,
+def check_disparities_from_input(
+    disparity: list[int] | str | None,
     img_left: str,
 ) -> None:
     """
-    Check disparities.
+    Check disparities from user configuration
 
     :param disparity: disparity to check if list it is a list of two values: min and max.
-    :type disparity:  list[int] | str | None | xr.DataArray
+    :type disparity:  list[int] | str | None
     :param img_left: path to the left image
     :type img_left: str
     :return: None
@@ -252,18 +273,28 @@ def check_disparities(
             logging.error("Disp_max must be bigger than Disp_min")
             sys.exit(1)
 
-    # disparities are xr.DataArray
-    if isinstance(disparity, xr.DataArray):
-        if "band_disp" not in disparity.coords:
-            logging.error("Disparity xr.Dataset must have a band_disp coordinate")
-            sys.exit(1)
-        band_disp = disparity.coords["band_disp"].data
-        if not {"min", "max"}.issubset(band_disp):
-            logging.error("Disparity xr.Dataset must have a band_disp coordinate with min and max band")
-            sys.exit(1)
-        if (disparity.sel(band_disp="min").data > disparity.sel(band_disp="max").data).any():
-            logging.error("Disp_max grid must be bigger than Disp_min grid for each pixel")
-            sys.exit(1)
+
+def check_disparities_from_dataset(disparity: xr.DataArray) -> None:
+    """
+    Check disparities with this format
+
+    disparity: 3D (band_disp, row, col) xarray.DataArray float32
+    and band_disp = (min, max)
+
+    :param disparity: disparity to check
+    :type disparity:  xr.DataArray
+    :return: None
+    """
+    if "band_disp" not in disparity.coords:
+        logging.error("Disparity xr.Dataset must have a band_disp coordinate")
+        sys.exit(1)
+    band_disp = disparity.coords["band_disp"].data
+    if not {"min", "max"}.issubset(band_disp):
+        logging.error("Disparity xr.Dataset must have a band_disp coordinate with min and max band")
+        sys.exit(1)
+    if (disparity.sel(band_disp="min").data > disparity.sel(band_disp="max").data).any():
+        logging.error("Disp_max grid must be bigger than Disp_min grid for each pixel")
+        sys.exit(1)
 
 
 def get_config_input(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
@@ -436,12 +467,12 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     # custom checking
 
     # check left disparities
-    check_disparities(
+    check_disparities_from_input(
         cfg["input"]["disp_left"],
         cfg["input"]["img_left"],
     )
     # check right disparities
-    check_disparities(
+    check_disparities_from_input(
         cfg["input"]["disp_right"],
         cfg["input"]["img_right"],
     )
