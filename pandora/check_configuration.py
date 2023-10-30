@@ -132,17 +132,12 @@ def check_dataset(dataset: xr.Dataset) -> None:
         logging.error("Image contains lony nan values")
         sys.exit(1)
 
-    # Check data_vars
-    if "msk" not in dataset:
-        logging.warning("User should provide a mask msk")
-    else:
-        check_shape(dataset=dataset, ref="im", test="msk")
+    # Check disparities
+    check_disparities(dataset["disparity"], None)
 
-    if "classif" in dataset:
-        check_shape(dataset=dataset, ref="im", test="classif")
-
-    if "segm" in dataset:
-        check_shape(dataset=dataset, ref="im", test="segm")
+    # Check others data_vars : mask, classif and segm
+    for data_var in filter(lambda i: i != "im", dataset):
+        check_shape(dataset=dataset, ref="im", test=str(data_var))
 
     # Check attributes
     mandatory_attributes = {"no_data_img", "valid_pixels", "no_data_mask", "crs", "transform"}
@@ -219,25 +214,24 @@ def check_band_names(img: str | xr.Dataset) -> None:
 
 
 def check_disparities(
-    disparity: list[int] | str | None,
+    disparity: list[int] | str | None | xr.DataArray,
     img_left: str,
 ) -> None:
     """
-    Check left and right disparities.
+    Check disparities.
 
     :param disparity: disparity to check if list it is a list of two values: min and max.
-    :type disparity:  list[int] | str | None
+    :type disparity:  list[int] | str | None | xr.DataArray
     :param img_left: path to the left image
     :type img_left: str
     :return: None
     """
-    # --- Check left disparities
-    # left disparity are integers
+    # disparities are integers
     if isinstance(disparity, list) and disparity[1] < disparity[0]:
         logging.error("Disp_max must be bigger than Disp_min")
         sys.exit(1)
 
-    # left disparity are grids
+    # disparites are grids
     if isinstance(disparity, str):
         # Load an image to compare the grid size
         img_left_ = rasterio_open(img_left)
@@ -256,6 +250,19 @@ def check_disparities(
 
         if (disparity_reader.read(1) > disparity_reader.read(2)).any():
             logging.error("Disp_max must be bigger than Disp_min")
+            sys.exit(1)
+
+    # disparities are xr.DataArray
+    if isinstance(disparity, xr.DataArray):
+        if "band_disp" not in disparity.coords:
+            logging.error("Disparity xr.Dataset must have a band_disp coordinate")
+            sys.exit(1)
+        band_disp = disparity.coords["band_disp"].data
+        if not {"min", "max"}.issubset(band_disp):
+            logging.error("Disparity xr.Dataset must have a band_disp coordinate with min and max band")
+            sys.exit(1)
+        if (disparity.sel(band_disp="min").data > disparity.sel(band_disp="max").data).any():
+            logging.error("Disp_max grid must be bigger than Disp_min grid for each pixel")
             sys.exit(1)
 
 
