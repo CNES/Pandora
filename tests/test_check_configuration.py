@@ -150,7 +150,10 @@ class TestCheckDatasets:
 
     @pytest.mark.parametrize(
         "datasets",
-        [(["tests/pandora/left.png", [-60, 0]], ["tests/pandora/right.png", [0, 60]])],
+        [
+            (["tests/pandora/left.png", [-60, 0]], ["tests/pandora/right.png", [0, 60]]),
+            (["tests/pandora/left.png", [-60, 0]], ["tests/pandora/right.png", None]),
+        ],
         indirect=["datasets"],
     )
     def test_nominal(self, datasets):
@@ -166,6 +169,22 @@ class TestCheckDatasets:
         indirect=["datasets"],
     )
     def test_fails_with_wrong_dimension(self, datasets):
+        """
+        Test the nominal case with image dataset
+        """
+        dataset_left, dataset_right = datasets
+        with pytest.raises(SystemExit):
+            check_datasets(dataset_left, dataset_right)
+
+    @pytest.mark.parametrize(
+        "datasets",
+        [
+            (["tests/image/left_img.tif", None], ["tests/pandora/right.png", [0, 60]]),
+            (["tests/image/left_img.tif", None], ["tests/pandora/right.png", None]),
+        ],
+        indirect=["datasets"],
+    )
+    def test_fails_without_disparity(self, datasets):
         """
         Test the nominal case with image dataset
         """
