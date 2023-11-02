@@ -210,19 +210,6 @@ class TestCheckBandNames:
         return create_dataset_from_inputs(input_cfg)
 
     @pytest.mark.parametrize(
-        ["img"],
-        [
-            pytest.param("tests/pandora/left.png", id="image without bands"),
-            pytest.param("tests/pandora/left_rgb.tif", id="image with bands"),
-        ],
-    )
-    def test_nominal_case_path(self, img):
-        """
-        Test the nominal case with image path
-        """
-        check_band_names(img)
-
-    @pytest.mark.parametrize(
         "dataset",
         [
             pytest.param("tests/pandora/left.png", id="dataset without bands"),
