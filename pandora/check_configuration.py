@@ -133,7 +133,8 @@ def check_dataset(dataset: xr.Dataset) -> None:
         sys.exit(1)
 
     # Check disparities
-    check_disparities_from_dataset(dataset["disparity"])
+    if "disparity" in dataset:
+        check_disparities_from_dataset(dataset["disparity"])
 
     # Check others data_vars : mask, classif and segm
     for data_var in filter(lambda i: i != "im", dataset):
@@ -157,6 +158,11 @@ def check_datasets(left: xr.Dataset, right: xr.Dataset) -> None:
     # Check the dataset content
     check_dataset(left)
     check_dataset(right)
+
+    # Check disparities at least on the left
+    if not "disparity" in left:
+        logging.error("left dataset must have disparity DataArray")
+        sys.exit(1)
 
     # Check shape
     # check only the rows and columns, the last two elements of the shape
