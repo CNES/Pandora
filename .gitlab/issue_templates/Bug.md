@@ -11,7 +11,7 @@
 **Copier l'environnement**
 
 ```
-pipt list:
+pip list:
 ```
 
 
