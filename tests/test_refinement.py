@@ -688,7 +688,9 @@ class TestRefinement(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
-        cv = matching_cost_matcher.compute_cost_volume(img_left=img_left, img_right=img_right, disp_min=-1, disp_max=1)
+        cv = matching_cost_matcher.compute_cost_volume(
+            img_left=img_left, img_right=img_right, grid_disp_min=-1, grid_disp_max=1
+        )
         # Cost volume :
         # array([[[nan, 49., 15.],
         #         [40.,  6., 54.],

@@ -2,13 +2,9 @@
   "input": {
     "img_left": "./left.png",
     "img_right": "./right.png",
-    "disp_min": -60,
-    "disp_max": 0
+    "disp_left": [-60, 0]
   },
   "pipeline": {
-    "right_disp_map": {
-      "method": "accurate"
-    },
     "matching_cost": {
       "matching_cost_method": "zncc",
       "window_size": 5,
@@ -20,6 +16,9 @@
     },
     "refinement": {
       "refinement_method": "quadratic"
+    },
+    "validation" : {
+      "validation_method": "cross_checking_accurate"
     }
   }
 }

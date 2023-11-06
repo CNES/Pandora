@@ -60,3 +60,62 @@ How do I add the band's names as metadata on a multiband image ?
       Description = g
     Band 3 Block=450x1 Type=Float32, ColorInterp=Blue
       Description = b
+
+
+How do I check my data without launching Pandora completely ?
+*************************************************************
+
+
+**Example using a python script and pandora library:**
+
+User configuration file, *pandora_conf.json*:
+
+.. code:: json
+    :name: user configuration example
+
+    {
+      "input": {
+        "img_left": "./left_rgb.tif",
+        "img_right": "./right_rgb.tif",
+        "disp_left": [-60, 0]
+      },
+      "pipeline": {
+        "matching_cost": {
+          "matching_cost_method": "zncc",
+          "band": "r",
+          "window_size": 5,
+          "subpix": 4
+        },
+        "disparity": {
+          "disparity_method": "wta",
+          "invalid_disparity": "NaN"
+        },
+        "refinement": {
+          "refinement_method": "quadratic"
+        },
+        "validation" : {
+          "validation_method": "cross_checking_accurate"
+        }
+      }
+    }
+
+
+And the python script.
+
+.. code-block:: bash
+
+    from pandora.img_tools import create_dataset_from_inputs
+    from pandora.check_configuration import check_dataset, read_config_file
+
+    # Read pandora_conf.json
+    user_cfg = read_config_file(cfg_path)
+
+    # Read images 
+    input_config = common.split_inputs(cfg["input"])
+    img_left = create_dataset_from_inputs(input_config=input_config["left"])
+    img_right = create_dataset_from_inputs(input_config=input_config["right"])
+
+    # Check dataset
+    check_dataset(img_left)
+    check_dataset(img_right)
+

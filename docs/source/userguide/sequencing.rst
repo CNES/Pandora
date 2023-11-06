@@ -39,10 +39,6 @@ See :ref:`multiple_filters_example` for an example with multiple usage of filter
 
 **The most important thing to remember is to build your configuration file following the previous diagram by using transition name on pipeline section of your file.**
 
-.. note::
-    The only step of *pipeline* key configuration file that does not depend on machine state is the *right_disp_map* step (see :ref:`outputs`). This one, if needed, must be written
-    at the top of *pipeline* section as shown in :ref:`right_map_example`.
-
 **Checking configuration with the state machine:**
 
 To ensure that the user configuration will work, we have chosen to activate twice the state machine.
@@ -75,12 +71,10 @@ median filter method.
         {
             "left_mask": null,
             "right_mask": null,
-            "disp_min_right": null,
-            "disp_max_right": null,
+            "disp_right": null,
             "img_left": "img_left.png",
             "img_right": "img_left.png",
-            "disp_min": -100,
-            "disp_max": 100
+            "disp_left": [-100, 100]
         },
         "pipeline":
         {
@@ -119,19 +113,13 @@ The same configuration as the previous example but right disparity map is also c
         {
             "left_mask": null,
             "right_mask": null,
-            "disp_min_right": null,
-            "disp_max_right": null,
+            "disp_right": null,
             "img_left": "img_left.png",
             "img_right": "img_left.png",
-            "disp_min": -100,
-            "disp_max": 100
+            "disp_left": [-100, 100]
         },
         "pipeline":
         {
-            "right_disp_map":
-            {
-              "method": "accurate"
-            },
             "matching_cost":
             {
                 "matching_cost_method": "ssd",
@@ -146,6 +134,10 @@ The same configuration as the previous example but right disparity map is also c
             "filter":
             {
                 "filter_method": "median"
+            },
+            "validation" :
+            {
+              "validation_method": "cross_checking_accurate"
             }
         }
     }
@@ -160,12 +152,10 @@ An impossible sequencing
         {
             "left_mask": null,
             "right_mask": null,
-            "disp_min_right": null,
-            "disp_max_right": null,
+            "disp_right": null,
             "img_left": "img_left.png",
             "img_right": "img_left.png",
-            "disp_min": -100,
-            "disp_max": 100
+            "disp_left": [-100, 100]
         },
         "pipeline":
         {
@@ -218,12 +208,10 @@ Same step, multiple times
         "input": {
             "left_mask": null,
             "right_mask": null,
-            "disp_min_right": null,
-            "disp_max_right": null,
+            "disp_right": null,
             "img_left": "img_left.png",
             "img_right": "img_left.png",
-            "disp_min": -100,
-            "disp_max": 100
+            "disp_left": [-100, 100]
         },
         "pipeline":
         {
@@ -264,12 +252,10 @@ Configuration to produce a disparity map, computed by SSD method with multiscale
         {
             "left_mask": null,
             "right_mask": null,
-            "disp_min_right": null,
-            "disp_max_right": null,
+            "disp_right": null,
             "img_left": "img_left.png",
             "img_right": "img_left.png",
-            "disp_min": -100,
-            "disp_max": 100
+            "disp_left": [-100, 100]
         },
         "pipeline":
         {

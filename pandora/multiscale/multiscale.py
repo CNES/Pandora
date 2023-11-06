@@ -42,10 +42,14 @@ class AbstractMultiscale:
     multiscale_methods_avail: Dict = {}
     cfg = None
 
-    def __new__(cls, **cfg: Union[str, int]):
+    def __new__(cls, _left_img: xr.Dataset, _right_img: xr.Dataset, **cfg: Union[str, int]):
         """
         Return the plugin associated with the multiscale method given in the configuration
 
+        :param left_img: xarray.Dataset of left image
+        :type left_img: xarray.Dataset
+        :param right_img: xarray.Dataset of right image
+        :type right_img: xarray.Dataset
         :param cfg: configuration {'multiscale_method': value, 'margin': value}
         :type cfg: dictionary
         """
@@ -102,7 +106,9 @@ class AbstractMultiscale:
         print("Multiscale matching description")
 
     @abstractmethod
-    def disparity_range(self, disp: xr.Dataset, disp_min: int, disp_max: int) -> Tuple[np.ndarray, np.ndarray]:
+    def disparity_range(
+        self, disp: xr.Dataset, disp_min: np.ndarray, disp_max: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Disparity range computation by seeking the max and min values in the window.
         Unvalid disparities are given the full disparity range
@@ -112,9 +118,9 @@ class AbstractMultiscale:
                 - disparity_map 2D xarray.DataArray (row, col)
                 - confidence_measure 3D xarray.DataArray(row, col, indicator)
         :param disp_min: absolute min disparity
-        :type disp_min: int
+        :type disp_min: np.ndarray
         :param disp_max: absolute max disparity
-        :type disp_max: int
+        :type disp_max: np.ndarray
         :return: Two np.darray :
                 - disp_min_range : minimum disparity value for all pixels :
                 - disp_max_range : maximum disparity value for all pixels.

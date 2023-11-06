@@ -24,21 +24,161 @@
 This module contains functions to test the Pandora pipeline.
 """
 
+# pylint: disable=redefined-outer-name
+
 import json
-import os
 import unittest
 import copy
-from tempfile import TemporaryDirectory
 
 import numpy as np
+import pytest
 import xarray as xr
 from rasterio import Affine
 
+from pandora.common import split_inputs
 from tests import common
 import pandora
 from pandora import import_plugin
-from pandora.img_tools import read_img, rasterio_open
+from pandora.img_tools import create_dataset_from_inputs, rasterio_open, add_disparity
 from pandora.state_machine import PandoraMachine
+
+
+def error(
+    data: np.ndarray,
+    ground_truth: np.ndarray,
+    threshold: int,
+    unknown_disparity: int = 0,
+) -> float:
+    """
+    Ratio of bad pixels whose absolute sum with ground truth is above threshold.
+    :param data: data to test.
+    :type data: np.ndarray
+    :param ground_truth: ground_truth
+    :type ground_truth: np.ndarray
+    :param threshold: threshold
+    :type threshold: int
+    :param unknown_disparity: unknown disparity
+    :type unknown_disparity: int
+    :return: ratio
+    :rtype: float
+    """
+    mask = ground_truth != unknown_disparity
+    selected_data = data[mask]
+    selected_ground_truth = ground_truth[mask]
+    error_mask = abs(selected_data + selected_ground_truth) > threshold
+    nb_of_errors = error_mask.sum()
+    return nb_of_errors / data.size
+
+
+@pytest.fixture()
+def disp_left():
+    return rasterio_open("tests/pandora/disp_left.tif").read(1)
+
+
+@pytest.fixture()
+def disp_right():
+    return rasterio_open("tests/pandora/disp_right.tif").read(1)
+
+
+class TestMain:
+    """Test Main."""
+
+    def test_left_disparity(self, tmp_path, disp_left):
+        """
+        Test the main method for the left disparity computation( read and write products )
+
+        """
+        cfg = {
+            "input": copy.deepcopy(common.input_cfg_left_grids),
+            "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
+        }
+
+        config_path = tmp_path / "config.json"
+        with open(config_path, "w", encoding="utf-8") as file_:
+            json.dump(cfg, file_, indent=2)
+
+        # Run Pandora pipeline
+        pandora.main(config_path, str(tmp_path), verbose=False)
+
+        # Check the left disparity map
+        assert (
+            error(
+                rasterio_open(str(tmp_path / "left_disparity.tif")).read(1),
+                disp_left,
+                1,
+            )
+            <= 0.20
+        )
+
+        # Check the crs & transform properties
+        left_im_prop = rasterio_open("tests/pandora/left.png").profile
+        left_disp_prop = rasterio_open(str(tmp_path / "left_disparity.tif")).profile
+        assert left_im_prop["crs"] == left_disp_prop["crs"]
+        assert left_im_prop["transform"] == left_disp_prop["transform"]
+
+    def test_left_right_disparity(self, tmp_path, disp_left, disp_right):
+        """
+        Test the main method for the left and right disparity computation ( read and write products )
+
+        """
+        cfg = {
+            "input": copy.deepcopy(common.input_cfg_left_right_grids),
+            "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
+        }
+
+        # Create temporary directory
+        config_path = tmp_path / "config.json"
+        with open(config_path, "w", encoding="utf-8") as file_:
+            json.dump(cfg, file_, indent=2)
+
+        # Run Pandora pipeline
+        pandora.main(config_path, str(tmp_path), verbose=False)
+
+        # Check the left disparity map
+        assert error(rasterio_open(str(tmp_path / "left_disparity.tif")).read(1), disp_left, 1) <= 0.20
+
+        # Check the right disparity map
+        assert error(-1 * rasterio_open(str(tmp_path / "right_disparity.tif")).read(1), disp_right, 1) <= 0.20
+
+        # Check the left validity mask cross checking ( bit 8 and 9 )
+        out_occlusion = rasterio_open(str(tmp_path / "left_validity_mask.tif")).read(1)
+        occlusion = np.ones((out_occlusion.shape[0], out_occlusion.shape[1]))
+        occlusion[out_occlusion >= 512] = 0
+
+        # Check the crs & transform properties
+        left_im_prop = rasterio_open("tests/pandora/left.png").profile
+        left_disp_prop = rasterio_open(str(tmp_path / "left_disparity.tif")).profile
+        right_im_prop = rasterio_open("tests/pandora/right.png").profile
+        right_disp_prop = rasterio_open(str(tmp_path / "right_disparity.tif")).profile
+        assert left_im_prop["crs"] == left_disp_prop["crs"]
+        assert left_im_prop["transform"] == left_disp_prop["transform"]
+        assert right_im_prop["crs"] == right_disp_prop["crs"]
+        assert right_im_prop["transform"] == right_disp_prop["transform"]
+        assert left_disp_prop != right_disp_prop
+
+    def test_variable_range_of_disp(self, tmp_path, disp_left, disp_right):
+        """
+        Test that variable range of disparities (grids of local disparities) are well taken into account in Pandora
+
+        """
+        cfg = {
+            "input": copy.deepcopy(common.input_cfg_left_right_grids),
+            "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
+        }
+
+        # Create temporary directory
+        config_path = tmp_path / "config.json"
+        with open(config_path, "w", encoding="utf-8") as file_:
+            json.dump(cfg, file_, indent=2)
+
+        # Run Pandora pipeline
+        pandora.main(config_path, str(tmp_path), verbose=False)
+
+        # Check the left disparity map
+        assert error(rasterio_open(str(tmp_path / "left_disparity.tif")).read(1), disp_left, 1) <= 0.20
+
+        # Check the right disparity map
+        assert error(-1 * rasterio_open(str(tmp_path / "right_disparity.tif")).read(1), disp_right, 1) <= 0.20
 
 
 class TestPandora(unittest.TestCase):
@@ -52,8 +192,20 @@ class TestPandora(unittest.TestCase):
 
         """
 
-        self.left = read_img("tests/pandora/left.png", no_data=np.nan, mask=None)
-        self.right = read_img("tests/pandora/right.png", no_data=np.nan, mask=None)
+        input_config = {
+            "left": {
+                "img": "tests/pandora/left.png",
+                "nodata": np.nan,
+                "disp": [-60, 0],
+            },
+            "right": {
+                "img": "tests/pandora/right.png",
+                "nodata": np.nan,
+                "disp": [0, 60],
+            },
+        }
+        self.left = create_dataset_from_inputs(input_config=input_config["left"])
+        self.right = create_dataset_from_inputs(input_config=input_config["right"])
         self.disp_left = rasterio_open("tests/pandora/disp_left.tif").read(1)
         self.disp_right = rasterio_open("tests/pandora/disp_right.tif").read(1)
         self.occlusion = rasterio_open("tests/pandora/occlusion.png").read(1)
@@ -100,7 +252,7 @@ class TestPandora(unittest.TestCase):
         # Update the user configuration with default values
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
         # Run the pandora pipeline
-        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
+        left, right = pandora.run(pandora_machine, self.left, self.right, cfg)
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.20:
@@ -132,9 +284,7 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, right = pandora.run(  # pylint: disable = unused-variable
-            pandora_machine, self.left, self.right, -60, 0, cfg
-        )
+        left, right = pandora.run(pandora_machine, self.left, self.right, cfg)  # pylint: disable = unused-variable
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.20:
@@ -156,7 +306,7 @@ class TestPandora(unittest.TestCase):
             "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": copy.deepcopy(common.multiscale_pipeline_cfg),
         }
-        user_cfg["pipeline"]["right_disp_map"]["method"] = "accurate"
+        user_cfg["pipeline"]["validation"] = {"validation_method": "cross_checking_accurate"}
 
         pandora_machine = PandoraMachine()
 
@@ -164,7 +314,7 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
+        left, right = pandora.run(pandora_machine, self.left, self.right, cfg)
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.20:
@@ -191,7 +341,7 @@ class TestPandora(unittest.TestCase):
             "pipeline": copy.deepcopy(common.multiscale_pipeline_cfg),
         }
         user_cfg["pipeline"]["multiscale"]["num_scales"] = 3
-        user_cfg["pipeline"]["right_disp_map"]["method"] = "accurate"
+        user_cfg["pipeline"]["validation"] = {"validation_method": "cross_checking_accurate"}
 
         pandora_machine = PandoraMachine()
 
@@ -199,7 +349,7 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
+        left, right = pandora.run(pandora_machine, self.left, self.right, cfg)
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.20:
             raise AssertionError
@@ -223,7 +373,6 @@ class TestPandora(unittest.TestCase):
         user_cfg = {
             "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": {
-                "right_disp_map": {"method": "none"},
                 "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2},
                 "cost_volume_confidence": {"confidence_method": "ambiguity"},
                 "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
@@ -235,10 +384,9 @@ class TestPandora(unittest.TestCase):
                     "scale_factor": 2,
                     "marge": 1,
                 },
+                "validation": {"validation_method": "cross_checking_accurate"},
             },
         }
-        user_cfg["pipeline"]["right_disp_map"]["method"] = "accurate"
-        user_cfg["pipeline"]["cost_volume_confidence"]["confidence_method"] = "ambiguity"
 
         pandora_machine = PandoraMachine()
 
@@ -246,9 +394,10 @@ class TestPandora(unittest.TestCase):
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, right = pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
+        left, right = pandora.run(pandora_machine, self.left, self.right, cfg)
 
         # Check the left disparity map
+        print("error", self.error(left["disparity_map"].data, self.disp_left, 1))
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.20:
             raise AssertionError
 
@@ -282,13 +431,13 @@ class TestPandora(unittest.TestCase):
             ],
             dtype=np.float32,
         )
-
         img_left = xr.Dataset(
             {"im": (["row", "col"], data_left)},
             coords={"row": np.arange(data_left.shape[0]), "col": np.arange(data_left.shape[1])},
         )
         img_left.attrs["crs"] = None
         img_left.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+        img_left.pipe(add_disparity, disparity=[-2, 2], window=None)
 
         data_right = np.array(
             [
@@ -311,11 +460,10 @@ class TestPandora(unittest.TestCase):
 
         # Load a configuration
         user_cfg = {
-            "input": copy.deepcopy(common.input_cfg_basic),
+            "input": copy.deepcopy(common.input_cfg_basic_with_none_right_disp),
             "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
         }
-        user_cfg["input"]["disp_min"] = -2
-        user_cfg["input"]["disp_max"] = 2
+        user_cfg["input"]["disp_left"] = (-2, 2)
         user_cfg["pipeline"]["matching_cost"]["matching_cost_method"] = "census"
         user_cfg["pipeline"]["matching_cost"]["subpix"] = 1
         user_cfg["pipeline"]["disparity"]["invalid_disparity"] = -10
@@ -328,9 +476,7 @@ class TestPandora(unittest.TestCase):
         import_plugin()
 
         # Run the Pandora pipeline
-        left, right = pandora.run(
-            pandora_machine, img_left, img_right, cfg["input"]["disp_min"], cfg["input"]["disp_max"], cfg
-        )
+        left, right = pandora.run(pandora_machine, img_left, img_right, cfg)
 
         # Ground truth confidence measure
         gt_left_indicator_stereo = np.array(
@@ -369,76 +515,6 @@ class TestPandora(unittest.TestCase):
         # assert equal on right confidence_measure
         np.testing.assert_array_equal(gt_right_confidence_measure, right["confidence_measure"].data)
 
-    def test_main_left_disparity(self):
-        """
-        Test the main method for the left disparity computation( read and write products )
-
-        """
-        cfg = {
-            "input": copy.deepcopy(common.input_cfg_left_right_grids),
-            "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
-        }
-
-        # Create temporary directory
-        with TemporaryDirectory() as tmp_dir:
-            with open(os.path.join(tmp_dir, "config.json"), "w", encoding="utf-8") as file_:
-                json.dump(cfg, file_, indent=2)
-
-            # Run Pandora pipeline
-            pandora.main(tmp_dir + "/config.json", tmp_dir, verbose=False)
-
-            # Check the left disparity map
-            if self.error(rasterio_open(tmp_dir + "/left_disparity.tif").read(1), self.disp_left, 1) > 0.20:
-                raise AssertionError
-
-            # Check the crs & transform properties
-            left_im_prop = rasterio_open("tests/pandora/left.png").profile
-            left_disp_prop = rasterio_open(os.path.join(tmp_dir, "left_disparity.tif")).profile
-            assert left_im_prop["crs"] == left_disp_prop["crs"]
-            assert left_im_prop["transform"] == left_disp_prop["transform"]
-
-    def test_main_left_right_disparity(self):
-        """
-        Test the main method for the left and right disparity computation ( read and write products )
-
-        """
-        cfg = {
-            "input": copy.deepcopy(common.input_cfg_left_right_grids),
-            "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
-        }
-
-        # Create temporary directory
-        with TemporaryDirectory() as tmp_dir:
-            with open(os.path.join(tmp_dir, "config.json"), "w", encoding="utf-8") as file_:
-                json.dump(cfg, file_, indent=2)
-
-            # Run Pandora pipeline
-            pandora.main(tmp_dir + "/config.json", tmp_dir, verbose=False)
-
-            # Check the left disparity map
-            if self.error(rasterio_open(tmp_dir + "/left_disparity.tif").read(1), self.disp_left, 1) > 0.20:
-                raise AssertionError
-
-            # Check the right disparity map
-            if self.error(-1 * rasterio_open(tmp_dir + "/right_disparity.tif").read(1), self.disp_right, 1) > 0.20:
-                raise AssertionError
-
-            # Check the left validity mask cross checking ( bit 8 and 9 )
-            out_occlusion = rasterio_open(tmp_dir + "/left_validity_mask.tif").read(1)
-            occlusion = np.ones((out_occlusion.shape[0], out_occlusion.shape[1]))
-            occlusion[out_occlusion >= 512] = 0
-
-            # Check the crs & transform properties
-            left_im_prop = rasterio_open("tests/pandora/left.png").profile
-            left_disp_prop = rasterio_open(os.path.join(tmp_dir, "left_disparity.tif")).profile
-            right_im_prop = rasterio_open("tests/pandora/right.png").profile
-            right_disp_prop = rasterio_open(os.path.join(tmp_dir, "right_disparity.tif")).profile
-            assert left_im_prop["crs"] == left_disp_prop["crs"]
-            assert left_im_prop["transform"] == left_disp_prop["transform"]
-            assert right_im_prop["crs"] == right_disp_prop["crs"]
-            assert right_im_prop["transform"] == right_disp_prop["transform"]
-            assert left_disp_prop != right_disp_prop
-
     @staticmethod
     def test_dataset_image():
         """
@@ -447,9 +523,11 @@ class TestPandora(unittest.TestCase):
         """
 
         user_cfg = {
-            "input": copy.deepcopy(common.input_cfg_basic),
+            "input": copy.deepcopy(common.input_cfg_basic_with_none_right_disp),
             "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
         }
+        user_cfg["input"]["nodata_left"] = np.nan
+        user_cfg["input"]["nodata_right"] = np.nan
         user_cfg["pipeline"]["matching_cost"]["matching_cost_method"] = "census"
 
         pandora_machine = PandoraMachine()
@@ -457,11 +535,12 @@ class TestPandora(unittest.TestCase):
         # Update the user configuration with default values
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
-        left_img = read_img("tests/pandora/left.png", no_data=np.nan, mask=None)
-        right_img = read_img("tests/pandora/right.png", no_data=np.nan, mask=None)
+        input_config = split_inputs(user_cfg["input"])
+        left_img = create_dataset_from_inputs(input_config=input_config["left"])
+        right_img = create_dataset_from_inputs(input_config=input_config["right"])
 
         # Run the pandora pipeline on images without modified coordinates
-        left_origin, right_origin = pandora.run(pandora_machine, left_img, right_img, -60, 0, cfg)
+        left_origin, right_origin = pandora.run(pandora_machine, left_img, right_img, cfg)
 
         row_c = left_img.coords["row"].data
         row_c += 41
@@ -472,37 +551,11 @@ class TestPandora(unittest.TestCase):
         right_img.assign_coords(row=row_c, col=col_c)
 
         # Run the pandora pipeline on images with modified coordinates
-        left_modified, right_modified = pandora.run(pandora_machine, left_img, right_img, -60, 0, cfg)
+        left_modified, right_modified = pandora.run(pandora_machine, left_img, right_img, cfg)
 
         # check if the disparity maps are equals
         np.testing.assert_array_equal(left_origin["disparity_map"].values, left_modified["disparity_map"].values)
         np.testing.assert_array_equal(right_origin["disparity_map"].values, right_modified["disparity_map"].values)
-
-    def test_variable_range_of_disp(self):
-        """
-        Test that variable range of disparities (grids of local disparities) are well taken into account in Pandora
-
-        """
-        cfg = {
-            "input": copy.deepcopy(common.input_cfg_left_right_grids),
-            "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
-        }
-
-        # Create temporary directory
-        with TemporaryDirectory() as tmp_dir:
-            with open(os.path.join(tmp_dir, "config.json"), "w", encoding="utf-8") as file_:
-                json.dump(cfg, file_, indent=2)
-
-            # Run Pandora pipeline
-            pandora.main(tmp_dir + "/config.json", tmp_dir, verbose=False)
-
-            # Check the left disparity map
-            if self.error(rasterio_open(tmp_dir + "/left_disparity.tif").read(1), self.disp_left, 1) > 0.20:
-                raise AssertionError
-
-            # Check the right disparity map
-            if self.error(-1 * rasterio_open(tmp_dir + "/right_disparity.tif").read(1), self.disp_right, 1) > 0.20:
-                raise AssertionError
 
     def test_main_with_rgb_image(self):
         """
@@ -513,18 +566,22 @@ class TestPandora(unittest.TestCase):
             "input": copy.deepcopy(common.input_multiband_cfg),
             "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
         }
+        user_cfg["input"]["nodata_left"] = np.nan
+        user_cfg["input"]["nodata_right"] = np.nan
+        user_cfg["input"]["disp_right"] = None
         # working on green band
         user_cfg["pipeline"]["matching_cost"]["band"] = "g"
 
-        left_rgb = read_img(user_cfg["input"]["img_left"], no_data=np.nan, mask=None)
-        right_rgb = read_img(user_cfg["input"]["img_right"], no_data=np.nan, mask=None)
+        input_config = split_inputs(user_cfg["input"])
+        left_rgb = create_dataset_from_inputs(input_config=input_config["left"])
+        right_rgb = create_dataset_from_inputs(input_config=input_config["right"])
 
         pandora_machine = PandoraMachine()
         # Update the user configuration with default values
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg)
+        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, cfg)
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.25:
@@ -545,15 +602,21 @@ class TestPandora(unittest.TestCase):
         # working on green band
         user_cfg["pipeline"]["matching_cost"]["band"] = "g"
 
-        left_rgb = read_img(user_cfg["input"]["img_left"], no_data=np.nan, mask=None)
-        right_rgb = read_img(user_cfg["input"]["img_right"], no_data=np.nan, mask=None)
+        input_config = split_inputs(user_cfg["input"])
+        input_config["left"]["mask"] = None
+        input_config["right"]["mask"] = None
+        input_config["left"]["nodata"] = np.nan
+        input_config["right"]["nodata"] = np.nan
+        input_config["right"]["disp"] = None
+        left_rgb = create_dataset_from_inputs(input_config=input_config["left"])
+        right_rgb = create_dataset_from_inputs(input_config=input_config["right"])
 
         pandora_machine = PandoraMachine()
         # Update the user configuration with default values
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg)
+        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, cfg)
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.25:
@@ -574,15 +637,21 @@ class TestPandora(unittest.TestCase):
         # working on green band
         user_cfg["pipeline"]["matching_cost"]["band"] = "g"
 
-        left_rgb = read_img(user_cfg["input"]["img_left"], no_data=np.nan, mask=None)
-        right_rgb = read_img(user_cfg["input"]["img_right"], no_data=np.nan, mask=None)
+        input_config = split_inputs(user_cfg["input"])
+        input_config["left"]["mask"] = None
+        input_config["right"]["mask"] = None
+        input_config["left"]["nodata"] = np.nan
+        input_config["right"]["nodata"] = np.nan
+        input_config["right"]["disp"] = None
+        left_rgb = create_dataset_from_inputs(input_config=input_config["left"])
+        right_rgb = create_dataset_from_inputs(input_config=input_config["right"])
 
         pandora_machine = PandoraMachine()
         # Update the user configuration with default values
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
         # Run the pandora pipeline
-        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg)
+        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, cfg)
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.25:
@@ -602,16 +671,21 @@ class TestPandora(unittest.TestCase):
 
         # working on green band
         user_cfg["pipeline"]["matching_cost"]["band"] = "g"
-
-        left_rgb = read_img(user_cfg["input"]["img_left"], no_data=np.nan, mask=None)
-        right_rgb = read_img(user_cfg["input"]["img_right"], no_data=np.nan, mask=None)
-
-        pandora_machine = PandoraMachine()
+        user_cfg["input"]["nodata_left"] = np.nan
+        user_cfg["input"]["nodata_right"] = np.nan
         # Update the user configuration with default values
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
+        input_config = split_inputs(cfg["input"])
+        new_input_config = copy.deepcopy(input_config)
+        new_input_config["left"]["mask"] = None
+        left_rgb = create_dataset_from_inputs(input_config=new_input_config["left"])
+        right_rgb = create_dataset_from_inputs(input_config=new_input_config["right"])
+
+        pandora_machine = PandoraMachine()
+
         # Run the pandora pipeline
-        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, -60, 0, cfg)
+        left, _ = pandora.run(pandora_machine, left_rgb, right_rgb, cfg)
 
         # Check the left disparity map
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.25:

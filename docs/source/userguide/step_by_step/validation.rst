@@ -55,15 +55,36 @@ It is possible to fill in occlusions and mismatches detected during cross-valida
 Configuration and parameters
 ----------------------------
 
-+-----------------------------------+---------------------------------------------------------------------------------------------------------+------------+---------------+---------------------------+----------+
-| Name                              | Description                                                                                             | Type       | Default value | Available value           | Required |
-+===================================+=========================================================================================================+============+===============+===========================+==========+
-| *validation_method*               | Validation method                                                                                       | string     |               | "cross_checking"          | Yes      |
-+-----------------------------------+---------------------------------------------------------------------------------------------------------+------------+---------------+---------------------------+----------+
-| *cross_checking_threshold*        | Threshold for cross-checking method                                                                     | int, float | 1.0           |                           | No       |
-+-----------------------------------+---------------------------------------------------------------------------------------------------------+------------+---------------+---------------------------+----------+
-| *interpolated_disparity*          | Interpolation method for filling occlusion and mismatches                                               | string     |               | "mc_cnn", "sgm"           | No       |
-+-----------------------------------+---------------------------------------------------------------------------------------------------------+------------+---------------+---------------------------+----------+
+.. list-table:: Available parameters
+   :widths: 19 19 19 19 19 19
+   :header-rows: 1
+
+
+   * - Name
+     - Description
+     - Type
+     - Default value
+     - Available value
+     - Required
+   * - validation_method
+     - Validation method
+     - str
+     -
+     - "cross_checking_accurate"
+     - Yes
+   * - cross_checking_threshold
+     - Threshold for cross-checking method
+     - int, float
+     - 1.0
+     - 
+     - No
+   * - interpolated_disparity
+     - Interpolation method for filling occlusion and mismatches
+     - str
+     - 
+     - "mc_cnn", "sgm"
+     - No
+
 
 **Example**
 
@@ -79,7 +100,7 @@ Configuration and parameters
             ...
             "validation":
             {
-               "validation_method": "cross_checking"
+               "validation_method": "cross_checking_accurate"
             }
             ...
         }

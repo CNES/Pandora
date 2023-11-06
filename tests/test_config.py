@@ -28,9 +28,7 @@ import copy
 import json_checker
 import pytest
 from transitions import MachineError
-
 import numpy as np
-import xarray as xr
 from tests import common
 from pandora import check_configuration
 from pandora.state_machine import PandoraMachine
@@ -47,8 +45,7 @@ class TestConfig(unittest.TestCase):
 
         """
 
-    @staticmethod
-    def test_check_input_section():
+    def test_check_input_section(self):
         """
         Test the method check_input_section
         """
@@ -56,34 +53,26 @@ class TestConfig(unittest.TestCase):
         # Test configuration with left disparity grids and right disparity = none
         cfg = {"input": copy.deepcopy(common.input_cfg_left_grids)}
         cfg_return = check_configuration.check_input_section(cfg)
-        if (cfg_return["input"]["disp_min_right"] is not None) and (cfg_return["input"]["disp_max_right"] is not None):
-            raise AssertionError
 
-        # Test configuration with left disparity as integer
+        self.assertIsNone(cfg_return["input"]["disp_right"])
+
+        # Test configuration with left disparity as list of integers
         cfg = {"input": copy.deepcopy(common.input_cfg_basic)}
         cfg_return = check_configuration.check_input_section(cfg)
-        if (cfg_return["input"]["disp_min_right"] is not None) and (cfg_return["input"]["disp_max_right"] is not None):
-            raise AssertionError
+
+        self.assertIsNone(cfg_return["input"]["disp_right"])
 
         # Test configuration with left and right disparity grids
         cfg = {"input": copy.deepcopy(common.input_cfg_left_right_grids)}
         cfg_return = check_configuration.check_input_section(cfg)
 
-        if (cfg_return["input"]["disp_min_right"] != "tests/pandora/right_disp_min_grid.tif") and (
-            cfg_return["input"]["disp_max_right"] != "tests/pandora/right_disp_max_grid.tif"
-        ):
-            raise AssertionError
+        self.assertEqual(cfg_return["input"]["disp_right"], "tests/pandora/right_disparity_grid.tif")
 
         # Test configuration with left disparity grids and right disparity = none and classif and segm = none
         cfg = {"input": copy.deepcopy(common.input_cfg_left_grids)}
         cfg_return = check_configuration.check_input_section(cfg)
-        if (
-            (cfg_return["input"]["left_classif"] is not None)
-            and (cfg_return["input"]["left_segm"] is not None)
-            and (cfg_return["input"]["right_classif"] is not None)
-            and (cfg_return["input"]["right_segm"] is not None)
-        ):
-            raise AssertionError
+        inputs_to_check = ("left_classif", "left_segm", "right_classif", "right_segm")
+        self.assertTrue(all(cfg_return["input"][input_key] is None for input_key in inputs_to_check))
 
         # Test configuration with left disparity grids and right disparity = none and classif_left filled
         #           and segm filled with artificial data from left and right images
@@ -92,13 +81,12 @@ class TestConfig(unittest.TestCase):
         cfg["input"]["left_segm"] = "tests/pandora/left.png"
 
         cfg_return = check_configuration.check_input_section(cfg)
-        if (
-            (cfg_return["input"]["left_classif"] != "tests/pandora/right.png")
-            and (cfg_return["input"]["left_segm"] != "tests/pandora/left.png")
-            and (cfg_return["input"]["right_classif"] is not None)
-            and (cfg_return["input"]["right_segm"] is not None)
-        ):
-            raise AssertionError
+        self.assertTrue(
+            (cfg_return["input"]["left_classif"] == "tests/pandora/right.png")
+            and (cfg_return["input"]["left_segm"] == "tests/pandora/left.png")
+            and (cfg_return["input"]["right_classif"] is None)
+            and (cfg_return["input"]["right_segm"] is None)
+        )
 
         # Test configuration with left disparity grids and right disparity = none and right filled
         #           and segm filled with artificial data from left and right images
@@ -107,180 +95,84 @@ class TestConfig(unittest.TestCase):
         cfg["input"]["right_segm"] = "tests/pandora/left.png"
 
         cfg_return = check_configuration.check_input_section(cfg)
-        if (
-            (cfg_return["input"]["right_classif"] != "tests/pandora/right.png")
-            and (cfg_return["input"]["right_segm"] != "tests/pandora/left.png")
-            and (cfg_return["input"]["left_classif"] is not None)
-            and (cfg_return["input"]["left_segm"] is not None)
-        ):
-            raise AssertionError
+        self.assertTrue(
+            (cfg_return["input"]["right_classif"] == "tests/pandora/right.png")
+            and (cfg_return["input"]["right_segm"] == "tests/pandora/left.png")
+            and (cfg_return["input"]["left_classif"] is None)
+            and (cfg_return["input"]["left_segm"] is None)
+        )
 
     def test_check_input_section_with_error(self):
         """
         Test the method check_input_section that must raise an error
         """
-        # Test configuration with left disparity min as grids and left disparity max as integer
-        cfg = {"input": copy.deepcopy(common.input_cfg_left_grids)}
-        cfg["input"]["disp_max"] = 45
-
+        # ~~~~~~~~~~~~~~~~~~
+        # Test type validity
+        # ~~~~~~~~~~~~~~~~~~
+        # Test left only disparity fails if it is a single value integer instead of tuple
+        cfg = {"input": {"img_left": "tests/pandora/left.png", "img_right": "tests/pandora/right.png", "disp_left": 45}}
         # Json checker must raise an error
         self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
 
-        # Test configuration with left disparity grids and right disparity max as integer
-        cfg = {"input": copy.deepcopy(common.input_cfg_left_grids)}
-        cfg["input"]["disp_max_right"] = -4
-
-        # Json checker must raise an error
-        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
-
-        # Test configuration with left disparity grids and right disparity max as integer
-        cfg = {"input": copy.deepcopy(common.input_cfg_left_right_grids)}
-        cfg["input"]["disp_max_right"] = -4
-
-        # Json checker must raise an error
-        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
-
-        # Test configuration with left disparity grids and right disparity min as integer
-        cfg = {"input": copy.deepcopy(common.input_cfg_left_grids)}
-        cfg["input"]["disp_min_right"] = -4
-
-        # Json checker must raise an error
-        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
-
-        # Test configuration with left disparity grids and right disparities as integer
-        cfg = {"input": copy.deepcopy(common.input_cfg_left_grids)}
-        cfg["input"]["disp_min_right"] = -4
-        cfg["input"]["disp_max_right"] = 0
-
-        # Json checker must raise an error
-        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
-
-        # Test configuration with left disparity as int and right disparites as str
+        # Test right disparity fails if it is a single value integer instead of tuple
         cfg = {
             "input": {
                 "img_left": "tests/pandora/left.png",
                 "img_right": "tests/pandora/right.png",
-                "disp_min": -4,
-                "disp_max": 0,
-                "disp_min_right": "tests/pandora/disp_min_grid.tif",
-                "disp_max_right": "tests/pandora/disp_max_grid.tif",
+                "disp_left": [0, 45],
+                "disp_right": 32,
             }
         }
         # Json checker must raise an error
         self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
 
-        # Test configuration with left disparity grids inverted
+        # ~~~~~~~~~~~~~~~~~~~~~~~
+        # Test type compatibility
+        # ~~~~~~~~~~~~~~~~~~~~~~~
+        # Test left disparity as grid and right disparity as ints fails
+        cfg = {"input": copy.deepcopy(common.input_cfg_left_grids)}
+        cfg["input"]["disp_max"] = [0, 45]
+
+        # Json checker must raise an error
+        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
+
+        # Test left disparity as ints and right disparity as grid fails
         cfg = {
             "input": {
                 "img_left": "tests/pandora/left.png",
                 "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_max_grid.tif",
-                "disp_max": "tests/pandora/disp_min_grid.tif",
+                "disp_left": [-4, 0],
+                "disp_right": "tests/pandora/right_disparity_grid.tif",
             }
         }
         # Json checker must raise an error
-        self.assertRaises(SystemExit, check_configuration.check_input_section, cfg)
+        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
 
+        # ~~~~~~~~~~~~~~~~~~
+        # Test values order
+        # ~~~~~~~~~~~~~~~~~~
         # Test configuration with left disparity inverted
         cfg = {
             "input": {
                 "img_left": "tests/pandora/left.png",
                 "img_right": "tests/pandora/right.png",
-                "disp_min": 0,
-                "disp_max": -4,
+                "disp_left": [0, -4],
             }
         }
         # Json checker must raise an error
         self.assertRaises(SystemExit, check_configuration.check_input_section, cfg)
 
-        # Test configuration with left disparity grids and right disparity grids inverted
+        # Test configuration with right disparity inverted
         cfg = {
             "input": {
                 "img_left": "tests/pandora/left.png",
                 "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif",
-                "disp_min_right": "tests/pandora/disp_max_grid.tif",
-                "disp_max_right": "tests/pandora/disp_min_grid.tif",
-            }
-        }
-        # Json checker must raise an error
-        self.assertRaises(SystemExit, check_configuration.check_input_section, cfg)
-
-        # Test configuration with left disparity grids and right disparity max as str
-        cfg = {
-            "input": {
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif",
-                "disp_max_right": "tests/pandora/disp_max_grid.tif",
+                "disp_left": [-4, 0],
+                "disp_right": [0, -4],
             }
         }
         # Json checker must raise an error
         self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
-
-        # Test configuration with left disparity grids and right disparity min as str
-        cfg = {
-            "input": {
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif",
-                "disp_min_right": "tests/pandora/disp_min_grid.tif",
-            }
-        }
-        # Json checker must raise an error
-        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
-
-        # Test configuration with left disparity as int and right disparity min as str
-        cfg = {
-            "input": {
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": -4,
-                "disp_max": 0,
-                "disp_min_right": "tests/pandora/disp_min_grid.tif",
-            }
-        }
-        # Json checker must raise an error
-        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
-
-        # Test configuration with left disparity as int and right disparity max as str
-        cfg = {
-            "input": {
-                "img_left": "tests/pandora/left.png",
-                "img_right": "tests/pandora/right.png",
-                "disp_min": -4,
-                "disp_max": 0,
-                "disp_max_right": "tests/pandora/disp_max_grid.tif",
-            }
-        }
-        # Json checker must raise an error
-        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
-
-    def test_get_metadata(self):
-        """
-        Test the method get_metadata
-
-        """
-
-        cfg = {"input": copy.deepcopy(common.input_cfg_basic)}
-
-        # get metadata without classif and mask
-        metadata_img = check_configuration.get_metadata(
-            cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"]
-        )
-
-        print("metadata_img", metadata_img)
-        # Metadata ground truth
-        metadata_gt = xr.Dataset(
-            data_vars={}, coords={"band_im": [None], "row": 375, "col": 450}, attrs={"disp_min": -60, "disp_max": 0}
-        )
-
-        # Check that the get_metadata function raises whitout error
-        assert metadata_img.coords == metadata_gt.coords
-        assert metadata_img.attrs == metadata_gt.attrs
 
     def test_multiband_pipeline(self):
         """
@@ -307,12 +199,10 @@ class TestConfig(unittest.TestCase):
                 "left_segm": None,
                 "right_classif": None,
                 "right_segm": None,
-                "disp_min_right": None,
-                "disp_max_right": None,
+                "disp_right": None,
                 "img_left": "tests/pandora/left_rgb.tif",
                 "img_right": "tests/pandora/right_rgb.tif",
-                "disp_min": -60,
-                "disp_max": 0,
+                "disp_left": [-60, 0],
             },
             "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
         }
@@ -339,10 +229,8 @@ class TestConfig(unittest.TestCase):
                 "disparity": {"disparity_method": "wta"},
             },
         }
-        img_left = check_configuration.get_metadata(
-            cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"]
-        )
-        img_right = check_configuration.get_metadata(cfg["input"]["img_right"], None, None)
+        img_left = check_configuration.get_metadata(cfg["input"]["img_left"], cfg["input"]["disp_left"])
+        img_right = check_configuration.get_metadata(cfg["input"]["img_right"], None)
         # Check that the check_conf function raises an error
         with pytest.raises(SystemExit):
             check_configuration.check_conf(cfg, pandora_machine)
@@ -368,10 +256,8 @@ class TestConfig(unittest.TestCase):
                 "disparity": {"disparity_method": "wta"},
             },
         }
-        img_left = check_configuration.get_metadata(
-            cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"]
-        )
-        img_right = check_configuration.get_metadata(cfg["input"]["img_right"], None, None)
+        img_left = check_configuration.get_metadata(cfg["input"]["img_left"], cfg["input"]["disp_left"])
+        img_right = check_configuration.get_metadata(cfg["input"]["img_right"], None)
         pandora_machine = PandoraMachine()
 
         # Check that the check_conf function raises an error
@@ -404,8 +290,7 @@ class TestConfig(unittest.TestCase):
             "input": {
                 "img_left": "tests/pandora/left.png",
                 "img_right": "tests/pandora/right.png",
-                "disp_min": -4,
-                "disp_max": 0,
+                "disp_left": [-4, 0],
                 "nodata_left": "NaN",
                 "nodata_right": "NaN",
             }
@@ -421,8 +306,7 @@ class TestConfig(unittest.TestCase):
             "input": {
                 "img_left": "tests/pandora/left.png",
                 "img_right": "tests/pandora/right.png",
-                "disp_min": -4,
-                "disp_max": 0,
+                "disp_left": [-4, 0],
                 "nodata_left": "inf",
                 "nodata_right": "inf",
             }
@@ -438,8 +322,7 @@ class TestConfig(unittest.TestCase):
             "input": {
                 "img_left": "tests/pandora/left.png",
                 "img_right": "tests/pandora/right.png",
-                "disp_min": -4,
-                "disp_max": 0,
+                "disp_left": [-4, 0],
                 "nodata_left": "-inf",
                 "nodata_right": "-inf",
             }
@@ -455,8 +338,7 @@ class TestConfig(unittest.TestCase):
             "input": {
                 "img_left": "tests/pandora/left.png",
                 "img_right": "tests/pandora/right.png",
-                "disp_min": -4,
-                "disp_max": 0,
+                "disp_left": [-4, 0],
                 "nodata_left": 3,
                 "nodata_right": -7,
             }
@@ -472,8 +354,7 @@ class TestConfig(unittest.TestCase):
             "input": {
                 "img_left": "tests/pandora/left.png",
                 "img_right": "tests/pandora/right.png",
-                "disp_min": -4,
-                "disp_max": 0,
+                "disp_left": [-4, 0],
                 "nodata_left": "NaN",
             }
         }
@@ -488,8 +369,7 @@ class TestConfig(unittest.TestCase):
             "input": {
                 "img_left": "tests/pandora/left.png",
                 "img_right": "tests/pandora/right.png",
-                "disp_min": -4,
-                "disp_max": 0,
+                "disp_left": (-4, 0),
                 "nodata_right": "NaN",
             }
         }
@@ -526,18 +406,17 @@ class TestConfig(unittest.TestCase):
                 "left_segm": None,
                 "right_classif": None,
                 "right_segm": None,
-                "disp_min_right": None,
-                "disp_max_right": None,
+                "disp_right": None,
                 "img_left": "tests/pandora/left.png",
                 "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif",
+                "disp_left": "tests/pandora/left_disparity_grid.tif",
             },
             "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
         }
 
         del cfg_gt["pipeline"]["refinement"]
         del cfg_gt["pipeline"]["filter"]
+
         assert cfg_return == cfg_gt
 
         # Check the configuration returned with left and right disparity grids
@@ -561,12 +440,10 @@ class TestConfig(unittest.TestCase):
                 "left_segm": None,
                 "right_classif": None,
                 "right_segm": None,
-                "disp_min_right": "tests/pandora/right_disp_min_grid.tif",
-                "disp_max_right": "tests/pandora/right_disp_max_grid.tif",
+                "disp_right": "tests/pandora/right_disparity_grid.tif",
                 "img_left": "tests/pandora/left.png",
                 "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif",
+                "disp_left": "tests/pandora/left_disparity_grid.tif",
             },
             "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
         }
@@ -604,12 +481,10 @@ class TestConfig(unittest.TestCase):
                 "right_classif": None,
                 "left_segm": None,
                 "right_segm": None,
-                "disp_min_right": "tests/pandora/right_disp_min_grid.tif",
-                "disp_max_right": "tests/pandora/right_disp_max_grid.tif",
+                "disp_right": "tests/pandora/right_disparity_grid.tif",
                 "img_left": "tests/pandora/left.png",
                 "img_right": "tests/pandora/right.png",
-                "disp_min": "tests/pandora/disp_min_grid.tif",
-                "disp_max": "tests/pandora/disp_max_grid.tif",
+                "disp_left": "tests/pandora/left_disparity_grid.tif",
             },
             "pipeline": common.validation_pipeline_cfg,
         }
@@ -648,10 +523,8 @@ class TestConfig(unittest.TestCase):
                 "right_classif": None,
                 "left_segm": None,
                 "right_segm": None,
-                "disp_min_right": None,
-                "disp_max_right": None,
-                "disp_min": -60,
-                "disp_max": 0,
+                "disp_right": None,
+                "disp_left": [-60, 0],
             },
             "pipeline": copy.deepcopy(common.multiscale_pipeline_cfg),
         }
@@ -666,19 +539,16 @@ class TestConfig(unittest.TestCase):
         cfg = {
             "input": copy.deepcopy(common.input_cfg_basic),
             "pipeline": {
-                "right_disp_map": {"method": "accurate"},
                 "matching_cost": {"matching_cost_method": "census", "window_size": 5, "subpix": 2},
                 "filter": {"filter_method": "median"},
                 "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
-                "validation": {"validation_method": "cross_checking"},
+                "validation": {"validation_method": "cross_checking_accurate"},
             },
         }
 
         pandora_machine = PandoraMachine()
-        img_left = check_configuration.get_metadata(
-            cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"]
-        )
-        img_right = check_configuration.get_metadata(cfg["input"]["img_right"], None, None)
+        img_left = check_configuration.get_metadata(cfg["input"]["img_left"], cfg["input"]["disp_left"])
+        img_right = check_configuration.get_metadata(cfg["input"]["img_right"], None)
 
         self.assertRaises(
             MachineError, check_configuration.check_pipeline_section, cfg, img_left, img_right, pandora_machine
@@ -742,10 +612,8 @@ class TestConfig(unittest.TestCase):
         disp_max = 0
         pandora_machine = PandoraMachine()
         cfg = {"input": copy.deepcopy(common.input_cfg_basic), "pipeline": copy.deepcopy(common.basic_pipeline_cfg)}
-        img_left = check_configuration.get_metadata(
-            cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"]
-        )
-        img_right = check_configuration.get_metadata(cfg["input"]["img_right"], None, None)
+        img_left = check_configuration.get_metadata(cfg["input"]["img_left"], cfg["input"]["disp_left"])
+        img_right = check_configuration.get_metadata(cfg["input"]["img_right"], None)
 
         # check pipeline before memory_consumption_estimation
         pipeline_cfg = check_configuration.check_pipeline_section(cfg, img_left, img_right, pandora_machine)
@@ -763,30 +631,22 @@ class TestConfig(unittest.TestCase):
         )
         np.testing.assert_allclose((min_mem_consump, max_mem_consump), consumption_vt, rtol=1e-02)
 
-    def test_right_disp_map_none_with_validation(self):
+    def test_step_in_matching_cost(self):
         """
-        Test that user can't implement validation with right_disp_map set to none
+        Test that user get a warning if he instantiates a step parameter in matching cost configuration
         """
-
+        # Check the configuration returned with left and right disparity grids
+        pandora_machine = PandoraMachine()
         cfg = {
-            "input": copy.deepcopy(common.input_cfg_basic),
+            "input": copy.deepcopy(common.input_cfg_left_right_grids),
             "pipeline": {
-                "right_disp_map": {"method": "none"},
-                "matching_cost": {"matching_cost_method": "census", "window_size": 5, "subpix": 2},
-                "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
-                "filter": {"filter_method": "median"},
-                "validation": {"validation_method": "cross_checking"},
+                "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "step": 2},
+                "disparity": {"disparity_method": "wta"},
             },
         }
-        img_left = check_configuration.get_metadata(
-            cfg["input"]["img_left"], cfg["input"]["disp_min"], cfg["input"]["disp_max"]
-        )
-        img_right = check_configuration.get_metadata(cfg["input"]["img_right"], None, None)
 
-        pandora_machine = PandoraMachine()
-        self.assertRaises(
-            MachineError, check_configuration.check_pipeline_section, cfg, img_left, img_right, pandora_machine
-        )
+        # When left disparities are grids and multiscale processing cannot be used : the program exits
+        self.assertRaises(SystemExit, check_configuration.check_conf, cfg, pandora_machine)
 
 
 if __name__ == "__main__":

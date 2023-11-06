@@ -28,6 +28,7 @@ import logging
 from abc import ABCMeta, abstractmethod
 from math import ceil, floor
 from typing import Tuple, List, Union, Dict
+from json_checker import And, Or
 
 import numpy as np
 import xarray as xr
@@ -48,11 +49,20 @@ class AbstractMatchingCost:
     _window_size = None
     cfg = None
     _band = None
+    _step_col = None
 
     # Default configuration, do not change these values
     _WINDOW_SIZE = 5
     _SUBPIX = 1
     _BAND = None
+    _STEP_COL = 1
+
+    # Matching cost schema confi
+    schema = {
+        "subpix": And(int, lambda input: input > 0 and ((input % 2) == 0) or input == 1),
+        "band": Or(str, lambda input: input is None),
+        "step": And(int, lambda y: y >= 1),
+    }
 
     def __new__(cls, **cfg: Union[str, int]):
         """
@@ -123,9 +133,10 @@ class AbstractMatchingCost:
         :return: None
         """
         self.cfg = self.check_conf(**cfg)  # type: ignore
-        self._window_size = self.cfg["window_size"]
-        self._subpix = self.cfg["subpix"]
+        self._window_size = int(self.cfg["window_size"])
+        self._subpix = int(self.cfg["subpix"])
         self._band = self.cfg["band"]
+        self._step_col = int(self.cfg["step"])
 
     def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
         """
@@ -145,6 +156,13 @@ class AbstractMatchingCost:
         if "band" not in cfg:
             cfg["band"] = self._BAND
 
+        if "pandora2d" not in sys.modules:
+            if "step" in cfg and cfg["step"] != 1:
+                logging.error("Step parameter cannot be different from 1")
+                sys.exit(1)
+        if "step" not in cfg:
+            cfg["step"] = self._STEP_COL  # type: ignore
+
         return cfg  # type: ignore
 
     def check_band_input_mc(self, img_left: xr.Dataset, img_right: xr.Dataset) -> None:
@@ -153,13 +171,19 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param img_right: right Dataset  containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
         :return: None
         """
@@ -192,33 +216,39 @@ class AbstractMatchingCost:
 
     @abstractmethod
     def compute_cost_volume(
-        self, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: int, disp_max: int
+        self, img_left: xr.Dataset, img_right: xr.Dataset, grid_disp_min: np.ndarray, grid_disp_max: np.ndarray
     ) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param img_right: right Dataset  containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
-        :param disp_min: minimum disparity
-        :type disp_min: int
-        :param disp_max: maximum disparity
-        :type disp_max: int
+        :param grid_disp_min: minimum disparity
+        :type grid_disp_min: np.ndarray
+        :param grid_disp_max: maximum disparity
+        :type grid_disp_max: np.ndarray
         :return: the cost volume dataset with the data variables:
 
                 - cost_volume 3D xarray.DataArray (row, col, disp)
         :rtype: xarray.Dataset
         """
 
-    @staticmethod
     def allocate_costvolume(
+        self,
         img_left: xr.Dataset,
         subpix: int,
         disp_min: int,
@@ -232,8 +262,11 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param subpix: subpixel precision = (1 or 2 or 4)
         :type subpix: int
@@ -245,6 +278,8 @@ class AbstractMatchingCost:
         :type window_size: int, odd number
         :param metadata: dictionary storing arbitrary metadata
         :type metadata: dictionary
+        :param step: step
+        :type step: int
         :param np_data: the array’s data
         :type np_data: 3D numpy array, dtype=np.float32
         :return: the dataset cost volume with the cost_volume :
@@ -257,14 +292,9 @@ class AbstractMatchingCost:
 
         # First pixel in the image that is fully computable (aggregation windows are complete)
         row = np.arange(c_row[0], c_row[-1] + 1)  # type: np.ndarray
-        col = np.arange(c_col[0], c_col[-1] + 1)  # type: np.ndarray
+        col = np.arange(c_col[0], c_col[-1] + 1, self._step_col)  # type: np.ndarray
 
-        # Compute the disparity range
-        if subpix == 1:
-            disparity_range = np.arange(disp_min, disp_max + 1)
-        else:
-            disparity_range = np.arange(disp_min, disp_max, step=1 / float(subpix), dtype=np.float64)
-            disparity_range = np.append(disparity_range, [disp_max])
+        disparity_range = AbstractMatchingCost.get_disparity_range(disp_min, disp_max, subpix)
 
         # Create the cost volume
         if np_data is None:
@@ -284,29 +314,54 @@ class AbstractMatchingCost:
         return cost_volume
 
     @staticmethod
+    def get_disparity_range(disparity_min: int, disparity_max: int, subpix: int) -> np.ndarray:
+        """
+        Build disparity range and return it.
+
+        :param disparity_min: minimum disparity
+        :type disparity_min: int
+        :param disparity_max: maximum disparity
+        :type disparity_max: int
+        :param subpix: subpixel precision = (1 or 2 or 4)
+        :return: disparity range
+        :rtype: np.ndarray
+        """
+        if subpix == 1:
+            disparity_range = np.arange(disparity_min, disparity_max + 1)
+        else:
+            disparity_range = np.arange(disparity_min, disparity_max, 1 / float(subpix), dtype=np.float64)
+            disparity_range = np.append(disparity_range, [disparity_max])
+        return disparity_range
+
     def point_interval(
-        img_left: xr.Dataset, img_right: xr.Dataset, disp: float
+        self, img_left: xr.Dataset, img_right: xr.Dataset, disp: float
     ) -> Tuple[Tuple[int, int], Tuple[int, int]]:
         """
         Computes the range of points over which the similarity measure will be applied
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
         :param disp: current disparity
         :type disp: float
         :return: the range of the left and right image over which the similarity measure will be applied
         :rtype: tuple
         """
-        nx_left = img_left.dims["col"]
-        nx_right = img_right.dims["col"]
+        nx_left = int(img_left.dims["col"] / self._step_col)
+        nx_right = int(img_right.dims["col"] / self._step_col)
 
         # range in the left image
         point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))
@@ -338,13 +393,19 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
         :param window_size: window size of the measure
         :type window_size: int
@@ -436,42 +497,26 @@ class AbstractMatchingCost:
         return dilatate_left_mask_xr, [dilatate_right_mask_xr, dilatate_right_mask_shift]
 
     @staticmethod
-    def dmin_dmax(disp_min: Union[int, np.ndarray], disp_max: Union[int, np.ndarray]) -> Tuple[int, int]:
+    def get_min_max_from_grid(disp_min: np.ndarray, disp_max: np.ndarray) -> Tuple[int, int]:
         """
         Find the smallest disparity present in disp_min, and the highest disparity present in disp_max
 
         :param disp_min: minimum disparity
-        :type disp_min: int or np.ndarray
+        :type disp_min: np.ndarray
         :param disp_max: maximum disparity
-        :type disp_max: int or np.ndarray
+        :type disp_max: np.ndarray
         :return: dmin_min: the smallest disparity in disp_min, dmax_max: the highest disparity in disp_max
         :rtype: Tuple(int, int)
         """
-        # Disp_min is a fixed disparity
-        if isinstance(disp_min, int):
-            dmin_min = disp_min
-
-        # Disp_min is a variable disparity
-        else:
-            dmin_min = int(np.nanmin(disp_min))
-
-        # Disp_max is a fixed disparity
-        if isinstance(disp_max, int):
-            dmax_max = disp_max
-
-        # Disp_max is a variable disparity
-        else:
-            dmax_max = int(np.nanmax(disp_max))
-
-        return dmin_min, dmax_max
+        return int(np.nanmin(disp_min)), int(np.nanmax(disp_max))
 
     def cv_masked(
         self,
         img_left: xr.Dataset,
         img_right: xr.Dataset,
         cost_volume: xr.Dataset,
-        disp_min: Union[int, np.ndarray],
-        disp_max: Union[int, np.ndarray],
+        disp_min: np.ndarray,
+        disp_max: np.ndarray,
     ) -> None:
         """
         Masks the cost volume :
@@ -482,29 +527,33 @@ class AbstractMatchingCost:
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
         :param cost_volume: the cost_volume DataSet with the data variables:
 
                 - cost_volume 3D xarray.DataArray (row, col, disp)
         :type cost_volume: xarray.Dataset
         :param disp_min: minimum disparity
-        :type disp_min: int or np.ndarray
+        :type disp_min: np.ndarray
         :param disp_max: maximum disparity
-        :type disp_max: int or np.ndarray
-        :param cfg: images configuration containing the mask convention : valid_pixels, no_data
-        :type cfg: dict
+        :type disp_max: np.ndarray
         :return: None
         """
         ny_, nx_, nd_ = cost_volume["cost_volume"].shape
 
-        dmin, _ = self.dmin_dmax(disp_min, disp_max)
+        dmin, _ = self.get_min_max_from_grid(disp_min, disp_max)
 
         # ----- Masking invalid pixels -----
 
@@ -513,9 +562,7 @@ class AbstractMatchingCost:
 
         # Computes the validity mask of the cost volume : invalid pixels or no_data are masked with the value nan.
         # Valid pixels are = 0
-        mask_left, mask_right = self.masks_dilatation(
-            img_left, img_right, self._window_size, self._subpix  # type: ignore
-        )
+        mask_left, mask_right = self.masks_dilatation(img_left, img_right, self._window_size, self._subpix)
 
         for disp in cost_volume.coords["disp"].data:
             i_right = int((disp % 1) * self._subpix)
@@ -537,36 +584,35 @@ class AbstractMatchingCost:
         # ----- Masking disparity range -----
 
         # Fixed range of disparities
-        if isinstance(disp_min, np.ndarray) and isinstance(disp_max, np.ndarray):
-            # Disparity range may be one size bigger in y axis
-            if disp_min.shape[0] > ny_:
-                disp_min = disp_min[0:ny_, :]
-                disp_max = disp_max[0:ny_, :]
-            if disp_min.shape[1] > nx_:
-                disp_min = disp_min[:, 0:nx_]
-                disp_max = disp_max[:, 0:nx_]
+        # Disparity range may be one size bigger in y axis
+        if disp_min.shape[0] > ny_:
+            disp_min = disp_min[0:ny_, :]
+            disp_max = disp_max[0:ny_, :]
+        if disp_min.shape[1] > nx_:
+            disp_min = disp_min[:, 0:nx_]
+            disp_max = disp_max[:, 0:nx_]
 
-            # Mask the costs computed with a disparity lower than disp_min and higher than disp_max
-            for dsp in range(nd_):
-                masking = np.where(
-                    np.logical_or(
-                        cost_volume.coords["disp"].data[dsp] < disp_min,
-                        cost_volume.coords["disp"].data[dsp] > disp_max,
-                    )
+        # Mask the costs computed with a disparity lower than disp_min and higher than disp_max
+        for dsp in range(nd_):
+            masking = np.where(
+                np.logical_or(
+                    cost_volume.coords["disp"].data[dsp] < disp_min,
+                    cost_volume.coords["disp"].data[dsp] > disp_max,
                 )
-                cost_volume["cost_volume"].data[masking[0], masking[1], dsp] = np.nan
+            )
+            cost_volume["cost_volume"].data[masking[0], masking[1], dsp] = np.nan
 
-    @staticmethod
-    def allocate_numpy_cost_volume(
-        img_left: xr.Dataset, disparity_range: np.ndarray, offset_row_col: int
-    ) -> Tuple[xr.Dataset, xr.Dataset]:
+    def allocate_numpy_cost_volume(self, img_left: xr.Dataset, disparity_range: Union[np.ndarray, List]) -> np.ndarray:
         """
         Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param disparity_range: disparity range
         :type disparity_range: np.ndarray
@@ -575,20 +621,26 @@ class AbstractMatchingCost:
         :return: the cost volume dataset , with the data variables:
 
                 - cost_volume 3D xarray.DataArray (row, col, disp)
-                - a cropped cost volume dataset
-        :rtype: Tuple[xarray.Dataset, xarray.Dataset]
+        :rtype: xarray.Dataset
         """
 
-        cv = np.zeros(
-            (len(disparity_range), img_left.dims["col"], img_left.dims["row"]),
+        return np.full(
+            (len(disparity_range), int(img_left.dims["col"] / self._step_col), int(img_left.dims["row"])),
+            np.nan,
             dtype=np.float32,
         )
-        cv += np.nan
 
-        # If offset, do not consider border position for cost computation
-        if offset_row_col != 0:
-            cv_crop = cv[:, offset_row_col:-offset_row_col, offset_row_col:-offset_row_col]
-        else:
-            cv_crop = cv
+    @staticmethod
+    def crop_cost_volume(cost_volume: np.ndarray, offset: int = 0) -> np.ndarray:
+        """
+        Return a cropped view of cost_volume.
 
-        return cv, cv_crop  # type: ignore
+        If offset, do not consider border position for cost computation.
+        :param cost_volume: cost volume to crop
+        :type cost_volume: np.ndarray
+        :param offset: offset used to crop cost volume
+        :type offset: int
+        :return: cropped view of cost_volume.
+        :rtype: np.ndarray
+        """
+        return cost_volume[:, offset:-offset, offset:-offset] if offset else cost_volume

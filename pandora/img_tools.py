@@ -23,13 +23,16 @@
 This module contains functions associated to raster images.
 """
 
+from __future__ import annotations
+
 import logging
 import warnings
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, cast, Dict
 import sys
 
 import numpy as np
 import rasterio
+from rasterio.windows import Window
 import xarray as xr
 from scipy.ndimage import zoom
 from skimage.transform.pyramids import pyramid_gaussian
@@ -57,110 +60,177 @@ def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.Da
         return rasterio.open(*args, **kwargs)
 
 
-def read_img(  # pylint:disable=too-many-branches
-    img: str, no_data: float, mask: str = None, classif: str = None, segm: str = None
+def get_window(roi: Dict, width: int, height: int) -> Window:
+    """
+    Get window from image size and roi
+
+    :param roi: dictionnary with a roi
+
+        "col": {"first": <value - int>, "last": <value - int>},
+        "row": {"first": <value - int>, "last": <value - int>},
+        "margins": [<value - int>, <value - int>, <value - int>, <value - int>]
+
+    with margins : left, up, right, down
+    :type roi: dict
+    :param width: image width
+    :type width: int
+    :param height: image height
+    :type height: int
+    :return: Window : Windowed reading with rasterio
+    :rtype: Window
+    """
+    # Window(col_off, row_off, width, height)
+    col_off = max(roi["col"]["first"] - roi["margins"][0], 0)  # if overlapping on left side
+    row_off = max(roi["row"]["first"] - roi["margins"][1], 0)  # if overlapping on up side
+    roi_width = roi["col"]["last"] - col_off + roi["margins"][2] + 1
+    roi_height = roi["row"]["last"] - row_off + roi["margins"][3] + 1
+
+    # check roi outside
+    if col_off > width or row_off > height or (col_off + roi_width) < 0 or (row_off + roi_height) < 0:
+        logging.error("Roi specified is outside the image")
+        sys.exit(1)
+
+    # overlap roi and image
+    # right side
+    if (col_off + roi_width) > width:
+        roi_width = width - col_off
+    # down side
+    if (row_off + roi_height) > height:
+        roi_height = height - row_off
+
+    return Window(col_off, row_off, roi_width, roi_height)
+
+
+def add_disparity(
+    dataset: xr.Dataset, disparity: Union[tuple[int, int], list[int], str, None], window: Window
 ) -> xr.Dataset:
     """
-    Read image and mask, and return the corresponding xarray.DataSet
+    Add disparity to dataset
 
-    :param img: Path to the image
-    :type img: string
-    :type no_data: no_data value in the image
-    :type no_data: float
-    :param mask: Path to the mask (optional): 0 value for valid pixels, !=0 value for invalid pixels
-    :type mask: string
-    :param classif: Path to the classif (optional)
-    :type classif: string
-    :param segm: Path to the mask (optional)
-    :type segm: string
-    :return: xarray.DataSet containing the variables :
+    :param dataset: xarray dataset without classification
+    :type dataset: xr.Dataset
+    :param disparity: disparity, or path to the disparity grid
+    :type disparity: tuple[int, int] or list[int] or str or None
 
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
-            - msk : 2D (row, col) xarray.DataArray int16, with the convention defined in the configuration file
-            - classif : 3D (band_classif, row, col) xarray.DataArray float32
-
-    :rtype: xarray.DataSet
+    :param window : Windowed reading with rasterio
+    :type window: Window
+    :return: dataset : updated dataset
+    :rtype: xr.Dataset
     """
-    # Select correct band
-    img_ds = rasterio_open(img)
-    nx_, ny_ = img_ds.width, img_ds.height
-    data = img_ds.read()
-    # If only one band is present, consider data as 2 dimensional
-    if data.shape[0] == 1:
-        data = data[0, :, :]
+    if disparity is not None:
+        dataset.coords["band_disp"] = ["min", "max"]
+        # disparity is a grid
+        if isinstance(disparity, str):
+            disparity_ds = rasterio_open(disparity)
+            dataset["disparity"] = xr.DataArray(
+                disparity_ds.read(out_dtype=np.float32, window=window),
+                dims=["band_disp", "row", "col"],
+            )
+        # tuple or list
+        else:
+            dataset["disparity"] = xr.DataArray(
+                np.array(
+                    [
+                        np.full((dataset.dims["row"], dataset.dims["col"]), disparity[0]),
+                        np.full((dataset.dims["row"], dataset.dims["col"]), disparity[1]),
+                    ]
+                ),
+                dims=["band_disp", "row", "col"],
+            )
 
-    if np.isnan(no_data):
-        no_data_pixels = np.where(np.isnan(data))
-    elif np.isinf(no_data):
-        no_data_pixels = np.where(np.isinf(data))
-    else:
-        no_data_pixels = np.where(data == no_data)
+    dataset.attrs["disparity_source"] = disparity
+    return dataset
 
+
+def add_classif(dataset: xr.Dataset, classif: Union[str, None], window: Window) -> xr.Dataset:
+    """
+    Add classification informations and image to datasaet
+
+    :param dataset: xarray dataset without classification
+    :type dataset: xr.Dataset
+    :param classif: classification image path
+    :type classif: str or None
+
+    :param window : Windowed reading with rasterio
+    :type window: Window
+    :return: dataset : updated dataset
+    :rtype: xr.Dataset
+    """
+    if classif is not None:
+        classif_ds = rasterio_open(classif)
+        # Add extra dataset coordinate for classification bands with band names from image metadat
+        dataset.coords["band_classif"] = list(classif_ds.descriptions)
+        dataset["classif"] = xr.DataArray(
+            classif_ds.read(out_dtype=np.int16, window=window),
+            dims=["band_classif", "row", "col"],
+        )
+    return dataset
+
+
+def add_segm(dataset: xr.Dataset, segm: Union[str, None], window: Window) -> xr.Dataset:
+    """
+    Add Segmentation informations and image to datasaet
+
+    :param dataset: xarray dataset without segmentation
+    :type dataset: xr.Dataset
+    :param segm: segmentation image path
+    :type segm: str or None
+
+    :param window : Windowed reading with rasterio
+    :type window: Window
+    :return: dataset : updated dataset
+    :rtype: xr.Dataset
+    """
+    if segm is not None:
+        dataset["segm"] = xr.DataArray(
+            rasterio_open(segm).read(1, out_dtype=np.int16, window=window),
+            dims=["row", "col"],
+        )
+    return dataset
+
+
+def add_no_data(dataset: xr.Dataset, no_data: Union[int, float], no_data_pixels: np.ndarray) -> xr.Dataset:
+    """
+    Add no data informations to datasaet
+
+    :param dataset: xarray dataset without no_data informations
+    :type dataset: xr.Dataset
+    :param no_data: value
+    :type no_data: int or float
+    :param no_data_pixels: matrix with no_data value
+    :type no_data_pixels: np.ndarray
+    :return: dataset : updated dataset
+    :rtype: xr.Dataset
+    """
     # We accept nan values as no data on input image but to not disturb cost volume processing as stereo computation
     # step,nan as no_data must be converted. We choose -9999 (can be another value). No_data position aren't erased
     # because stored in 'msk'
     if no_data_pixels[0].size != 0 and (np.isnan(no_data) or np.isinf(no_data)):
-        data[no_data_pixels] = -9999
+        dataset["im"].data[no_data_pixels] = -9999
         no_data = -9999
+    dataset.attrs.update({"no_data_img": no_data})
+    return dataset
 
-    # If only one band is present
-    if len(data.shape) == 2:
-        image = {"im": (["row", "col"], data.astype(np.float32))}
-        coords = {"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])}
-    # if image is 3 dimensions we create a dataset with [band row col] dims for dataArray
-    else:
-        image = {"im": (["band_im", "row", "col"], data.astype(np.float32))}
-        # Band names are in the image metadata
-        coords = {
-            "band_im": list(img_ds.descriptions),  # type: ignore
-            "row": np.arange(data.shape[1]),
-            "col": np.arange(data.shape[2]),
-        }
 
-    dataset = xr.Dataset(
-        image,
-        coords=coords,
-    )
+def add_mask(
+    dataset: xr.Dataset, mask: Union[str, None], no_data_pixels: np.ndarray, width: int, height: int, window: Window
+) -> xr.Dataset:
+    """
+    Add mask informations and image to datasaet
 
-    transform = img_ds.profile["transform"]
-    crs = img_ds.profile["crs"]
-    # If the image has no geotransform, its transform is the identity matrix, which may not be compatible with QGIS
-    # To make it compatible, the attributes are set to None
-    if crs is None:
-        transform = None
-        crs = None
-
-    # Add image conf to the image dataset
-    dataset.attrs = {
-        "no_data_img": no_data,
-        "crs": crs,
-        "transform": transform,
-        "valid_pixels": 0,  # arbitrary default value
-        "no_data_mask": 1,
-    }  # arbitrary default value
-
-    if classif is not None:
-        classif_ds = rasterio_open(classif)
-        classif_data = classif_ds.read()
-        # Band names are in the image metadata
-        band_classif = list(classif_ds.descriptions)
-
-        # Add extra dataset coordinate for classification bands
-        dataset.coords["band_classif"] = band_classif
-        dataset["classif"] = xr.DataArray(
-            np.full((classif_data.shape[0], classif_data.shape[1], classif_data.shape[2]), 0).astype(np.int16),
-            dims=["band_classif", "row", "col"],
-        )
-        dataset["classif"].data = classif_data
-
-    if segm is not None:
-        input_segm = rasterio_open(segm).read(1)
-        dataset["segm"] = xr.DataArray(
-            np.full((data.shape[0], data.shape[1]), 0).astype(np.int16),
-            dims=["row", "col"],
-        )
-        dataset["segm"].data = input_segm
-
+    :param dataset: xarray dataset without mask
+    :type dataset: xr.Dataset
+    :param mask: mask image path
+    :type mask: str or None
+    :param no_data_pixels: matrix with no_data value
+    :type no_data_pixels: np.ndarray
+    :param width: nb columns
+    :type width: int
+    :param height: nb rows
+    :type height: int
+    :return: dataset : updated dataset
+    :rtype: xr.Dataset
+    """
     # If there is no mask, and no data in the images, do not create the mask to minimize calculation time
     if mask is None and no_data_pixels[0].size == 0:
         return dataset
@@ -171,9 +241,8 @@ def read_img(  # pylint:disable=too-many-branches
     # dataset.attrs['valid_pixels'] : a valid pixel
     # dataset.attrs['no_data_mask'] : a no_data_pixel
     # other value : an invalid_pixel
-
     dataset["msk"] = xr.DataArray(
-        np.full((ny_, nx_), dataset.attrs["valid_pixels"]).astype(np.int16),
+        np.full((height, width), dataset.attrs["valid_pixels"]).astype(np.int16),
         dims=["row", "col"],
     )
 
@@ -182,7 +251,7 @@ def read_img(  # pylint:disable=too-many-branches
     # Value == 0 on input_mask represents a valid pixel
     # Value != 0 on input_mask represents an invalid pixel
     if mask is not None:
-        input_mask = rasterio_open(mask).read(1)
+        input_mask = rasterio_open(mask).read(1, window=window)
         # Masks invalid pixels
         # All pixels that are not valid_pixels, on the input mask, are considered as invalid pixels
         dataset["msk"].data[np.where(input_mask > 0)] = (
@@ -192,53 +261,137 @@ def read_img(  # pylint:disable=too-many-branches
     # Masks no_data pixels
     # If a pixel is invalid due to the input mask, and it is also no_data, then the value of this pixel in the
     # generated mask will be = no_data
-    dataset["msk"].data[(no_data_pixels[0], no_data_pixels[1])] = int(dataset.attrs["no_data_mask"])
+    # In 3D, the coordinates of dataset["im"] are [band_im, row, col] and in 2D are [row, col]. To be sure to always
+    # having no_data_pixels[row], take the "-2" dimension, and no_data_pixel[col], take the last dimension.
+    dataset["msk"].data[(no_data_pixels[-2], no_data_pixels[-1])] = int(dataset.attrs["no_data_mask"])
     return dataset
 
 
-def check_dataset(dataset: xr.Dataset) -> None:
+def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Dataset:
     """
-    Check if input dataset is correct, and return the corresponding xarray.DataSet
+    Read image and mask, and return the corresponding xarray.DataSet
 
-    :param dataset: dataset
-    :type dataset: xr.Dataset
+    :param input_config: configuration used to create dataset.
+    :type input_config: dict
+    :param roi: dictionnary with a roi
+
+            "col": {"first": <value - int>, "last": <value - int>},
+            "row": {"first": <value - int>, "last": <value - int>},
+            "margins": [<value - int>, <value - int>, <value - int>, <value - int>]
+
+            with margins : left, up, right, down
+    :type roi: dict
+    :return: xarray.DataSet containing the variables :
+
+            - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+            - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+            - msk (optional): 2D (row, col) xarray.DataArray int16
+            - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+            - segm (optional): 2D (row, col) xarray.DataArray int16
+
+    :rtype: xarray.DataSet
     """
+    # Set default values
+    input_parameters = {"mask": None, "classif": None, "segm": None}
+    input_parameters.update(input_config)
 
-    # Check image
-    if "im" not in dataset:
-        logging.error("User must provide an image im")
-        sys.exit(1)
+    img_ds = rasterio_open(input_parameters["img"])
+    nx_, ny_ = img_ds.width, img_ds.height
 
-    # Check mask
-    if "msk" not in dataset:
-        logging.warning("User should provide a mask msk")
+    # ROI
+    window = get_window(roi, nx_, ny_) if roi else None
+
+    # If only one band is present, consider data as 2 dimensional
+    if img_ds.count == 1:
+        data = img_ds.read(1, out_dtype=np.float32, window=window)
+        nx_, ny_ = data.shape[1], data.shape[0]
+        image = {"im": (["row", "col"], data)}
+        coords = {"row": np.arange(ny_), "col": np.arange(nx_)}
+    # if image is 3 dimensions we create a dataset with [band row col] dims for dataArray
     else:
-        if dataset["im"].data.shape != dataset["msk"].data.shape:
-            logging.error("image and mask must have the same shape")
-            sys.exit(1)
+        data = img_ds.read(out_dtype=np.float32, window=window)
+        nx_, ny_ = data.shape[2], data.shape[1]
+        image = {"im": (["band_im", "row", "col"], data)}
+        # Band names are in the image metadata
+        coords = {
+            "band_im": list(img_ds.descriptions),  # type: ignore
+            "row": np.arange(ny_),
+            "col": np.arange(nx_),
+        }
 
-    # Check no_data_img
-    if "no_data_img" not in dataset.attrs:
-        logging.error("User must provide the image nodata value ")
-        sys.exit(1)
+    crs = img_ds.profile["crs"]
+    # If the image has no geotransform, its transform is the identity matrix, which may not be compatible with QGIS
+    # To make it compatible, the attributes are set to None
+    transform = img_ds.profile["transform"] if crs is not None else None
 
-    # Check valid_pixels
-    if "valid_pixels" not in dataset.attrs:
-        logging.error("User must provide the valid pixels value")
-        sys.exit(1)
+    # Add image conf to the attributes of the dataset
+    attributes = {
+        "crs": crs,
+        "transform": transform,
+        "valid_pixels": 0,  # arbitrary default value
+        "no_data_mask": 1,  # arbitrary default value
+    }
+    dataset = xr.Dataset(
+        image,
+        coords=coords,
+        attrs=attributes,
+    )
 
-    # Check valid_pixels
-    if "no_data_mask" not in dataset.attrs:
-        logging.error("User must provide the no_data_mask pixels value")
-        sys.exit(1)
+    # disparities
+    if "disp" in input_parameters:
+        dataset.pipe(add_disparity, disparity=input_config["disp"], window=window)
 
-    # Check georef
-    if "crs" not in dataset.attrs:
-        logging.error("User must provide image crs")
-        sys.exit(1)
-    if "transform" not in dataset.attrs:
-        logging.error("User must provide image transform")
-        sys.exit(1)
+    # No data
+    no_data = input_parameters["nodata"]
+    if np.isnan(no_data):
+        no_data_pixels = np.where(np.isnan(dataset["im"].data))
+    elif np.isinf(no_data):
+        no_data_pixels = np.where(np.isinf(dataset["im"].data))
+    else:
+        no_data_pixels = np.where(dataset["im"].data == no_data)
+
+    return (
+        dataset.pipe(add_classif, input_parameters["classif"], window)
+        .pipe(add_segm, input_parameters["segm"], window)
+        .pipe(add_no_data, no_data, no_data_pixels)
+        .pipe(add_mask, input_parameters["mask"], no_data_pixels, nx_, ny_, window)
+    )
+
+
+def get_metadata(
+    img: str, disparity: list[int] | str | None = None, classif: str = None, segm: str = None
+) -> xr.Dataset:
+    """
+    Read metadata from image, and return the corresponding xarray.DataSet
+
+    :param img: img_path
+    :type img: str
+    :param disparity: disparity couple of ints or path to disparity grid file (optional)
+    :type disparity: list[int] | str | None
+    :param classif: path to the classif (optional)
+    :type classif: str
+    :param segm: path to the segm (optional)
+    :type segm: str
+    :return: partial xarray.DataSet (attributes and coordinates)
+    :rtype: xarray.DataSet
+    """
+    img_ds = rasterio_open(img)
+
+    # create the dataset
+    dataset = xr.Dataset(
+        data_vars={},
+        coords={
+            "band_im": list(img_ds.descriptions),
+            "row": np.arange(img_ds.height),
+            "col": np.arange(img_ds.width),
+        },
+    )
+
+    return (
+        dataset.pipe(add_disparity, disparity=disparity, window=None)
+        .pipe(add_classif, classif, window=None)
+        .pipe(add_segm, segm, window=None)
+    )
 
 
 def prepare_pyramid(
@@ -247,13 +400,9 @@ def prepare_pyramid(
     """
     Return a List with the datasets at the different scales
 
-    :param img_left: left Dataset image containing :
-
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img_left: left Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img_left: xarray.Dataset
-    :param img_right: right Dataset containing :
-
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img_right: right Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img_right: xarray.Dataset
     :param num_scales: number of scales
     :type num_scales: int
@@ -311,10 +460,8 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
     """
     Interpolate no data values in image. If no mask was given, create all valid masks
 
-    :param dataset: Dataset image
-    :type dataset: xarray.Dataset containing :
-
-        - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param dataset: Dataset image containing the image im : 2D (row, col) xarray.Dataset
+    :type dataset: xarray.Dataset
     :return: a Tuple that contains the filled image and mask
     :rtype: Tuple of np.ndarray
     """
@@ -410,9 +557,7 @@ def convert_pyramid_to_dataset(
     """
     Return a List with the datasets at the different scales
 
-    :param img_orig: Dataset image containing :
-
-        - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img_orig: Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img_orig: xarray.Dataset
     :param images: list of images for the pyramid
     :type images: list[np.ndarray]
@@ -466,9 +611,7 @@ def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None) -> Lis
     """
     Return an array that contains the shifted right images
 
-    :param img_right: right Dataset image containing :
-
-        - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img_right: Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img_right: xarray.Dataset
     :param subpix: subpixel precision = (1 or pair number)
     :type subpix: int
@@ -508,9 +651,7 @@ def check_inside_image(img: xr.Dataset, row: int, col: int) -> bool:
     """
     Check if the coordinates row,col are inside the image
 
-    :param img: Dataset image containing :
-
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img: Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img: xarray.Dataset
     :param row: row coordinates
     :type row: int
@@ -589,9 +730,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.
     """
     Compute the mean within a sliding window for the whole image
 
-    :param img: Dataset image containing :
-
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img: Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img: xarray.Dataset
     :param win_size: window size
     :type win_size: int
@@ -681,9 +820,7 @@ def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np
     """
     Compute the mean within a window centered at position row,col
 
-    :param img: Dataset image containing :
-
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img: Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img: xarray.Dataset
     :param row: row coordinates
     :type row: int
@@ -715,9 +852,7 @@ def compute_std_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.n
     Compute the standard deviation within a sliding window for the whole image
     with the formula : std = sqrt( E[row^2] - E[row]^2 )
 
-    :param img: Dataset image containing :
-
-            - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
+    :param img: Dataset image containing the image im : 2D (row, col) xarray.Dataset
     :type img: xarray.Dataset
     :param win_size: window size
     :type win_size: int
@@ -752,24 +887,27 @@ def compute_std_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.n
     return np.sqrt(var)
 
 
-def read_disp(disparity: Union[None, int, str]) -> Union[None, int, np.ndarray]:
+def read_disp(disparity: tuple[int, int] | list[int] | str) -> tuple[int, int] | tuple[np.ndarray, np.ndarray]:
     """
     Read the disparity :
-        - if cfg_disp is the path of a disparity grid, read and return the grid (type numpy array)
+        - if cfg_disp is the path of a disparity grid, read and return the grids (type tuple of numpy arrays)
         - else return the value of cfg_disp
 
     :param disparity: disparity, or path to the disparity grid
-    :type disparity: None, int or str
+    :type disparity: tuple[int, int] or list[int] or str
     :return: the disparity
-    :rtype: int or np.ndarray
+    :rtype: tuple[int, int] | tuple[np.ndarray, np.ndarray]
     """
-    if isinstance(disparity, str):
-        disp_ = rasterio_open(disparity)
-        data_disp = disp_.read(1)
-    else:
-        data_disp = disparity
+    if disparity is None:
+        raise ValueError("disparity should not be None")
 
-    return data_disp
+    if not isinstance(disparity, str):
+        # cast because of mypy when we give list as input while it expects a tuple as output
+        # not sure it is the best solution
+        return cast(Tuple[int, int], tuple(disparity))
+
+    raster_disparity = rasterio_open(disparity)
+    return raster_disparity.read(1), raster_disparity.read(2)
 
 
 def fuse_classification_bands(img: xr.Dataset, class_names: List[str]) -> np.ndarray:

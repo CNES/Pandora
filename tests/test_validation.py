@@ -48,6 +48,7 @@ class TestValidation(unittest.TestCase):
         self.left = xr.Dataset(
             {
                 "disparity_map": (["row", "col"], np.array([[0, -1, 1, -2], [2, 2, -1, 0]], dtype=np.float32)),
+                "disparity_interval": xr.DataArray([-2, 2], coords=[("disparity", ["min", "max"])]),
                 "confidence_measure": (["row", "col", "indicator"], np.full((2, 4, 1), np.nan)),
                 "validity_mask": (
                     ["row", "col"],
@@ -59,20 +60,17 @@ class TestValidation(unittest.TestCase):
             },
             coords={"row": [0, 1], "col": np.arange(4)},
         )
-        self.left.attrs["disp_min"] = -2
-        self.left.attrs["disp_max"] = 2
         self.left.attrs["offset_row_col"] = 0
 
         self.right = xr.Dataset(
             {
                 "disparity_map": (["row", "col"], np.array([[0, 2, -1, -1], [1, 1, -2, -1]], dtype=np.float32)),
+                "disparity_interval": xr.DataArray([-2, 2], coords=[("disparity", ["min", "max"])]),
                 "confidence_measure": (["row", "col", "indicator"], np.full((2, 4, 1), np.nan)),
                 "validity_mask": (["row", "col"], np.array([[0, 0, 0, 0], [0, 0, 0, 0]], dtype=np.uint16)),
             },
             coords={"row": [0, 1], "col": np.arange(4)},
         )
-        self.right.attrs["disp_min"] = -2
-        self.right.attrs["disp_max"] = 2
         self.right.attrs["offset_row_col"] = 0
 
     def test_cross_checking(self):
@@ -83,7 +81,7 @@ class TestValidation(unittest.TestCase):
         """
         # Compute the cross checking confidence measure and validity mask
         validation_matcher = validation.AbstractValidation(
-            **{"validation_method": "cross_checking", "cross_checking_threshold": 0.0}
+            **{"validation_method": "cross_checking_accurate", "cross_checking_threshold": 0.0}
         )
 
         left = validation_matcher.disparity_checking(self.left, self.right)
@@ -127,6 +125,7 @@ class TestValidation(unittest.TestCase):
                         dtype=np.float32,
                     ),
                 ),
+                "disparity_interval": xr.DataArray([-1, 1], coords=[("disparity", ["min", "max"])]),
                 "confidence_measure": (["row", "col", "indicator"], np.full((3, 4, 1), np.nan)),
                 "validity_mask": (
                     ["row", "col"],
@@ -157,8 +156,6 @@ class TestValidation(unittest.TestCase):
             },
             coords={"row": [0, 1, 2], "col": [0, 1, 2, 3]},
         )
-        left.attrs["disp_min"] = -1
-        left.attrs["disp_max"] = 1
 
         right = xr.Dataset(
             {
@@ -169,6 +166,7 @@ class TestValidation(unittest.TestCase):
                         dtype=np.float32,
                     ),
                 ),
+                "disparity_interval": xr.DataArray([-1, 1], coords=[("disparity", ["min", "max"])]),
                 "confidence_measure": (["row", "col", "indicator"], np.full((3, 4, 1), np.nan)),
                 "validity_mask": (
                     ["row", "col"],
@@ -199,12 +197,10 @@ class TestValidation(unittest.TestCase):
             },
             coords={"row": [0, 1, 2], "col": [0, 1, 2, 3]},
         )
-        right.attrs["disp_min"] = -1
-        right.attrs["disp_max"] = 1
 
         # Compute the confidence measure
         validation_matcher = validation.AbstractValidation(
-            **{"validation_method": "cross_checking", "cross_checking_threshold": 0.0}
+            **{"validation_method": "cross_checking_accurate", "cross_checking_threshold": 0.0}
         )
         left = validation_matcher.disparity_checking(left, right)
 
@@ -235,6 +231,7 @@ class TestValidation(unittest.TestCase):
             {
                 "disparity_map": (["row", "col"], np.array([[0, -1.2, 1, -2], [2, 1.8, -1, 0]], dtype=np.float32)),
                 "confidence_measure": (["row", "col", "indicator"], np.full((2, 4, 1), np.nan)),
+                "disparity_interval": xr.DataArray([-2, 2], coords=[("disparity", ["min", "max"])]),
                 "validity_mask": (
                     ["row", "col"],
                     np.array(
@@ -245,25 +242,22 @@ class TestValidation(unittest.TestCase):
             },
             coords={"row": [0, 1], "col": np.arange(4)},
         )
-        left.attrs["disp_min"] = -2
-        left.attrs["disp_max"] = 2
         left.attrs["offset_row_col"] = 0
 
         right = xr.Dataset(
             {
                 "disparity_map": (["row", "col"], np.array([[0, 2, -1.2, -1], [0.8, 1, -2, -1]], dtype=np.float32)),
+                "disparity_interval": xr.DataArray([-2, 2], coords=[("disparity", ["min", "max"])]),
                 "confidence_measure": (["row", "col", "indicator"], np.full((2, 4, 1), np.nan)),
                 "validity_mask": (["row", "col"], np.array([[0, 0, 0, 0], [0, 0, 0, 0]], dtype=np.uint16)),
             },
             coords={"row": [0, 1], "col": np.arange(4)},
         )
-        right.attrs["disp_min"] = -2
-        right.attrs["disp_max"] = 2
         right.attrs["offset_row_col"] = 0
 
         # Compute the cross checking confidence measure and validity mask
         validation_matcher = validation.AbstractValidation(
-            **{"validation_method": "cross_checking", "cross_checking_threshold": 0.0}
+            **{"validation_method": "cross_checking_accurate", "cross_checking_threshold": 0.0}
         )
 
         left = validation_matcher.disparity_checking(left, right)
@@ -309,8 +303,7 @@ class TestValidation(unittest.TestCase):
             {"disparity_map": (["row", "col"], disp_data), "validity_mask": (["row", "col"], msk_data)},
             coords={"row": [0, 1], "col": np.arange(4)},
         )
-        left.attrs["disp_min"] = -2
-        left.attrs["disp_max"] = 2
+        left.attrs["disparity_interval"] = [-2, 2]
 
         # Interpolate occlusions
         interpolation_matcher = validation.AbstractInterpolation(**{"interpolated_disparity": "mc-cnn"})
@@ -379,8 +372,7 @@ class TestValidation(unittest.TestCase):
             {"disparity_map": (["row", "col"], disp_data), "validity_mask": (["row", "col"], msk_data)},
             coords={"row": np.arange(4), "col": np.arange(5)},
         )
-        left.attrs["disp_min"] = -2
-        left.attrs["disp_max"] = 2
+        left.attrs["disparity_interval"] = [-2, 2]
 
         # Interpolate mistmatch
         interpolation_matcher = validation.AbstractInterpolation(**{"interpolated_disparity": "mc-cnn"})
@@ -467,8 +459,7 @@ class TestValidation(unittest.TestCase):
             {"disparity_map": (["row", "col"], disp_data), "validity_mask": (["row", "col"], msk_data)},
             coords={"row": np.arange(4), "col": np.arange(5)},
         )
-        left.attrs["disp_min"] = -2
-        left.attrs["disp_max"] = 2
+        left.attrs["disparity_interval"] = [-2, 2]
 
         # Interpolate occlusion
         interpolation_matcher = validation.AbstractInterpolation(**{"interpolated_disparity": "sgm"})
@@ -543,8 +534,7 @@ class TestValidation(unittest.TestCase):
             {"disparity_map": (["row", "col"], disp_data), "validity_mask": (["row", "col"], msk_data)},
             coords={"row": np.arange(4), "col": np.arange(5)},
         )
-        left.attrs["disp_min"] = -2
-        left.attrs["disp_max"] = 2
+        left.attrs["disparity_interval"] = [-2, 2]
 
         # Interpolate mismatch
         interpolation_matcher = validation.AbstractInterpolation(**{"interpolated_disparity": "sgm"})
@@ -626,8 +616,7 @@ class TestValidation(unittest.TestCase):
             {"disparity_map": (["row", "col"], disp_data), "validity_mask": (["row", "col"], msk_data)},
             coords={"row": np.arange(4), "col": np.arange(5)},
         )
-        left.attrs["disp_min"] = -2
-        left.attrs["disp_max"] = 2
+        left.attrs["disparity_interval"] = [-2, 2]
 
         # Interpolate mismatch
         interpolation_matcher = validation.AbstractInterpolation(**{"interpolated_disparity": "sgm"})

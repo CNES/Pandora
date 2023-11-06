@@ -35,6 +35,7 @@ from tests import common
 import pandora.constants as cst
 from pandora import disparity
 from pandora import matching_cost
+from pandora.img_tools import add_disparity
 
 
 class TestDisparityMask(unittest.TestCase):
@@ -174,8 +175,9 @@ class TestDisparityMask(unittest.TestCase):
         matching_cost_plugin = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
-        dmin, dmax = matching_cost_plugin.dmin_dmax(disp_min_grid, disp_max_grid)
-        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, dmin, dmax)
+        cv = matching_cost_plugin.compute_cost_volume(
+            img_left=self.left, img_right=self.right, grid_disp_min=disp_min_grid, grid_disp_max=disp_max_grid
+        )
         matching_cost_plugin.cv_masked(self.left, self.right, cv, disp_min_grid, disp_max_grid)
 
         # Compute the disparity map and validity mask
@@ -334,8 +336,10 @@ class TestDisparityMask(unittest.TestCase):
         matching_cost_plugin = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
-        dmin, dmax = matching_cost_plugin.dmin_dmax(disp_min_grid, disp_max_grid)
-        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, dmin, dmax)
+
+        cv = matching_cost_plugin.compute_cost_volume(
+            img_left=self.left, img_right=self.right, grid_disp_min=disp_min_grid, grid_disp_max=disp_max_grid
+        )
         matching_cost_plugin.cv_masked(self.left, self.right, cv, disp_min_grid, disp_max_grid)
 
         # Compute the disparity map and validity mask
@@ -509,7 +513,6 @@ class TestDisparityMask(unittest.TestCase):
 
         data = np.array(([[6, 1, 2, 4], [6, 2, 4, 1], [10, 6, 7, 8]]), dtype=np.float64)
         right_mask = np.array([[1, 1, 3, 5], [4, 1, 1, 1], [2, 2, 4, 6]], dtype=np.uint8)
-
         right = xr.Dataset(
             {"im": (["row", "col"], data), "msk": (["row", "col"], right_mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
@@ -656,7 +659,6 @@ class TestDisparityMask(unittest.TestCase):
 
         data = np.array(([[6, 1, 2, 4, 1], [6, 2, 4, 1, 6], [10, 6, 7, 8, 1], [5, 6, 7, 8, 0]]), dtype=np.float64)
         right_mask = np.array([[1, 1, 1, 2, 1], [5, 1, 1, 1, 1], [2, 1, 1, 6, 1], [0, 1, 1, 1, 1]], dtype=np.uint8)
-
         right = xr.Dataset(
             {"im": (["row", "col"], data), "msk": (["row", "col"], right_mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
@@ -727,7 +729,6 @@ class TestDisparityMask(unittest.TestCase):
 
         data = np.ones((10, 10), dtype=np.float64)
         left_mask = np.ones((10, 10), dtype=np.uint8)
-
         left = xr.Dataset(
             {"im": (["row", "col"], data), "msk": (["row", "col"], left_mask)},
             coords={"row": np.arange(5, data.shape[0] + 5), "col": np.arange(4, data.shape[1] + 4)},
@@ -742,7 +743,6 @@ class TestDisparityMask(unittest.TestCase):
         data = np.ones((10, 10), dtype=np.float64)
         right_mask = np.ones((10, 10), dtype=np.uint8)
         right_mask = np.tril(right_mask, -1.5)
-
         right = xr.Dataset(
             {"im": (["row", "col"], data), "msk": (["row", "col"], right_mask)},
             coords={"row": np.arange(5, data.shape[0] + 5), "col": np.arange(4, data.shape[1] + 4)},
@@ -917,7 +917,6 @@ class TestDisparityMask(unittest.TestCase):
         # Masks convention
         # 1 = valid
         # 2 = no_data
-
         data = np.array(([[1, 2, 4, 6]]), dtype=np.float64)
         left_mask = np.array([[2, 2, 2, 2]], dtype=np.uint8)
         left = xr.Dataset(
@@ -930,10 +929,10 @@ class TestDisparityMask(unittest.TestCase):
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         data = np.array(([[6, 1, 2, 4]]), dtype=np.float64)
         right_mask = np.array([[2, 2, 2, 1]], dtype=np.uint8)
-
         right = xr.Dataset(
             {"im": (["row", "col"], data), "msk": (["row", "col"], right_mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
@@ -948,13 +947,19 @@ class TestDisparityMask(unittest.TestCase):
         matching_cost_plugin = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
-        cv = matching_cost_plugin.compute_cost_volume(right, left, -1, 1)
+
+        cv = matching_cost_plugin.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
         matching_cost_plugin.cv_masked(
             left,
             right,
             cv,
-            -1,
-            1,
+            left["disparity"].sel(band_disp="min"),
+            left["disparity"].sel(band_disp="max"),
         )
         # Compute the disparity map and validity mask
         disparity_ = disparity.AbstractDisparity(**{"disparity_method": "wta", "invalid_disparity": 0})

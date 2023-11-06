@@ -39,10 +39,12 @@ class AbstractSemanticSegmentation:
     segmentation_methods_avail: Dict = {}
     cfg = None
 
-    def __new__(cls, **cfg: Dict[str, dict]):
+    def __new__(cls, _img: xr.Dataset, **cfg: Dict[str, dict]):
         """
         Return the plugin associated with the segmentation_method given in the configuration
 
+        :param img: xarray.Dataset of left image
+        :type img: xarray.Dataset
         :param cfg: configuration {'segmentation_method': value}
         :type cfg: dictionary
         """
@@ -112,18 +114,27 @@ class AbstractSemanticSegmentation:
         :type cv: xarray.Dataset
         :param img_left: left Dataset image containing :
 
-                - im : 3D (band_im, row, col) xarray.DataArray
-                - msk (optional): 2D (row, col) xarray.DataArray
+                - im: 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray
         :param img_right: right Dataset image containing :
 
-                - im : 3D (band, col) xarray.DataArray
-                - msk (optional): 2D (row, col) xarray.DataArray
+                - im: 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray
         :return: The semantic segmentation in the left image dataset with the data variables:
 
-                - im : 3D (band, col) xarray.DataArray
-                - msk (optional): 2D (row, col) xarray.DataArray
+                - im: 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
                 - initial : 2D (row, col) xarray.DataArray semantic segmentation
         :rtype: xarray.Dataset
         """

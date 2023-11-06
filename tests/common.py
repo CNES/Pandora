@@ -159,26 +159,23 @@ def matching_cost_tests_multiband_setup() -> Tuple[xr.Dataset, xr.Dataset]:
 
 
 basic_pipeline_cfg = {
-    "right_disp_map": {"method": "none"},
-    "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": None},
+    "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": None, "step": 1},
     "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
     "refinement": {"refinement_method": "vfit"},
     "filter": {"filter_method": "median", "filter_size": 3},
 }
 
 validation_pipeline_cfg = {
-    "right_disp_map": {"method": "accurate"},
-    "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": None},
+    "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": None, "step": 1},
     "cost_volume_confidence": {"confidence_method": "std_intensity"},
     "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
     "refinement": {"refinement_method": "vfit"},
     "filter": {"filter_method": "median", "filter_size": 3},
-    "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1.0},
+    "validation": {"validation_method": "cross_checking_accurate", "cross_checking_threshold": 1.0},
 }
 
 multiscale_pipeline_cfg = {
-    "right_disp_map": {"method": "none"},
-    "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": None},
+    "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": None, "step": 1},
     "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
     "refinement": {"refinement_method": "vfit"},
     "filter": {"filter_method": "median", "filter_size": 3},
@@ -188,31 +185,33 @@ multiscale_pipeline_cfg = {
 input_cfg_basic = {
     "img_left": "tests/pandora/left.png",
     "img_right": "tests/pandora/right.png",
-    "disp_min": -60,
-    "disp_max": 0,
+    "disp_left": [-60, 0],
+}
+
+input_cfg_basic_with_none_right_disp = {
+    "img_left": "tests/pandora/left.png",
+    "img_right": "tests/pandora/right.png",
+    "disp_left": [-60, 0],
+    "disp_right": None,
 }
 
 input_multiband_cfg = {
     "img_left": "tests/pandora/left_rgb.tif",
     "img_right": "tests/pandora/right_rgb.tif",
-    "disp_min": -60,
-    "disp_max": 0,
+    "disp_left": [-60, 0],
 }
 
 input_cfg_left_grids = {
     "img_left": "tests/pandora/left.png",
     "img_right": "tests/pandora/right.png",
-    "disp_min": "tests/pandora/disp_min_grid.tif",
-    "disp_max": "tests/pandora/disp_max_grid.tif",
+    "disp_left": "tests/pandora/left_disparity_grid.tif",
 }
 
 input_cfg_left_right_grids = {
     "img_left": "tests/pandora/left.png",
     "img_right": "tests/pandora/right.png",
-    "disp_min": "tests/pandora/disp_min_grid.tif",
-    "disp_max": "tests/pandora/disp_max_grid.tif",
-    "disp_min_right": "tests/pandora/right_disp_min_grid.tif",
-    "disp_max_right": "tests/pandora/right_disp_max_grid.tif",
+    "disp_left": "tests/pandora/left_disparity_grid.tif",
+    "disp_right": "tests/pandora/right_disparity_grid.tif",
 }
 
 # Image common attributes for matching_cost_tests

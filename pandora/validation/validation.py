@@ -35,6 +35,7 @@ from pandora import common
 from pandora.cost_volume_confidence.cost_volume_confidence import (
     AbstractCostVolumeConfidence,
 )
+from pandora.disparity import extract_disparity_range_from_disparity_map
 
 
 class AbstractValidation:
@@ -136,13 +137,19 @@ class AbstractValidation:
         :type dataset_right: xarray.Dataset
         :param img_left: left Datset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
+            - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+            - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+            - msk (optional): 2D (row, col) xarray.DataArray int16
+            - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+            - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
+            - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+            - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+            - msk (optional): 2D (row, col) xarray.DataArray int16
+            - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+            - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
         :param cv: cost_volume Dataset with the variables:
 
@@ -160,8 +167,8 @@ class AbstractValidation:
         """
 
 
-@AbstractValidation.register_subclass("cross_checking")
-class CrossChecking(AbstractValidation):
+@AbstractValidation.register_subclass("cross_checking_accurate")
+class CrossCheckingAccurate(AbstractValidation):
     """
     CrossChecking class allows to perform the validation step
     """
@@ -193,7 +200,7 @@ class CrossChecking(AbstractValidation):
             cfg["cross_checking_threshold"] = self._THRESHOLD
 
         schema = {
-            "validation_method": And(str, lambda input: "cross_checking"),
+            "validation_method": And(str, lambda input: "cross_checking_accurate"),
             "cross_checking_threshold": Or(int, float),
             OptionalKey("interpolated_disparity"): And(str, lambda input: common.is_method(input, ["mc-cnn", "sgm"])),
         }
@@ -239,13 +246,19 @@ class CrossChecking(AbstractValidation):
         :type dataset_right: xarray.Dataset
         :param img_left: left Datset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
         :param cv: cost_volume Dataset with the variables:
 
@@ -263,7 +276,7 @@ class CrossChecking(AbstractValidation):
         :rtype: xarray.Dataset
         """
         nb_row, nb_col = dataset_left["disparity_map"].shape
-        disparity_range = np.arange(dataset_left.attrs["disp_min"], dataset_left.attrs["disp_max"] + 1)
+        disparity_range = extract_disparity_range_from_disparity_map(dataset_left)
 
         # Confidence measure which calculates the distance LR / RL
         conf_measure = np.full((nb_row, nb_col), np.nan, dtype=np.float32)
@@ -335,7 +348,7 @@ class CrossChecking(AbstractValidation):
             outside_right = np.where((col_right < 0) & (col_right >= nb_col))
             dataset_left["validity_mask"].data[row, col_left[outside_right]] += cst.PANDORA_MSK_PIXEL_OCCLUSION
 
-        dataset_left.attrs["validation"] = "cross_checking"
+        dataset_left.attrs["validation"] = "cross_checking_accurate"
 
         dataset_left, _ = AbstractCostVolumeConfidence.allocate_confidence_map(
             "left_right_consistency", conf_measure, dataset_left, cv

@@ -1,4 +1,5 @@
 # pylint: disable=duplicate-code
+# pylint:disable=too-many-lines
 # type:ignore
 #!/usr/bin/env python
 # coding: utf8
@@ -32,6 +33,7 @@ import xarray as xr
 from rasterio import Affine
 
 from pandora import matching_cost
+from pandora.img_tools import add_disparity
 from tests import common
 
 
@@ -48,7 +50,9 @@ class TestMatchingCostSAD(unittest.TestCase):
         """
 
         self.left, self.right = common.matching_cost_tests_setup()
+        self.left.pipe(add_disparity, disparity=[-1, 1], window=None)
         self.left_multiband, self.right_multiband = common.matching_cost_tests_multiband_setup()
+        self.left_multiband.pipe(add_disparity, disparity=[-1, 1], window=None)
 
     def test_sad_cost(self):
         """
@@ -70,8 +74,12 @@ class TestMatchingCostSAD(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
+
         sad = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
+            img_left=self.left,
+            img_right=self.right,
+            grid_disp_min=self.left["disparity"].sel(band_disp="min"),
+            grid_disp_max=self.left["disparity"].sel(band_disp="max"),
         )
 
         # Check if the calculated ad cost is equal to the ground truth (same shape and all elements equals)
@@ -95,9 +103,18 @@ class TestMatchingCostSAD(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 5, "subpix": 1}
         )
         sad = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left, img_right=self.right, disp_min=-1, disp_max=1
+            img_left=self.left,
+            img_right=self.right,
+            grid_disp_min=self.left["disparity"].sel(band_disp="min"),
+            grid_disp_max=self.left["disparity"].sel(band_disp="max"),
         )
-        matching_cost_matcher.cv_masked(self.left, self.right, sad, -1, 1)
+        matching_cost_matcher.cv_masked(
+            self.left,
+            self.right,
+            sad,
+            self.left["disparity"].sel(band_disp="min"),
+            self.left["disparity"].sel(band_disp="max"),
+        )
 
         # Check if the calculated ad cost is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(sad["cost_volume"].sel(disp=0), sad_ground_truth)
@@ -122,8 +139,12 @@ class TestMatchingCostSAD(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1, "band": "r"}
         )
+
         sad = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left_multiband, img_right=self.right_multiband, disp_min=-1, disp_max=1
+            img_left=self.left_multiband,
+            img_right=self.right_multiband,
+            grid_disp_min=self.left_multiband["disparity"].sel(band_disp="min"),
+            grid_disp_max=self.left_multiband["disparity"].sel(band_disp="max"),
         )
 
         # Check if the calculated ad cost is equal to the ground truth (same shape and all elements equals)
@@ -146,9 +167,18 @@ class TestMatchingCostSAD(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 5, "subpix": 1, "band": "r"}
         )
         sad = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left_multiband, img_right=self.right_multiband, disp_min=-1, disp_max=1
+            img_left=self.left_multiband,
+            img_right=self.right_multiband,
+            grid_disp_min=self.left_multiband["disparity"].sel(band_disp="min"),
+            grid_disp_max=self.left_multiband["disparity"].sel(band_disp="max"),
         )
-        matching_cost_matcher.cv_masked(self.left_multiband, self.right_multiband, sad, -1, 1)
+        matching_cost_matcher.cv_masked(
+            self.left_multiband,
+            self.right_multiband,
+            sad,
+            self.left_multiband["disparity"].sel(band_disp="min"),
+            self.left_multiband["disparity"].sel(band_disp="max"),
+        )
 
         # Compute gt cmax:
         window_size = 5
@@ -172,6 +202,7 @@ class TestMatchingCostSAD(unittest.TestCase):
         )
         left.attrs["crs"] = None
         left.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+        left.pipe(add_disparity, disparity=[-2, 1], window=None)
 
         data = np.array(([6, 7, 8, 10], [2, 4, 1, 6], [9, 10, 1, 2]), dtype=np.float64)
         right = xr.Dataset(
@@ -210,8 +241,20 @@ class TestMatchingCostSAD(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
-        cv = matching_cost_matcher.compute_cost_volume(left, right, disp_min=-2, disp_max=1)
-        matching_cost_matcher.cv_masked(left, right, cv, -2, 1)
+
+        cv = matching_cost_matcher.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_matcher.cv_masked(
+            left,
+            right,
+            cv,
+            left["disparity"].sel(band_disp="min"),
+            left["disparity"].sel(band_disp="max"),
+        )
 
         # Check if the calculated mean is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(cv["cost_volume"].data, ground_truth)
@@ -228,15 +271,13 @@ class TestMatchingCostSAD(unittest.TestCase):
         # cfg['image']['no_data'] = 1
         # invalid_pixels all other values
         data = np.array(([1, 1, 1, 3, 4], [1, 2, 1, 0, 2], [2, 1, 0, 1, 2], [1, 1, 1, 1, 4]), dtype=np.float64)
-
         mask = np.array(([0, 0, 2, 0, 1], [0, 2, 0, 0, 0], [0, 0, 0, 0, 0], [1, 0, 0, 0, 2]), dtype=np.int16)
-
         left = xr.Dataset(
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         left.attrs = common.img_attrs
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         data = np.array(([5, 1, 2, 3, 4], [1, 2, 1, 0, 2], [2, 2, 0, 1, 4], [1, 1, 1, 1, 2]), dtype=np.float64)
         # right mask contains valid pixels
@@ -245,16 +286,27 @@ class TestMatchingCostSAD(unittest.TestCase):
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         right.attrs = common.img_attrs
 
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
-        # Compute the cost volume and invalidate pixels if need
 
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=-1, disp_max=1)
+        # Compute the cost volume and invalidate pixels if need
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_.cv_masked(
+            img_left=left,
+            img_right=right,
+            cost_volume=cv,
+            disp_min=left["disparity"].sel(band_disp="min"),
+            disp_max=left["disparity"].sel(band_disp="max"),
+        )
+
         # Cost volume before invalidation
         #  disp       -1    0   1
         # col 1    [[[nan, 6., 8.],
@@ -310,13 +362,12 @@ class TestMatchingCostSAD(unittest.TestCase):
         data = np.array(([1, 1, 1, 3, 4], [1, 2, 1, 0, 2], [2, 1, 0, 1, 2], [1, 1, 1, 1, 4]), dtype=np.float64)
         # left mask contains valid pixels
         mask = np.zeros((4, 5), dtype=np.int16)
-
         left = xr.Dataset(
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         left.attrs = common.img_attrs
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         data = np.array(([5, 1, 2, 3, 4], [1, 2, 1, 0, 2], [2, 2, 0, 1, 4], [1, 1, 1, 1, 2]), dtype=np.float64)
         mask = np.array(([0, 0, 0, 0, 2], [0, 1, 0, 0, 0], [0, 2, 0, 2, 0], [1, 0, 0, 0, 0]), dtype=np.int16)
@@ -324,15 +375,27 @@ class TestMatchingCostSAD(unittest.TestCase):
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         right.attrs = common.img_attrs
 
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
+
         # Compute the cost volume and invalidate pixels if need
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=-1, disp_max=1)
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_.cv_masked(
+            img_left=left,
+            img_right=right,
+            cost_volume=cv,
+            disp_min=left["disparity"].sel(band_disp="min"),
+            disp_max=left["disparity"].sel(band_disp="max"),
+        )
+
         # Cost volume before invalidation
         #  disp       -1    0   1
         # col 1    [[[nan, 6., 8.],
@@ -388,13 +451,12 @@ class TestMatchingCostSAD(unittest.TestCase):
         data = np.array(([1, 1, 1, 3, 4], [1, 2, 1, 0, 2], [2, 1, 0, 1, 2], [1, 1, 1, 1, 4]), dtype=np.float64)
         # left mask contains valid pixels
         mask = np.array(([1, 0, 0, 2, 0], [0, 0, 0, 0, 0], [0, 0, 2, 0, 0], [2, 0, 0, 0, 1]), dtype=np.int16)
-
         left = xr.Dataset(
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         left.attrs = common.img_attrs
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         data = np.array(([5, 1, 2, 3, 4], [1, 2, 1, 0, 2], [2, 2, 0, 1, 4], [1, 1, 1, 1, 2]), dtype=np.float64)
         mask = np.array(([0, 2, 0, 0, 1], [0, 0, 0, 0, 0], [0, 0, 0, 2, 0], [1, 0, 2, 0, 0]), dtype=np.int16)
@@ -402,15 +464,27 @@ class TestMatchingCostSAD(unittest.TestCase):
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         right.attrs = common.img_attrs
 
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
+
         # Compute the cost volume and invalidate pixels if need
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=-1, disp_max=1)
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_.cv_masked(
+            img_left=left,
+            img_right=right,
+            cost_volume=cv,
+            disp_min=left["disparity"].sel(band_disp="min"),
+            disp_max=left["disparity"].sel(band_disp="max"),
+        )
+
         # Cost volume before invalidation
         #  disp       -1    0   1
         # col 1    [[[nan, 6., 8.],
@@ -474,7 +548,6 @@ class TestMatchingCostSAD(unittest.TestCase):
             ),
             dtype=np.float64,
         )
-
         mask = np.array(
             (
                 [2, 0, 0, 0, 0, 0, 1],
@@ -492,6 +565,8 @@ class TestMatchingCostSAD(unittest.TestCase):
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
         left.attrs = common.img_attrs
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
+
         data = np.array(
             (
                 [0, 0, 0, 0, 0, 0, 0],
@@ -503,7 +578,6 @@ class TestMatchingCostSAD(unittest.TestCase):
             ),
             dtype=np.float64,
         )
-
         mask = np.array(
             (
                 [1, 0, 0, 0, 0, 0, 2],
@@ -524,12 +598,23 @@ class TestMatchingCostSAD(unittest.TestCase):
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 5, "subpix": 1}
         )
+
         # Compute the cost volume and invalidate pixels if need
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=-1, disp_max=1)
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_.cv_masked(
+            img_left=left,
+            img_right=right,
+            cost_volume=cv,
+            disp_min=left["disparity"].sel(band_disp="min"),
+            disp_max=left["disparity"].sel(band_disp="max"),
+        )
 
         # Cost volume ground truth after invalidation
-
         cv_ground_truth = np.array(
             [
                 [
@@ -601,12 +686,12 @@ class TestMatchingCostSAD(unittest.TestCase):
         data = np.array(([1, 1, 1, 3, 4], [1, 1, 1, 1, 4]), dtype=np.float64)
         # left mask contains valid pixels
         mask = np.array(([1, 0, 0, 2, 0], [2, 0, 0, 0, 1]), dtype=np.int16)
-
         left = xr.Dataset(
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
         left.attrs = common.img_attrs
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         data = np.array(([5, 1, 2, 3, 4], [1, 1, 1, 1, 2]), dtype=np.float64)
         mask = np.array(([0, 2, 0, 0, 1], [1, 0, 2, 0, 0]), dtype=np.int16)
@@ -619,9 +704,21 @@ class TestMatchingCostSAD(unittest.TestCase):
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
+
         # Compute the cost volume and invalidate pixels if need
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
-        matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=-1, disp_max=1)
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_.cv_masked(
+            img_left=left,
+            img_right=right,
+            cost_volume=cv,
+            disp_min=left["disparity"].sel(band_disp="min"),
+            disp_max=left["disparity"].sel(band_disp="max"),
+        )
 
         # Cost volume ground truth after invalidation
         cv_ground_truth = np.array(
@@ -661,13 +758,12 @@ class TestMatchingCostSAD(unittest.TestCase):
         data = np.array(([1, 1, 1, 3, 4], [1, 1, 1, 1, 4]), dtype=np.float64)
         # left mask contains valid pixels
         mask = np.array(([0, 0, 0, 0, 0], [0, 0, 0, 0, 0]), dtype=np.int16)
-
         left = xr.Dataset(
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         left.attrs = common.img_attrs
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         data = np.array(([5, 1, 2, 3, 4], [1, 1, 1, 1, 2]), dtype=np.float64)
         mask = np.array(([0, 0, 0, 0, 1], [1, 0, 2, 0, 0]), dtype=np.int16)
@@ -675,18 +771,26 @@ class TestMatchingCostSAD(unittest.TestCase):
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         right.attrs = common.img_attrs
-
-        dmin = -1
-        dmax = 1
 
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 2}
         )
+
         # Compute the cost volume and invalidate pixels if need
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
-        matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_.cv_masked(
+            img_left=left,
+            img_right=right,
+            cost_volume=cv,
+            disp_min=left["disparity"].sel(band_disp="min"),
+            disp_max=left["disparity"].sel(band_disp="max"),
+        )
 
         # The cost volume before invalidation
         # <xarray.DataArray 'cost_volume' (row: 2, col: 5, disp: 5)>
@@ -737,18 +841,17 @@ class TestMatchingCostSAD(unittest.TestCase):
         data = np.array(([1, 1, 1], [1, 1, 1]), dtype=np.float64)
         # left mask contains valid pixels
         mask = np.array(([5, 5, 5], [5, 5, 5]), dtype=np.int16)
-
         left = xr.Dataset(
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         left.attrs = {
             "valid_pixels": 5,
             "no_data_mask": 7,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         data = np.array(([5, 1, 2], [1, 1, 1]), dtype=np.float64)
         mask = np.array(([5, 4, 7], [6, 7, 5]), dtype=np.int16)
@@ -756,7 +859,6 @@ class TestMatchingCostSAD(unittest.TestCase):
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         right.attrs = {
             "valid_pixels": 5,
             "no_data_mask": 7,
@@ -764,15 +866,24 @@ class TestMatchingCostSAD(unittest.TestCase):
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
 
-        dmin = -1
-        dmax = 1
-
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 4}
         )
+
         # Compute the cost volume and invalidate pixels if need
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
-        matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_.cv_masked(
+            img_left=left,
+            img_right=right,
+            cost_volume=cv,
+            disp_min=left["disparity"].sel(band_disp="min"),
+            disp_max=left["disparity"].sel(band_disp="max"),
+        )
 
         # The cost volume before invalidation
         # <xarray.DataArray 'cost_volume' (row: 2, col: 5, disp: 5)>
@@ -815,25 +926,24 @@ class TestMatchingCostSAD(unittest.TestCase):
         # invalid_pixels all other values
         data = np.array(([1, 1, 1, 3, 4], [1, 2, 1, 0, 2], [2, 1, 0, 1, 2], [1, 1, 1, 1, 4]), dtype=np.float64)
         mask = np.array(([5, 56, 5, 12, 5], [5, 5, 5, 5, 5], [5, 5, 5, 5, 5], [3, 5, 4, 5, 7]), dtype=np.int16)
-
         left = xr.Dataset(
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         left.attrs = {
             "valid_pixels": 5,
             "no_data_mask": 7,
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
+
         data = np.array(([5, 1, 2, 3, 4], [1, 2, 1, 0, 2], [2, 2, 0, 1, 4], [1, 1, 1, 1, 2]), dtype=np.float64)
         mask = np.array(([7, 5, 5, 5, 5], [5, 5, 5, 65, 5], [5, 5, 5, 5, 5], [5, 23, 5, 5, 2]), dtype=np.int16)
         right = xr.Dataset(
             {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
             coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
-
         right.attrs = {
             "valid_pixels": 5,
             "no_data_mask": 7,
@@ -841,15 +951,24 @@ class TestMatchingCostSAD(unittest.TestCase):
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
 
-        dmin = -1
-        dmax = 1
-
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 2}
         )
+
         # Compute the cost volume and invalidate pixels if need
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=dmin, disp_max=dmax)
-        matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin, disp_max=dmax)
+        cv = matching_cost_.compute_cost_volume(
+            img_left=left,
+            img_right=right,
+            grid_disp_min=left["disparity"].sel(band_disp="min"),
+            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        )
+        matching_cost_.cv_masked(
+            img_left=left,
+            img_right=right,
+            cost_volume=cv,
+            disp_min=left["disparity"].sel(band_disp="min"),
+            disp_max=left["disparity"].sel(band_disp="max"),
+        )
 
         # Cost volume before invalidation
         # array([[[ nan,  nan,  6. ,  6. ,  8. ],
@@ -919,7 +1038,6 @@ class TestMatchingCostSAD(unittest.TestCase):
             ),
             dtype=np.float64,
         )
-
         data[1, :, :] = np.array(
             (
                 [2, 3, 4, 6],
@@ -929,7 +1047,6 @@ class TestMatchingCostSAD(unittest.TestCase):
             ),
             dtype=np.float64,
         )
-
         left = xr.Dataset(
             {"im": (["band_im", "row", "col"], data)},
             coords={
@@ -938,7 +1055,6 @@ class TestMatchingCostSAD(unittest.TestCase):
                 "col": np.arange(data.shape[2]),
             },
         )
-
         left.attrs = common.img_attrs
 
         # Initialize multiband data
@@ -952,7 +1068,6 @@ class TestMatchingCostSAD(unittest.TestCase):
             ),
             dtype=np.float64,
         )
-
         data[1, :, :] = np.array(
             (
                 [6, 5, 2, 7],
@@ -962,7 +1077,6 @@ class TestMatchingCostSAD(unittest.TestCase):
             ),
             dtype=np.float64,
         )
-
         right = xr.Dataset(
             {"im": (["band_im", "row", "col"], data)},
             coords={
@@ -971,7 +1085,6 @@ class TestMatchingCostSAD(unittest.TestCase):
                 "col": np.arange(data.shape[2]),
             },
         )
-
         right.attrs = common.img_attrs
 
         # Initialization of matching_cost plugin with wrong band
@@ -981,7 +1094,7 @@ class TestMatchingCostSAD(unittest.TestCase):
 
         # Compute the cost_volume
         with pytest.raises(SystemExit):
-            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
 
         # Initialization of matching_cost plugin with no band
         matching_cost_ = matching_cost.AbstractMatchingCost(
@@ -990,7 +1103,7 @@ class TestMatchingCostSAD(unittest.TestCase):
 
         # Compute the cost_volume
         with pytest.raises(SystemExit):
-            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, disp_min=-1, disp_max=1)
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
 
 
 if __name__ == "__main__":

@@ -32,7 +32,7 @@ import numpy as np
 
 from tests import common
 import pandora
-from pandora.img_tools import read_img, rasterio_open
+from pandora.img_tools import create_dataset_from_inputs, rasterio_open
 from pandora.state_machine import PandoraMachine
 
 
@@ -47,10 +47,25 @@ class TestPandora(unittest.TestCase):
 
         """
 
-        self.left = read_img("tests/pandora/left.png", no_data=np.nan, mask=None)
-        self.right = read_img("tests/pandora/right.png", no_data=np.nan, mask=None)
         self.disp_left = rasterio_open("tests/pandora/disp_left.tif").read(1)
         self.disp_right = rasterio_open("tests/pandora/disp_right.tif").read(1)
+        input_config = {
+            "left": {
+                "img": "tests/pandora/left.png",
+                "nodata": np.nan,
+                "mask": None,
+                "disp": self.disp_left,
+            },
+            "right": {
+                "img": "tests/pandora/right.png",
+                "nodata": np.nan,
+                "mask": None,
+                "disp": self.disp_right,
+            },
+        }
+
+        self.left = create_dataset_from_inputs(input_config=input_config["left"])
+        self.right = create_dataset_from_inputs(input_config=input_config["right"])
         self.occlusion = rasterio_open("tests/pandora/occlusion.png").read(1)
 
     def test_run_with_semantic_segmentation(self):
@@ -59,13 +74,12 @@ class TestPandora(unittest.TestCase):
         """
 
         pipeline_cfg = {
-            "right_disp_map": {"method": "accurate"},
             "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2},
             "semantic_segmentation": {"segmentation_method": "ARNN"},
             "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
             "refinement": {"refinement_method": "vfit"},
             "filter": {"filter_method": "median", "filter_size": 3},
-            "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1.0},
+            "validation": {"validation_method": "cross_checking_accurate", "cross_checking_threshold": 1.0},
         }
         user_cfg = {"input": copy.deepcopy(common.input_cfg_basic), "pipeline": pipeline_cfg}
 
@@ -75,7 +89,7 @@ class TestPandora(unittest.TestCase):
 
         # Run the pandora pipeline
         with self.assertRaises(KeyError) as error:
-            pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
+            pandora.run(pandora_machine, self.left, self.right, cfg)
         self.assertEqual(str(error.exception), "'No semantic segmentation method named ARNN supported'")
 
     def test_run_with_sgm_optimization(self):
@@ -85,7 +99,6 @@ class TestPandora(unittest.TestCase):
         """
 
         pipeline_cfg = {
-            "right_disp_map": {"method": "accurate"},
             "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2},
             "optimization": {
                 "optimization_method": "sgm",
@@ -94,7 +107,7 @@ class TestPandora(unittest.TestCase):
             "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
             "refinement": {"refinement_method": "vfit"},
             "filter": {"filter_method": "median", "filter_size": 3},
-            "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1.0},
+            "validation": {"validation_method": "cross_checking_accurate", "cross_checking_threshold": 1.0},
         }
         user_cfg = {"input": copy.deepcopy(common.input_cfg_basic), "pipeline": pipeline_cfg}
 
@@ -105,7 +118,7 @@ class TestPandora(unittest.TestCase):
 
         # Run the pandora pipeline
         with self.assertRaises(KeyError) as error:
-            pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
+            pandora.run(pandora_machine, self.left, self.right, cfg)
         self.assertEqual(str(error.exception), "'No optimization method named sgm supported'")
 
     def test_run_with_mc_cnn_matching_cost(self):
@@ -115,12 +128,11 @@ class TestPandora(unittest.TestCase):
         """
 
         pipeline_cfg = {
-            "right_disp_map": {"method": "accurate"},
             "matching_cost": {"matching_cost_method": "mc_cnn", "window_size": 11, "subpix": 1},
             "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
             "refinement": {"refinement_method": "vfit"},
             "filter": {"filter_method": "median", "filter_size": 3},
-            "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1.0},
+            "validation": {"validation_method": "cross_checking_accurate", "cross_checking_threshold": 1.0},
         }
         user_cfg = {"input": copy.deepcopy(common.input_cfg_basic), "pipeline": pipeline_cfg}
         pandora_machine = PandoraMachine()
@@ -130,5 +142,5 @@ class TestPandora(unittest.TestCase):
 
         # Run the pandora pipeline
         with self.assertRaises(KeyError) as error:
-            pandora.run(pandora_machine, self.left, self.right, -60, 0, cfg)
+            pandora.run(pandora_machine, self.left, self.right, cfg)
         self.assertEqual(str(error.exception), "'No matching cost method named mc_cnn supported'")

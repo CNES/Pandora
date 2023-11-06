@@ -12,7 +12,7 @@ Pandora provides a full python API which can be used to compute disparity maps a
 
     import pandora
     from pandora import common
-    from pandora.img_tools import read_img, read_disp
+    from pandora.img_tools import create_dataset_from_inputs, read_disp
     from pandora.check_configuration import check_conf, read_config_file
     from pandora.state_machine import PandoraMachine
 
@@ -44,17 +44,13 @@ Pandora provides a full python API which can be used to compute disparity maps a
         pandora.setup_logging(verbose)
 
         # Read images and masks
-        img_left = read_img(cfg['input']['img_left'], no_data=cfg['input']['nodata_left'],mask=cfg['input']['left_mask'],
-                            classif=cfg['input']['left_classif'], segm=cfg['input']['left_segm'])
-        img_right = read_img(cfg['input']['img_right'], no_data=cfg['input']['nodata_right'],
-                             mask=cfg['input']['right_mask'], classif=cfg['input']['right_classif'],
-                             segm=cfg['input']['right_segm'])
+        cfg_input = common.split_inputs(cfg['input'])
+        img_left = create_dataset_from_inputs(cfg_input['left'])
+        img_right = create_dataset_from_inputs(cfg_input['right'])
 
         # Read range of disparities
-        disp_min = read_disp(cfg['input']['disp_min'])
-        disp_max = read_disp(cfg['input']['disp_max'])
-        disp_min_right = read_disp(cfg['input']['disp_min_right'])
-        disp_max_right = read_disp(cfg['input']['disp_max_right'])
+        disp_min, disp_max = read_disp(cfg['input']['disp_left'])
+        disp_min_right, disp_max_right  = read_disp(cfg['input']['disp_right'])
 
         # Run the Pandora pipeline
         left, right = pandora.run(pandora_machine, img_left, img_right, disp_min, disp_max, cfg['pipeline'], disp_min_right,
@@ -89,24 +85,28 @@ Example of a monoband image dataset
 
 ::
 
-    Dimensions:  (col: 450, row: 375)
+    Dimensions:   (col: 450, row: 375)
     Coordinates:
-      * col      (col) int64 0 1 2 3 4 5 6 7 8 ... 442 443 444 445 446 447 448 449
-      * row      (row) int64 0 1 2 3 4 5 6 7 8 ... 367 368 369 370 371 372 373 374
+      * col       (col) int64 0 1 2 3 4 5 6 7 8 ... 442 443 444 445 446 447 448 449
+      * row       (row) int64 0 1 2 3 4 5 6 7 8 ... 367 368 369 370 371 372 373 374
+      * band_disp (band_disp) <U3 'min' 'max'
     Data variables:
-        im       (row, col) float32 88.0 85.0 84.0 83.0 ... 176.0 180.0 165.0 172.0
-        msk      (row, col) int16 0 0 0 0 0 0 0 0 0 0 0 0 ... 0 0 0 0 0 0 0 0 0 0 0
+        im        (row, col) float32 88.0 85.0 84.0 83.0 ... 176.0 180.0 165.0 172.0
+        msk       (row, col) int16 0 0 0 0 0 0 0 0 0 0 0 0 ... 0 0 0 0 0 0 0 0 0 0 0
+        disparity (band_disp, row, col) int16 -60.0 -60.0 -60.0 -60.0 -60.0 -60.0 ... -60.0 -60.0 -60.0 -60.0 -60.0
     Attributes:
         no_data_img:   0
         crs:           None
         transform:     | 1.00, 0.00, 0.00|\n| 0.00, 1.00, 0.00|\n| 0.00, 0.00, 1.00|
         valid_pixels:  0
         no_data_mask:  1
+        disparity_source <disparity in config file>
 
 Two data variables are created in this dataset:
 
  * *im*: contains input image data
  * *msk*: contains input mask data + no_data of input image
+ * *disparity*: contains input disparity data with two bands (min and max)
 
 Example of a multiband image dataset
 
@@ -117,13 +117,16 @@ Example of a multiband image dataset
       * band_im     (band_im) <U1 'r' 'g'
       * row      (row) int64 0 1 2 3 4
       * col      (col) int64 0 1 2 3 4 5
+      * band_disp (band_disp) <U3 'min' 'max'
     Data variables:
         im       (band_im, row, col) float64 1.0 1.0 1.0 1.0 1.0 ... 1.0 1.0 1.0 1.0
+        disparity (band_disp, row, col) int16 -60.0 -60.0 -60.0 -60.0 -60.0 -60.0 ... -60.0 -60.0 -60.0 -60.0 -60.0
     Attributes:
         valid_pixels:  0
         no_data_mask:  1
         crs:           None
         transform:     | 1.00, 0.00, 0.00|\n| 0.00, 1.00, 0.00|\n| 0.00, 0.00, 1.00|
+        disparity_source <disparity in config file>
 
 
 .. note::
@@ -200,13 +203,15 @@ This Dataset also has a :
 .. sourcecode:: text
 
     <xarray.Dataset>
-    Dimensions:             (col: 1000, indicator: 2, row: 1000)
+    Dimensions:             (row: 1000, col: 1000, disparity: 2, indicator: 2)
     Coordinates:
+      * disparity           (disparity) <U3 'min' 'max'
       * row                 (row) int64 0 1 2 3 4 5 6 ... 994 995 996 997 998 999
       * col                 (col) int64 0 1 2 3 4 5 6 ... 994 995 996 997 998 999
       * indicator           (indicator) object 'confidence_from_intensity_std' 'confidence_from_left_right_consistency'
     Data variables:
         disparity_map       (row, col) float32 0.0 0.0 0.0 0.0 ... 0.0 0.0 0.0 0.0
+        disparity_interval  (disparity) int64 -30 33
         validity_mask       (row, col) uint16 1 1 1 1 1 1 1 1 1 ... 1 1 1 1 1 1 1 1
         interpolated_coeff  (row, col) float64 nan nan nan nan ... nan nan nan nan
         confidence_measure  (row, col, indicator) float32 nan nan nan ... nan nan nan
@@ -218,11 +223,9 @@ This Dataset also has a :
         type_measure:           min
         cmax:                   24
         optimization:           sgm
-        disp_min:               -30
-        disp_max:               33
         refinement:             vfit
         filter:                 median
-        validation:             cross_checking
+        validation:             cross_checking_accurate
         interpolated_disparity: none
         crs:                    None
         transform:              | 1.00, 0.00, 0.00|\n| 0.00, 1.00, 0.00|\n| 0.00, 0.00, 1.00|

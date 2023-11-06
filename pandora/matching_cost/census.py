@@ -27,7 +27,7 @@ from typing import Dict, Union, Tuple, List
 
 import numpy as np
 import xarray as xr
-from json_checker import Checker, And, Or
+from json_checker import Checker, And
 
 from pandora.img_tools import shift_right_img, census_transform
 from pandora.matching_cost import matching_cost
@@ -59,12 +59,9 @@ class Census(matching_cost.AbstractMatchingCost):
         """
         cfg = super().check_conf(**cfg)
 
-        schema = {
-            "matching_cost_method": And(str, lambda input: "census"),
-            "window_size": And(int, lambda input: input in (3, 5)),
-            "subpix": And(int, lambda input: input > 0 and ((input % 2) == 0) or input == 1),
-            "band": Or(str, lambda input: input is None),
-        }
+        schema = self.schema
+        schema["matching_cost_method"] = And(str, lambda input: "census")
+        schema["window_size"] = And(int, lambda input: input in (3, 5))
 
         checker = Checker(schema)
         checker.validate(cfg)
@@ -78,30 +75,38 @@ class Census(matching_cost.AbstractMatchingCost):
         print("census similarity measure")
 
     def compute_cost_volume(
-        self, img_left: xr.Dataset, img_right: xr.Dataset, disp_min: int, disp_max: int
+        self, img_left: xr.Dataset, img_right: xr.Dataset, grid_disp_min: np.ndarray, grid_disp_max: np.ndarray
     ) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
 
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk : 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
-        :param disp_min: minimum disparity
-        :type disp_min: int
-        :param disp_max: maximum disparity
-        :type disp_max: int
+        :param grid_disp_min: minimum disparity
+        :type grid_disp_min: np.ndarray
+        :param grid_disp_max: maximum disparity
+        :type grid_disp_max: np.ndarray
         :return: the cost volume dataset , with the data variables:
 
                 - cost_volume 3D xarray.DataArray (row, col, disp)
         :rtype: xarray.Dataset
         """
+        # Obtain absolute min and max disparities
+        disp_min, disp_max = self.get_min_max_from_grid(grid_disp_min, grid_disp_max)
         # check band parameter
         self.check_band_input_mc(img_left, img_right)
 
@@ -109,8 +114,8 @@ class Census(matching_cost.AbstractMatchingCost):
         img_right_shift = shift_right_img(img_right, self._subpix, self._band)  # type: ignore
 
         # Maximal cost of the cost volume with census measure
-        cmax = int(self._window_size**2)  # type: ignore
-        offset_row_col = int((self._window_size - 1) / 2)  # type: ignore
+        cmax = int(self._window_size**2)
+        offset_row_col = int((self._window_size - 1) / 2)
         metadata = {
             "measure": "census",
             "subpixel": self._subpix,
@@ -126,14 +131,9 @@ class Census(matching_cost.AbstractMatchingCost):
         for i, img in enumerate(img_right_shift):
             img_right_shift[i] = census_transform(img, self._window_size, self._band)  # type: ignore
 
-        # Disparity range # pylint: disable=undefined-variable
-        if self._subpix == 1:
-            disparity_range = np.arange(disp_min, disp_max + 1)
-        else:
-            disparity_range = np.arange(disp_min, disp_max, step=1 / float(self._subpix))  # type: ignore
-            disparity_range = np.append(disparity_range, [disp_max])
-
-        cv, cv_crop = self.allocate_numpy_cost_volume(img_left, disparity_range, offset_row_col)
+        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
+        cv = self.allocate_numpy_cost_volume(img_left, disparity_range)
+        cv_crop = self.crop_cost_volume(cv, offset_row_col)
 
         # Giving the 2 images, the matching cost will be calculated as :
         #                 1, 1, 1                2, 5, 6
@@ -165,24 +165,20 @@ class Census(matching_cost.AbstractMatchingCost):
         # Computes the matching cost
         # In the loop, cv is of shape (disp, col, row) and images / masks of shape (row, col)
         # np.swapaxes allow to interchange row and col in images and masks
-        for disp in disparity_range:
+        for disp_index, disp in enumerate(disparity_range):
             i_right = int((disp % 1) * self._subpix)
             point_p, point_q = self.point_interval(left, img_right_shift[i_right], disp)
-            dsp = int((disp - disp_min) * self._subpix)
 
-            cv_crop[dsp, point_p[0] : point_p[1], :] = np.swapaxes(
+            cv_crop[disp_index, point_p[0] : point_p[1], :] = np.swapaxes(
                 self.census_cost(point_p, point_q, left, img_right_shift[i_right]), 0, 1
             )
 
         # Create the xarray.DataSet that will contain the cv of dimensions (row, col, disp)
+        # Computations were optimized with a cost_volume of dimensions (disp, row, col)
+        # As we are expected to return a cost_volume of dimensions (row, col, disp),
+        # we swap axes.
         cv = self.allocate_costvolume(
-            img_left,
-            self._subpix,  # type: ignore
-            disp_min,
-            disp_max,
-            self._window_size,  # type: ignore
-            metadata,
-            np.swapaxes(cv, 0, 2),
+            img_left, self._subpix, disp_min, disp_max, self._window_size, metadata, np.swapaxes(cv, 0, 2)
         )
 
         # Remove temporary values
@@ -206,13 +202,19 @@ class Census(matching_cost.AbstractMatchingCost):
         :type point_q: tuple
         :param img_left: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk (optional): 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk (optional): 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
         :return: the xor pixel-wise between elements in the interval
         :rtype: numpy array

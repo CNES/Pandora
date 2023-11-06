@@ -54,7 +54,7 @@ class TestMargins(unittest.TestCase):
             "optimization": {"optimization_method": "sgm"},
             "refinement": {"refinement_method": "vfit"},
             "filter": {"filter_method": "median", "filter_size": 3},
-            "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1},
+            "validation": {"validation_method": "cross_checking_accurate", "cross_checking_threshold": 1},
         }
 
         res = pandora.marge.get_margins(-13, 14, cfg_sgm)
@@ -86,7 +86,7 @@ class TestMargins(unittest.TestCase):
             "optimization": {"optimization_method": "3sgm"},
             "refinement": {"refinement_method": "vfit"},
             "filter": {"filter_method": "median", "filter_size": 3},
-            "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1},
+            "validation": {"validation_method": "cross_checking_accurate", "cross_checking_threshold": 1},
         }
 
         res = pandora.marge.get_margins(-13, 14, cfg_3sgm)
@@ -117,7 +117,7 @@ class TestMargins(unittest.TestCase):
             "matching_cost": {"matching_cost_method": "census", "window_size": 3},
             "refinement": {"refinement_method": "vfit"},
             "filter": {"filter_method": "median", "filter_size": 3},
-            "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1},
+            "validation": {"validation_method": "cross_checking_accurate", "cross_checking_threshold": 1},
         }
 
         res = pandora.marge.get_margins(-13, 14, cfg)
@@ -130,7 +130,7 @@ class TestMargins(unittest.TestCase):
             "matching_cost": {"matching_cost_method": "sad", "window_size": 9},
             "refinement": {"refinement_method": "vfit"},
             "filter": {"filter_method": "median", "filter_size": 3},
-            "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1},
+            "validation": {"validation_method": "cross_checking_accurate", "cross_checking_threshold": 1},
         }
 
         res = pandora.marge.get_margins(3, 14, cfg)
@@ -143,7 +143,7 @@ class TestMargins(unittest.TestCase):
             "matching_cost": {"matching_cost_method": "sad", "window_size": 1},
             "refinement": {"refinement_method": "vfit"},
             "filter": {"filter_method": "median", "filter_size": 5},
-            "validation": {"validation_method": "cross_checking", "cross_checking_threshold": 1},
+            "validation": {"validation_method": "cross_checking_accurate", "cross_checking_threshold": 1},
         }
 
         res = pandora.marge.get_margins(-13, -2, cfg)

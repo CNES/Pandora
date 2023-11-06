@@ -26,13 +26,14 @@
 This module contains class associated to the pandora state machine
 """
 
+from __future__ import annotations
+
 import warnings
 import logging
 import sys
 from typing import Dict, Union, List
 import numpy as np
 import xarray as xr
-from json_checker import Checker, And
 
 try:
     import graphviz  # pylint: disable=unused-import
@@ -142,7 +143,6 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             "trigger": "check_matching_cost",
             "source": "begin",
             "dest": "cost_volume",
-            "before": "right_disp_map_check_conf",
             "after": "matching_cost_check_conf",
         },
         {
@@ -203,62 +203,36 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         },
     ]
 
-    def __init__(
-        self,
-        img_left_pyramid: List[xr.Dataset] = None,
-        img_right_pyramid: List[xr.Dataset] = None,
-        disp_min: Union[np.ndarray, int] = None,
-        disp_max: Union[np.ndarray, int] = None,
-        right_disp_min: Union[np.ndarray, None] = None,
-        right_disp_max: Union[np.ndarray, None] = None,
-    ) -> None:
+    def __init__(self) -> None:
         """
         Initialize Pandora Machine
 
-        :param img_left_pyramid: left Dataset image containing :
-
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk (optional): 2D (row, col) xarray.DataArray
-        :type img_left_pyramid: xarray.Dataset
-        :param img_right_pyramid: right Dataset image containing :
-
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk (optional): 2D (row, col) xarray.DataArray
-        :type img_right_pyramid: xarray.Dataset
-        :param disp_min: minimal disparity
-        :type disp_min: int or np.ndarray
-        :param disp_max: maximal disparity
-        :type disp_max: int or np.ndarray
-        :param right_disp_min: minimal disparity of the right image
-        :type right_disp_min: None or np.ndarray
-        :param right_disp_max: maximal disparity of the right image
-        :type right_disp_max: None or np.ndarray
         :return: None
         """
         # Left image scale pyramid
-        self.img_left_pyramid: List[xr.Dataset] = img_left_pyramid
+        self.img_left_pyramid: List[xr.Dataset] = [None]
         # Right image scale pyramid
-        self.img_right_pyramid: List[xr.Dataset] = img_right_pyramid
+        self.img_right_pyramid: List[xr.Dataset] = [None]
         # Left image
         self.left_img: xr.Dataset = None
         # Right image
         self.right_img: xr.Dataset = None
         # Minimum disparity
-        self.disp_min: Union[np.ndarray, int] = disp_min
+        self.disp_min: np.ndarray = None
         # Maximum disparity
-        self.disp_max: Union[np.ndarray, int] = disp_max
+        self.disp_max: np.ndarray = None
         # Maximum disparity for the right image
-        self.right_disp_min: Union[np.ndarray, None] = right_disp_min
+        self.right_disp_min: np.ndarray = None
         # Minimum disparity for the right image
-        self.right_disp_max: Union[np.ndarray, None] = right_disp_max
+        self.right_disp_max: np.ndarray = None
         # User minimum disparity
-        self.dmin_user: Union[np.ndarray, int] = None
+        self.dmin_user: np.ndarray = None
         # User maximum disparity
-        self.dmax_user: Union[np.ndarray, int] = None
+        self.dmax_user: np.ndarray = None
         # User minimum disparity right
-        self.dmin_user_right: Union[np.ndarray, None] = None
+        self.dmin_user_right: np.ndarray = None
         # User maximum disparity right
-        self.dmax_user_right: Union[np.ndarray, None] = None
+        self.dmax_user_right: np.ndarray = None
 
         # Scale factor
         self.scale_factor: int = None
@@ -278,9 +252,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         # Pandora's pipeline configuration
         self.pipeline_cfg: Dict = {"pipeline": {}}
-        # Right disparity map computation information: Can be "none" or "accurate"
+        # Right disparity map computation information: Can be None or "cross_checking_accurate"
         # Useful during the running steps to choose if we must compute left and right objects.
-        self.right_disp_map = "none"
+        self.right_disp_map = None
         # Define avalaible states
         states_ = ["begin", "cost_volume", "disp_map"]
 
@@ -315,18 +289,15 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
-
         logging.info("Matching cost computation...")
         matching_cost_ = matching_cost.AbstractMatchingCost(**cfg["pipeline"][input_step])  # type: ignore
 
         # Update min and max disparity according to the current scale
         self.disp_min = self.disp_min * self.scale_factor
         self.disp_max = self.disp_max * self.scale_factor
-        # Obtain absolute min and max disparities
-        dmin_min, dmax_max = matching_cost_.dmin_dmax(self.disp_min, self.disp_max)
 
         # Compute cost volume and mask it
-        self.left_cv = matching_cost_.compute_cost_volume(self.left_img, self.right_img, dmin_min, dmax_max)
+        self.left_cv = matching_cost_.compute_cost_volume(self.left_img, self.right_img, self.disp_min, self.disp_max)
         matching_cost_.cv_masked(
             self.left_img,
             self.right_img,
@@ -335,15 +306,14 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             self.disp_max,
         )
 
-        if self.right_disp_map == "accurate":
+        if self.right_disp_map == "cross_checking_accurate":
             # Update min and max disparity according to the current scale
             self.right_disp_min = self.right_disp_min * self.scale_factor
             self.right_disp_max = self.right_disp_max * self.scale_factor
-            # Obtain absolute min and max right disparities
-            dmin_min_right, dmax_max_right = matching_cost_.dmin_dmax(self.right_disp_min, self.right_disp_max)
+
             # Compute right cost volume and mask it
             self.right_cv = matching_cost_.compute_cost_volume(
-                self.right_img, self.left_img, dmin_min_right, dmax_max_right
+                self.right_img, self.left_img, self.right_disp_min, self.right_disp_max
             )
             matching_cost_.cv_masked(
                 self.right_img,
@@ -362,9 +332,10 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
+        logging.info("Aggregation computation...")
         aggregation_ = aggregation.AbstractAggregation(**cfg["pipeline"][input_step])  # type: ignore
         aggregation_.cost_volume_aggregation(self.left_img, self.right_img, self.left_cv)
-        if self.right_disp_map == "accurate":
+        if self.right_disp_map == "cross_checking_accurate":
             aggregation_.cost_volume_aggregation(self.right_img, self.left_img, self.right_cv)
 
     def semantic_segmentation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -376,13 +347,14 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
+        logging.info("Semantic segmentation computation...")
         semantic_segmentation_ = semantic_segmentation.AbstractSemanticSegmentation(
-            **cfg["pipeline"][input_step]
+            self.left_img, **cfg["pipeline"][input_step]
         )  # type: ignore
         self.left_img = semantic_segmentation_.compute_semantic_segmentation(
             self.left_cv, self.left_img, self.right_img
         )
-        if self.right_disp_map == "accurate":
+        if self.right_disp_map == "cross_checking_accurate":
             self.right_img = semantic_segmentation_.compute_semantic_segmentation(
                 self.right_cv, self.right_img, self.left_img
             )
@@ -396,11 +368,11 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
-        optimization_ = optimization.AbstractOptimization(**cfg["pipeline"][input_step])  # type: ignore
         logging.info("Cost optimization...")
+        optimization_ = optimization.AbstractOptimization(self.left_img, **cfg["pipeline"][input_step])  # type: ignore
 
         self.left_cv = optimization_.optimize_cv(self.left_cv, self.left_img, self.right_img)
-        if self.right_disp_map == "accurate":
+        if self.right_disp_map == "cross_checking_accurate":
             self.right_cv = optimization_.optimize_cv(self.right_cv, self.right_img, self.left_img)
 
     def disparity_run(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -417,7 +389,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         self.left_disparity = disparity_.to_disp(self.left_cv, self.left_img, self.right_img)
         disparity_.validity_mask(self.left_disparity, self.left_img, self.right_img, self.left_cv)
-        if self.right_disp_map == "accurate":
+        if self.right_disp_map == "cross_checking_accurate":
             self.right_disparity = disparity_.to_disp(self.right_cv, self.right_img, self.left_img)
             disparity_.validity_mask(self.right_disparity, self.right_img, self.left_img, self.right_cv)
 
@@ -433,7 +405,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         logging.info("Disparity filtering...")
         filter_ = filter.AbstractFilter(**cfg["pipeline"][input_step])  # type: ignore
         filter_.filter_disparity(self.left_disparity)
-        if self.right_disp_map == "accurate":
+        if self.right_disp_map == "cross_checking_accurate":
             filter_.filter_disparity(self.right_disparity)
 
     def refinement_run(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -445,11 +417,11 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
-        refinement_ = refinement.AbstractRefinement(**cfg["pipeline"][input_step])  # type: ignore
         logging.info("Subpixel refinement...")
+        refinement_ = refinement.AbstractRefinement(**cfg["pipeline"][input_step])  # type: ignore
 
         refinement_.subpixel_refinement(self.left_cv, self.left_disparity)
-        if self.right_disp_map == "accurate":
+        if self.right_disp_map == "cross_checking_accurate":
             refinement_.subpixel_refinement(self.right_cv, self.right_disparity)
 
     def validation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -461,12 +433,11 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
+        logging.info("Validation...")
         validation_ = validation.AbstractValidation(**cfg["pipeline"][input_step])  # type: ignore
 
-        logging.info("Validation...")
-
         self.left_disparity = validation_.disparity_checking(self.left_disparity, self.right_disparity)
-        if self.right_disp_map == "accurate":
+        if self.right_disp_map == "cross_checking_accurate":
             self.right_disparity = validation_.disparity_checking(self.right_disparity, self.left_disparity)
             # Interpolated mismatch and occlusions
             if "interpolated_disparity" in cfg["pipeline"][input_step]:
@@ -483,28 +454,26 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
-
         logging.info("Disparity range computation...")
-
-        multiscale_ = multiscale.AbstractMultiscale(**cfg["pipeline"][input_step])  # type: ignore
+        multiscale_ = multiscale.AbstractMultiscale(
+            self.left_img, self.right_img, **cfg["pipeline"][input_step]
+        )  # type: ignore
 
         # Update min and max user disparity according to the current scale
         self.dmin_user = self.dmin_user * self.scale_factor
         self.dmax_user = self.dmax_user * self.scale_factor
 
         # Compute disparity range for the next scale level
-        self.disp_min, self.disp_max = multiscale_.disparity_range(
-            self.left_disparity, int(self.dmin_user), int(self.dmax_user)
-        )
+        self.disp_min, self.disp_max = multiscale_.disparity_range(self.left_disparity, self.dmin_user, self.dmax_user)
         # Set to None the disparity map for the next scale
         self.left_disparity = None
 
-        if self.right_disp_map == "accurate":
+        if self.right_disp_map == "cross_checking_accurate":
             # Update min and max user disparity according to the current scale
             self.dmin_user_right = self.dmin_user_right * self.scale_factor
             self.dmax_user_right = self.dmax_user_right * self.scale_factor
             self.right_disp_min, self.right_disp_max = multiscale_.disparity_range(
-                self.right_disparity, int(self.dmin_user_right), int(self.dmax_user_right)
+                self.right_disparity, self.dmin_user_right, self.dmax_user_right
             )
             self.right_disparity = None
 
@@ -524,6 +493,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: str
         :return: None
         """
+        logging.info("Cost volume confidence computation...")
         # In case multiple confidence maps are computed, add its
         # name to the indicator to distinguish the different maps
         cfg["pipeline"][input_step]["indicator"] = ""
@@ -536,7 +506,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         self.left_disparity, self.left_cv = confidence_.confidence_prediction(
             self.left_disparity, self.left_img, self.right_img, self.left_cv
         )
-        if self.right_disp_map == "accurate":
+        if self.right_disp_map == "cross_checking_accurate":
             self.right_disparity, self.right_cv = confidence_.confidence_prediction(
                 self.right_disparity, self.right_img, self.left_img, self.right_cv
             )
@@ -546,12 +516,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         cfg: Dict[str, dict],
         left_img: xr.Dataset,
         right_img: xr.Dataset,
-        disp_min: Union[np.ndarray, int],
-        disp_max: Union[np.ndarray, int],
         scale_factor: Union[None, int] = None,
         num_scales: Union[None, int] = None,
-        right_disp_min: Union[None, np.ndarray] = None,
-        right_disp_max: Union[None, np.ndarray] = None,
     ) -> None:
         """
         Prepare the machine before running
@@ -560,26 +526,24 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type cfg: dict
         :param left_img: left Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk (optional): 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type left_img: xarray.Dataset
         :param right_img: right Dataset image containing :
 
-                - im : 2D (row, col) or 3D (band_im, row, col) xarray.DataArray
-                - msk (optional): 2D (row, col) xarray.DataArray
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
         :type right_img: xarray.Dataset
-        :param disp_min: minimal disparity
-        :type disp_min: int or np.ndarray
-        :param disp_max: maximal disparity
-        :type disp_max: int or np.ndarray
         :param scale_factor: scale factor for multiscale
         :type scale_factor: int or None
         :param num_scales: scales number for multiscale
         :type num_scales: int or None
-        :param right_disp_min: minimal disparity of the right image
-        :type right_disp_min: np.ndarray or None
-        :param right_disp_max: maximal disparity of the right image
-        :type right_disp_max: np.ndarray or None
         :return: None
         """
 
@@ -602,16 +566,16 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             self.current_scale = num_scales - 1
             # If multiscale, disparities can only be int.
             # Downscale disparities since the pyramid is processed from coarse to original size
-            self.disp_min = int(disp_min / (scale_factor**self.num_scales))
-            self.disp_max = int(disp_max / (scale_factor**self.num_scales))
+            self.disp_min = left_img["disparity"].sel(band_disp="min") / (self.scale_factor**self.num_scales)
+            self.disp_max = left_img["disparity"].sel(band_disp="max") / (self.scale_factor**self.num_scales)
             # User disparity
             self.dmin_user = self.disp_min
             self.dmax_user = self.disp_max
             # If multiscale disparities can only be int, and right disparity can only be np.ndarray, so right disparity
             # can not be defined in the input conf
             # Right disparities
-            self.right_disp_min = -self.disp_max  # type: ignore
-            self.right_disp_max = -self.disp_min  # type: ignore
+            self.right_disp_min = -self.disp_max
+            self.right_disp_max = -self.disp_min
             # Right user disparity
             self.dmin_user_right = self.right_disp_min
             self.dmax_user_right = self.right_disp_max
@@ -622,22 +586,22 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             # If no multiscale processing, current scale is zero
             self.current_scale = 0
             # Disparities
-            self.disp_min = disp_min
-            self.disp_max = disp_max
+            self.disp_min = left_img["disparity"].sel(band_disp="min").data
+            self.disp_max = left_img["disparity"].sel(band_disp="max").data
             # Right disparities
-            if right_disp_max is not None and right_disp_min is not None:
-                # If the right disparity was defined in the input conf
-                self.right_disp_min = right_disp_min
-                self.right_disp_max = right_disp_max
+            if "disparity" in right_img.data_vars:
+                self.right_disp_min = right_img["disparity"].sel(band_disp="min").data
+                self.right_disp_max = right_img["disparity"].sel(band_disp="max").data
             else:
-                self.right_disp_min = -self.disp_max  # type: ignore
-                self.right_disp_max = -self.disp_min  # type: ignore
+                self.right_disp_min = -left_img["disparity"].sel(band_disp="max").data
+                self.right_disp_max = -left_img["disparity"].sel(band_disp="min").data
 
         # Initiate output disparity datasets
         self.left_disparity = xr.Dataset()
         self.right_disparity = xr.Dataset()
         # To determine whether the right disparity map has to be computed
-        self.right_disp_map = cfg["pipeline"]["right_disp_map"]["method"]
+        if "validation" in cfg["pipeline"]:
+            self.right_disp_map = cfg["pipeline"]["validation"]["validation_method"]
         # Add transitions
         self.add_transitions(self._transitions_run)
 
@@ -680,29 +644,6 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         self.remove_transitions(self._transitions_run)
         self.set_state("begin")
 
-    def right_disp_map_check_conf(
-        self,
-        cfg: Dict[str, dict],
-        input_step: str,  # pylint:disable=unused-argument
-    ) -> None:
-        """
-        Check the right_disp_map configuration
-
-        :param cfg: configuration
-        :type cfg: dict
-        :param input_step: current step
-        :type input_step: string
-        :return: None
-        """
-
-        schema = {"method": And(str, lambda input: "none" or "accurate")}
-
-        checker = Checker(schema)
-        checker.validate(cfg["right_disp_map"])
-
-        # Store the righ disparity map configuration
-        self.right_disp_map = cfg["right_disp_map"]["method"]
-
     def matching_cost_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Check the matching cost configuration
@@ -715,25 +656,20 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         # Create matching_cost object to check its step configuration
         matching_cost_ = matching_cost.AbstractMatchingCost(**cfg[input_step])  # type: ignore
+        self.pipeline_cfg["pipeline"][input_step] = matching_cost_.cfg
 
         # Check the coherence between the band selected for the matching_cost step
         # and the bands present on left and right image
-        if not "band" in cfg["matching_cost"]:
-            band = None
-        else:
-            band = cfg["matching_cost"]["band"]
         self.check_band_pipeline(
             self.left_img.coords["band_im"].data,
             cfg["matching_cost"]["matching_cost_method"],
-            band,
+            matching_cost_.cfg["band"],  # type: ignore
         )
         self.check_band_pipeline(
             self.right_img.coords["band_im"].data,
             cfg["matching_cost"]["matching_cost_method"],
-            band,
+            matching_cost_.cfg["band"],  # type: ignore
         )
-
-        self.pipeline_cfg["pipeline"][input_step] = matching_cost_.cfg
 
     def disparity_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -797,7 +733,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        semantic_segmentation_ = semantic_segmentation.AbstractSemanticSegmentation(**cfg[input_step])  # type: ignore
+        semantic_segmentation_ = semantic_segmentation.AbstractSemanticSegmentation(
+            self.left_img, **cfg[input_step]
+        )  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = semantic_segmentation_.cfg
 
         # If semantic_segmentation is present, check that the necessary bands are present in the inputs
@@ -820,28 +758,6 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                 cfg["semantic_segmentation"]["segmentation_method"],
                 cfg["semantic_segmentation"]["vegetation_band"]["classes"],
             )
-        # If semantic_segmentation and right disparity is to be computed,
-        # check that the RGB band are present in the right image
-        if self.right_disp_map == "accurate":
-            self.check_band_pipeline(
-                self.right_img.coords["band_im"].data,
-                cfg["semantic_segmentation"]["segmentation_method"],
-                cfg["semantic_segmentation"]["RGB_bands"],
-            )
-            # If vegetation_band is present in semantic_segmentation, and right disparity is to be computed,
-            # check that the bands are present in the input right classification
-            if "vegetation_band" in cfg["semantic_segmentation"]:
-                if not "classif" in self.right_img.data_vars:
-                    logging.error(
-                        "For performing cross-checking step with semantic_segmentation in the pipeline,"
-                        " classif must be present in right image.",
-                    )
-                    sys.exit(1)
-                self.check_band_pipeline(
-                    self.right_img.coords["band_classif"].data,
-                    cfg["semantic_segmentation"]["segmentation_method"],
-                    cfg["semantic_segmentation"]["vegetation_band"]["classes"],
-                )
 
     def optimization_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -853,7 +769,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        optimization_ = optimization.AbstractOptimization(**cfg[input_step])  # type: ignore
+        optimization_ = optimization.AbstractOptimization(self.left_img, **cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = optimization_.cfg
 
         # If geometric_prior is needed for the optimization step,
@@ -866,15 +782,6 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                         "For performing the 3SGM optimization step in the pipeline, left %s must be present.", source
                     )
                     sys.exit(1)
-                # If right disparity is to be computed and 3SGM optimization is present on the pipeline,
-                # then both left and right segmentations/classifications must be present
-                if self.right_disp_map == "accurate" and not source in self.right_img.data_vars:
-                    logging.error(
-                        "For performing cross-checking step with 3SGM optimization in the pipeline,"
-                        " right %s must be present.",
-                        source,
-                    )
-                    sys.exit(1)
                 # If sgm optimization is present with geometric_prior classification, check that the
                 # classes bands are present in the input classification
                 if "classes" in cfg["optimization"]["geometric_prior"]:
@@ -883,14 +790,6 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                         cfg["optimization"]["optimization_method"],
                         cfg["optimization"]["geometric_prior"]["classes"],
                     )
-                    # If right disparity is to be computed, check that the classes bands are present
-                    # in the input right classification
-                    if self.right_disp_map == "accurate":
-                        self.check_band_pipeline(
-                            self.right_img.coords["band_classif"].data,
-                            cfg["optimization"]["optimization_method"],
-                            cfg["optimization"]["geometric_prior"]["classes"],
-                        )
 
     def validation_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -910,20 +809,19 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                 **cfg[input_step]
             )
 
-        if validation_.cfg["validation_method"] == "cross_checking" and self.right_disp_map != "accurate":
-            raise MachineError(
-                "Can t trigger event cross-checking validation if right_disp_map method equal to " + self.right_disp_map
-            )
+        self.right_disp_map = validation_.cfg["validation_method"]
 
         # If left disparities are grids of disparity and the right disparities are none, the cross-checking
         # method cannot be used
-        if isinstance(self.left_img.attrs["disp_min"], str) and "validation" in cfg:
-            if not self.right_img.attrs["disp_min"]:
-                logging.error(
-                    "The cross-checking step cannot be processed if disp_min, disp_max are paths to the left "
-                    "disparity grids and disp_right_min, disp_right_max are none."
-                )
-                sys.exit(1)
+        if (
+            isinstance(self.left_img.attrs["disparity_source"], str)
+            and self.right_img.attrs["disparity_source"] is None
+        ):
+            logging.error(
+                "The cross-checking step cannot be processed if disp_min, disp_max are paths to the left "
+                "disparity grids and disp_right_min, disp_right_max are none."
+            )
+            sys.exit(1)
 
     def multiscale_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -935,18 +833,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return:
         """
-        multiscale_ = multiscale.AbstractMultiscale(**cfg[input_step])  # type: ignore
+        multiscale_ = multiscale.AbstractMultiscale(self.left_img, self.right_img, **cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = multiscale_.cfg
-
-        # If multiscale step is present, input disparities cannot be grids
-        if (
-            isinstance(self.left_img.attrs["disp_min"], str)
-            or isinstance(self.right_img.attrs["disp_min"], str)
-            or (isinstance(self.left_img.attrs["disp_max"], str))
-            or isinstance(self.right_img.attrs["disp_max"], str)
-        ) and ("multiscale" in cfg):
-            logging.error("Multiscale processing does not accept input disparity grids.")
-            sys.exit(1)
 
     def cost_volume_confidence_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -961,7 +849,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = confidence_.cfg
 
-    def check_conf(self, cfg: Dict[str, dict], img_left: xr.Dataset, img_right: xr.Dataset) -> None:
+    def check_conf(
+        self, cfg: Dict[str, dict], img_left: xr.Dataset, img_right: xr.Dataset, right_left_img_check: bool = False
+    ) -> None:
         """
         Check configuration and transitions
 
@@ -980,9 +870,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # Add transitions to the empty machine.
         self.add_transitions(self._transitions_check)
 
-        # Warning: first element of cfg dictionary is not a transition. It contains information about the way to
-        # compute right disparity map.
-        for input_step in list(cfg["pipeline"])[1:]:
+        for input_step in list(cfg["pipeline"]):
             try:
                 # There may be steps that are repeated several times, for example:
                 #     'filter': {
@@ -1012,6 +900,12 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         # Coming back to the initial state
         self.set_state("begin")
+
+        # second round RIGHT/LEFT
+        if self.right_disp_map and not right_left_img_check:
+            self.check_conf(cfg, img_right, img_left, True)
+            self.left_img = img_left
+            self.right_img = img_right
 
     def remove_transitions(self, transition_list: List[Dict[str, str]]) -> None:
         """
