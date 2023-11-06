@@ -2,6 +2,36 @@
 
 ## Unreleased
 
+## 1.6.0a1 (Novembre 2023)
+
+### Added
+- Addition of a step for matching_cost (only usable with Pandora2d). [#337]
+- Adding roi in create_dataset_from_inputs. [#346]
+- Adding disparity in dataset image. [#331]
+- Check inter dataset. [#334]
+- Adding check_datasets function. [#335]
+
+
+### Fixed
+- Rationalisation of the allocate_costvolume function. [#320]
+- Remove right_disp_map. [#324]
+- Fix step use. [#353]
+- Fix disparities for Pandora2d. [#359]
+- Update get_metadata with classification and segmentation. [#361]
+- Update check_disparities. [#363]
+- Correction of notebooks. [#362]
+
+
+### Changed
+- Change dmin_dmax name function to get_min_max_from_grid. [#347]
+- New disparity storage in the dataset containing the disparity map. [#339]
+- Moving some "pipeline" checks to abstract classes. [#313]
+- New format for disparity in the user configuration file. [#330]
+- Change read_img function to create_dataset_from_inputs. [#345]
+- Move get_metadata function in img_tools file. [#328]
+- Update and move check_dataset function. [#333]
+
+
 ## 1.5.0 (April 2023)
 
 ### Added 
