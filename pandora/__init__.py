@@ -165,15 +165,14 @@ def main(cfg_path: PathLike | str, output: str, verbose: bool) -> None:
     setup_logging(verbose)
 
     # Read images and masks
-    input_config = common.split_inputs(cfg["input"])
-    img_left = create_dataset_from_inputs(input_config=input_config["left"])
-    # If input_config["right"]["disp"] is None then "disp_right_min" = - "disp_left_max"
+    img_left = create_dataset_from_inputs(input_config=cfg["input"]["left"])
+    # If cfg["input"]["right"]["disp"] is None then "disp_right_min" = - "disp_left_max"
     # and "disp_right_max" = - "disp_left_min"
-    if input_config["right"]["disp"] is None and not isinstance(input_config["left"]["disp"], str):
-        input_config["right"]["disp"] = [-input_config["left"]["disp"][1], -input_config["left"]["disp"][0]]
-    img_right = create_dataset_from_inputs(input_config=input_config["right"])
+    if cfg["input"]["right"]["disp"] is None and not isinstance(cfg["input"]["left"]["disp"], str):
+        cfg["input"]["right"]["disp"] = [-cfg["input"]["left"]["disp"][1], -cfg["input"]["left"]["disp"][0]]
+    img_right = create_dataset_from_inputs(input_config=cfg["input"]["right"])
 
-    # Check datasets
+    # Check datasets: shape, format and content
     check_datasets(img_left, img_right)
 
     # Run the Pandora pipeline
