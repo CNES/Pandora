@@ -387,7 +387,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": "tests/image/left_img.tif",
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "mask": "tests/image/mask_left.tif",
                 "disp": [-60, 0],
             }
@@ -471,7 +471,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": "tests/pandora/left.png",
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "classif": "tests/pandora/left_classif.tif",
                 "disp": [-60, 0],
             }
@@ -495,7 +495,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": "tests/pandora/left_rgb.tif",
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "classif": "tests/pandora/left_classif.tif",
                 "disp": [-60, 0],
             }
@@ -566,7 +566,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": "tests/image/left_img.tif",
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "segm": "tests/image/mask_left.tif",
                 "disp": [-60, 0],
             }
@@ -591,7 +591,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": "tests/pandora/left.png",
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "disp": [-60, 0],
             }
         }
@@ -614,7 +614,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": "tests/image/left_img.tif",
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "disp": [-60, 0],
             }
         }
@@ -695,7 +695,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": image_path,
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "disp": [-60, 0],
             }
         }
@@ -723,7 +723,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": image_path,
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "disp": [-60, 0],
             }
         }
@@ -742,7 +742,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": "tests/pandora/left.png",
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "classif": "tests/pandora/left_classif.tif",
                 "disp": [-60, 0],
             }
@@ -774,7 +774,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": "tests/image/left_img.tif",
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "segm": "tests/image/mask_left.tif",
                 "disp": [-60, 0],
             }
@@ -979,7 +979,7 @@ class TestGetMetadata:
         )
 
         # get metadata without classif and mask
-        metadata_img = img_tools.get_metadata(input_cfg["input"]["img_left"], input_cfg["input"]["disp_left"])
+        metadata_img = img_tools.get_metadata(input_cfg["input"]["left"]["img"], input_cfg["input"]["left"]["disp"])
 
         # Check that the get_metadata function run whitout error
         assert metadata_img.coords["band_im"] == metadata_gt.coords["band_im"]
@@ -1001,7 +1001,7 @@ class TestGetMetadata:
 
         """
         with pytest.raises((TypeError, RasterioIOError)):
-            img_tools.get_metadata(img=img_path, disparity=input_cfg["input"]["disp_left"])
+            img_tools.get_metadata(img=img_path, disparity=input_cfg["input"]["left"]["disp"])
 
     @pytest.mark.parametrize(
         ["classif"],
@@ -1017,5 +1017,5 @@ class TestGetMetadata:
         """
         with pytest.raises(TypeError):
             img_tools.get_metadata(
-                img=input_cfg["input"]["img_left"], disparity=input_cfg["input"]["disp_left"], classif=classif
+                img=input_cfg["input"]["left"]["img"], disparity=input_cfg["input"]["left"]["disp"], classif=classif
             )

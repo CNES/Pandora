@@ -27,7 +27,6 @@ from rasterio import Affine
 import pytest
 
 
-from pandora.common import split_inputs
 from pandora.img_tools import create_dataset_from_inputs, add_disparity, rasterio_open
 from pandora.check_configuration import (
     check_dataset,
@@ -51,7 +50,7 @@ class TestCheckDataset:
     def dataset_without_bands(self):
         """Build dataset."""
         # Build the default configuration
-        input_config = split_inputs(default_short_configuration["input"])
+        input_config = default_short_configuration["input"]
         input_config["left"]["img"] = "tests/image/left_img.tif"
         input_config["left"]["disp"] = [-60, 0]
 
@@ -63,10 +62,9 @@ class TestCheckDataset:
         """Build dataset."""
         # Build the default configuration
         input_config = update_conf(default_short_configuration["input"], common.input_multiband_cfg)  # type: ignore
-        input_config_split = split_inputs(input_config)
 
         # Computes the dataset image
-        return create_dataset_from_inputs(input_config=input_config_split["left"])
+        return create_dataset_from_inputs(input_config=input_config["left"])
 
     @pytest.mark.parametrize(
         ["dataset"],
