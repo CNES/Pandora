@@ -9,22 +9,37 @@ Pandora works with two stereo rectified one-channel or multi-channel images.
 Configuration and parameters
 ****************************
 
+Pandora input configuration files are divided into two parts: left and right. 
+
+**Left input** 
+
 .. csv-table::
 
     **Name**,**Description**,**Type**,**Default value**,**Required**
-    *img_left*,Path to the left image,string,,Yes
-    *img_right*,Path to the right image,string,,Yes
-    *nodata_left*,Nodata value for left image, int,-9999,No
-    *nodata_right*,Nodata value for right image,int,-9999,No
-    *disp_left*,"Path to the disparity grid of the left image or [min, max] values","string or [int, int]",,Yes
-    *left_mask*,Path to the left mask,string,"none",No
-    *right_mask*,Path to the right mask,string,"none",No
-    *disp_right*,"Path to the disparity grid of the right image or [min, max] values","string or [int, int]","none",No
-    *left_classif*,Path to the left classification map,string,"none",No
-    *right_classif*,Path to the right classification map,string,"none",No
-    *left_segm*,Path to the left segmentation map,string,"none",No
-    *right_segm*,Path to the right segmentation map,string,"none",No
+    *img*,Path to the left image,string,,Yes
+    *nodata*,Nodata value for left image, int,-9999,No
+    *disp*,"Path to the disparity grid of the left image or [min, max] values","string or [int, int]",,Yes
+    *mask*,Path to the left mask,string,"none",No
+    *classif*,Path to the left classification map,string,"none",No
+    *segm*,Path to the left segmentation map,string,"none",No
 
+**Right input** 
+
+.. csv-table::
+
+    **Name**,**Description**,**Type**,**Default value**,**Required**
+    *img*,Path to the right image,string,,Yes
+    *nodata*,Nodata value for right image,int,-9999,No
+    *disp*,"Path to the disparity grid of the right image or [min, max] values","string or [int, int]","none",No
+    *mask*,Path to the right mask,string,"none",No
+    *classif*,Path to the right classification map,string,"none",No
+    *segm*,Path to the right segmentation map,string,"none",No
+
+**Requirement** 
+
+.. note::
+    *disp* parameter is only required for left image. 
+   
 Images
 ******
 
@@ -37,14 +52,14 @@ Images
 
 
 .. note::
-    - Parameter *disp_left* can be the disparity range (type list[int, int]) or the path to the grids
+    - Parameter left *disp* can be the disparity range (type list[int, int]) or the path to the grids
       that contain the minimum and maximum disparity of a pixel (type string).
-    - If *disp_left* is a tuple of integers, then the range of disparities is fixed. The minimal and maximal
+    - If left *disp* is a tuple of integers, then the range of disparities is fixed. The minimal and maximal
       disparity of the right image are automatically calculated :
-      *disp_right[0]* = - *disp_left[1]* and *disp_right[1]* = - *disp_left[0]*
+      right *disp[0]* = - left *disp[1]* and right *disp[1]* = - left *disp[0]*
       where index `0` correspond to *min* and index `1` correspond to *max*.
-    - If *disp_left* is a string, that means it is the path to grids of disparities which have the same size as the input images.
-      Each pixel (x,y) of the grid corresponds to a local disparity (min for disp_left[0] and max for disp_left[1]) related to the same pixel (x, y) of the image.
+    - If left *disp* is a string, that means it is the path to grids of disparities which have the same size as the input images.
+      Each pixel (x,y) of the grid corresponds to a local disparity (min for left *disp[0]* and max for left *disp[1]*) related to the same pixel (x, y) of the image.
     - Cross-checking step is not applicable if only left grids are provided (i.e the right one must be provided).
 
 .. note::

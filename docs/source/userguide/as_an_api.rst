@@ -13,7 +13,7 @@ Pandora provides a full python API which can be used to compute disparity maps a
     import pandora
     from pandora import common
     from pandora.img_tools import create_dataset_from_inputs, read_disp
-    from pandora.check_configuration import check_conf, read_config_file
+    from pandora.check_configuration import check_conf, check_datasets, read_config_file
     from pandora.state_machine import PandoraMachine
 
     def pandora_stereo(cfg_path: str, output: str, verbose: bool) -> None:
@@ -44,13 +44,15 @@ Pandora provides a full python API which can be used to compute disparity maps a
         pandora.setup_logging(verbose)
 
         # Read images and masks
-        cfg_input = common.split_inputs(cfg['input'])
-        img_left = create_dataset_from_inputs(cfg_input['left'])
-        img_right = create_dataset_from_inputs(cfg_input['right'])
+        img_left = create_dataset_from_inputs(cfg['input']['left'])
+        img_right = create_dataset_from_inputs(cfg['input']['right'])
+
+        # Check datasets: shape, format and content
+        check_datasets(img_left, img_right)
 
         # Read range of disparities
-        disp_min, disp_max = read_disp(cfg['input']['disp_left'])
-        disp_min_right, disp_max_right  = read_disp(cfg['input']['disp_right'])
+        disp_min, disp_max = read_disp(cfg['input']['left']['disp'])
+        disp_min_right, disp_max_right  = read_disp(cfg['input']['right']['disp'])
 
         # Run the Pandora pipeline
         left, right = pandora.run(pandora_machine, img_left, img_right, disp_min, disp_max, cfg['pipeline'], disp_min_right,
