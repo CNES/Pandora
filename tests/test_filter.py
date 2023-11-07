@@ -1,5 +1,4 @@
 # type:ignore
-#!/usr/bin/env python
 # coding: utf8
 #
 # Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
@@ -24,34 +23,25 @@
 This module contains functions to test the disparity map filtering.
 """
 
-import unittest
-
 import numpy as np
+import pytest
 import xarray as xr
 
-from tests import common
 import pandora
 import pandora.constants as cst
 import pandora.filter as flt
 
 
-class TestFilter(unittest.TestCase):
-    """
-    TestFilter class allows to test the filter module
-    """
+class TestMedianFilter:
+    """Test MedianFilter"""
 
-    def setUp(self):
-        """
-        Method called to prepare the test fixture
+    @pytest.fixture()
+    def filter_median(self, request):
+        return flt.AbstractFilter(**{"filter_method": "median", "filter_size": request.param})
 
-        """
-
-    @staticmethod
-    def test_median_filter():
-        """
-        Test the median method
-
-        """
+    @pytest.fixture()
+    def dataset1(self):
+        """Dataset #1"""
         disp = np.array([[5, 6, 7, 8, 9], [6, 85, 1, 36, 5], [5, 9, 23, 12, 2], [6, 1, 9, 2, 4]], dtype=np.float32)
 
         valid = np.array(
@@ -64,22 +54,14 @@ class TestFilter(unittest.TestCase):
             dtype=np.uint16,
         )
 
-        disp_dataset = xr.Dataset(
+        return xr.Dataset(
             {"disparity_map": (["row", "col"], disp), "validity_mask": (["row", "col"], valid)},
             coords={"row": np.arange(4), "col": np.arange(5)},
         )
 
-        filter_median = flt.AbstractFilter(**{"filter_method": "median", "filter_size": 3})
-
-        # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
-        filter_median.filter_disparity(disp_dataset)
-
-        # Filtered disparity map ground truth
-        gt_disp = np.array([[5, 6, 7, 8, 9], [6, 6, 9, 8, 5], [5, 6, 9, 5, 2], [6, 1, 9, 2, 4]], dtype=np.float32)
-
-        # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(disp_dataset["disparity_map"].data, gt_disp)
-
+    @pytest.fixture()
+    def dataset2(self):
+        """Dataset #2"""
         disp = np.array([[7, 8, 4, 5, 5], [5, 9, 4, 3, 8], [5, 2, 7, 2, 2], [6, 1, 9, 2, 4]], dtype=np.float32)
 
         valid = np.array(
@@ -117,22 +99,14 @@ class TestFilter(unittest.TestCase):
             dtype=np.uint16,
         )
 
-        disp_dataset = xr.Dataset(
+        return xr.Dataset(
             {"disparity_map": (["row", "col"], disp), "validity_mask": (["row", "col"], valid)},
             coords={"row": np.arange(4), "col": np.arange(5)},
         )
 
-        filter_median = flt.AbstractFilter(**{"filter_method": "median", "filter_size": 3})
-
-        # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
-        filter_median.filter_disparity(disp_dataset)
-
-        # Filtered disparity map ground truth
-        gt_disp = np.array([[7, 8, 4, 5, 5], [5, 9, 4, 3.5, 8], [5, 2, 7, 2, 2], [6, 1, 9, 2, 4]], dtype=np.float32)
-
-        # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(disp_dataset["disparity_map"].data, gt_disp)
-
+    @pytest.fixture()
+    def dataset3(self):
+        """Dataset #3"""
         disp = np.array([[7, 8, 4, 5, 5], [5, 9, 4, 3, 8], [5, 2, 7, 2, 2], [6, 1, 9, 2, 4]], dtype=np.float32)
 
         valid = np.array(
@@ -158,23 +132,14 @@ class TestFilter(unittest.TestCase):
             dtype=np.uint16,
         )
 
-        disp_dataset = xr.Dataset(
+        return xr.Dataset(
             {"disparity_map": (["row", "col"], disp), "validity_mask": (["row", "col"], valid)},
             coords={"row": np.arange(4), "col": np.arange(5)},
         )
 
-        filter_median = flt.AbstractFilter(**{"filter_method": "median", "filter_size": 3})
-
-        # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
-        filter_median.filter_disparity(disp_dataset)
-
-        # Filtered disparity map ground truth
-        gt_disp = np.array([[7, 8, 4, 5, 5], [5, 5, 4, 4, 8], [5, 5, 3, 4, 2], [6, 1, 9, 2, 4]], dtype=np.float32)
-
-        # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(disp_dataset["disparity_map"].data, gt_disp)
-
-        # Test with window size 5
+    @pytest.fixture()
+    def dataset4(self):
+        """Dataset #4"""
         disp = np.array(
             [[7, 8, 4, 5, 5], [5, 9, 4, 3, 8], [5, 2, 7, 2, 2], [6, 1, 9, 2, 4], [1, 6, 2, 7, 8]], dtype=np.float32
         )
@@ -210,26 +175,68 @@ class TestFilter(unittest.TestCase):
             dtype=np.uint16,
         )
 
-        disp_dataset = xr.Dataset(
+        return xr.Dataset(
             {"disparity_map": (["row", "col"], disp), "validity_mask": (["row", "col"], valid)},
             coords={"row": np.arange(5), "col": np.arange(5)},
         )
 
-        filter_median = flt.AbstractFilter(**{"filter_method": "median", "filter_size": 5})
+    @pytest.mark.parametrize(
+        [
+            "filter_median",
+            "disparity_dataset",
+            "gt_disp",
+        ],
+        [
+            pytest.param(
+                3,
+                "dataset1",
+                np.array([[5, 6, 7, 8, 9], [6, 6, 9, 8, 5], [5, 6, 9, 5, 2], [6, 1, 9, 2, 4]], dtype=np.float32),
+                id="Case1",
+            ),
+            pytest.param(
+                3,
+                "dataset2",
+                np.array([[7, 8, 4, 5, 5], [5, 9, 4, 3.5, 8], [5, 2, 7, 2, 2], [6, 1, 9, 2, 4]], dtype=np.float32),
+                id="Case2",
+            ),
+            pytest.param(
+                3,
+                "dataset3",
+                np.array([[7, 8, 4, 5, 5], [5, 5, 4, 4, 8], [5, 5, 3, 4, 2], [6, 1, 9, 2, 4]], dtype=np.float32),
+                id="Case3",
+            ),
+            pytest.param(
+                5,
+                "dataset4",
+                np.array(
+                    [[7, 8, 4, 5, 5], [5, 9, 4, 3, 8], [5, 2, 5, 2, 2], [6, 1, 9, 2, 4], [1, 6, 2, 7, 8]],
+                    dtype=np.float32,
+                ),
+                id="Case4",
+            ),
+        ],
+        indirect=["filter_median"],
+    )
+    def test_median_filter(self, request, filter_median, disparity_dataset, gt_disp):
+        """
+        Test the median method
 
+        """
+        disp_dataset = request.getfixturevalue(disparity_dataset)
         # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
         filter_median.filter_disparity(disp_dataset)
-
-        # Filtered disparity map ground truth
-        gt_disp = np.array(
-            [[7, 8, 4, 5, 5], [5, 9, 4, 3, 8], [5, 2, 5, 2, 2], [6, 1, 9, 2, 4], [1, 6, 2, 7, 8]], dtype=np.float32
-        )
 
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(disp_dataset["disparity_map"].data, gt_disp)
 
+
+class TestBilateralFilter:
+    """
+    Test BilateralFilter
+    """
+
     @staticmethod
-    def test_bilateral_gauss_spatial_kernel():
+    def test_gauss_spatial_kernel():
         """
         Test the gauss spatial kernel function
 
@@ -294,7 +301,7 @@ class TestFilter(unittest.TestCase):
         np.testing.assert_allclose(gauss_spatial_kernel, gt_gauss_spatial_kernel, rtol=1e-07)
 
     @staticmethod
-    def test_bilateral_filter():
+    def test_on_valid_pixels():
         """
         Test the bilateral method. Bilateral filter is only applied on valid pixels.
 
@@ -395,7 +402,7 @@ class TestFilter(unittest.TestCase):
         np.testing.assert_allclose(gt_disp, disp_dataset["disparity_map"].data, rtol=1e-07)
 
     @staticmethod
-    def test_bilateral_filter_with_nans():
+    def test_with_nans():
         """
         Test the bilateral method with input Nans.
 
@@ -543,7 +550,7 @@ class TestFilter(unittest.TestCase):
         np.testing.assert_allclose(gt_disp, disp_dataset["disparity_map"].data, rtol=1e-07)
 
     @staticmethod
-    def test_bilateral_filter_with_invalid_center():
+    def test_with_invalid_center():
         """
         Test the bilateral method with center pixel invalid. Bilateral filter is only applied on valid pixels.
 
@@ -588,8 +595,3 @@ class TestFilter(unittest.TestCase):
         filter_bilateral.filter_disparity(disp_dataset)
 
         np.testing.assert_allclose(gt_disp, disp_dataset["disparity_map"].data, rtol=1e-07)
-
-
-if __name__ == "__main__":
-    common.setup_logging()
-    unittest.main()
