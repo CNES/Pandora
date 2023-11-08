@@ -26,6 +26,7 @@ This module contains functions to test the disparity map filtering.
 import numpy as np
 import pytest
 import xarray as xr
+from json_checker import MissKeyCheckerError
 
 import pandora
 import pandora.constants as cst
@@ -229,11 +230,57 @@ class TestMedianFilter:
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(disp_dataset["disparity_map"].data, gt_disp)
 
+    @pytest.mark.parametrize(["filter_median", "filter_size"], [(1, 1), (3, 3)], indirect=["filter_median"])
+    def test_margins(self, filter_median, filter_size):
+        """Check that margin computation is correct."""
+        assert filter_median.margins == (filter_size, filter_size, filter_size, filter_size)
+        assert filter_median.margins.left == filter_size
+        assert filter_median.margins.up == filter_size
+        assert filter_median.margins.right == filter_size
+        assert filter_median.margins.down == filter_size
+
 
 class TestBilateralFilter:
     """
     Test BilateralFilter
     """
+
+    @pytest.mark.parametrize(
+        ["sigma_space", "row_length", "col_length", "expected"],
+        [
+            pytest.param(1.0, 5, 5, (4, 4, 4, 4), id="Result should be computed from sigma_space"),
+            pytest.param(2.0, 6, 6, (6, 6, 6, 6), id="Result should be lowest image's dimension"),
+        ],
+    )
+    def test_margins(self, sigma_space, row_length, col_length, expected):
+        """Check that margin computation is correct."""
+        filter_config = {
+            "filter_method": "bilateral",
+            "sigma_color": 4.0,
+            "sigma_space": sigma_space,
+            "image_shape": (row_length, col_length),
+        }
+
+        filter_ = flt.AbstractFilter(**filter_config)
+        assert filter_.margins == expected
+        assert filter_.margins.left == expected[0]
+        assert filter_.margins.up == expected[1]
+        assert filter_.margins.right == expected[2]
+        assert filter_.margins.down == expected[3]
+
+    @pytest.mark.parametrize("missing_key", ["filter_method", "image_shape"])
+    def test_check_conf_fails_when_is_missing_mandatory_key(self, missing_key):
+        """When a mandatory key is missing instanciation should fail."""
+        filter_config = {
+            "filter_method": "bilateral",
+            "sigma_color": 4.0,
+            "sigma_space": 6.0,
+            "image_shape": (450, 600),
+        }
+        del filter_config[missing_key]
+
+        with pytest.raises((MissKeyCheckerError, KeyError)):
+            flt.AbstractFilter(**filter_config)
 
     @staticmethod
     def test_gauss_spatial_kernel():
@@ -242,7 +289,14 @@ class TestBilateralFilter:
 
         """
 
-        user_cfg = {"filter": {"filter_method": "bilateral", "sigma_color": 4.0, "sigma_space": 6.0}}
+        user_cfg = {
+            "filter": {
+                "filter_method": "bilateral",
+                "sigma_color": 4.0,
+                "sigma_space": 6.0,
+                "image_shape": [5, 5],
+            }
+        }
 
         # Build the default configuration
         cfg = pandora.check_configuration.default_short_configuration
@@ -308,7 +362,14 @@ class TestBilateralFilter:
 
         """
 
-        user_cfg = {"filter": {"filter_method": "bilateral", "sigma_color": 4.0, "sigma_space": 6.0}}
+        user_cfg = {
+            "filter": {
+                "filter_method": "bilateral",
+                "sigma_color": 4.0,
+                "sigma_space": 6.0,
+                "image_shape": [5, 5],
+            }
+        }
 
         # Build the default configuration
         cfg = pandora.check_configuration.default_short_configuration
@@ -407,7 +468,14 @@ class TestBilateralFilter:
         Test the bilateral method with input Nans.
 
         """
-        user_cfg = {"filter": {"filter_method": "bilateral", "sigma_color": 4.0, "sigma_space": 6.0}}
+        user_cfg = {
+            "filter": {
+                "filter_method": "bilateral",
+                "sigma_color": 4.0,
+                "sigma_space": 6.0,
+                "image_shape": [5, 5],
+            }
+        }
 
         # Build the default configuration
         cfg = pandora.check_configuration.default_short_configuration
@@ -556,7 +624,14 @@ class TestBilateralFilter:
 
         """
 
-        user_cfg = {"filter": {"filter_method": "bilateral", "sigma_color": 4.0, "sigma_space": 6.0}}
+        user_cfg = {
+            "filter": {
+                "filter_method": "bilateral",
+                "sigma_color": 4.0,
+                "sigma_space": 6.0,
+                "image_shape": [5, 5],
+            }
+        }
 
         # Build the default configuration
         cfg = pandora.check_configuration.default_short_configuration

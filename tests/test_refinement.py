@@ -36,6 +36,7 @@ from pandora import refinement
 from pandora import matching_cost
 import pandora.filter as flt
 from pandora import disparity
+from pandora.descriptors.margins import NullMargins
 
 
 class TestRefinement(unittest.TestCase):
@@ -77,6 +78,9 @@ class TestRefinement(unittest.TestCase):
             },
             coords={"row": [1], "col": [0, 1, 2, 3]},
         )
+
+    def test_margins(self):
+        assert isinstance(refinement.AbstractRefinement.margins, NullMargins)
 
     def test_quadratic(self):
         """

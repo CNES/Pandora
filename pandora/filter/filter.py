@@ -27,6 +27,8 @@ from abc import ABCMeta, abstractmethod
 from typing import Dict
 import xarray as xr
 
+from pandora.descriptors.margins import NullMargins
+
 
 class AbstractFilter:
     """
@@ -37,6 +39,7 @@ class AbstractFilter:
 
     filter_methods_avail: Dict = {}
     cfg = None
+    margins = NullMargins()
 
     def __new__(cls, **cfg: dict):
         """

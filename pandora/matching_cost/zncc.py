@@ -112,21 +112,21 @@ class Zncc(matching_cost.AbstractMatchingCost):
         self.check_band_input_mc(img_left, img_right)
 
         # Contains the shifted right images
-        img_right_shift = shift_right_img(img_right, self._subpix, self._band)  # type: ignore
+        img_right_shift = shift_right_img(img_right, self._subpix, self._band)
 
         # Computes the standard deviation raster for the whole images
         # The standard deviation raster is truncated for points that are not calculable
-        img_left_std = compute_std_raster(img_left, self._window_size, self._band)  # type: ignore
+        img_left_std = compute_std_raster(img_left, self._window_size, self._band)
         img_right_std = []
         for i, img in enumerate(img_right_shift):  # pylint: disable=unused-variable
-            img_right_std.append(compute_std_raster(img, self._window_size, self._band))  # type: ignore
+            img_right_std.append(compute_std_raster(img, self._window_size, self._band))
 
         # Computes the mean raster for the whole images
         # The standard mean raster is truncated for points that are not calculable
-        img_left_mean = compute_mean_raster(img_left, self._window_size, self._band)  # type: ignore
+        img_left_mean = compute_mean_raster(img_left, self._window_size, self._band)
         img_right_mean = []
         for i, img in enumerate(img_right_shift):
-            img_right_mean.append(compute_mean_raster(img, self._window_size, self._band))  # type: ignore
+            img_right_mean.append(compute_mean_raster(img, self._window_size, self._band))
 
         # Cost volume metadata
         offset_row_col = int((self._window_size - 1) / 2)
@@ -184,7 +184,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
                     "col": np.arange(zncc_.shape[1]),
                 },
             )
-            zncc_ = compute_mean_raster(zncc_, self._window_size, self._band)  # type: ignore
+            zncc_ = compute_mean_raster(zncc_, self._window_size, self._band)
             # Subtracting  the  local mean  value  of  intensities
             zncc_ -= img_left_mean[:, p_std[0] : p_std[1]] * img_right_mean[i_right][:, q_std[0] : q_std[1]]
 

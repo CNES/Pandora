@@ -24,13 +24,14 @@ This module contains functions associated to the bilateral filter used to filter
 """
 
 import warnings
-from typing import Dict, Union
+from typing import Dict, Union, cast, Tuple
 
 import numpy as np
 import xarray as xr
 from json_checker import Checker, And
 
 import pandora.constants as cst
+from pandora.descriptors.margins import Margins
 from . import filter  # pylint: disable=redefined-builtin
 from ..common import sliding_window
 
@@ -47,12 +48,19 @@ class BilateralFilter(filter.AbstractFilter):
 
     def __init__(self, **cfg: Union[str, float]):
         """
-        :param cfg: optional configuration, {'sigmaColor' : value, 'sigmaSpace' : value}
+        :param cfg: optional configuration, {'sigmaColor' : value, 'sigmaSpace' : value, 'image_shape': value}
         :type cfg: dict
         """
         self.cfg = self.check_conf(**cfg)
         self._sigma_color = float(self.cfg["sigma_color"])
         self._sigma_space = float(self.cfg["sigma_space"])
+        self._image_shape = cast(Tuple[int, int], self.cfg["image_shape"])
+
+    @property
+    def margins(self):
+        sigma = int(3 * self._sigma_space + 1)
+        value = min(*self._image_shape, sigma)
+        return Margins(value, value, value, value)
 
     def check_conf(self, **cfg: Union[str, float]) -> Dict[str, Union[str, float]]:
         """
@@ -73,6 +81,7 @@ class BilateralFilter(filter.AbstractFilter):
             "filter_method": And(str, lambda input: "bilateral"),
             "sigma_color": And(float, lambda input: input > 0),
             "sigma_space": And(float, lambda input: input > 0),
+            "image_shape": (int, int),
         }
 
         checker = Checker(schema)

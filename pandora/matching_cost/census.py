@@ -111,7 +111,7 @@ class Census(matching_cost.AbstractMatchingCost):
         self.check_band_input_mc(img_left, img_right)
 
         # Contains the shifted right images
-        img_right_shift = shift_right_img(img_right, self._subpix, self._band)  # type: ignore
+        img_right_shift = shift_right_img(img_right, self._subpix, self._band)
 
         # Maximal cost of the cost volume with census measure
         cmax = int(self._window_size**2)
@@ -127,9 +127,9 @@ class Census(matching_cost.AbstractMatchingCost):
         }
 
         # Apply census transformation
-        left = census_transform(img_left, self._window_size, self._band)  # type: ignore
+        left = census_transform(img_left, self._window_size, self._band)
         for i, img in enumerate(img_right_shift):
-            img_right_shift[i] = census_transform(img, self._window_size, self._band)  # type: ignore
+            img_right_shift[i] = census_transform(img, self._window_size, self._band)
 
         disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
         cv = self.allocate_numpy_cost_volume(img_left, disparity_range)

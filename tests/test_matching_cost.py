@@ -28,7 +28,9 @@ This module contains functions to test the matching cost step.
 import numpy as np
 import xarray as xr
 import pytest
+
 from pandora import matching_cost
+from pandora.descriptors.margins import HalfWindowMargins
 
 from tests import common
 
@@ -142,3 +144,6 @@ class TestMatchingCost:
         """Test get_disparity_range."""
         result = matching_cost.AbstractMatchingCost.get_disparity_range(disparity_min, disparity_max, subpix)
         np.testing.assert_array_equal(result, expected)
+
+    def test_margins(self):
+        assert isinstance(matching_cost.AbstractMatchingCost.margins, HalfWindowMargins)

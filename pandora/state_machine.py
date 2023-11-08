@@ -28,6 +28,7 @@ This module contains class associated to the pandora state machine
 
 from __future__ import annotations
 
+import copy
 import warnings
 import logging
 import sys
@@ -661,12 +662,12 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         self.check_band_pipeline(
             self.left_img.coords["band_im"].data,
             cfg["matching_cost"]["matching_cost_method"],
-            matching_cost_.cfg["band"],  # type: ignore
+            matching_cost_.cfg["band"],
         )
         self.check_band_pipeline(
             self.right_img.coords["band_im"].data,
             cfg["matching_cost"]["matching_cost_method"],
-            matching_cost_.cfg["band"],  # type: ignore
+            matching_cost_.cfg["band"],
         )
 
     def disparity_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -692,7 +693,10 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        filter_ = filter.AbstractFilter(**cfg[input_step])  # type: ignore
+        filter_config = copy.deepcopy(cfg[input_step])
+        if filter_config["filter_method"] == "bilateral":
+            filter_config["image_shape"] = self.left_img.dims["row"], self.left_img.dims["col"]
+        filter_ = filter.AbstractFilter(**filter_config)  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = filter_.cfg
 
     def refinement_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:

@@ -32,6 +32,7 @@ import xarray as xr
 from rasterio import Affine
 
 from tests import common
+from pandora.descriptors.margins import NullMargins
 from pandora.img_tools import add_disparity
 from pandora import aggregation
 from pandora.aggregation import cbca
@@ -874,6 +875,9 @@ class TestAggregation(unittest.TestCase):
         np.testing.assert_array_equal(cross_right[0], gt_right_arms)
         # No subpixel precision
         assert len(cross_right) == 1
+
+    def test_margins(self):
+        assert isinstance(aggregation.AbstractAggregation.margins, NullMargins)
 
 
 if __name__ == "__main__":
