@@ -35,7 +35,7 @@ from pkg_resources import iter_entry_points
 
 from . import common
 from .img_tools import create_dataset_from_inputs
-from .check_configuration import check_conf, read_config_file, read_multiscale_params
+from .check_configuration import check_conf, check_datasets, read_config_file, read_multiscale_params
 from .state_machine import PandoraMachine
 
 
@@ -172,6 +172,9 @@ def main(cfg_path: PathLike | str, output: str, verbose: bool) -> None:
     if input_config["right"]["disp"] is None and not isinstance(input_config["left"]["disp"], str):
         input_config["right"]["disp"] = [-input_config["left"]["disp"][1], -input_config["left"]["disp"][0]]
     img_right = create_dataset_from_inputs(input_config=input_config["right"])
+
+    # Check datasets
+    check_datasets(img_left, img_right)
 
     # Run the Pandora pipeline
     left, right = run(pandora_machine, img_left, img_right, cfg)

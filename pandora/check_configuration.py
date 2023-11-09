@@ -210,32 +210,16 @@ def check_images(user_cfg: Dict[str, dict]) -> None:
             check_image_dimension(right_, rasterio_open(user_cfg["right"][img]))
 
 
-def check_band_names(img: str | xr.Dataset) -> None:
+def check_band_names(dataset: xr.Dataset) -> None:
     """
-    Check that band names have the correct format
+    Check that band names have the correct format : band names must be strings.
 
-    :param img: path to the image
-    :type img: string
+    :param dataset: dataset
+    :type dataset: xr.Dataset
     :return: None
     """
 
-    bands = []
-    if isinstance(img, str):
-        # open image
-        img_ds = rasterio_open(img)
-        # check that the image have the band names
-        if img_ds.count != 1:
-            if not img_ds.descriptions:
-                logging.error("Image is missing band names metadata")
-                sys.exit(1)
-            bands = list(img_ds.descriptions)
-            logging.info("Image has not band")
-    else:  # img is a dataset
-        if "band_im" in img.coords:
-            bands = list(img.coords["band_im"].data)
-
-    # Check type
-    if not all(isinstance(band, str) for band in bands):
+    if "band_im" in dataset.coords and not all(isinstance(band, str) for band in dataset.coords["band_im"].data):
         logging.error("Band value must be str")
         sys.exit(1)
 
@@ -482,9 +466,6 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
         cfg["input"]["disp_right"],
         cfg["input"]["img_right"],
     )
-    # check bands
-    check_band_names(cfg["input"]["img_left"])
-    check_band_names(cfg["input"]["img_right"])
 
     check_images(split_inputs(cfg["input"]))
 
