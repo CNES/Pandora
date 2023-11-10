@@ -194,9 +194,13 @@ There are some parameters depending on penalty_method choice and p2_method choic
 
     {
       "input" : {
-            "img_left": PATH,
-            "img_right": PATH,
-            "left_classif": PATH
+            "left": {
+                "img": PATH,
+                "classif": PATH
+            },
+            "right": {
+                "img": PATH
+            }
       },
       "pipeline" :
        {

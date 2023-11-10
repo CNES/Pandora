@@ -183,35 +183,55 @@ multiscale_pipeline_cfg = {
 }
 
 input_cfg_basic = {
-    "img_left": "tests/pandora/left.png",
-    "img_right": "tests/pandora/right.png",
-    "disp_left": [-60, 0],
+    "left": {
+        "img": "tests/pandora/left.png",
+        "disp": [-60, 0],
+    },
+    "right": {
+        "img": "tests/pandora/right.png",
+    },
 }
 
 input_cfg_basic_with_none_right_disp = {
-    "img_left": "tests/pandora/left.png",
-    "img_right": "tests/pandora/right.png",
-    "disp_left": [-60, 0],
-    "disp_right": None,
+    "left": {
+        "img": "tests/pandora/left.png",
+        "disp": [-60, 0],
+    },
+    "right": {
+        "img": "tests/pandora/right.png",
+        "disp": None,
+    },
 }
 
 input_multiband_cfg = {
-    "img_left": "tests/pandora/left_rgb.tif",
-    "img_right": "tests/pandora/right_rgb.tif",
-    "disp_left": [-60, 0],
+    "left": {
+        "img": "tests/pandora/left_rgb.tif",
+        "disp": [-60, 0],
+    },
+    "right": {
+        "img": "tests/pandora/right_rgb.tif",
+    },
 }
 
 input_cfg_left_grids = {
-    "img_left": "tests/pandora/left.png",
-    "img_right": "tests/pandora/right.png",
-    "disp_left": "tests/pandora/left_disparity_grid.tif",
+    "left": {
+        "img": "tests/pandora/left.png",
+        "disp": "tests/pandora/left_disparity_grid.tif",
+    },
+    "right": {
+        "img": "tests/pandora/right.png",
+    },
 }
 
 input_cfg_left_right_grids = {
-    "img_left": "tests/pandora/left.png",
-    "img_right": "tests/pandora/right.png",
-    "disp_left": "tests/pandora/left_disparity_grid.tif",
-    "disp_right": "tests/pandora/right_disparity_grid.tif",
+    "left": {
+        "img": "tests/pandora/left.png",
+        "disp": "tests/pandora/left_disparity_grid.tif",
+    },
+    "right": {
+        "img": "tests/pandora/right.png",
+        "disp": "tests/pandora/right_disparity_grid.tif",
+    },
 }
 
 # Image common attributes for matching_cost_tests

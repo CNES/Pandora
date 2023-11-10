@@ -40,8 +40,6 @@ from json_checker import Checker, Or, And
 
 from pandora.state_machine import PandoraMachine
 from pandora.img_tools import rasterio_open, get_metadata
-from pandora.common import split_inputs
-
 from pandora import multiscale
 
 
@@ -129,7 +127,7 @@ def check_dataset(dataset: xr.Dataset) -> None:
 
     # Check not empty image (all nan values)
     if np.isnan(dataset["im"].data).all():
-        logging.error("Image contains lony nan values")
+        logging.error("Image contains only nan values")
         sys.exit(1)
 
     # Check disparities
@@ -345,12 +343,12 @@ def memory_consumption_estimation(
     """
     # If the input configuration is given as a dict
     if isinstance(user_input, dict):
-        disparity_interval = user_input["input"]["disp_left"]
-        img_path = user_input["input"]["img_left"]
+        disparity_interval = user_input["input"]["left"]["disp"]
+        img_path = user_input["input"]["left"]["img"]
     else:
         img_path, *disparity_interval = user_input
         # Since only the size is to be used for the memory computation, the same path is set on left and right
-        input_cfg = {"disparity_interval": disparity_interval, "img_left": img_path, "img_right": img_path}
+        input_cfg = {"left": {"disp": disparity_interval, "img": img_path}, "right": {"img": img_path}}
         user_input = {"input": input_cfg}
 
     # Read input image
@@ -364,8 +362,8 @@ def memory_consumption_estimation(
     else:
         # First, check if the configuration is valid
         cfg = {"pipeline": user_pipeline_cfg["pipeline"], "input": user_input["input"]}
-        img_left_metadata = get_metadata(cfg["input"]["img_left"], disparity_interval)
-        img_right_metadata = get_metadata(cfg["input"]["img_right"], None, None)
+        img_left_metadata = get_metadata(cfg["input"]["left"]["img"], disparity_interval)
+        img_right_metadata = get_metadata(cfg["input"]["right"]["img"], None, None)
         checked_cfg = check_pipeline_section(cfg, img_left_metadata, img_right_metadata, pandora_machine)
         # Obtain pipeline cfg
         pipeline_cfg = checked_cfg["pipeline"]
@@ -440,14 +438,16 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     # Disparity can be integer type, or string type (path to the disparity grid)
     # If the left disparity is string type, right disparity must be string type or none
     # if the left disparity is integer type, right disparity must be none
-    if isinstance(cfg["input"]["disp_left"], list):
+    if isinstance(cfg["input"]["left"]["disp"], list):
         base_input_configuration_schema = input_configuration_schema_integer_disparity
-    elif isinstance(cfg["input"]["disp_right"], str):
+    elif isinstance(cfg["input"]["right"]["disp"], str):
         base_input_configuration_schema = input_configuration_schema_left_disparity_grids_right_grids
     else:
         base_input_configuration_schema = input_configuration_schema_left_disparity_grids_right_none
 
-    input_configuration_schema.update(base_input_configuration_schema)
+    input_configuration_schema["left"].update(base_input_configuration_schema["left"])
+    input_configuration_schema["right"].update(base_input_configuration_schema["right"])
+
     # check schema
     configuration_schema = {"input": input_configuration_schema}
 
@@ -458,16 +458,16 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
 
     # check left disparities
     check_disparities_from_input(
-        cfg["input"]["disp_left"],
-        cfg["input"]["img_left"],
+        cfg["input"]["left"]["disp"],
+        cfg["input"]["left"]["img"],
     )
     # check right disparities
     check_disparities_from_input(
-        cfg["input"]["disp_right"],
-        cfg["input"]["img_right"],
+        cfg["input"]["right"]["disp"],
+        cfg["input"]["right"]["img"],
     )
 
-    check_images(split_inputs(cfg["input"]))
+    check_images(cfg["input"])
 
     return cfg
 
@@ -490,16 +490,16 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> di
 
     # read metadata from left and right images
     img_left_metadata = get_metadata(
-        cfg_input["input"]["img_left"],
-        cfg_input["input"]["disp_left"],
-        cfg_input["input"]["left_classif"],
-        cfg_input["input"]["left_segm"],
+        cfg_input["input"]["left"]["img"],
+        cfg_input["input"]["left"]["disp"],
+        cfg_input["input"]["left"]["classif"],
+        cfg_input["input"]["left"]["segm"],
     )
     img_right_metadata = get_metadata(
-        cfg_input["input"]["img_right"],
-        cfg_input["input"]["disp_right"],
-        cfg_input["input"]["right_classif"],
-        cfg_input["input"]["right_segm"],
+        cfg_input["input"]["right"]["img"],
+        cfg_input["input"]["right"]["disp"],
+        cfg_input["input"]["right"]["classif"],
+        cfg_input["input"]["right"]["segm"],
     )
 
     # check pipeline
@@ -555,47 +555,67 @@ def read_multiscale_params(cfg: Dict[str, dict]) -> Tuple[int, int]:
 
 
 input_configuration_schema = {
-    "img_left": And(str, rasterio_can_open_mandatory),
-    "img_right": And(str, rasterio_can_open_mandatory),
-    "nodata_left": Or(int, lambda input: np.isnan(input)),
-    "nodata_right": Or(int, lambda input: np.isnan(input)),
-    "left_mask": And(Or(str, lambda input: input is None), rasterio_can_open),
-    "right_mask": And(Or(str, lambda input: input is None), rasterio_can_open),
-    "left_classif": And(Or(str, lambda x: x is None), rasterio_can_open),
-    "right_classif": And(Or(str, lambda x: x is None), rasterio_can_open),
-    "left_segm": And(Or(str, lambda x: x is None), rasterio_can_open),
-    "right_segm": And(Or(str, lambda x: x is None), rasterio_can_open),
+    "left": {
+        "img": And(str, rasterio_can_open_mandatory),
+        "nodata": Or(int, lambda input: np.isnan(input)),
+        "mask": And(Or(str, lambda input: input is None), rasterio_can_open),
+        "classif": And(Or(str, lambda x: x is None), rasterio_can_open),
+        "segm": And(Or(str, lambda x: x is None), rasterio_can_open),
+    },
+    "right": {
+        "img": And(str, rasterio_can_open_mandatory),
+        "nodata": Or(int, lambda input: np.isnan(input)),
+        "mask": And(Or(str, lambda input: input is None), rasterio_can_open),
+        "classif": And(Or(str, lambda x: x is None), rasterio_can_open),
+        "segm": And(Or(str, lambda x: x is None), rasterio_can_open),
+    },
 }
 
 # Input configuration when disparity is integer
-input_configuration_schema_integer_disparity = {
-    "disp_left": [int, int],
-    "disp_right": (lambda input: input is None),
+input_configuration_schema_integer_disparity: Mapping = {
+    "left": {
+        "disp": [int, int],
+    },
+    "right": {
+        "disp": (lambda input: input is None),
+    },
 }
 
 # Input configuration when left disparity is a grid, and right not provided
-input_configuration_schema_left_disparity_grids_right_none = {
-    "disp_left": And(str, rasterio_can_open),
-    "disp_right": (lambda input: input is None),
+input_configuration_schema_left_disparity_grids_right_none: Mapping = {
+    "left": {
+        "disp": And(str, rasterio_can_open),
+    },
+    "right": {
+        "disp": (lambda input: input is None),
+    },
 }
 
 # Input configuration when left and right disparity are grids
-input_configuration_schema_left_disparity_grids_right_grids = {
-    "disp_left": And(str, rasterio_can_open),
-    "disp_right": And(str, rasterio_can_open),
+input_configuration_schema_left_disparity_grids_right_grids: Mapping = {
+    "left": {
+        "disp": And(str, rasterio_can_open),
+    },
+    "right": {
+        "disp": And(str, rasterio_can_open),
+    },
 }
 
 default_short_configuration_input = {
     "input": {
-        "nodata_left": -9999,
-        "nodata_right": -9999,
-        "left_mask": None,
-        "right_mask": None,
-        "left_classif": None,
-        "right_classif": None,
-        "left_segm": None,
-        "right_segm": None,
-        "disp_right": None,
+        "left": {
+            "nodata": -9999,
+            "mask": None,
+            "classif": None,
+            "segm": None,
+        },
+        "right": {
+            "nodata": -9999,
+            "mask": None,
+            "classif": None,
+            "segm": None,
+            "disp": None,
+        },
     }
 }
 

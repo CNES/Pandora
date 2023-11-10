@@ -69,12 +69,18 @@ median filter method.
     {
         "input":
         {
-            "left_mask": null,
-            "right_mask": null,
-            "disp_right": null,
-            "img_left": "img_left.png",
-            "img_right": "img_left.png",
-            "disp_left": [-100, 100]
+            "left": 
+            {
+                "mask": null,
+                "disp": [-100, 100],
+                "img": "img_left.png"
+            },
+            "right": 
+            {
+                "mask": null,
+                "disp": null,
+                "img": "img_right.png",
+            }
         },
         "pipeline":
         {
@@ -111,12 +117,18 @@ The same configuration as the previous example but right disparity map is also c
     {
         "input":
         {
-            "left_mask": null,
-            "right_mask": null,
-            "disp_right": null,
-            "img_left": "img_left.png",
-            "img_right": "img_left.png",
-            "disp_left": [-100, 100]
+            "left": 
+            {
+                "mask": null,
+                "disp": [-100, 100],
+                "img": "img_left.png"
+            },
+            "right": 
+            {
+                "mask": null,
+                "disp": null,
+                "img": "img_right.png",
+            }
         },
         "pipeline":
         {
@@ -150,12 +162,18 @@ An impossible sequencing
     {
         "input":
         {
-            "left_mask": null,
-            "right_mask": null,
-            "disp_right": null,
-            "img_left": "img_left.png",
-            "img_right": "img_left.png",
-            "disp_left": [-100, 100]
+            "left": 
+            {
+                "mask": null,
+                "disp": [-100, 100],
+                "img": "img_left.png"
+            },
+            "right": 
+            {
+                "mask": null,
+                "disp": null,
+                "img": "img_right.png",
+            }
         },
         "pipeline":
         {
@@ -206,12 +224,18 @@ Same step, multiple times
 
     {
         "input": {
-            "left_mask": null,
-            "right_mask": null,
-            "disp_right": null,
-            "img_left": "img_left.png",
-            "img_right": "img_left.png",
-            "disp_left": [-100, 100]
+            "left": 
+            {
+                "mask": null,
+                "disp": [-100, 100],
+                "img": "img_left.png"
+            },
+            "right": 
+            {
+                "mask": null,
+                "disp": null,
+                "img": "img_right.png",
+            }
         },
         "pipeline":
         {
@@ -250,12 +274,18 @@ Configuration to produce a disparity map, computed by SSD method with multiscale
     {
         "input":
         {
-            "left_mask": null,
-            "right_mask": null,
-            "disp_right": null,
-            "img_left": "img_left.png",
-            "img_right": "img_left.png",
-            "disp_left": [-100, 100]
+            "left": 
+            {
+                "mask": null,
+                "disp": [-100, 100],
+                "img": "img_left.png"
+            },
+            "right": 
+            {
+                "mask": null,
+                "disp": null,
+                "img": "img_right.png",
+            }
         },
         "pipeline":
         {
