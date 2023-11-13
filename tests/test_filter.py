@@ -28,7 +28,6 @@ import pytest
 import xarray as xr
 from json_checker import MissKeyCheckerError
 
-import pandora
 import pandora.constants as cst
 import pandora.filter as flt
 
@@ -290,21 +289,13 @@ class TestBilateralFilter:
         """
 
         user_cfg = {
-            "filter": {
-                "filter_method": "bilateral",
-                "sigma_color": 4.0,
-                "sigma_space": 6.0,
-                "image_shape": [5, 5],
-            }
+            "filter_method": "bilateral",
+            "sigma_color": 4.0,
+            "sigma_space": 6.0,
+            "image_shape": [5, 5],
         }
 
-        # Build the default configuration
-        cfg = pandora.check_configuration.default_short_configuration
-
-        # Update the configuration with default values
-        cfg = pandora.check_configuration.update_conf(cfg, user_cfg)
-
-        filter_bilateral = flt.AbstractFilter(**cfg["filter"])
+        filter_bilateral = flt.AbstractFilter(**user_cfg)
 
         # Gauss spatial kernel of size (5,5) and sigma_space = 6
         # arr[i, j] = np.sqrt(abs(i - kernel_size // 2) ** 2 + abs(j - kernel_size // 2) ** 2)
@@ -363,21 +354,13 @@ class TestBilateralFilter:
         """
 
         user_cfg = {
-            "filter": {
-                "filter_method": "bilateral",
-                "sigma_color": 4.0,
-                "sigma_space": 6.0,
-                "image_shape": [5, 5],
-            }
+            "filter_method": "bilateral",
+            "sigma_color": 4.0,
+            "sigma_space": 6.0,
+            "image_shape": [5, 5],
         }
 
-        # Build the default configuration
-        cfg = pandora.check_configuration.default_short_configuration
-
-        # Update the configuration with default values
-        cfg = pandora.check_configuration.update_conf(cfg, user_cfg)
-
-        filter_bilateral = flt.AbstractFilter(**cfg["filter"])
+        filter_bilateral = flt.AbstractFilter(**user_cfg)
 
         disp = np.array(
             [[5, 6, 7, 8, 9], [6, 85, 1, 36, 5], [5, 9, 23, 12, 2], [6, 1, 9, 2, 4], [6, 7, 4, 2, 1]], dtype=np.float32
@@ -469,21 +452,13 @@ class TestBilateralFilter:
 
         """
         user_cfg = {
-            "filter": {
-                "filter_method": "bilateral",
-                "sigma_color": 4.0,
-                "sigma_space": 6.0,
-                "image_shape": [5, 5],
-            }
+            "filter_method": "bilateral",
+            "sigma_color": 4.0,
+            "sigma_space": 6.0,
+            "image_shape": [5, 5],
         }
 
-        # Build the default configuration
-        cfg = pandora.check_configuration.default_short_configuration
-
-        # Update the configuration with default values
-        cfg = pandora.check_configuration.update_conf(cfg, user_cfg)
-
-        filter_bilateral = flt.AbstractFilter(**cfg["filter"])
+        filter_bilateral = flt.AbstractFilter(**user_cfg)
 
         disp = np.array(
             [[5, 6, 7, 8, 9], [6, 85, np.nan, 36, 5], [5, 9, 23, 12, 2], [6, np.nan, 9, 2, 4], [1, 6, 2, 7, 8]],
@@ -625,21 +600,13 @@ class TestBilateralFilter:
         """
 
         user_cfg = {
-            "filter": {
-                "filter_method": "bilateral",
-                "sigma_color": 4.0,
-                "sigma_space": 6.0,
-                "image_shape": [5, 5],
-            }
+            "filter_method": "bilateral",
+            "sigma_color": 4.0,
+            "sigma_space": 6.0,
+            "image_shape": [5, 5],
         }
 
-        # Build the default configuration
-        cfg = pandora.check_configuration.default_short_configuration
-
-        # Update the configuration with default values
-        cfg = pandora.check_configuration.update_conf(cfg, user_cfg)
-
-        filter_bilateral = flt.AbstractFilter(**cfg["filter"])
+        filter_bilateral = flt.AbstractFilter(**user_cfg)
         disp = np.array(
             [[5, 6, 7, 8, 9], [6, 85, 1, 36, 5], [5, 9, 23, 12, 2], [6, 1, 9, 2, 4], [6, 7, 4, 2, 1]], dtype=np.float32
         )
