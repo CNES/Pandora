@@ -19,10 +19,10 @@
 """
 Test optimization module.
 """
-from pandora.descriptors.margins import UniformMargins
+from pandora.descriptors.margins import UniformMargins, Margins
 from pandora.optimization import AbstractOptimization
 
 
 def test_margins():
     assert isinstance(AbstractOptimization.margins, UniformMargins)
-    assert AbstractOptimization.margins.value == (40, 40, 40, 40)
+    assert AbstractOptimization.margins.value == Margins(40, 40, 40, 40)

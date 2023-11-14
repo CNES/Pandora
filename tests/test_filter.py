@@ -30,6 +30,7 @@ from json_checker import MissKeyCheckerError
 
 import pandora.constants as cst
 import pandora.filter as flt
+from pandora.descriptors.margins import Margins
 
 
 class TestMedianFilter:
@@ -232,11 +233,7 @@ class TestMedianFilter:
     @pytest.mark.parametrize(["filter_median", "filter_size"], [(1, 1), (3, 3)], indirect=["filter_median"])
     def test_margins(self, filter_median, filter_size):
         """Check that margin computation is correct."""
-        assert filter_median.margins == (filter_size, filter_size, filter_size, filter_size)
-        assert filter_median.margins.left == filter_size
-        assert filter_median.margins.up == filter_size
-        assert filter_median.margins.right == filter_size
-        assert filter_median.margins.down == filter_size
+        assert filter_median.margins == Margins(filter_size, filter_size, filter_size, filter_size)
 
 
 class TestBilateralFilter:
@@ -247,8 +244,8 @@ class TestBilateralFilter:
     @pytest.mark.parametrize(
         ["sigma_space", "row_length", "col_length", "expected"],
         [
-            pytest.param(1.0, 5, 5, (4, 4, 4, 4), id="Result should be computed from sigma_space"),
-            pytest.param(2.0, 6, 6, (6, 6, 6, 6), id="Result should be lowest image's dimension"),
+            pytest.param(1.0, 5, 5, Margins(4, 4, 4, 4), id="Result should be computed from sigma_space"),
+            pytest.param(2.0, 7, 6, Margins(6, 6, 6, 6), id="Result should be lowest image's dimension"),
         ],
     )
     def test_margins(self, sigma_space, row_length, col_length, expected):
@@ -262,10 +259,6 @@ class TestBilateralFilter:
 
         filter_ = flt.AbstractFilter(**filter_config)
         assert filter_.margins == expected
-        assert filter_.margins.left == expected[0]
-        assert filter_.margins.up == expected[1]
-        assert filter_.margins.right == expected[2]
-        assert filter_.margins.down == expected[3]
 
     @pytest.mark.parametrize("missing_key", ["filter_method", "image_shape"])
     def test_check_conf_fails_when_is_missing_mandatory_key(self, missing_key):

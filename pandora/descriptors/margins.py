@@ -22,11 +22,13 @@ Margin descriptors
 """
 from __future__ import annotations
 
+from dataclasses import dataclass, astuple
 import operator
-from typing import NamedTuple, overload, Sequence
+from typing import overload, Sequence, Tuple
 
 
-class Margins(NamedTuple):
+@dataclass(order=True, frozen=True)
+class Margins:
     """Tuple of margins."""
 
     left: int
@@ -34,8 +36,12 @@ class Margins(NamedTuple):
     right: int
     down: int
 
-    def __add__(self, other):
-        return Margins(*map(operator.add, self, other))
+    def __add__(self, other: Margins) -> Margins:
+        return Margins(*map(operator.add, self.astuple(), other.astuple()))
+
+    def astuple(self) -> Tuple:
+        """Convert self to a tuple of (left, up, right, down)."""
+        return astuple(self)
 
 
 def max_margins(margins: Sequence[Margins]) -> Margins:

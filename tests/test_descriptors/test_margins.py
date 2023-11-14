@@ -96,8 +96,8 @@ class TestFixedMargins:
             [1, 2, 3, 4],
         ],
     )
-    def test_returns_named_tuple(self, mocker, left, up, right, down):
-        """Test."""
+    def test_returns_margins(self, mocker, left, up, right, down):
+        """We expect to get a Margins object."""
         parent_class = mocker.Mock()
 
         descriptor = FixedMargins(left, up, right, down)
@@ -105,7 +105,7 @@ class TestFixedMargins:
         # We ignore typing because mypy does not seem to understand the call to __get__
         margin = descriptor.__get__(parent_class)  # type: ignore  # pylint:disable=unnecessary-dunder-call
 
-        assert margin == (left, up, right, down)
+        assert margin.astuple() == (left, up, right, down)
         assert margin.left == left
         assert margin.up == up
         assert margin.right == right
@@ -118,8 +118,8 @@ class TestUniformMargins:
     def test_is_read_only(self):
         assert issubclass(UniformMargins, ReadOnlyDescriptor)
 
-    def test_returns_named_tuple(self, mocker):
-        """Test."""
+    def test_returns_margins(self, mocker):
+        """We expect to get a Margins object."""
         parent_class = mocker.Mock()
 
         descriptor = UniformMargins(40)
@@ -127,7 +127,7 @@ class TestUniformMargins:
         # We ignore typing because mypy does not seem to understand the call to __get__
         margin = descriptor.__get__(parent_class)  # type: ignore  # pylint:disable=unnecessary-dunder-call
 
-        assert margin == (40, 40, 40, 40)
+        assert margin.astuple() == (40, 40, 40, 40)
         assert margin.left == 40
         assert margin.up == 40
         assert margin.right == 40
@@ -140,8 +140,8 @@ class TestNullMargins:
     def test_is_read_only(self):
         assert issubclass(NullMargins, ReadOnlyDescriptor)
 
-    def test_returns_named_tuple(self, mocker):
-        """Test."""
+    def test_returns_margins(self, mocker):
+        """We expect to get a Margins object."""
         parent_class = mocker.Mock()
 
         descriptor = NullMargins()
@@ -149,7 +149,7 @@ class TestNullMargins:
         # We ignore typing because mypy does not seem to understand the call to __get__
         margin = descriptor.__get__(parent_class)  # type: ignore  # pylint:disable=unnecessary-dunder-call
 
-        assert margin == (0, 0, 0, 0)
+        assert margin.astuple() == (0, 0, 0, 0)
         assert margin.left == 0
         assert margin.up == 0
         assert margin.right == 0
@@ -164,8 +164,8 @@ class TestUniformMarginsFromAttribute:
 
     @pytest.mark.parametrize("value", [3, 5])
     @pytest.mark.parametrize("reference_attribute", ["_FILTER_SIZE ", "nawak"])
-    def test_returns_named_tuple(self, mocker, reference_attribute, value):
-        """Test."""
+    def test_returns_margins(self, mocker, reference_attribute, value):
+        """We expect to get a Margins object."""
         parent_class = mocker.Mock()
         setattr(parent_class, reference_attribute, value)
 
@@ -174,7 +174,7 @@ class TestUniformMarginsFromAttribute:
         # We ignore typing because mypy does not seem to understand the call to __get__
         margin = descriptor.__get__(parent_class)  # type: ignore  # pylint:disable=unnecessary-dunder-call
 
-        assert margin == (value, value, value, value)
+        assert margin.astuple() == (value, value, value, value)
         assert margin.left == value
         assert margin.up == value
         assert margin.right == value
@@ -195,8 +195,8 @@ class TestHalfWindowMargins:
             [0, 0, 0, 0, 0],
         ],
     )
-    def test_returns_named_tuple(self, mocker, window_size, left, up, right, down):
-        """Test."""
+    def test_returns_margins(self, mocker, window_size, left, up, right, down):
+        """We expect to get a Margins object."""
         parent_class = mocker.Mock()
         parent_class._window_size = window_size  # pylint:disable=protected-access
 
@@ -205,7 +205,7 @@ class TestHalfWindowMargins:
         # We ignore typing because mypy does not seem to understand the call to __get__
         margin = descriptor.__get__(parent_class)  # type: ignore  # pylint:disable=unnecessary-dunder-call
 
-        assert margin == (left, up, right, down)
+        assert margin.astuple() == (left, up, right, down)
         assert margin.left == left
         assert margin.up == up
         assert margin.right == right
