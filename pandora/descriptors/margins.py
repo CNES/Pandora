@@ -22,9 +22,9 @@ Margin descriptors
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, astuple
+from dataclasses import dataclass, astuple, asdict
 import operator
-from typing import overload, Sequence, Tuple
+from typing import overload, Sequence, Tuple, Dict
 
 
 @dataclass(order=True, frozen=True)
@@ -42,6 +42,10 @@ class Margins:
     def astuple(self) -> Tuple:
         """Convert self to a tuple of (left, up, right, down)."""
         return astuple(self)
+
+    def asdict(self) -> Dict:
+        """Convert self to a dictionary."""
+        return asdict(self)
 
 
 def max_margins(margins: Sequence[Margins]) -> Margins:

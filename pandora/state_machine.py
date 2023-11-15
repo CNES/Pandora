@@ -29,9 +29,11 @@ This module contains class associated to the pandora state machine
 from __future__ import annotations
 
 import copy
+import operator
 import warnings
 import logging
 import sys
+from functools import reduce
 from typing import Dict, Union, List
 import numpy as np
 import xarray as xr
@@ -55,6 +57,7 @@ from pandora import optimization
 from pandora import refinement
 from pandora import matching_cost
 from pandora import semantic_segmentation
+from pandora.descriptors.margins import Margins, max_margins
 
 
 # This silences numba's TBB threading layer warning
@@ -253,6 +256,11 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         # Pandora's pipeline configuration
         self.pipeline_cfg: Dict = {"pipeline": {}}
+
+        # Margins that cumulates:
+        self.cumulative_margins: Dict[str, Margins] = {}
+        # Margins that takes maximum values
+        self.non_cumulative_margins: Dict[str, Margins] = {}
         # Right disparity map computation information: Can be None or "cross_checking_accurate"
         # Useful during the running steps to choose if we must compute left and right objects.
         self.right_disp_map = None
@@ -280,6 +288,11 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             )
 
         logging.getLogger("transitions").setLevel(logging.WARNING)
+
+    @property
+    def margins(self):
+        cumulated_margins = reduce(operator.add, self.cumulative_margins.values(), Margins(0, 0, 0, 0))
+        return max_margins([cumulated_margins, *self.non_cumulative_margins.values()])
 
     def matching_cost_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -656,6 +669,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # Create matching_cost object to check its step configuration
         matching_cost_ = matching_cost.AbstractMatchingCost(**cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = matching_cost_.cfg
+        self.cumulative_margins[input_step] = matching_cost_.margins
 
         # Check the coherence between the band selected for the matching_cost step
         # and the bands present on left and right image
@@ -682,6 +696,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         disparity_ = disparity.AbstractDisparity(**cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = disparity_.cfg
+        self.cumulative_margins[input_step] = disparity_.margins
 
     def filter_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -698,6 +713,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             filter_config["image_shape"] = self.left_img.dims["row"], self.left_img.dims["col"]
         filter_ = filter.AbstractFilter(**filter_config)  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = filter_.cfg
+        self.non_cumulative_margins[input_step] = filter_.margins
 
     def refinement_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -711,6 +727,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         refinement_ = refinement.AbstractRefinement(**cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = refinement_.cfg
+        self.cumulative_margins[input_step] = refinement_.margins
 
     def aggregation_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -724,6 +741,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         aggregation_ = aggregation.AbstractAggregation(**cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = aggregation_.cfg
+        self.cumulative_margins[input_step] = aggregation_.margins
 
     def semantic_segmentation_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -792,6 +810,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                         cfg["optimization"]["optimization_method"],
                         cfg["optimization"]["geometric_prior"]["classes"],
                     )
+        self.cumulative_margins[input_step] = optimization_.margins
 
     def validation_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """

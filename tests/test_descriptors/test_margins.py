@@ -46,6 +46,12 @@ def test_margins_are_summable(augend, addend, expected):
     assert augend + addend == expected
 
 
+def test_margins_can_be_converted_to_dict():
+    """Margins should have a method to convert it to dict."""
+    result = Margins(1, 2, 3, 4).asdict()
+    assert result == {"left": 1, "up": 2, "right": 3, "down": 4}
+
+
 @pytest.mark.parametrize(
     ["margin_list", "expected"],
     [
