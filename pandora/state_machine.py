@@ -627,10 +627,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             # But there's only a filter transition. Therefore, in the case of filter.1 we have to call the
             # filter
             # trigger and give the configuration of filter.1
-            if len(input_step.split(".")) != 1:
-                self.trigger(input_step.split(".")[0], cfg, input_step)
-            else:
-                self.trigger(input_step, cfg, input_step)
+            step_to_trigger = input_step.split(".")[0]
+            self.trigger(step_to_trigger, cfg, input_step)
         except (MachineError, KeyError, AttributeError):
             logging.error("A problem occurs during Pandora running %s  step. Be sure of your sequencement", input_step)
             raise
