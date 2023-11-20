@@ -36,6 +36,10 @@ class Margins:
     right: int
     down: int
 
+    def __post_init__(self):
+        if any(m < 0 for m in self.astuple()):
+            raise ValueError(f"Margins values should be positive. Got {self.astuple()}")
+
     def __add__(self, other: Margins) -> Margins:
         return Margins(*map(operator.add, self.astuple(), other.astuple()))
 

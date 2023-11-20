@@ -20,6 +20,7 @@
 """
 Test margin descriptors
 """
+import re
 
 import pytest
 from pandora.descriptors.margins import (
@@ -50,6 +51,13 @@ def test_margins_can_be_converted_to_dict():
     """Margins should have a method to convert it to dict."""
     result = Margins(1, 2, 3, 4).asdict()
     assert result == {"left": 1, "up": 2, "right": 3, "down": 4}
+
+
+@pytest.mark.parametrize("values", [(-1, 2, 2, 2), (2, -1, 2, 2), (2, 2, -1, 2), (2, 2, 2, -1)])
+def test_margins_are_positive(values):
+    """Margins can not be negatives."""
+    with pytest.raises(ValueError, match=re.escape(f"Margins values should be positive. Got {values}")):
+        Margins(*values)
 
 
 @pytest.mark.parametrize(
