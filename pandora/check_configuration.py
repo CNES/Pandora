@@ -323,7 +323,7 @@ def get_config_pipeline(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
 
 def memory_consumption_estimation(
     user_pipeline_cfg: Dict[str, dict],
-    user_input: Union[Dict[str, dict], Tuple[str, int, int]],
+    user_input: Union[Dict[str, dict], Tuple[str, int, int], Tuple[str, str]],
     pandora_machine: PandoraMachine,
     checked_cfg_flag: bool = False,
 ) -> Union[Tuple[float, float], None]:
@@ -332,8 +332,11 @@ def memory_consumption_estimation(
 
     :param user_pipeline_cfg: user pipeline configuration
     :type user_pipeline_cfg: dict
-    :param user_input: user input configuration, may be given as a dict or directly as img_path, disp_min, disp_max.
-    :type user_input: dict or Tuple[str, int, int]
+    :param user_input: user input configuration, may be given as a dict
+        or directly as (img_path, disp_min, disp_max) where [disp_min, disp_max] is the disparity interval used,
+        or as (img_path, disparity_path) where disparity_path leads to a disparity grid containing two bands:
+        min and max.
+    :type user_input: dict or Tuple[str, int, int] or Tuple[str, str]
     :param pandora_machine: instance of PandoraMachine
     :type pandora_machine: PandoraMachine object
     :param checked_cfg_flag: Flag for checking pipeline
@@ -341,20 +344,30 @@ def memory_consumption_estimation(
     :return: minimum and maximum memory consumption
     :rtype: Tuple[float, float]
     """
-    # If the input configuration is given as a dict
+
     if isinstance(user_input, dict):
         disparity_interval = user_input["input"]["left"]["disp"]
         img_path = user_input["input"]["left"]["img"]
-    else:
+    elif isinstance(user_input, tuple):
         img_path, *disparity_interval = user_input
+        if isinstance(disparity_interval[0], str):
+            disparity_interval = disparity_interval[0]
         # Since only the size is to be used for the memory computation, the same path is set on left and right
         input_cfg = {"left": {"disp": disparity_interval, "img": img_path}, "right": {"img": img_path}}
         user_input = {"input": input_cfg}
+    else:
+        logging.error("%s must be a Dict or a Tuple", user_input)
+        sys.exit(1)
 
     # Read input image
     img = rasterio_open(img_path)
     # Obtain cost volume size
-    dmin, dmax = disparity_interval
+    if isinstance(disparity_interval, str):
+        disparity_reader = rasterio.open(disparity_interval)
+        dmin = np.nanmin(disparity_reader.read(1))
+        dmax = np.nanmax(disparity_reader.read(2))
+    else:
+        dmin, dmax = disparity_interval
     cv_size = img.width * img.height * np.abs(dmax - dmin)
     if checked_cfg_flag:
         # Obtain pipeline cfg
