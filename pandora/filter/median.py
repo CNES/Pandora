@@ -30,7 +30,7 @@ import xarray as xr
 from json_checker import Checker, And
 
 import pandora.constants as cst
-from pandora.descriptors.margins import UniformMarginsFromAttribute
+from pandora.margins.descriptors import UniformMarginsFromAttribute
 from . import filter  # pylint: disable= redefined-builtin
 from ..common import sliding_window
 

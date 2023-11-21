@@ -15,72 +15,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-"""
-Test margin descriptors
-"""
-import re
+"""Test descriptors of the margins package."""
 
 import pytest
-from pandora.descriptors.margins import (
+
+from pandora.margins.descriptors import (
+    ReadOnlyDescriptor,
     FixedMargins,
     UniformMargins,
     NullMargins,
-    HalfWindowMargins,
-    ReadOnlyDescriptor,
     UniformMarginsFromAttribute,
-    Margins,
-    max_margins,
+    HalfWindowMargins,
 )
-
-
-@pytest.mark.parametrize(
-    ["augend", "addend", "expected"],
-    [
-        [Margins(0, 0, 0, 0), Margins(0, 0, 0, 0), Margins(0, 0, 0, 0)],
-        [Margins(1, 2, 4, 1), Margins(2, 4, 1, 2), Margins(3, 6, 5, 3)],
-    ],
-)
-def test_margins_are_summable(augend, addend, expected):
-    """Do element wise addition instead of extending left tuple with right one."""
-    assert augend + addend == expected
-
-
-def test_margins_can_be_converted_to_dict():
-    """Margins should have a method to convert it to dict."""
-    result = Margins(1, 2, 3, 4).asdict()
-    assert result == {"left": 1, "up": 2, "right": 3, "down": 4}
-
-
-@pytest.mark.parametrize("values", [(-1, 2, 2, 2), (2, -1, 2, 2), (2, 2, -1, 2), (2, 2, 2, -1)])
-def test_margins_are_positive(values):
-    """Margins can not be negatives."""
-    with pytest.raises(ValueError, match=re.escape(f"Margins values should be positive. Got {values}")):
-        Margins(*values)
-
-
-@pytest.mark.parametrize(
-    ["margin_list", "expected"],
-    [
-        pytest.param([Margins(1, 2, 3, 0)], Margins(1, 2, 3, 0), id="One margins"),
-        pytest.param([Margins(0, 0, 0, 0), Margins(0, 0, 0, 0)], Margins(0, 0, 0, 0), id="Two null margins"),
-        pytest.param([Margins(1, 2, 4, 1), Margins(2, 4, 1, 2)], Margins(2, 4, 4, 2), id="Two margins"),
-        pytest.param(
-            [Margins(1, 2, 4, 9), Margins(2, 4, 1, 2), Margins(6, 1, 0, 3)],
-            Margins(6, 4, 4, 9),
-            id="More than Two margins",
-        ),
-        pytest.param(
-            iter([Margins(1, 2, 4, 9), Margins(2, 4, 1, 2), Margins(6, 1, 0, 3)]),
-            Margins(6, 4, 4, 9),
-            id="With iterator",
-        ),
-    ],
-)
-def test_max_margins(margin_list, expected):
-    """max_margins should returns element wise maximum of a Margins list."""
-    assert max_margins(margin_list) == expected
 
 
 @pytest.mark.parametrize("attribute_name", ["margin", "nawak"])
@@ -116,7 +63,7 @@ class TestFixedMargins:
 
         descriptor = FixedMargins(left, up, right, down)
         # See https://github.com/pylint-dev/pylint/issues/8265 for why we disable pylint
-        # We ignore typing because mypy does not seem to understand the call to __get__
+        # We ignore typing because mypy does not seem to understand the call to __get__ with Mock object of type Any
         margin = descriptor.__get__(parent_class)  # type: ignore  # pylint:disable=unnecessary-dunder-call
 
         assert margin.astuple() == (left, up, right, down)
@@ -138,7 +85,7 @@ class TestUniformMargins:
 
         descriptor = UniformMargins(40)
         # See https://github.com/pylint-dev/pylint/issues/8265 for why we disable pylint
-        # We ignore typing because mypy does not seem to understand the call to __get__
+        # We ignore typing because mypy does not seem to understand the call to __get__ with Mock object of type Any
         margin = descriptor.__get__(parent_class)  # type: ignore  # pylint:disable=unnecessary-dunder-call
 
         assert margin.astuple() == (40, 40, 40, 40)
@@ -160,8 +107,8 @@ class TestNullMargins:
 
         descriptor = NullMargins()
         # See https://github.com/pylint-dev/pylint/issues/8265 for why we disable pylint
-        # We ignore typing because mypy does not seem to understand the call to __get__
-        margin = descriptor.__get__(parent_class)  # type: ignore  # pylint:disable=unnecessary-dunder-call
+        # We ignore typing because mypy does not seem to understand the call to __get__ with Mock object of type Any
+        margin = descriptor.__get__(parent_class)  # type: ignore[call-overload]  # pylint:disable=unnecessary-dunder-call
 
         assert margin.astuple() == (0, 0, 0, 0)
         assert margin.left == 0
@@ -185,8 +132,8 @@ class TestUniformMarginsFromAttribute:
 
         descriptor = UniformMarginsFromAttribute(reference_attribute)
         # See https://github.com/pylint-dev/pylint/issues/8265 for why we disable pylint
-        # We ignore typing because mypy does not seem to understand the call to __get__
-        margin = descriptor.__get__(parent_class)  # type: ignore  # pylint:disable=unnecessary-dunder-call
+        # We ignore typing because mypy does not seem to understand the call to __get__ with Mock object of type Any
+        margin = descriptor.__get__(parent_class)  # type: ignore[call-overload]  # pylint:disable=unnecessary-dunder-call
 
         assert margin.astuple() == (value, value, value, value)
         assert margin.left == value
@@ -216,8 +163,8 @@ class TestHalfWindowMargins:
 
         descriptor = HalfWindowMargins()
         # See https://github.com/pylint-dev/pylint/issues/8265 for why we disable pylint
-        # We ignore typing because mypy does not seem to understand the call to __get__
-        margin = descriptor.__get__(parent_class)  # type: ignore  # pylint:disable=unnecessary-dunder-call
+        # We ignore typing because mypy does not seem to understand the call to __get__ with Mock object of type Any
+        margin = descriptor.__get__(parent_class)  # type: ignore[call-overload]  # pylint:disable=unnecessary-dunder-call
 
         assert margin.astuple() == (left, up, right, down)
         assert margin.left == left

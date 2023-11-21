@@ -16,14 +16,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Test optimization module.
-"""
-from pandora.margins import Margins
-from pandora.margins.descriptors import UniformMargins
-from pandora.optimization import AbstractOptimization
+"""This module contains objects and functions related to Margins manipulations."""
 
-
-def test_margins():
-    assert isinstance(AbstractOptimization.margins, UniformMargins)
-    assert AbstractOptimization.margins.value == Margins(40, 40, 40, 40)
+from .margins import *

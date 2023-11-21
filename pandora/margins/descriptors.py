@@ -18,53 +18,28 @@
 #
 
 """
-Margin descriptors
+This module contains descriptors which returns Margins.
+
+Descriptors are a kind of properties object that can be reused in several classes.
+They meant to be used as class attributes.
+
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, astuple, asdict
-import operator
-from typing import overload, Sequence, Tuple, Dict
+from typing import overload
+
+from pandora.margins import Margins
 
 
-@dataclass(order=True, frozen=True)
-class Margins:
-    """Tuple of margins."""
+# In order to make a descriptor instance aware of the name it is affected to,
+# we can use the dunder method `__set_name__` which is called at affectation.
 
-    left: int
-    up: int
-    right: int
-    down: int
-
-    def __post_init__(self):
-        if any(m < 0 for m in self.astuple()):
-            raise ValueError(f"Margins values should be positive. Got {self.astuple()}")
-
-    def __add__(self, other: Margins) -> Margins:
-        return Margins(*map(operator.add, self.astuple(), other.astuple()))
-
-    def astuple(self) -> Tuple:
-        """Convert self to a tuple of (left, up, right, down)."""
-        return astuple(self)
-
-    def asdict(self) -> Dict:
-        """Convert self to a dictionary."""
-        return asdict(self)
-
-
-def max_margins(margins: Sequence[Margins]) -> Margins:
-    """
-    Return a Margins which is the max of margins element wise.
-
-    :param margins: sequence of Margins to compute max of.
-    :type margins: Sequence[Margins]
-    :return: Maximum Margins
-    :rtype: Margins
-    """
-    as_tuple_margins = list(map(astuple, margins))
-    if len(as_tuple_margins) == 1:
-        return Margins(*as_tuple_margins[0])
-    return Margins(*map(max, *as_tuple_margins))
+# When the attribute the descriptor is affected to is called directly from the
+# class and not from an instance of this class, the instance argument passed to
+# the `__get__` method is `None`. In this case, we want to return the
+# descriptor itself and not a value. In order to tell mypy that depending on
+# the type of the argument a different type is returned, we declare an
+# overload. Thus, the use of overload is only for typing purpose.
 
 
 class ReadOnlyDescriptor:
@@ -80,7 +55,7 @@ class ReadOnlyDescriptor:
 
 
 class FixedMargins(ReadOnlyDescriptor):
-    """Margins with fixed values."""
+    """Getter returns Margins with fixed values."""
 
     # pylint:disable=too-few-public-methods
 
@@ -102,7 +77,7 @@ class FixedMargins(ReadOnlyDescriptor):
 
 
 class UniformMargins(FixedMargins):
-    """Margins with same fixed values in all directions."""
+    """Getter returns Margins with same fixed values in all directions."""
 
     # pylint:disable=too-few-public-methods
 
@@ -120,7 +95,7 @@ class NullMargins(UniformMargins):
 
 
 class UniformMarginsFromAttribute(ReadOnlyDescriptor):
-    """Margins with same fixed values in all directions read from another attribute."""
+    """Getter returns Margins with same fixed values in all directions read from another attribute."""
 
     # pylint:disable=too-few-public-methods
 
@@ -145,7 +120,7 @@ class UniformMarginsFromAttribute(ReadOnlyDescriptor):
 
 
 class HalfWindowMargins(ReadOnlyDescriptor):
-    """Margins corresponding to half window.
+    """Getter returns Margins corresponding to half window.
 
     Expects instance object has a `_window_size` member.
     """

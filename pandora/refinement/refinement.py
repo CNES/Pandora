@@ -32,7 +32,7 @@ import xarray as xr
 from numba import njit, prange
 
 import pandora.constants as cst
-from pandora.descriptors.margins import NullMargins
+from pandora.margins.descriptors import NullMargins
 
 
 class AbstractRefinement:

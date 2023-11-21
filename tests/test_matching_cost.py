@@ -30,7 +30,7 @@ import xarray as xr
 import pytest
 
 from pandora import matching_cost
-from pandora.descriptors.margins import HalfWindowMargins
+from pandora.margins.descriptors import HalfWindowMargins
 
 from tests import common
 

@@ -36,7 +36,7 @@ from pandora import refinement
 from pandora import matching_cost
 import pandora.filter as flt
 from pandora import disparity
-from pandora.descriptors.margins import NullMargins
+from pandora.margins.descriptors import NullMargins
 
 
 class TestRefinement(unittest.TestCase):

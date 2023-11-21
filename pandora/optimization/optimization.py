@@ -28,7 +28,7 @@ from typing import Dict
 
 import xarray as xr
 
-from pandora.descriptors.margins import UniformMargins
+from pandora.margins.descriptors import UniformMargins
 
 
 class AbstractOptimization:

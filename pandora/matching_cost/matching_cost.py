@@ -34,7 +34,7 @@ import numpy as np
 import xarray as xr
 from scipy.ndimage import binary_dilation
 
-from pandora.descriptors.margins import HalfWindowMargins
+from pandora.margins.descriptors import HalfWindowMargins
 from pandora.img_tools import shift_right_img
 
 

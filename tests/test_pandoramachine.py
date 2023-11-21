@@ -27,7 +27,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from pandora.descriptors.margins import Margins
+from pandora.margins import Margins
 from pandora import PandoraMachine
 
 

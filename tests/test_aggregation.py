@@ -32,7 +32,7 @@ import xarray as xr
 from rasterio import Affine
 
 from tests import common
-from pandora.descriptors.margins import NullMargins
+from pandora.margins.descriptors import NullMargins
 from pandora.img_tools import add_disparity
 from pandora import aggregation
 from pandora.aggregation import cbca

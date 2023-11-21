@@ -30,7 +30,7 @@ from json_checker import MissKeyCheckerError
 
 import pandora.constants as cst
 import pandora.filter as flt
-from pandora.descriptors.margins import Margins
+from pandora.margins import Margins
 
 
 class TestMedianFilter:

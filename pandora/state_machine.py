@@ -57,7 +57,7 @@ from pandora import optimization
 from pandora import refinement
 from pandora import matching_cost
 from pandora import semantic_segmentation
-from pandora.descriptors.margins import Margins, max_margins
+from pandora.margins import Margins, max_margins
 
 
 # This silences numba's TBB threading layer warning

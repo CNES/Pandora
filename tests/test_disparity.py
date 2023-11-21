@@ -37,7 +37,7 @@ from pandora import disparity
 from pandora import matching_cost
 from pandora.img_tools import create_dataset_from_inputs
 from pandora.state_machine import PandoraMachine
-from pandora.descriptors.margins import NullMargins
+from pandora.margins.descriptors import NullMargins
 
 
 class TestDisparity(unittest.TestCase):

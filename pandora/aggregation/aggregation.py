@@ -28,7 +28,7 @@ from typing import Union, Dict
 
 import xarray as xr
 
-from pandora.descriptors.margins import NullMargins
+from pandora.margins.descriptors import NullMargins
 
 
 class AbstractAggregation:
