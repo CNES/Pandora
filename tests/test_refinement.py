@@ -728,7 +728,7 @@ class TestRefinement(unittest.TestCase):
         #  [ 1.  0. -1. -1.]]
 
         # Apply median filter to the disparity map
-        filter_median = flt.AbstractFilter(**{"filter_method": "median", "filter_size": 3})
+        filter_median = flt.AbstractFilter(cfg={"filter_method": "median", "filter_size": 3})
         filter_median.filter_disparity(disp)
 
         # Disparity map with median filter :

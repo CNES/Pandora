@@ -38,7 +38,7 @@ class TestMedianFilter:
 
     @pytest.fixture()
     def filter_median(self, request):
-        return flt.AbstractFilter(**{"filter_method": "median", "filter_size": request.param})
+        return flt.AbstractFilter(cfg={"filter_method": "median", "filter_size": request.param})
 
     @pytest.fixture()
     def dataset1(self):
@@ -254,25 +254,23 @@ class TestBilateralFilter:
             "filter_method": "bilateral",
             "sigma_color": 4.0,
             "sigma_space": sigma_space,
-            "image_shape": (row_length, col_length),
         }
 
-        filter_ = flt.AbstractFilter(**filter_config)
+        filter_ = flt.AbstractFilter(cfg=filter_config, image_shape=(row_length, col_length))
         assert filter_.margins == expected
 
-    @pytest.mark.parametrize("missing_key", ["filter_method", "image_shape"])
+    @pytest.mark.parametrize("missing_key", ["filter_method"])
     def test_check_conf_fails_when_is_missing_mandatory_key(self, missing_key):
         """When a mandatory key is missing instanciation should fail."""
         filter_config = {
             "filter_method": "bilateral",
             "sigma_color": 4.0,
             "sigma_space": 6.0,
-            "image_shape": (450, 600),
         }
         del filter_config[missing_key]
 
         with pytest.raises((MissKeyCheckerError, KeyError)):
-            flt.AbstractFilter(**filter_config)
+            flt.AbstractFilter(cfg=filter_config, image_shape=(450, 600))
 
     @staticmethod
     def test_gauss_spatial_kernel():
@@ -285,10 +283,9 @@ class TestBilateralFilter:
             "filter_method": "bilateral",
             "sigma_color": 4.0,
             "sigma_space": 6.0,
-            "image_shape": [5, 5],
         }
 
-        filter_bilateral = flt.AbstractFilter(**user_cfg)
+        filter_bilateral = flt.AbstractFilter(cfg=user_cfg, image_shape=(5, 5))
 
         # Gauss spatial kernel of size (5,5) and sigma_space = 6
         # arr[i, j] = np.sqrt(abs(i - kernel_size // 2) ** 2 + abs(j - kernel_size // 2) ** 2)
@@ -350,10 +347,9 @@ class TestBilateralFilter:
             "filter_method": "bilateral",
             "sigma_color": 4.0,
             "sigma_space": 6.0,
-            "image_shape": [5, 5],
         }
 
-        filter_bilateral = flt.AbstractFilter(**user_cfg)
+        filter_bilateral = flt.AbstractFilter(cfg=user_cfg, image_shape=(5, 5))
 
         disp = np.array(
             [[5, 6, 7, 8, 9], [6, 85, 1, 36, 5], [5, 9, 23, 12, 2], [6, 1, 9, 2, 4], [6, 7, 4, 2, 1]], dtype=np.float32
@@ -448,10 +444,9 @@ class TestBilateralFilter:
             "filter_method": "bilateral",
             "sigma_color": 4.0,
             "sigma_space": 6.0,
-            "image_shape": [5, 5],
         }
 
-        filter_bilateral = flt.AbstractFilter(**user_cfg)
+        filter_bilateral = flt.AbstractFilter(cfg=user_cfg, image_shape=(5, 5))
 
         disp = np.array(
             [[5, 6, 7, 8, 9], [6, 85, np.nan, 36, 5], [5, 9, 23, 12, 2], [6, np.nan, 9, 2, 4], [1, 6, 2, 7, 8]],
@@ -596,10 +591,9 @@ class TestBilateralFilter:
             "filter_method": "bilateral",
             "sigma_color": 4.0,
             "sigma_space": 6.0,
-            "image_shape": [5, 5],
         }
 
-        filter_bilateral = flt.AbstractFilter(**user_cfg)
+        filter_bilateral = flt.AbstractFilter(cfg=user_cfg, image_shape=(5, 5))
         disp = np.array(
             [[5, 6, 7, 8, 9], [6, 85, 1, 36, 5], [5, 9, 23, 12, 2], [6, 1, 9, 2, 4], [6, 7, 4, 2, 1]], dtype=np.float32
         )

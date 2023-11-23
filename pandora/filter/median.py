@@ -46,15 +46,15 @@ class MedianFilter(filter.AbstractFilter):
     # We ignore type because we just override a null value.
     margins = UniformMarginsFromAttribute("_filter_size")  # type: ignore
 
-    def __init__(self, **cfg: Union[str, int]):
+    def __init__(self, cfg: Dict, *args, **kwargs):  # pylint:disable=unused-argument
         """
         :param cfg: optional configuration, {'filter_size': value}
         :type cfg: dictionary
         """
-        self.cfg = self.check_conf(**cfg)
+        self.cfg = self.check_conf(cfg)
         self._filter_size = cast(int, self.cfg["filter_size"])
 
-    def check_conf(self, **cfg: Union[str, int]) -> Dict[str, Union[str, int]]:
+    def check_conf(self, cfg: Dict) -> Dict[str, Union[str, int]]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 

@@ -24,7 +24,7 @@ This module contains functions associated to the bilateral filter used to filter
 """
 
 import warnings
-from typing import Dict, Union, cast, Tuple
+from typing import Dict, Union, Tuple
 
 import numpy as np
 import xarray as xr
@@ -46,15 +46,15 @@ class BilateralFilter(filter.AbstractFilter):
     _SIGMA_COLOR = 2.0
     _SIGMA_SPACE = 6.0
 
-    def __init__(self, **cfg: Union[str, float]):
+    def __init__(self, cfg: Dict, image_shape: Tuple[int, int]):
         """
         :param cfg: optional configuration, {'sigmaColor' : value, 'sigmaSpace' : value, 'image_shape': value}
         :type cfg: dict
         """
-        self.cfg = self.check_conf(**cfg)
+        self.cfg = self.check_conf(cfg)
         self._sigma_color = float(self.cfg["sigma_color"])
         self._sigma_space = float(self.cfg["sigma_space"])
-        self._image_shape = cast(Tuple[int, int], self.cfg["image_shape"])
+        self._image_shape = [] if image_shape is None else image_shape
 
     @property
     def margins(self):
@@ -62,7 +62,7 @@ class BilateralFilter(filter.AbstractFilter):
         value = min(*self._image_shape, sigma)
         return Margins(value, value, value, value)
 
-    def check_conf(self, **cfg: Union[str, float]) -> Dict[str, Union[str, float]]:
+    def check_conf(self, cfg: Dict) -> Dict[str, Union[str, float]]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
@@ -81,7 +81,6 @@ class BilateralFilter(filter.AbstractFilter):
             "filter_method": And(str, lambda input: "bilateral"),
             "sigma_color": And(float, lambda input: input > 0),
             "sigma_space": And(float, lambda input: input > 0),
-            "image_shape": (int, int),
         }
 
         checker = Checker(schema)

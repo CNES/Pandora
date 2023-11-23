@@ -21,7 +21,6 @@
 # pylint with pytest's fixtures compatibility:
 # pylint: disable=redefined-outer-name
 
-import copy
 
 import numpy as np
 import pytest
@@ -70,42 +69,6 @@ def pandora_machine_builder():
         return machine
 
     return builder
-
-
-class TestFilterCheckConf:
-    """Test filter_check_conf method."""
-
-    @pytest.fixture()
-    def user_pipeline(self):
-        """Pipeline given by user."""
-        user_cfg = {
-            "filter": {"filter_method": "bilateral", "sigma_color": 4.0, "sigma_space": 6.0},
-        }
-        return user_cfg
-
-    @pytest.mark.parametrize(
-        "image_shape",
-        [
-            (3, 4),
-            (10, 7),
-        ],
-    )
-    @pytest.mark.parametrize(
-        "image_builder_name",
-        [
-            "monoband_image",
-            "multiband_image",
-        ],
-    )
-    def test_filter_check_conf(self, request, image_builder_name, image_shape, pandora_machine_builder, user_pipeline):
-        """Test image_shape is added to bilateralfilter config."""
-        expected = copy.deepcopy(user_pipeline["filter"])
-        expected["image_shape"] = image_shape
-        pandora_machine = pandora_machine_builder(image_shape, request.getfixturevalue(image_builder_name))
-
-        pandora_machine.filter_check_conf(user_pipeline, "filter")
-
-        assert pandora_machine.pipeline_cfg["pipeline"]["filter"] == expected
 
 
 class TestGlobalMargins:

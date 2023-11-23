@@ -41,7 +41,7 @@ class AbstractFilter:
     cfg = None
     margins = NullMargins()
 
-    def __new__(cls, **cfg: dict):
+    def __new__(cls, *args, cfg: dict = None, **kwargs):  # pylint:disable=unused-argument
         """
         Return the plugin associated with the filter_method given in the configuration
 
