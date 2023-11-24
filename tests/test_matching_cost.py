@@ -100,6 +100,8 @@ class TestMatchingCost:
         Test the allocate_cost_volume function
         """
 
+        left.attrs["disparity_source"] = [-2, 2]
+
         # Create matching cost object
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "census", "window_size": 5, "subpix": 4, "band": "b"}
@@ -136,6 +138,8 @@ class TestMatchingCost:
         """ "
         Test the allocate_cost_volume function
         """
+
+        left.attrs["disparity_source"] = [-2, 2]
 
         # Create matching cost object
         matching_cost_ = matching_cost.AbstractMatchingCost(

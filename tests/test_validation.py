@@ -303,7 +303,6 @@ class TestValidation(unittest.TestCase):
             {"disparity_map": (["row", "col"], disp_data), "validity_mask": (["row", "col"], msk_data)},
             coords={"row": [0, 1], "col": np.arange(4)},
         )
-        left.attrs["disparity_interval"] = [-2, 2]
 
         # Interpolate occlusions
         interpolation_matcher = validation.AbstractInterpolation(**{"interpolated_disparity": "mc-cnn"})
@@ -372,7 +371,6 @@ class TestValidation(unittest.TestCase):
             {"disparity_map": (["row", "col"], disp_data), "validity_mask": (["row", "col"], msk_data)},
             coords={"row": np.arange(4), "col": np.arange(5)},
         )
-        left.attrs["disparity_interval"] = [-2, 2]
 
         # Interpolate mistmatch
         interpolation_matcher = validation.AbstractInterpolation(**{"interpolated_disparity": "mc-cnn"})
@@ -459,7 +457,6 @@ class TestValidation(unittest.TestCase):
             {"disparity_map": (["row", "col"], disp_data), "validity_mask": (["row", "col"], msk_data)},
             coords={"row": np.arange(4), "col": np.arange(5)},
         )
-        left.attrs["disparity_interval"] = [-2, 2]
 
         # Interpolate occlusion
         interpolation_matcher = validation.AbstractInterpolation(**{"interpolated_disparity": "sgm"})
@@ -534,7 +531,6 @@ class TestValidation(unittest.TestCase):
             {"disparity_map": (["row", "col"], disp_data), "validity_mask": (["row", "col"], msk_data)},
             coords={"row": np.arange(4), "col": np.arange(5)},
         )
-        left.attrs["disparity_interval"] = [-2, 2]
 
         # Interpolate mismatch
         interpolation_matcher = validation.AbstractInterpolation(**{"interpolated_disparity": "sgm"})
@@ -616,7 +612,6 @@ class TestValidation(unittest.TestCase):
             {"disparity_map": (["row", "col"], disp_data), "validity_mask": (["row", "col"], msk_data)},
             coords={"row": np.arange(4), "col": np.arange(5)},
         )
-        left.attrs["disparity_interval"] = [-2, 2]
 
         # Interpolate mismatch
         interpolation_matcher = validation.AbstractInterpolation(**{"interpolated_disparity": "sgm"})
