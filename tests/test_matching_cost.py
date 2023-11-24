@@ -132,6 +132,40 @@ class TestMatchingCost:
 
         assert ground_truth.equals(dataset_cv)
 
+    def test_allocate_empty_cost_volume_with_step(self, left):
+        """ "
+        Test the allocate_cost_volume function
+        """
+
+        # Create matching cost object
+        matching_cost_ = matching_cost.AbstractMatchingCost(
+            **{"matching_cost_method": "census", "window_size": 5, "subpix": 4, "band": "b"}
+        )
+        matching_cost_._step_col = 2  # pylint:disable=protected-access
+
+        dataset_cv = matching_cost_.allocate_costvolume(left, 4, -2, 2, 5, {"metadata": "metadata"})
+
+        row = [0, 1, 2, 3, 4]
+        col = [0, 2, 4]
+
+        disparity_range = np.arange(-2, 2, step=1 / float(4), dtype=np.float64)
+        disparity_range = np.append(disparity_range, [2])
+
+        np_data = np.zeros((len(row), len(col), len(disparity_range)), dtype=np.float32)
+
+        ground_truth = xr.Dataset(
+            {"cost_volume": (["row", "col", "disp"], np_data)},
+            coords={"row": row, "col": col, "disp": disparity_range},
+        )
+
+        ground_truth.attrs = {
+            "crs": left.attrs["crs"],
+            "transform": left.attrs["transform"],
+            "window_size": 5,
+        }
+
+        assert ground_truth.equals(dataset_cv)
+
     @pytest.mark.parametrize(
         ["disparity_min", "disparity_max", "subpix", "expected"],
         [
@@ -147,3 +181,21 @@ class TestMatchingCost:
 
     def test_margins(self):
         assert isinstance(matching_cost.AbstractMatchingCost.margins, HalfWindowMargins)
+
+    @pytest.mark.parametrize(
+        ["step_col", "value", "expected"],
+        [
+            pytest.param(2, 2, 2, id="value is a multiple of step"),
+            pytest.param(2, 3, 4, id="value is not a multiple of step"),
+        ],
+    )
+    def test_find_nearest_multiple_of_step(self, step_col, value, expected):
+        """Test values returned by find_nearest_multiple_of_step."""
+        matching_cost_ = matching_cost.AbstractMatchingCost(
+            **{"matching_cost_method": "census", "window_size": 5, "subpix": 4, "band": "b"}
+        )
+        matching_cost_._step_col = step_col  # pylint:disable=protected-access
+
+        result = matching_cost_.find_nearest_multiple_of_step(value)
+
+        assert result == expected
