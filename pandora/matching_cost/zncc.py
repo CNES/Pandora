@@ -206,7 +206,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
 
 
 def apply_divide_standard(
-    zncc: xr.Dataset,
+    zncc: np.ndarray,
     img_left: np.ndarray,
     img_right: List[np.ndarray],
     p_std: Tuple[int, int],
@@ -217,7 +217,7 @@ def apply_divide_standard(
     Divide by the standard deviation of the intensities of the images
 
     :param zncc:
-    :type zncc: xr.Dataset
+    :type zncc: np.ndarray
     :param img_left: standard deviation raster of left image
     :type img_left: np.ndarray
     :param img_right: standard deviation raster list of right image (for each subpix)
