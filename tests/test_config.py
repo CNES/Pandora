@@ -701,6 +701,62 @@ class TestConfig(unittest.TestCase):
         )
         np.testing.assert_allclose((min_mem_consump, max_mem_consump), consumption_vt, rtol=1e-02)
 
+    @staticmethod
+    def test_memory_consumption_estimation_with_grid_disparity():
+        """
+        Test the method test_memory_consumption_estimation when disparity is given as a grid
+        """
+
+        # Most consuming function is to_disp
+        cv_size = 450 * 375 * 75
+        m_line = 8.68e-06
+        n_line = 243
+        # Compute memory consumption in GiB with a marge of +-10%
+        consumption_vt = (
+            ((cv_size * m_line + n_line) * (1 - 0.1)) / 1024,
+            ((cv_size * m_line + n_line) * (1 + 0.1)) / 1024,
+        )
+
+        # Run memory_consumption_estimation giving the input parameters directly
+        img_left_path = "tests/pandora/left.png"
+        disp_left_path = "tests/pandora/left_disparity_grid.tif"
+        pandora_machine = PandoraMachine()
+        pipeline_cfg = {"pipeline": copy.deepcopy(common.basic_pipeline_cfg)}
+
+        min_mem_consump, max_mem_consump = check_configuration.memory_consumption_estimation(
+            pipeline_cfg, (img_left_path, disp_left_path), pandora_machine
+        )
+        np.testing.assert_allclose((min_mem_consump, max_mem_consump), consumption_vt, rtol=1e-02)
+
+        # Run memory_consumption_estimation giving the input parameters in a dict
+        pandora_machine = PandoraMachine()
+
+        input_cfg = {"input": copy.deepcopy(common.input_cfg_left_grids)}
+
+        min_mem_consump, max_mem_consump = check_configuration.memory_consumption_estimation(
+            pipeline_cfg, input_cfg, pandora_machine
+        )
+        np.testing.assert_allclose((min_mem_consump, max_mem_consump), consumption_vt, rtol=1e-02)
+
+    def test_memory_consumption_estimation_with_wrong_input(self):
+        """
+        Test the method test_memory_consumption_estimation when input is given in the wrong type
+        """
+        # Run memory_consumption_estimation giving the input parameters as a list
+        img_left_path = "tests/pandora/left.png"
+        disp_min = -60
+        disp_max = 0
+        pandora_machine = PandoraMachine()
+        pipeline_cfg = {"pipeline": copy.deepcopy(common.basic_pipeline_cfg)}
+
+        self.assertRaises(
+            SystemExit,
+            check_configuration.memory_consumption_estimation,
+            pipeline_cfg,
+            [img_left_path, disp_min, disp_max],
+            pandora_machine,
+        )
+
     def test_step_in_matching_cost(self):
         """
         Test that user get a warning if he instantiates a step parameter in matching cost configuration
