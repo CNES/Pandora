@@ -23,11 +23,13 @@ Margin margins
 
 from __future__ import annotations
 
+from collections import UserDict
 from dataclasses import dataclass, astuple, asdict
 import operator
+from functools import reduce
 from typing import Sequence, Tuple, Dict
 
-__all__ = ["Margins", "max_margins"]
+__all__ = ["Margins", "max_margins", "MarginDict", "GlobalMargins"]
 
 
 @dataclass(order=True, frozen=True)
@@ -53,6 +55,84 @@ class Margins:
     def asdict(self) -> Dict:
         """Convert self to a dictionary."""
         return asdict(self)
+
+
+class MarginDict(UserDict):
+    """A dictionary that stores Margins."""
+
+    def __setitem__(self, key, value: Margins):
+        if not isinstance(value, Margins):
+            raise ValueError(f"MarginDict only accept values of type Margins. Got {type(value)} instead.")
+        super().__setitem__(key, value)
+
+    def sum(self) -> Margins:
+        """Compute the sum of margins on each direction."""
+        return reduce(operator.add, self.data.values(), Margins(0, 0, 0, 0))
+
+
+class GlobalMargins:
+    """Class to store Margins and compute the global."""
+
+    def __init__(self):
+        # Margins that cumulates:
+        self._cumulatives = MarginDict()
+        # Margins that takes maximum values
+        self._non_cumulatives = MarginDict()
+
+    def add_cumulative(self, key, value):
+        """Add a margins that cumulates."""
+        if key in self._non_cumulatives:
+            raise KeyError(
+                f"{key} is already a non-cumulative margins. "
+                "Cumulative margins and non-cumulative margins are exclusive."
+            )
+        self._cumulatives[key] = value
+
+    def add_non_cumulative(self, key, value):
+        """Add a margins that does not cumulate."""
+        if key in self._cumulatives:
+            raise KeyError(
+                f"{key} is already a cumulative margins. "
+                "Cumulative margins and non-cumulative margins are exclusive."
+            )
+        self._non_cumulatives[key] = value
+
+    def remove_cumulative(self, key):
+        """Remove a margin that cumulates."""
+        try:
+            del self._cumulatives[key]
+        except KeyError:
+            raise KeyError(key)
+
+    def remove_non_cumulative(self, key):
+        """Remove a margin that does not cumulate."""
+        try:
+            del self._non_cumulatives[key]
+        except KeyError:
+            raise KeyError(key)
+
+    @property
+    def cumulatives(self):
+        """MarginDict of margins that cumulates."""
+        return MarginDict(self._cumulatives)
+
+    @property
+    def non_cumulatives(self):
+        """MarginDict of margins that does not cumulate."""
+        return MarginDict(self._non_cumulatives)
+
+    @property
+    def global_margins(self):
+        """Computed global margins."""
+        return max_margins([self._cumulatives.sum(), *self.non_cumulatives.values()])
+
+    def to_dict(self):
+        """Convert self to a dictionary in order to be json serializable."""
+        return {
+            "cumulative margins": {s: m.asdict() for s, m in self._cumulatives.items()},
+            "non-cumulative margins": {s: m.asdict() for s, m in self._non_cumulatives.items()},
+            "global margins": self.global_margins.asdict(),
+        }
 
 
 def max_margins(margins: Sequence[Margins]) -> Margins:

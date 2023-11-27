@@ -182,10 +182,6 @@ def main(cfg_path: PathLike | str, output: str, verbose: bool) -> None:
     common.save_results(left, right, output)
 
     # Update cfg with margins
-    cfg["margins"] = {
-        "cumulative margins": {s: m.asdict() for s, m in pandora_machine.cumulative_margins.items()},
-        "non-cumulative margins": {s: m.asdict() for s, m in pandora_machine.non_cumulative_margins.items()},
-        "global margins": pandora_machine.margins.asdict(),
-    }
+    cfg["margins"] = pandora_machine.margins.to_dict()
     # Save the configuration
     common.save_config(output, cfg)

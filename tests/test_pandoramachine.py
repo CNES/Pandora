@@ -229,4 +229,4 @@ class TestGlobalMargins:
         pandora_machine = pandora_machine_builder(image_shape, monoband_image)
         pandora_machine.check_conf(configuration, pandora_machine.left_img, pandora_machine.right_img)
 
-        assert pandora_machine.margins == expected
+        assert pandora_machine.margins.global_margins == expected
