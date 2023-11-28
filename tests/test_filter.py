@@ -1,5 +1,4 @@
 # type:ignore
-#!/usr/bin/env python
 # coding: utf8
 #
 # Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
@@ -24,34 +23,26 @@
 This module contains functions to test the disparity map filtering.
 """
 
-import unittest
-
 import numpy as np
+import pytest
 import xarray as xr
+from json_checker import MissKeyCheckerError
 
-from tests import common
-import pandora
 import pandora.constants as cst
 import pandora.filter as flt
+from pandora.margins import Margins
 
 
-class TestFilter(unittest.TestCase):
-    """
-    TestFilter class allows to test the filter module
-    """
+class TestMedianFilter:
+    """Test MedianFilter"""
 
-    def setUp(self):
-        """
-        Method called to prepare the test fixture
+    @pytest.fixture()
+    def filter_median(self, request):
+        return flt.AbstractFilter(cfg={"filter_method": "median", "filter_size": request.param})
 
-        """
-
-    @staticmethod
-    def test_median_filter():
-        """
-        Test the median method
-
-        """
+    @pytest.fixture()
+    def dataset1(self):
+        """Dataset #1"""
         disp = np.array([[5, 6, 7, 8, 9], [6, 85, 1, 36, 5], [5, 9, 23, 12, 2], [6, 1, 9, 2, 4]], dtype=np.float32)
 
         valid = np.array(
@@ -64,22 +55,14 @@ class TestFilter(unittest.TestCase):
             dtype=np.uint16,
         )
 
-        disp_dataset = xr.Dataset(
+        return xr.Dataset(
             {"disparity_map": (["row", "col"], disp), "validity_mask": (["row", "col"], valid)},
             coords={"row": np.arange(4), "col": np.arange(5)},
         )
 
-        filter_median = flt.AbstractFilter(**{"filter_method": "median", "filter_size": 3})
-
-        # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
-        filter_median.filter_disparity(disp_dataset)
-
-        # Filtered disparity map ground truth
-        gt_disp = np.array([[5, 6, 7, 8, 9], [6, 6, 9, 8, 5], [5, 6, 9, 5, 2], [6, 1, 9, 2, 4]], dtype=np.float32)
-
-        # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(disp_dataset["disparity_map"].data, gt_disp)
-
+    @pytest.fixture()
+    def dataset2(self):
+        """Dataset #2"""
         disp = np.array([[7, 8, 4, 5, 5], [5, 9, 4, 3, 8], [5, 2, 7, 2, 2], [6, 1, 9, 2, 4]], dtype=np.float32)
 
         valid = np.array(
@@ -117,22 +100,14 @@ class TestFilter(unittest.TestCase):
             dtype=np.uint16,
         )
 
-        disp_dataset = xr.Dataset(
+        return xr.Dataset(
             {"disparity_map": (["row", "col"], disp), "validity_mask": (["row", "col"], valid)},
             coords={"row": np.arange(4), "col": np.arange(5)},
         )
 
-        filter_median = flt.AbstractFilter(**{"filter_method": "median", "filter_size": 3})
-
-        # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
-        filter_median.filter_disparity(disp_dataset)
-
-        # Filtered disparity map ground truth
-        gt_disp = np.array([[7, 8, 4, 5, 5], [5, 9, 4, 3.5, 8], [5, 2, 7, 2, 2], [6, 1, 9, 2, 4]], dtype=np.float32)
-
-        # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(disp_dataset["disparity_map"].data, gt_disp)
-
+    @pytest.fixture()
+    def dataset3(self):
+        """Dataset #3"""
         disp = np.array([[7, 8, 4, 5, 5], [5, 9, 4, 3, 8], [5, 2, 7, 2, 2], [6, 1, 9, 2, 4]], dtype=np.float32)
 
         valid = np.array(
@@ -158,23 +133,14 @@ class TestFilter(unittest.TestCase):
             dtype=np.uint16,
         )
 
-        disp_dataset = xr.Dataset(
+        return xr.Dataset(
             {"disparity_map": (["row", "col"], disp), "validity_mask": (["row", "col"], valid)},
             coords={"row": np.arange(4), "col": np.arange(5)},
         )
 
-        filter_median = flt.AbstractFilter(**{"filter_method": "median", "filter_size": 3})
-
-        # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
-        filter_median.filter_disparity(disp_dataset)
-
-        # Filtered disparity map ground truth
-        gt_disp = np.array([[7, 8, 4, 5, 5], [5, 5, 4, 4, 8], [5, 5, 3, 4, 2], [6, 1, 9, 2, 4]], dtype=np.float32)
-
-        # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(disp_dataset["disparity_map"].data, gt_disp)
-
-        # Test with window size 5
+    @pytest.fixture()
+    def dataset4(self):
+        """Dataset #4"""
         disp = np.array(
             [[7, 8, 4, 5, 5], [5, 9, 4, 3, 8], [5, 2, 7, 2, 2], [6, 1, 9, 2, 4], [1, 6, 2, 7, 8]], dtype=np.float32
         )
@@ -210,40 +176,116 @@ class TestFilter(unittest.TestCase):
             dtype=np.uint16,
         )
 
-        disp_dataset = xr.Dataset(
+        return xr.Dataset(
             {"disparity_map": (["row", "col"], disp), "validity_mask": (["row", "col"], valid)},
             coords={"row": np.arange(5), "col": np.arange(5)},
         )
 
-        filter_median = flt.AbstractFilter(**{"filter_method": "median", "filter_size": 5})
+    @pytest.mark.parametrize(
+        [
+            "filter_median",
+            "disparity_dataset",
+            "gt_disp",
+        ],
+        [
+            pytest.param(
+                3,
+                "dataset1",
+                np.array([[5, 6, 7, 8, 9], [6, 6, 9, 8, 5], [5, 6, 9, 5, 2], [6, 1, 9, 2, 4]], dtype=np.float32),
+                id="Case1",
+            ),
+            pytest.param(
+                3,
+                "dataset2",
+                np.array([[7, 8, 4, 5, 5], [5, 9, 4, 3.5, 8], [5, 2, 7, 2, 2], [6, 1, 9, 2, 4]], dtype=np.float32),
+                id="Case2",
+            ),
+            pytest.param(
+                3,
+                "dataset3",
+                np.array([[7, 8, 4, 5, 5], [5, 5, 4, 4, 8], [5, 5, 3, 4, 2], [6, 1, 9, 2, 4]], dtype=np.float32),
+                id="Case3",
+            ),
+            pytest.param(
+                5,
+                "dataset4",
+                np.array(
+                    [[7, 8, 4, 5, 5], [5, 9, 4, 3, 8], [5, 2, 5, 2, 2], [6, 1, 9, 2, 4], [1, 6, 2, 7, 8]],
+                    dtype=np.float32,
+                ),
+                id="Case4",
+            ),
+        ],
+        indirect=["filter_median"],
+    )
+    def test_median_filter(self, request, filter_median, disparity_dataset, gt_disp):
+        """
+        Test the median method
 
+        """
+        disp_dataset = request.getfixturevalue(disparity_dataset)
         # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
         filter_median.filter_disparity(disp_dataset)
-
-        # Filtered disparity map ground truth
-        gt_disp = np.array(
-            [[7, 8, 4, 5, 5], [5, 9, 4, 3, 8], [5, 2, 5, 2, 2], [6, 1, 9, 2, 4], [1, 6, 2, 7, 8]], dtype=np.float32
-        )
 
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(disp_dataset["disparity_map"].data, gt_disp)
 
+    @pytest.mark.parametrize(["filter_median", "filter_size"], [(1, 1), (3, 3)], indirect=["filter_median"])
+    def test_margins(self, filter_median, filter_size):
+        """Check that margin computation is correct."""
+        assert filter_median.margins == Margins(filter_size, filter_size, filter_size, filter_size)
+
+
+class TestBilateralFilter:
+    """
+    Test BilateralFilter
+    """
+
+    @pytest.mark.parametrize(
+        ["sigma_space", "row_length", "col_length", "expected"],
+        [
+            pytest.param(1.0, 5, 5, Margins(4, 4, 4, 4), id="Result should be computed from sigma_space"),
+            pytest.param(2.0, 7, 6, Margins(6, 6, 6, 6), id="Result should be lowest image's dimension"),
+        ],
+    )
+    def test_margins(self, sigma_space, row_length, col_length, expected):
+        """Check that margin computation is correct."""
+        filter_config = {
+            "filter_method": "bilateral",
+            "sigma_color": 4.0,
+            "sigma_space": sigma_space,
+        }
+
+        filter_ = flt.AbstractFilter(cfg=filter_config, image_shape=(row_length, col_length))
+        assert filter_.margins == expected
+
+    @pytest.mark.parametrize("missing_key", ["filter_method"])
+    def test_check_conf_fails_when_is_missing_mandatory_key(self, missing_key):
+        """When a mandatory key is missing instanciation should fail."""
+        filter_config = {
+            "filter_method": "bilateral",
+            "sigma_color": 4.0,
+            "sigma_space": 6.0,
+        }
+        del filter_config[missing_key]
+
+        with pytest.raises((MissKeyCheckerError, KeyError)):
+            flt.AbstractFilter(cfg=filter_config, image_shape=(450, 600))
+
     @staticmethod
-    def test_bilateral_gauss_spatial_kernel():
+    def test_gauss_spatial_kernel():
         """
         Test the gauss spatial kernel function
 
         """
 
-        user_cfg = {"filter": {"filter_method": "bilateral", "sigma_color": 4.0, "sigma_space": 6.0}}
+        user_cfg = {
+            "filter_method": "bilateral",
+            "sigma_color": 4.0,
+            "sigma_space": 6.0,
+        }
 
-        # Build the default configuration
-        cfg = pandora.check_configuration.default_short_configuration
-
-        # Update the configuration with default values
-        cfg = pandora.check_configuration.update_conf(cfg, user_cfg)
-
-        filter_bilateral = flt.AbstractFilter(**cfg["filter"])
+        filter_bilateral = flt.AbstractFilter(cfg=user_cfg, image_shape=(5, 5))
 
         # Gauss spatial kernel of size (5,5) and sigma_space = 6
         # arr[i, j] = np.sqrt(abs(i - kernel_size // 2) ** 2 + abs(j - kernel_size // 2) ** 2)
@@ -294,22 +336,20 @@ class TestFilter(unittest.TestCase):
         np.testing.assert_allclose(gauss_spatial_kernel, gt_gauss_spatial_kernel, rtol=1e-07)
 
     @staticmethod
-    def test_bilateral_filter():
+    def test_on_valid_pixels():
         """
         Test the bilateral method. Bilateral filter is only applied on valid pixels.
 
 
         """
 
-        user_cfg = {"filter": {"filter_method": "bilateral", "sigma_color": 4.0, "sigma_space": 6.0}}
+        user_cfg = {
+            "filter_method": "bilateral",
+            "sigma_color": 4.0,
+            "sigma_space": 6.0,
+        }
 
-        # Build the default configuration
-        cfg = pandora.check_configuration.default_short_configuration
-
-        # Update the configuration with default values
-        cfg = pandora.check_configuration.update_conf(cfg, user_cfg)
-
-        filter_bilateral = flt.AbstractFilter(**cfg["filter"])
+        filter_bilateral = flt.AbstractFilter(cfg=user_cfg, image_shape=(5, 5))
 
         disp = np.array(
             [[5, 6, 7, 8, 9], [6, 85, 1, 36, 5], [5, 9, 23, 12, 2], [6, 1, 9, 2, 4], [6, 7, 4, 2, 1]], dtype=np.float32
@@ -395,20 +435,18 @@ class TestFilter(unittest.TestCase):
         np.testing.assert_allclose(gt_disp, disp_dataset["disparity_map"].data, rtol=1e-07)
 
     @staticmethod
-    def test_bilateral_filter_with_nans():
+    def test_with_nans():
         """
         Test the bilateral method with input Nans.
 
         """
-        user_cfg = {"filter": {"filter_method": "bilateral", "sigma_color": 4.0, "sigma_space": 6.0}}
+        user_cfg = {
+            "filter_method": "bilateral",
+            "sigma_color": 4.0,
+            "sigma_space": 6.0,
+        }
 
-        # Build the default configuration
-        cfg = pandora.check_configuration.default_short_configuration
-
-        # Update the configuration with default values
-        cfg = pandora.check_configuration.update_conf(cfg, user_cfg)
-
-        filter_bilateral = flt.AbstractFilter(**cfg["filter"])
+        filter_bilateral = flt.AbstractFilter(cfg=user_cfg, image_shape=(5, 5))
 
         disp = np.array(
             [[5, 6, 7, 8, 9], [6, 85, np.nan, 36, 5], [5, 9, 23, 12, 2], [6, np.nan, 9, 2, 4], [1, 6, 2, 7, 8]],
@@ -543,21 +581,19 @@ class TestFilter(unittest.TestCase):
         np.testing.assert_allclose(gt_disp, disp_dataset["disparity_map"].data, rtol=1e-07)
 
     @staticmethod
-    def test_bilateral_filter_with_invalid_center():
+    def test_with_invalid_center():
         """
         Test the bilateral method with center pixel invalid. Bilateral filter is only applied on valid pixels.
 
         """
 
-        user_cfg = {"filter": {"filter_method": "bilateral", "sigma_color": 4.0, "sigma_space": 6.0}}
+        user_cfg = {
+            "filter_method": "bilateral",
+            "sigma_color": 4.0,
+            "sigma_space": 6.0,
+        }
 
-        # Build the default configuration
-        cfg = pandora.check_configuration.default_short_configuration
-
-        # Update the configuration with default values
-        cfg = pandora.check_configuration.update_conf(cfg, user_cfg)
-
-        filter_bilateral = flt.AbstractFilter(**cfg["filter"])
+        filter_bilateral = flt.AbstractFilter(cfg=user_cfg, image_shape=(5, 5))
         disp = np.array(
             [[5, 6, 7, 8, 9], [6, 85, 1, 36, 5], [5, 9, 23, 12, 2], [6, 1, 9, 2, 4], [6, 7, 4, 2, 1]], dtype=np.float32
         )
@@ -588,8 +624,3 @@ class TestFilter(unittest.TestCase):
         filter_bilateral.filter_disparity(disp_dataset)
 
         np.testing.assert_allclose(gt_disp, disp_dataset["disparity_map"].data, rtol=1e-07)
-
-
-if __name__ == "__main__":
-    common.setup_logging()
-    unittest.main()

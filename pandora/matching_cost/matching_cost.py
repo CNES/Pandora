@@ -34,6 +34,7 @@ import numpy as np
 import xarray as xr
 from scipy.ndimage import binary_dilation
 
+from pandora.margins.descriptors import HalfWindowMargins
 from pandora.img_tools import shift_right_img
 
 
@@ -63,6 +64,8 @@ class AbstractMatchingCost:
         "band": Or(str, lambda input: input is None),
         "step": And(int, lambda y: y >= 1),
     }
+
+    margins = HalfWindowMargins()
 
     def __new__(cls, **cfg: Union[str, int]):
         """
@@ -138,7 +141,7 @@ class AbstractMatchingCost:
         self._band = self.cfg["band"]
         self._step_col = int(self.cfg["step"])
 
-    def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
+    def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
@@ -163,7 +166,7 @@ class AbstractMatchingCost:
         if "step" not in cfg:
             cfg["step"] = self._STEP_COL  # type: ignore
 
-        return cfg  # type: ignore
+        return cfg
 
     def check_band_input_mc(self, img_left: xr.Dataset, img_right: xr.Dataset) -> None:
         """
@@ -558,7 +561,7 @@ class AbstractMatchingCost:
         # ----- Masking invalid pixels -----
 
         # Contains the shifted right images
-        img_right_shift = shift_right_img(img_right, self._subpix, self._band)  # type: ignore
+        img_right_shift = shift_right_img(img_right, self._subpix, self._band)
 
         # Computes the validity mask of the cost volume : invalid pixels or no_data are masked with the value nan.
         # Valid pixels are = 0

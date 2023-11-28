@@ -28,10 +28,12 @@ This module contains class associated to the pandora state machine
 
 from __future__ import annotations
 
-import warnings
+import copy
 import logging
 import sys
+import warnings
 from typing import Dict, Union, List
+
 import numpy as np
 import xarray as xr
 
@@ -46,14 +48,17 @@ except ImportError:
     FLAG_GRAPHVIZ = False
 from transitions import MachineError
 
-from pandora import aggregation
-from pandora import disparity
-from pandora import filter  # pylint: disable=redefined-builtin
-from pandora import multiscale
-from pandora import optimization
-from pandora import refinement
-from pandora import matching_cost
-from pandora import semantic_segmentation
+from pandora import (  # pylint: disable=redefined-builtin
+    aggregation,
+    disparity,
+    filter,
+    multiscale,
+    optimization,
+    refinement,
+    matching_cost,
+    semantic_segmentation,
+)
+from pandora.margins import GlobalMargins
 
 
 # This silences numba's TBB threading layer warning
@@ -252,6 +257,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         # Pandora's pipeline configuration
         self.pipeline_cfg: Dict = {"pipeline": {}}
+
+        # Margins that cumulates:
+        self.margins = GlobalMargins()
         # Right disparity map computation information: Can be None or "cross_checking_accurate"
         # Useful during the running steps to choose if we must compute left and right objects.
         self.right_disp_map = None
@@ -403,7 +411,10 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :return: None
         """
         logging.info("Disparity filtering...")
-        filter_ = filter.AbstractFilter(**cfg["pipeline"][input_step])  # type: ignore
+        filter_ = filter.AbstractFilter(
+            cfg=cfg["pipeline"][input_step],
+            image_shape=(self.left_img.dims["row"], self.left_img.dims["col"]),
+        )  # type: ignore
         filter_.filter_disparity(self.left_disparity)
         if self.right_disp_map == "cross_checking_accurate":
             filter_.filter_disparity(self.right_disparity)
@@ -627,10 +638,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             # But there's only a filter transition. Therefore, in the case of filter.1 we have to call the
             # filter
             # trigger and give the configuration of filter.1
-            if len(input_step.split(".")) != 1:
-                self.trigger(input_step.split(".")[0], cfg, input_step)
-            else:
-                self.trigger(input_step, cfg, input_step)
+            step_to_trigger = input_step.split(".")[0]
+            self.trigger(step_to_trigger, cfg, input_step)
         except (MachineError, KeyError, AttributeError):
             logging.error("A problem occurs during Pandora running %s  step. Be sure of your sequencement", input_step)
             raise
@@ -657,18 +666,19 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # Create matching_cost object to check its step configuration
         matching_cost_ = matching_cost.AbstractMatchingCost(**cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = matching_cost_.cfg
+        self.margins.add_cumulative(input_step, matching_cost_.margins)
 
         # Check the coherence between the band selected for the matching_cost step
         # and the bands present on left and right image
         self.check_band_pipeline(
             self.left_img.coords["band_im"].data,
             cfg["matching_cost"]["matching_cost_method"],
-            matching_cost_.cfg["band"],  # type: ignore
+            matching_cost_.cfg["band"],
         )
         self.check_band_pipeline(
             self.right_img.coords["band_im"].data,
             cfg["matching_cost"]["matching_cost_method"],
-            matching_cost_.cfg["band"],  # type: ignore
+            matching_cost_.cfg["band"],
         )
 
     def disparity_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -683,6 +693,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         disparity_ = disparity.AbstractDisparity(**cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = disparity_.cfg
+        self.margins.add_cumulative(input_step, disparity_.margins)
 
     def filter_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -694,8 +705,13 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
-        filter_ = filter.AbstractFilter(**cfg[input_step])  # type: ignore
+        filter_config = copy.deepcopy(cfg[input_step])
+        filter_ = filter.AbstractFilter(
+            cfg=filter_config,
+            image_shape=(self.left_img.dims["row"], self.left_img.dims["col"]),
+        )  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = filter_.cfg
+        self.margins.add_non_cumulative(input_step, filter_.margins)
 
     def refinement_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -709,6 +725,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         refinement_ = refinement.AbstractRefinement(**cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = refinement_.cfg
+        self.margins.add_cumulative(input_step, refinement_.margins)
 
     def aggregation_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -722,6 +739,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         aggregation_ = aggregation.AbstractAggregation(**cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = aggregation_.cfg
+        self.margins.add_cumulative(input_step, aggregation_.margins)
 
     def semantic_segmentation_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -790,6 +808,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                         cfg["optimization"]["optimization_method"],
                         cfg["optimization"]["geometric_prior"]["classes"],
                     )
+        self.margins.add_cumulative(input_step, optimization_.margins)
 
     def validation_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """

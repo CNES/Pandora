@@ -179,6 +179,35 @@ class TestMain:
         # Check the right disparity map
         assert error(-1 * rasterio_open(str(tmp_path / "right_disparity.tif")).read(1), disp_right, 1) <= 0.20
 
+    def test_margins_are_stored_in_final_output_configuration(self, tmp_path):
+        """We expect to find information about used margins in the output configuration."""
+        cfg = {
+            "input": copy.deepcopy(common.input_cfg_left_grids),
+            "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
+        }
+
+        config_path = tmp_path / "config.json"
+        with open(config_path, "w", encoding="utf-8") as file_:
+            json.dump(cfg, file_, indent=2)
+
+        # Run Pandora pipeline
+        pandora.main(config_path, str(tmp_path), verbose=False)
+
+        with (tmp_path / "cfg" / "config.json").open() as fp:
+            result = json.load(fp)
+
+        assert result["margins"] == {
+            "cumulative margins": {
+                "matching_cost": {"left": 2, "up": 2, "right": 2, "down": 2},
+                "disparity": {"left": 0, "up": 0, "right": 0, "down": 0},
+                "refinement": {"down": 0, "left": 0, "right": 0, "up": 0},
+            },
+            "non-cumulative margins": {
+                "filter": {"left": 3, "up": 3, "right": 3, "down": 3},
+            },
+            "global margins": {"left": 3, "up": 3, "right": 3, "down": 3},
+        }
+
 
 class TestPandora(unittest.TestCase):
     """

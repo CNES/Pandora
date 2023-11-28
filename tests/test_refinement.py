@@ -36,6 +36,7 @@ from pandora import refinement
 from pandora import matching_cost
 import pandora.filter as flt
 from pandora import disparity
+from pandora.margins.descriptors import NullMargins
 
 
 class TestRefinement(unittest.TestCase):
@@ -77,6 +78,9 @@ class TestRefinement(unittest.TestCase):
             },
             coords={"row": [1], "col": [0, 1, 2, 3]},
         )
+
+    def test_margins(self):
+        assert isinstance(refinement.AbstractRefinement.margins, NullMargins)
 
     def test_quadratic(self):
         """
@@ -724,7 +728,7 @@ class TestRefinement(unittest.TestCase):
         #  [ 1.  0. -1. -1.]]
 
         # Apply median filter to the disparity map
-        filter_median = flt.AbstractFilter(**{"filter_method": "median", "filter_size": 3})
+        filter_median = flt.AbstractFilter(cfg={"filter_method": "median", "filter_size": 3})
         filter_median.filter_disparity(disp)
 
         # Disparity map with median filter :

@@ -28,6 +28,8 @@ from typing import Union, Dict
 
 import xarray as xr
 
+from pandora.margins.descriptors import NullMargins
+
 
 class AbstractAggregation:
     """
@@ -38,6 +40,7 @@ class AbstractAggregation:
 
     aggreg_methods_avail: Dict = {}
     cfg = None
+    margins = NullMargins()
 
     def __new__(cls, **cfg: dict):
         """

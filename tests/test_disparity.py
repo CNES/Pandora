@@ -37,6 +37,7 @@ from pandora import disparity
 from pandora import matching_cost
 from pandora.img_tools import create_dataset_from_inputs
 from pandora.state_machine import PandoraMachine
+from pandora.margins.descriptors import NullMargins
 
 
 class TestDisparity(unittest.TestCase):
@@ -71,6 +72,9 @@ class TestDisparity(unittest.TestCase):
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         }
+
+    def test_margins(self):
+        assert isinstance(disparity.AbstractDisparity.margins, NullMargins)
 
     def test_to_disp(self):
         """

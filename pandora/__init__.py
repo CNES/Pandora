@@ -181,5 +181,7 @@ def main(cfg_path: PathLike | str, output: str, verbose: bool) -> None:
     # Save the left and right DataArray in tiff files
     common.save_results(left, right, output)
 
+    # Update cfg with margins
+    cfg["margins"] = pandora_machine.margins.to_dict()
     # Save the configuration
     common.save_config(output, cfg)

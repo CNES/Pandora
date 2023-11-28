@@ -33,6 +33,7 @@ from scipy.ndimage import binary_dilation
 
 import pandora.constants as cst
 from pandora.img_tools import compute_std_raster
+from pandora.margins.descriptors import NullMargins
 
 
 class AbstractDisparity:
@@ -44,6 +45,7 @@ class AbstractDisparity:
 
     disparity_methods_avail: Dict = {}
     cfg = None
+    margins = NullMargins()
 
     def __new__(cls, **cfg: dict):
         """

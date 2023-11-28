@@ -32,6 +32,7 @@ import xarray as xr
 from numba import njit, prange
 
 import pandora.constants as cst
+from pandora.margins.descriptors import NullMargins
 
 
 class AbstractRefinement:
@@ -44,6 +45,7 @@ class AbstractRefinement:
     subpixel_methods_avail: Dict = {}
     _refinement_method_name = None
     cfg = None
+    margins = NullMargins()
 
     def __new__(cls, **cfg: dict):
         """
