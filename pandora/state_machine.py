@@ -82,6 +82,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             "trigger": "matching_cost",
             "source": "begin",
             "dest": "cost_volume",
+            "prepare": "matching_cost_prepare",
             "after": "matching_cost_run",
         },
         {
@@ -266,6 +267,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # Define avalaible states
         states_ = ["begin", "cost_volume", "disp_map"]
 
+        # Instance matching_cost
+        self.matching_cost_: Union[matching_cost.AbstractMatchingCost, None] = None
+
         if FLAG_GRAPHVIZ:
             # Initialize a machine without any transition
             Machine.__init__(
@@ -288,7 +292,19 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         logging.getLogger("transitions").setLevel(logging.WARNING)
 
-    def matching_cost_run(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def matching_cost_prepare(self, cfg: Dict[str, dict], input_step: str) -> None:
+        """
+        Matching cost computation
+        :param cfg: user configuration
+        :type  cfg: dict
+        :param input_step: step to trigger
+        :type input_step: str
+        :return: None
+        """
+        self.matching_cost_ = matching_cost.AbstractMatchingCost(**cfg["pipeline"][input_step])  # type: ignore
+        _ = self.matching_cost_.grid_estimation(self.left_img, cfg)
+
+    def matching_cost_run(self, _: Dict[str, dict], __: str) -> None:
         """
         Matching cost computation
         :param cfg: pipeline configuration
@@ -298,15 +314,16 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :return: None
         """
         logging.info("Matching cost computation...")
-        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg["pipeline"][input_step])  # type: ignore
 
         # Update min and max disparity according to the current scale
         self.disp_min = self.disp_min * self.scale_factor
         self.disp_max = self.disp_max * self.scale_factor
 
         # Compute cost volume and mask it
-        self.left_cv = matching_cost_.compute_cost_volume(self.left_img, self.right_img, self.disp_min, self.disp_max)
-        matching_cost_.cv_masked(
+        self.left_cv = self.matching_cost_.compute_cost_volume(
+            self.left_img, self.right_img, self.disp_min, self.disp_max
+        )
+        self.matching_cost_.cv_masked(
             self.left_img,
             self.right_img,
             self.left_cv,
@@ -320,10 +337,10 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             self.right_disp_max = self.right_disp_max * self.scale_factor
 
             # Compute right cost volume and mask it
-            self.right_cv = matching_cost_.compute_cost_volume(
+            self.right_cv = self.matching_cost_.compute_cost_volume(
                 self.right_img, self.left_img, self.right_disp_min, self.right_disp_max
             )
-            matching_cost_.cv_masked(
+            self.matching_cost_.cv_masked(
                 self.right_img,
                 self.left_img,
                 self.right_cv,
