@@ -23,6 +23,8 @@
 This module contains classes and functions associated to the subpixel refinement step.
 """
 
+import os
+import logging
 import warnings
 from abc import ABCMeta, abstractmethod
 from typing import Tuple, Callable, Dict
@@ -211,7 +213,7 @@ class AbstractRefinement:
         print("Subpixel method description")
 
     @staticmethod
-    @njit(parallel=True)
+    @njit(parallel=eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")))
     def loop_refinement(
         cv: np.ndarray,
         disp: np.ndarray,
@@ -297,7 +299,7 @@ class AbstractRefinement:
         """
 
     @staticmethod
-    @njit(parallel=True)
+    @njit(parallel=eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")))
     def loop_approximate_refinement(
         cv: np.ndarray,
         disp: np.ndarray,

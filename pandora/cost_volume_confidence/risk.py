@@ -23,6 +23,7 @@
 This module contains functions for estimating the risk.
 """
 
+import os
 import warnings
 from typing import Dict, Tuple, Union
 
@@ -145,7 +146,11 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         return disp, cv
 
     @staticmethod
-    @njit("Tuple((f4[:, :],f4[:, :]))(f4[:, :, :], f4[:, :, :], f4, f4, f4)", parallel=True, cache=True)
+    @njit(
+        "Tuple((f4[:, :],f4[:, :]))(f4[:, :, :], f4[:, :, :], f4, f4, f4)", 
+        parallel=eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")), 
+        cache=True
+    )
     def compute_risk(
         cv: np.ndarray, sampled_ambiguity: np.ndarray, _eta_min: float, _eta_max: float, _eta_step: float
     ) -> Tuple[np.ndarray, np.ndarray]:
@@ -220,7 +225,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
     @staticmethod
     @njit(
         "Tuple((f4[:, :],f4[:, :],f4[:, :, :],f4[:, :, :]))(f4[:, :, :], f4[:, :, :], f4, f4, f4)",
-        parallel=True,
+        parallel=eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
         cache=True,
     )
     def compute_risk_and_sampled_risk(
