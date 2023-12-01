@@ -26,14 +26,13 @@ This module contains functions for estimating confidence from ambiguity.
 import warnings
 import os
 from typing import Dict, Tuple, Union
-
+from ast import literal_eval
 import numpy as np
 from json_checker import Checker, And
 from numba import njit, prange
 import xarray as xr
 
 from . import cost_volume_confidence
-
 
 
 @cost_volume_confidence.AbstractCostVolumeConfidence.register_subclass("ambiguity")
@@ -166,9 +165,9 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
 
     @staticmethod
     @njit(
-        "f4[:, :](f4[:, :, :], f4, f4, f4)", 
-        parallel=eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")), 
-        cache=True
+        "f4[:, :](f4[:, :, :], f4, f4, f4)",
+        parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
+        cache=True,
     )
     def compute_ambiguity(cv: np.ndarray, _eta_min: float, _eta_max: float, _eta_step: float) -> np.ndarray:
         """
@@ -185,7 +184,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         :return: the normalized ambiguity
         :rtype: 2D np.array (row, col) dtype = float32
         """
-        #  Miniumum and maximum of all costs, useful to normalize the cost volume
+        # Miniumum and maximum of all costs, useful to normalize the cost volume
         min_cost = np.nanmin(cv)
         max_cost = np.nanmax(cv)
 
@@ -223,7 +222,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
     @staticmethod
     @njit(
         "Tuple((f4[:, :],f4[:, :, :]))(f4[:, :, :], f4, f4, f4)",
-        parallel=eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
+        parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
         cache=True,
     )
     def compute_ambiguity_and_sampled_ambiguity(cv: np.ndarray, _eta_min: float, _eta_max: float, _eta_step: float):

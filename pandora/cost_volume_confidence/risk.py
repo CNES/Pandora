@@ -26,7 +26,7 @@ This module contains functions for estimating the risk.
 import os
 import warnings
 from typing import Dict, Tuple, Union
-
+from ast import literal_eval
 import numpy as np
 from json_checker import Checker, And
 from numba import njit, prange
@@ -147,9 +147,9 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
 
     @staticmethod
     @njit(
-        "Tuple((f4[:, :],f4[:, :]))(f4[:, :, :], f4[:, :, :], f4, f4, f4)", 
-        parallel=eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")), 
-        cache=True
+        "Tuple((f4[:, :],f4[:, :]))(f4[:, :, :], f4[:, :, :], f4, f4, f4)",
+        parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
+        cache=True,
     )
     def compute_risk(
         cv: np.ndarray, sampled_ambiguity: np.ndarray, _eta_min: float, _eta_max: float, _eta_step: float
@@ -225,7 +225,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
     @staticmethod
     @njit(
         "Tuple((f4[:, :],f4[:, :],f4[:, :, :],f4[:, :, :]))(f4[:, :, :], f4[:, :, :], f4, f4, f4)",
-        parallel=eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
+        parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
         cache=True,
     )
     def compute_risk_and_sampled_risk(
