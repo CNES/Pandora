@@ -29,7 +29,7 @@ import numpy as np
 import xarray as xr
 from json_checker import Checker, And
 
-from pandora.img_tools import shift_right_img, compute_mean_raster, compute_std_raster
+from pandora.img_tools import shift_right_img, compute_mean_raster, compute_std_raster, extract_band_data
 from pandora.matching_cost import matching_cost
 
 
@@ -129,14 +129,14 @@ class Zncc(matching_cost.AbstractMatchingCost):
         offset_row_col = int((self._window_size - 1) / 2)
         cv_crop = self.crop_cost_volume(cv, offset_row_col)
 
-        left_data = self.extract_image_data(img_left)
+        left_data = extract_band_data(img_left, self._band)
 
         # Computes the matching cost
         for disp_index, disp in enumerate(disparity_range):
             i_right = int((disp % 1) * self._subpix)
             shifted_right_image = img_right_shift[i_right]
             point_p, point_q = self.point_interval(img_left, shifted_right_image, disp)
-            right_data = self.extract_image_data(shifted_right_image)
+            right_data = extract_band_data(shifted_right_image, self._band)
 
             zncc_ = left_data[:, slice(*point_p)] * right_data[:, slice(*point_q)]
 
@@ -192,20 +192,6 @@ class Zncc(matching_cost.AbstractMatchingCost):
         :rtype: Tuple[int, int]
         """
         return point_interval[0], point_interval[1] - (int(self._window_size / 2) * 2)
-
-    def extract_image_data(self, image_dataset: xr.Dataset) -> np.ndarray:
-        """
-        Extract image data from dataset taking band into account if relevant.
-        :param image_dataset:
-        :type image_dataset:
-        :return:
-        :rtype:
-        """
-        try:
-            return image_dataset.sel(band_im=self._band)["im"].data
-        except KeyError:
-            # Raised when there is no band_im coordinates or when self._band is None
-            return image_dataset["im"].data
 
 
 def apply_divide_standard(
