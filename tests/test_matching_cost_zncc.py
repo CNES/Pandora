@@ -483,6 +483,25 @@ class TestMatchingCostZncc(unittest.TestCase):
             _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
 
 
+@pytest.mark.parametrize(
+    ["point_interval", "window_size", "expected"],
+    [
+        [(1, 2), 1, (1, 2)],
+        [(2, 2), 3, (2, 0)],
+        [(2, 7), 3, (2, 5)],
+    ],
+)
+def test_std_point_interval(point_interval, window_size, expected):
+    """Test returned values of std_point_interval."""
+    matching_cost_ = matching_cost.AbstractMatchingCost(
+        **{"matching_cost_method": "zncc", "window_size": window_size, "subpix": 1}
+    )
+
+    result = matching_cost_.std_point_interval(point_interval)
+
+    assert result == expected
+
+
 if __name__ == "__main__":
     common.setup_logging()
     unittest.main()

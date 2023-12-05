@@ -301,10 +301,10 @@ class AbstractMatchingCost:
 
         # Create the cost volume
         if np_data is None:
-            np_data = np.zeros((len(row), len(col), len(disparity_range)), dtype=np.float32)
+            np_data = np.zeros((*img_left["im"].shape, len(disparity_range)), dtype=np.float32)
 
         cost_volume = xr.Dataset(
-            {"cost_volume": (["row", "col", "disp"], np_data)},
+            {"cost_volume": (["row", "col", "disp"], np_data[:, :: self._step_col, :])},
             coords={"row": row, "col": col, "disp": disparity_range},
         )
         cost_volume.attrs = metadata
@@ -363,8 +363,8 @@ class AbstractMatchingCost:
         :return: the range of the left and right image over which the similarity measure will be applied
         :rtype: tuple
         """
-        nx_left = int(img_left.dims["col"] / self._step_col)
-        nx_right = int(img_right.dims["col"] / self._step_col)
+        nx_left = int(img_left.dims["col"])
+        nx_right = int(img_right.dims["col"])
 
         # range in the left image
         point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))
@@ -513,6 +513,19 @@ class AbstractMatchingCost:
         """
         return int(np.nanmin(disp_min)), int(np.nanmax(disp_max))
 
+    def find_nearest_multiple_of_step(self, value: int) -> int:
+        """
+        In case value is not a multiple of step, find nearest greater value for which it is the case.
+
+        :param value: Initial value.
+        :type: value: int
+        :return: nearest multiple of step.
+        :rtype: int
+        """
+        while value % self._step_col != 0:
+            value += 1
+        return value
+
     def cv_masked(
         self,
         img_left: xr.Dataset,
@@ -571,19 +584,40 @@ class AbstractMatchingCost:
             i_right = int((disp % 1) * self._subpix)
             point_p, point_q = self.point_interval(img_left, img_right_shift[i_right], disp)
 
+            # For the 2 images of shape (3,4) with a cost volume at disp
+            #               1  4 -5  nan
+            #               1  0  1  nan
+            #               5  2 -1  nan
+            # the intervals given by the point_interval function:
+            #   - point_p [0, 1, 2]
+            #   - point_q [1, 2 ,3]
+            # and the _step_col parameter is 2
+            # new index for point_p and point_q must be:
+            #   - point_p [0, 2]
+            #   - point_q [2] but here with np.arange(q_0, point_q[1], self._step_col) with have [1, 3]
+            # To solve this problem, we look for the new point in the cost volume in relation to the step
+            # chosen by the user by calling find_nearest_multiple_of_step.
+            # This function return p_0 = 0 and q_0 = 2
+            p_0 = self.find_nearest_multiple_of_step(point_p[0])
+            q_0 = self.find_nearest_multiple_of_step(point_q[0])
+
             # Point interval in the left image
-            p_mask = (point_p[0], point_p[1])
+            p_mask = np.arange(p_0, point_p[1], self._step_col)
             # Point interval in the right image
-            q_mask = (point_q[0], point_q[1])
+            q_mask = np.arange(q_0, point_q[1], self._step_col)
+            # Point interval in the cost volume
+            # Here the indices for the left image must be divided by the step
+            # to correspond to the cost volume column.
+            p_cv = (p_mask / self._step_col).astype(int)
 
             i_mask_right = min(1, i_right)
             dsp = int((disp - dmin) * self._subpix)
 
             # Invalid costs in the cost volume
-            cost_volume["cost_volume"].data[:, p_mask[0] : p_mask[1], dsp] += (
-                mask_right[i_mask_right].data[:, q_mask[0] : q_mask[1]] + mask_left.data[:, p_mask[0] : p_mask[1]]
-            )
-
+            if p_mask.size > 0:
+                cost_volume["cost_volume"].data[:, p_cv, dsp] += mask_left.data[:, p_mask]
+                if q_mask.size > 0:
+                    cost_volume["cost_volume"].data[:, p_cv, dsp] += mask_right[i_mask_right].data[:, q_mask]
         # ----- Masking disparity range -----
 
         # Fixed range of disparities
@@ -628,7 +662,7 @@ class AbstractMatchingCost:
         """
 
         return np.full(
-            (len(disparity_range), int(img_left.dims["col"] / self._step_col), int(img_left.dims["row"])),
+            (len(disparity_range), int(img_left.dims["col"]), int(img_left.dims["row"])),
             np.nan,
             dtype=np.float32,
         )

@@ -60,6 +60,34 @@ def multiband_image():
     return common.matching_cost_tests_multiband_setup()[0]
 
 
+class TestExtractBandData:
+    """Test extract_band_data function."""
+
+    def test_monoband(self):
+        """Given a monoband data with a band value of None should return `im` data."""
+        data = np.ones((2, 2))
+        image = xr.Dataset({"im": (["row", "col"], data)}, coords={"row": [0, 1], "col": [0, 1]})
+
+        result = img_tools.extract_band_data(image, None)
+
+        np.testing.assert_array_equal(result, data)
+
+    @pytest.mark.parametrize(["band", "expected"], [("r", np.zeros((2, 2))), ("g", np.ones((2, 2)))])
+    def test_multiband(self, band, expected):
+        """Given a multiband data with a band should return `im` data of corresponding band."""
+        red = np.zeros((2, 2))
+        green = np.ones((2, 2))
+        data = np.stack((red, green))
+        image = xr.Dataset(
+            {"im": (["band_im", "row", "col"], data)},
+            coords={"band_im": ["r", "g"], "row": np.arange(data.shape[1]), "col": np.arange(data.shape[2])},
+        )
+
+        result = img_tools.extract_band_data(image, band)
+
+        np.testing.assert_array_equal(result, expected)
+
+
 @pytest.mark.parametrize(
     ["window_size", "expected"],
     [
