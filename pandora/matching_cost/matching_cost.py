@@ -314,7 +314,7 @@ class AbstractMatchingCost:
 
         cost_volume.attrs["window_size"] = window_size
 
-        cost_volume.attrs["disparity_souce"] = img_left.attrs["disparity_source"]
+        cost_volume.attrs["disparity_source"] = img_left.attrs["disparity_source"]
 
         return cost_volume
 
