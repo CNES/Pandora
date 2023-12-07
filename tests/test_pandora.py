@@ -485,6 +485,7 @@ class TestPandora(unittest.TestCase):
         )
         img_right.attrs["crs"] = None
         img_right.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+        img_right.pipe(add_disparity, disparity=[-2, 2], window=None)
 
         # Load a configuration
         user_cfg = {
@@ -699,6 +700,7 @@ class TestPandora(unittest.TestCase):
         user_cfg["pipeline"]["matching_cost"]["band"] = "g"
         user_cfg["input"]["left"]["nodata"] = np.nan
         user_cfg["input"]["right"]["nodata"] = np.nan
+
         # Update the user configuration with default values
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 

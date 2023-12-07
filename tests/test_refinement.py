@@ -37,6 +37,7 @@ from pandora import matching_cost
 import pandora.filter as flt
 from pandora import disparity
 from pandora.margins.descriptors import NullMargins
+from pandora.img_tools import add_disparity
 
 
 class TestRefinement(unittest.TestCase):
@@ -670,6 +671,9 @@ class TestRefinement(unittest.TestCase):
         img_left.attrs["crs"] = None
         img_left.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
 
+        # Add disparity on left image
+        img_left.pipe(add_disparity, disparity=[-1, 1], window=None)
+
         data_right = np.array(
             [
                 [82.0, 116.0, 176.0, 172.0],
@@ -693,7 +697,7 @@ class TestRefinement(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
         cv = matching_cost_matcher.compute_cost_volume(
-            img_left=img_left, img_right=img_right, grid_disp_min=-1, grid_disp_max=1
+            img_left, img_right, img_left["disparity"].sel(band_disp="min"), img_left["disparity"].sel(band_disp="max")
         )
         # Cost volume :
         # array([[[nan, 49., 15.],
