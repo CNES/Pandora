@@ -95,6 +95,114 @@ class TestMatchingCost:
 
         np.testing.assert_array_equal(result, expected)
 
+    @pytest.mark.parametrize(
+        ["img_left", "user_cfg", "step", "col", "ground_truth_attrs"],
+        [
+            pytest.param(
+                common.matching_cost_tests_setup()[0],
+                {},
+                1,  # step value
+                np.arange(0, 6, 1),  # col coords left image
+                {
+                    "sampling_interval": 1,
+                    "roi_origin": (0, 0),
+                    "cv_origin": (0, 0),
+                    "col_to_compute": np.array([0, 1, 2, 3, 4, 5]),
+                },
+                id="no ROI in user_configuration and step = 1",
+            ),
+            pytest.param(
+                common.matching_cost_tests_setup()[0],
+                {
+                    "ROI": {
+                        "col": {"first": 2, "last": 3},
+                        "row": {"first": 2, "last": 3},
+                        "margins": [2, 2, 2, 2],
+                    }
+                },
+                2,  # step value
+                np.arange(0, 6, 2),  # col coords left image
+                {
+                    "sampling_interval": 2,
+                    "roi_origin": (2, 2),
+                    "cv_origin": (2, 1),
+                    "col_to_compute": np.array([0, 2, 4]),
+                },
+                id="ROI in user_configuration and margin % step == 0",
+            ),
+            pytest.param(
+                common.matching_cost_tests_setup()[0],
+                {
+                    "ROI": {
+                        "col": {"first": 2, "last": 3},
+                        "row": {"first": 2, "last": 3},
+                        "margins": [2, 2, 2, 2],
+                    }
+                },
+                3,  # step value
+                np.arange(0, 6, 3),  # col coords left image
+                {
+                    "sampling_interval": 3,
+                    "roi_origin": (2, 2),
+                    "cv_origin": (2, 0),
+                    "col_to_compute": np.array([2, 5]),
+                },
+                id="ROI in user_configuration and margin % step != 0 with margin < step",
+            ),
+            pytest.param(
+                xr.Dataset(
+                    {"im": (["row", "col"], np.ones((8, 8), dtype=np.float64))},
+                    coords={"row": np.arange(8), "col": np.arange(8)},
+                ).assign_attrs(common.img_attrs),
+                {
+                    "ROI": {
+                        "col": {"first": 3, "last": 3},
+                        "row": {"first": 3, "last": 3},
+                        "margins": [3, 3, 3, 3],
+                    }
+                },
+                2,  # step value
+                np.arange(0, 8, 2),  # col coords left image
+                {
+                    "sampling_interval": 2,
+                    "roi_origin": (3, 3),
+                    "cv_origin": (3, 1),
+                    "col_to_compute": np.array([1, 3, 5, 7]),
+                },
+                id="ROI in user_configuration and margin % step != 0 with margin > step",
+            ),
+        ],
+    )
+    def test_grid_estimation(self, img_left, user_cfg, step, col, ground_truth_attrs):
+        """
+        Test the grid_estimation function
+        """
+
+        # Create matching cost object
+        matching_cost_ = matching_cost.AbstractMatchingCost(**common.basic_pipeline_cfg["matching_cost"])
+
+        # Update step for matching cost
+        matching_cost_._step_col = step  # pylint: disable=protected-access
+
+        # Grid estimation
+        grid = matching_cost_.grid_estimation(img_left, user_cfg)
+
+        # Create ground truth for output of grid_estimation() function
+        c_row = img_left["im"].coords["row"]
+        row = np.arange(c_row[0], c_row[-1] + 1)
+
+        ground_truth = xr.Dataset(
+            {},
+            coords={"row": row, "col": col},
+        )
+
+        ground_truth.attrs = img_left.attrs
+        ground_truth.attrs.update(ground_truth_attrs)
+
+        print(f"{grid=}")
+
+        xr.testing.assert_identical(grid, ground_truth)
+
     def test_allocate_cost_volume(self, left):
         """ "
         Test the allocate_cost_volume function

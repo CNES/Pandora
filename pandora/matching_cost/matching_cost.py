@@ -28,6 +28,7 @@ import logging
 from abc import ABCMeta, abstractmethod
 from math import ceil, floor
 from typing import Tuple, List, Union, Dict
+import math
 from json_checker import And, Or
 
 import numpy as np
@@ -249,6 +250,122 @@ class AbstractMatchingCost:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
         :rtype: xarray.Dataset
         """
+
+    def grid_estimation(self, img: xr.Dataset, cfg: Dict[str, dict]) -> xr.Dataset:
+        """
+        :param img: left Dataset image
+        :type img: xarray.Dataset
+        :param cfg: user configuration
+        :type cfg: dict
+        :return: a grid with:
+
+                - ROI origin
+                - cost volume origin
+                - indexs of columns to compute
+                - size
+                - sampling interval
+        :rtype: xarray.Dataset
+        """
+        # Get col dimension
+        c_col = img["im"].coords["col"]
+        col = np.arange(c_col[0], c_col[-1] + 1, self._step_col)  # type: np.ndarray
+
+        # Index to be kept in the cost volume once it has been calculated
+        index_compute_col = col
+
+        # At current, the ROI image is not in the same reference frame as the image,
+        # hence these additional origins
+        # To be modified in the 371 ticket
+        roi_origin = (0, 0)  # without calculation margins
+        cv_origin = (0, 0)  # final cost volume without left margin
+
+        # Get the index of the columns that should be computed and the origin points of ROI and cost volume
+        if "ROI" in cfg:
+            left_margin, up_margin = cfg["ROI"]["margins"][0], cfg["ROI"]["margins"][1]
+            roi_origin = (cfg["ROI"]["row"]["first"], cfg["ROI"]["col"]["first"])
+
+            # Check if the first column of roi is inside the final CV (with the step)
+            if left_margin % self._step_col == 0:
+                # For example, given left_margin = 4 and step = 2
+                #
+                # roi_img = M M M M M M M M M M M
+                #           M M M M 1 2 3 M M M M
+                #           M M M M 4 5 6 M M M M
+                #           M M M M 7 8 9 M M M M
+                #           M M M M M M M M M M M
+                #
+                # Our starting point would be at index 0 --> starting point = 1st M
+                # With a step of 2, the first point of ROI is calculated
+
+                # To be modified in the 371 ticket, do not start at 0
+                index_compute_col = np.arange(0, img["im"].shape[1], self._step_col)
+                cv_origin = (up_margin, left_margin / self._step_col)
+
+            elif left_margin < self._step_col:
+                # For example, given left_margin = 2 and step = 3
+                #
+                # roi_img = M M M M M M M
+                #           M M 1 2 3 M M
+                #           M M 4 5 6 M M
+                #           M M 7 8 9 M M
+                #           M M M M M M M
+                #
+                # Our starting point would be at index left_margin = 2 --> starting point = 1st point of ROI
+                # We are directly on the first point to compute
+
+                # To be modified in the 371 ticket, do not begin at 0 but roi_origin_col
+                # And finish at c_col[-1]
+                index_compute_col = np.arange(left_margin, img["im"].shape[1], self._step_col)
+                cv_origin = (up_margin, 0)
+            else:
+                # For example, given left_margin = 3 and step = 2
+                #
+                # roi_img = M M M M M M M M M
+                #           M M M 1 2 3 M M M
+                #           M M M 4 5 6 M M M
+                #           M M M 7 8 9 M M M
+                #           M M M M M M M M M
+                #
+                # Our starting point would be at index 1 --> starting point = 2nd M
+                # With a step of 2, the first point of ROI is calculated without cropping margins too much
+                #
+                # For example, given left_margin = 4 and step = 3
+                #
+                # roi_img = M M M M M M M M M M M
+                #           M M M M 1 2 3 M M M M
+                #           M M M M 4 5 6 M M M M
+                #           M M M M 7 8 9 M M M M
+                #           M M M M M M M M M M M
+                #
+                # Our starting point would be at index 1 --> starting point = 2nd M
+                # With a step of 3, the first point of ROI is calculated without cropping margins too much
+
+                # give the number of the first column to compute
+                start = self._step_col - (self.find_nearest_multiple_of_step(left_margin) - left_margin)
+                # To be modified in the 371 ticket, do not begin at start but c_col[0] + start
+                # And finish at c_col[-1]
+                index_compute_col = np.arange(start, img["im"].shape[1], self._step_col)
+                cv_origin = (up_margin, math.floor(left_margin / self._step_col))
+
+        # Instantiate grid
+        grid = xr.Dataset(
+            {},
+            coords={"row": img["im"].coords["row"], "col": col},
+        )
+
+        # Add img attributes
+        grid.attrs = img.attrs
+        # Add step in grid attributes
+        grid.attrs["sampling_interval"] = self._step_col
+        # Add ROI origin in grid attributes
+        grid.attrs["roi_origin"] = roi_origin
+        # Add cost volume origin in grid attributes
+        grid.attrs[
+            "cv_origin"
+        ] = cv_origin  #  Point where we have to start computing cost volume to be sure to compute ROI origin point
+        # Add index of columns to compute in grid attributes
+        grid.attrs["col_to_compute"] = index_compute_col
+        return grid
 
     def allocate_costvolume(
         self,
