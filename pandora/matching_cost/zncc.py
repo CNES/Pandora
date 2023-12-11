@@ -105,6 +105,9 @@ class Zncc(matching_cost.AbstractMatchingCost):
             xarray.Dataset, with the data variables:
                 - cost_volume 3D xarray.DataArray (row, col, disp)
         """
+        # Obtain absolute min and max disparities
+        disp_min, disp_max = self.get_min_max_from_grid(grid_disp_min, grid_disp_max)
+
         # check band parameter
         self.check_band_input_mc(img_left, img_right)
 
@@ -114,54 +117,19 @@ class Zncc(matching_cost.AbstractMatchingCost):
         # Computes the standard deviation raster for the whole images
         # The standard deviation raster is truncated for points that are not calculable
         img_left_std = compute_std_raster(img_left, self._window_size, self._band)
-        img_right_std = [compute_std_raster(img, self._window_size, self._band) for img in img_right_shift]
+        img_right_std = []
+        for i, img in enumerate(img_right_shift):  # pylint: disable=unused-variable
+            img_right_std.append(compute_std_raster(img, self._window_size, self._band))
 
         # Computes the mean raster for the whole images
         # The standard mean raster is truncated for points that are not calculable
         img_left_mean = compute_mean_raster(img_left, self._window_size, self._band)
-        img_right_mean = [compute_mean_raster(img, self._window_size, self._band) for img in img_right_shift]
-
-        # Obtain absolute min and max disparities
-        disp_min, disp_max = self.get_min_max_from_grid(grid_disp_min, grid_disp_max)
-        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
-        cv = self.allocate_numpy_cost_volume(img_left, disparity_range)
-
-        offset_row_col = int((self._window_size - 1) / 2)
-        cv_crop = self.crop_cost_volume(cv, offset_row_col)
-
-        left_data = self.extract_image_data(img_left)
-
-        # Computes the matching cost
-        for disp_index, disp in enumerate(disparity_range):
-            i_right = int((disp % 1) * self._subpix)
-            shifted_right_image = img_right_shift[i_right]
-            point_p, point_q = self.point_interval(img_left, shifted_right_image, disp)
-            right_data = self.extract_image_data(shifted_right_image)
-
-            zncc_ = left_data[:, slice(*point_p)] * right_data[:, slice(*point_q)]
-
-            zncc_ = xr.Dataset(
-                {"im": (["row", "col"], zncc_)},
-                coords={
-                    "row": np.arange(zncc_.shape[0]),
-                    "col": np.arange(zncc_.shape[1]),
-                },
-            )
-            zncc_ = compute_mean_raster(zncc_, self._window_size, self._band)
-
-            p_std = self.std_point_interval(point_p)
-            q_std = self.std_point_interval(point_q)
-
-            # Subtracting  the  local mean  value  of  intensities
-            zncc_ -= img_left_mean[:, p_std[0] : p_std[1]] * img_right_mean[i_right][:, q_std[0] : q_std[1]]
-
-            # Divide by the standard deviation of the intensities of the images
-            apply_divide_standard(zncc_, img_left_std, img_right_std, p_std, q_std, i_right)
-
-            # Places the result in the cost_volume
-            cv_crop[disp_index, point_p[0] : p_std[1], :] = np.swapaxes(zncc_, 0, 1)
+        img_right_mean = []
+        for i, img in enumerate(img_right_shift):
+            img_right_mean.append(compute_mean_raster(img, self._window_size, self._band))
 
         # Cost volume metadata
+        offset_row_col = int((self._window_size - 1) / 2)
         metadata = {
             "measure": "zncc",
             "subpixel": self._subpix,
@@ -171,6 +139,61 @@ class Zncc(matching_cost.AbstractMatchingCost):
             "cmax": 1,  # Maximal cost of the cost volume with zncc measure
             "band_correl": self._band,
         }
+
+        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
+        cv = self.allocate_numpy_cost_volume(img_left, disparity_range)
+        cv_crop = self.crop_cost_volume(cv, offset_row_col)
+
+        # Computes the matching cost
+        for disp_index, disp in enumerate(disparity_range):
+            i_right = int((disp % 1) * self._subpix)
+            point_p, point_q = self.point_interval(img_left, img_right_shift[i_right], disp)
+
+            # Point interval in the left standard deviation image
+            # -  (win_radius * 2) because img_std is truncated for points that are not calculable
+            p_std = (point_p[0], point_p[1] - (int(self._window_size / 2) * 2))
+            # Point interval in the right standard deviation image
+            q_std = (point_q[0], point_q[1] - (int(self._window_size / 2) * 2))
+
+            if self._band is not None:
+                band_index_left = list(img_left.band_im.data).index(self._band)
+                band_index_right = list(img_right.band_im.data).index(self._band)
+                if len(img_right_shift[i_right]["im"].shape) > 2:
+                    # Compute the normalized summation of the product of intensities
+                    zncc_ = (
+                        img_left["im"].data[band_index_left, :, point_p[0] : point_p[1]]
+                        * img_right_shift[i_right]["im"].data[band_index_right, :, point_q[0] : point_q[1]]
+                    )
+                else:
+                    # Compute the normalized summation of the product of intensities
+                    zncc_ = (
+                        img_left["im"].data[band_index_left, :, point_p[0] : point_p[1]]
+                        * img_right_shift[i_right]["im"].data[:, point_q[0] : point_q[1]]
+                    )
+            else:
+                # Compute the normalized summation of the product of intensities
+                zncc_ = (
+                    img_left["im"].data[:, point_p[0] : point_p[1]]
+                    * img_right_shift[i_right]["im"].data[:, point_q[0] : point_q[1]]
+                )
+
+            zncc_ = xr.Dataset(
+                {"im": (["row", "col"], zncc_)},
+                coords={
+                    "row": np.arange(zncc_.shape[0]),
+                    "col": np.arange(zncc_.shape[1]),
+                },
+            )
+            zncc_ = compute_mean_raster(zncc_, self._window_size, self._band)
+            # Subtracting  the  local mean  value  of  intensities
+            zncc_ -= img_left_mean[:, p_std[0] : p_std[1]] * img_right_mean[i_right][:, q_std[0] : q_std[1]]
+
+            # Divide by the standard deviation of the intensities of the images
+            apply_divide_standard(zncc_, img_left_std, img_right_std, p_std, q_std, i_right)
+
+            # Places the result in the cost_volume
+            cv_crop[disp_index, point_p[0] : p_std[1], :] = np.swapaxes(zncc_, 0, 1)
+
         # Create the xarray.DataSet that will contain the cost_volume of dimensions (row, col, disp)
         # Computations were optimized with a cost_volume of dimensions (disp, row, col)
         # As we are expected to return a cost_volume of dimensions (row, col, disp),
@@ -180,32 +203,6 @@ class Zncc(matching_cost.AbstractMatchingCost):
         )
 
         return cv
-
-    def std_point_interval(self, point_interval: Tuple[int, int]) -> Tuple[int, int]:
-        """
-        Compute standard deviation point interval.
-
-        (win_radius * 2) because img_std is truncated for points that are not calculable
-        :param point_interval: point interval
-        :type point_interval: Tuple[int, int]
-        :return: standard deviation point interval
-        :rtype: Tuple[int, int]
-        """
-        return point_interval[0], point_interval[1] - (int(self._window_size / 2) * 2)
-
-    def extract_image_data(self, image_dataset: xr.Dataset) -> np.ndarray:
-        """
-        Extract image data from dataset taking band into account if relevant.
-        :param image_dataset:
-        :type image_dataset:
-        :return:
-        :rtype:
-        """
-        try:
-            return image_dataset.sel(band_im=self._band)["im"].data
-        except KeyError:
-            # Raised when there is no band_im coordinates or when self._band is None
-            return image_dataset["im"].data
 
 
 def apply_divide_standard(
