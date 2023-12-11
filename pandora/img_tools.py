@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import logging
 import warnings
-from typing import List, Union, Tuple, cast, Dict, Optional
+from typing import List, Union, Tuple, cast, Dict
 import sys
 
 import numpy as np
@@ -265,24 +265,6 @@ def add_mask(
     # having no_data_pixels[row], take the "-2" dimension, and no_data_pixel[col], take the last dimension.
     dataset["msk"].data[(no_data_pixels[-2], no_data_pixels[-1])] = int(dataset.attrs["no_data_mask"])
     return dataset
-
-
-def extract_band_data(image_dataset: xr.Dataset, band: Optional[str] = None) -> np.ndarray:
-    """
-    Extract image data from dataset taking band into account if relevant.
-
-    :param image_dataset: dataset to extract data from.
-    :type image_dataset: xr.Dataset
-    :param band: str (optional)
-    :type band: Optional[str]
-    :return: data from band.
-    :rtype: np.ndarray
-    """
-    try:
-        return image_dataset.sel(band_im=band)["im"].data
-    except KeyError:
-        # Raised when there is no band_im coordinates or when band is None
-        return image_dataset["im"].data
 
 
 def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Dataset:

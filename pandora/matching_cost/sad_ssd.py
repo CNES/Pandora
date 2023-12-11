@@ -29,7 +29,7 @@ import numpy as np
 import xarray as xr
 from json_checker import Checker, And
 
-from pandora.img_tools import shift_right_img, extract_band_data
+from pandora.img_tools import shift_right_img
 from pandora import common
 from pandora.matching_cost import matching_cost
 
@@ -116,8 +116,14 @@ class SadSsd(matching_cost.AbstractMatchingCost):
 
         # Contains the shifted right images
         img_right_shift = shift_right_img(img_right, self._subpix, self._band)
-        selected_band_right = extract_band_data(img_right, self._band)
-        selected_band_left = extract_band_data(img_left, self._band)
+        if self._band is not None:
+            band_index_left = list(img_left.band_im.data).index(self._band)
+            band_index_right = list(img_right.band_im.data).index(self._band)
+            selected_band_right = img_right["im"].data[band_index_right, :, :]
+            selected_band_left = img_left["im"].data[band_index_left, :, :]
+        else:
+            selected_band_right = img_right["im"].data
+            selected_band_left = img_left["im"].data
 
         # Computes the maximal cost of the cost volume
         min_left = np.amin(selected_band_left)
@@ -257,9 +263,29 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         :return: the absolute difference pixel-wise between elements in the interval
         :rtype: numpy array
         """
-        left_data = extract_band_data(img_left, self._band)
-        right_data = extract_band_data(img_right, self._band)
-        return abs(left_data[:, slice(*point_p)] - right_data[:, slice(*point_q)])
+        if self._band is not None:
+            band_index_left = list(img_left.band_im.data).index(self._band)
+            band_index_right = list(img_right.band_im.data).index(self._band)
+            # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
+            if len(img_right["im"].data.shape) > 2:
+                cost = abs(
+                    img_left["im"].data[
+                        band_index_left,
+                        :,
+                        point_p[0] : point_p[1],
+                    ]
+                    - img_right["im"].data[band_index_right, :, point_q[0] : point_q[1]]
+                )
+            else:
+                cost = abs(
+                    img_left["im"].data[band_index_left, :, point_p[0] : point_p[1]]
+                    - img_right["im"].data[:, point_q[0] : point_q[1]]
+                )
+        else:
+            cost = abs(
+                img_left["im"].data[:, point_p[0] : point_p[1]] - img_right["im"].data[:, point_q[0] : point_q[1]]
+            )
+        return cost
 
     def sd_cost(self, point_p: Tuple, point_q: Tuple, img_left: xr.Dataset, img_right: xr.Dataset) -> np.ndarray:
         """
@@ -288,9 +314,31 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         :return: the squared difference pixel-wise between elements in the interval
         :rtype: numpy array
         """
-        left_data = extract_band_data(img_left, self._band)
-        right_data = extract_band_data(img_right, self._band)
-        return (left_data[:, slice(*point_p)] - right_data[:, slice(*point_q)]) ** 2
+
+        if self._band is not None:
+            band_index_left = list(img_left.band_im.data).index(self._band)
+            band_index_right = list(img_right.band_im.data).index(self._band)
+            # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
+            if len(img_right["im"].data.shape) > 2:
+                cost = (
+                    img_left["im"].data[
+                        band_index_left,
+                        :,
+                        point_p[0] : point_p[1],
+                    ]
+                    - img_right["im"].data[band_index_right, :, point_q[0] : point_q[1]]
+                ) ** 2
+            else:
+                cost = (
+                    img_left["im"].data[band_index_left, :, point_p[0] : point_p[1]]
+                    - img_right["im"].data[:, point_q[0] : point_q[1]]
+                ) ** 2
+        else:
+            cost = (
+                img_left["im"].data[:, point_p[0] : point_p[1]] - img_right["im"].data[:, point_q[0] : point_q[1]]
+            ) ** 2
+
+        return cost
 
     def pixel_wise_aggregation(self, cost_volume: np.ndarray) -> np.ndarray:
         """
