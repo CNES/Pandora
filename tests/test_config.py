@@ -27,7 +27,7 @@ import unittest
 import copy
 import json_checker
 import pytest
-from transitions import MachineError
+from transitions.core import MachineError
 import numpy as np
 from tests import common
 from pandora import check_configuration
@@ -180,7 +180,7 @@ class TestConfig(unittest.TestCase):
             }
         }
         # Json checker must raise an error
-        self.assertRaises(SystemExit, check_configuration.check_input_section, cfg)
+        self.assertRaises(ValueError, check_configuration.check_input_section, cfg)
 
         # Test configuration with right disparity inverted
         cfg = {
@@ -260,16 +260,16 @@ class TestConfig(unittest.TestCase):
         img_left = check_configuration.get_metadata(cfg["input"]["left"]["img"], cfg["input"]["left"]["disp"])
         img_right = check_configuration.get_metadata(cfg["input"]["right"]["img"], None)
         # Check that the check_conf function raises an error
-        with pytest.raises(SystemExit):
+        with pytest.raises(MachineError, match="A problem occurs during Pandora checking. Be sure of your sequencing"):
             check_configuration.check_conf(cfg, pandora_machine)
         # Check that the check_band_pipeline raises an error (this shall be the source of check_conf's error)
-        with pytest.raises(SystemExit):
+        with pytest.raises(AttributeError, match="Wrong band instantiate on zncc step: n not in input image"):
             pandora_machine.check_band_pipeline(
                 img_left.coords["band_im"].data,
                 cfg["pipeline"]["matching_cost"]["matching_cost_method"],
                 cfg["pipeline"]["matching_cost"]["band"],
             )
-        with pytest.raises(SystemExit):
+        with pytest.raises(AttributeError, match="Wrong band instantiate on zncc step: n not in input image"):
             pandora_machine.check_band_pipeline(
                 img_right.coords["band_im"].data,
                 cfg["pipeline"]["matching_cost"]["matching_cost_method"],
@@ -289,10 +289,10 @@ class TestConfig(unittest.TestCase):
         pandora_machine = PandoraMachine()
 
         # Check that the check_conf function raises an error
-        with pytest.raises(SystemExit):
+        with pytest.raises(MachineError, match="A problem occurs during Pandora checking. Be sure of your sequencing"):
             check_configuration.check_conf(cfg, pandora_machine)
         # Check that the check_band_pipeline raises an error (this shall be the source of check_conf's error)
-        with pytest.raises(SystemExit):
+        with pytest.raises(AttributeError, match="Missing band instantiate on zncc step : input image is multiband"):
             # We add the band argument ad None because normally it is completed in the check_conf function,
             # which then calls check_band_pipeline
             pandora_machine.check_band_pipeline(
@@ -300,7 +300,7 @@ class TestConfig(unittest.TestCase):
                 cfg["pipeline"]["matching_cost"]["matching_cost_method"],
                 band_used=None,
             )
-        with pytest.raises(SystemExit):
+        with pytest.raises(AttributeError, match="Missing band instantiate on zncc step : input image is multiband"):
             pandora_machine.check_band_pipeline(
                 img_right.coords["band_im"].data,
                 cfg["pipeline"]["matching_cost"]["matching_cost_method"],
@@ -523,7 +523,7 @@ class TestConfig(unittest.TestCase):
         }
 
         # When left disparities are grids and right are none, cross checking method cannot be used : the program exits
-        self.assertRaises(SystemExit, check_configuration.check_conf, cfg, pandora_machine)
+        self.assertRaises(MachineError, check_configuration.check_conf, cfg, pandora_machine)
 
         # Check the configuration returned with left and right disparity grids and cross checking method
         cfg = {
@@ -566,7 +566,7 @@ class TestConfig(unittest.TestCase):
         }
 
         # When left disparities are grids and multiscale processing cannot be used : the program exits
-        self.assertRaises(SystemExit, check_configuration.check_conf, cfg, pandora_machine)
+        self.assertRaises(TypeError, check_configuration.check_conf, cfg, pandora_machine)
 
         # Check the configuration returned with left disparity integer and multiscale processing
         pandora_machine = PandoraMachine()
@@ -750,7 +750,7 @@ class TestConfig(unittest.TestCase):
         pipeline_cfg = {"pipeline": copy.deepcopy(common.basic_pipeline_cfg)}
 
         self.assertRaises(
-            SystemExit,
+            TypeError,
             check_configuration.memory_consumption_estimation,
             pipeline_cfg,
             [img_left_path, disp_min, disp_max],
@@ -772,7 +772,7 @@ class TestConfig(unittest.TestCase):
         }
 
         # When left disparities are grids and multiscale processing cannot be used : the program exits
-        self.assertRaises(SystemExit, check_configuration.check_conf, cfg, pandora_machine)
+        self.assertRaises(ValueError, check_configuration.check_conf, cfg, pandora_machine)
 
 
 if __name__ == "__main__":

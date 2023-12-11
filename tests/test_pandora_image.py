@@ -27,6 +27,7 @@ This module contains functions to test all the methods in img_tools module.
 
 # pylint: disable=redefined-outer-name
 
+import re
 import copy
 import numpy as np
 import pytest
@@ -354,7 +355,7 @@ class TestGetWindow:
         """
         img_height, img_width = default_image_shape
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(ValueError, match="Roi specified is outside the image"):
             img_tools.get_window(roi, img_width, img_height)
 
 
@@ -837,23 +838,25 @@ class TestCreateDatasetFromInputs:
         np.testing.assert_array_equal(dst_left["disparity"].data, expected)
 
     @pytest.mark.parametrize(
-        ["img_path", "classif_path", "segm_path"],
+        ["img_path", "classif_path", "segm_path", "size"],
         [
             pytest.param(
                 "tests/image/left_img.tif",
                 "tests/pandora/left_classif.tif",
                 None,
+                "4",
                 id="between img and classif",
             ),
             pytest.param(
                 "tests/pandora/left.png",
                 None,
                 "tests/image/mask_left.tif",
+                "375",
                 id="between img and segm",
             ),
         ],
     )
-    def test_fails_with_different_shape(self, img_path, classif_path, segm_path):
+    def test_fails_with_different_shape(self, img_path, classif_path, segm_path, size):
         """
         Test with wrong image shapes
         """
@@ -866,8 +869,11 @@ class TestCreateDatasetFromInputs:
             "classif": classif_path,
             "segm": segm_path,
         }
-
-        with pytest.raises((ValueError, SystemExit)):
+        string_match = re.escape(
+            "cannot reindex or align along dimension 'row' because of conflicting dimension sizes:"
+            " {4, 375} (note: an index is found along that dimension with size=" + size + ")"
+        )
+        with pytest.raises(ValueError, match=string_match):
             create_dataset_from_inputs(input_config=input_config)
 
 
@@ -969,7 +975,7 @@ class TestGetMetadata:
 
     def test_get_metadata_succeed(self, input_cfg):
         """
-        Test the method get_metadata with all good informations
+        Test the method get_metadata with all good information
 
         """
         # Metadata ground truth
@@ -997,25 +1003,25 @@ class TestGetMetadata:
     )
     def test_fail_with_wrong_img_path(self, input_cfg, img_path):
         """
-        Test the method get_metadata with wrong informations for img param
+        Test the method get_metadata with wrong information for img param
 
         """
         with pytest.raises((TypeError, RasterioIOError)):
             img_tools.get_metadata(img=img_path, disparity=input_cfg["input"]["left"]["disp"])
 
     @pytest.mark.parametrize(
-        ["classif"],
+        ["classif", "expected_error"],
         [
-            pytest.param(True, id="Boolean for classification path"),
-            pytest.param(1, id="Integer for classification path"),
+            pytest.param(True, "invalid path or file: True", id="Boolean for classification path"),
+            pytest.param(1, "invalid path or file: 1", id="Integer for classification path"),
         ],
     )
-    def test_fail_with_wrong_classification_param(self, input_cfg, classif):
+    def test_fail_with_wrong_classification_param(self, input_cfg, classif, expected_error):
         """
-        Test the method get_metadata with wrong informations for classif param
+        Test the method get_metadata with wrong information for classif param
 
         """
-        with pytest.raises(TypeError):
+        with pytest.raises(TypeError, match=expected_error):
             img_tools.get_metadata(
                 img=input_cfg["input"]["left"]["img"], disparity=input_cfg["input"]["left"]["disp"], classif=classif
             )

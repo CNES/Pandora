@@ -300,7 +300,7 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
     # ROI
     window = get_window(roi, nx_, ny_) if roi else None
 
-    # If only one band is present, consider data as 2 dimensional
+    # If only one band is present, consider data as 2 dimensions
     if img_ds.count == 1:
         data = img_ds.read(1, out_dtype=np.float32, window=window)
         nx_, ny_ = data.shape[1], data.shape[0]

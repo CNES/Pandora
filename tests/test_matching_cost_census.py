@@ -790,7 +790,7 @@ class TestMatchingCostCensus(unittest.TestCase):
         )
 
         # Compute the cost_volume
-        with pytest.raises(SystemExit):
+        with pytest.raises(AttributeError, match="Wrong band instantiate : b not in img_left or img_right"):
             _ = matching_cost_.compute_cost_volume(
                 left, right, left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max")
             )
@@ -801,7 +801,7 @@ class TestMatchingCostCensus(unittest.TestCase):
         )
 
         # Compute the cost_volume
-        with pytest.raises(SystemExit):
+        with pytest.raises(AttributeError, match="Band must be instantiated in matching cost step"):
             _ = matching_cost_.compute_cost_volume(
                 left, right, left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max")
             )
@@ -852,7 +852,7 @@ class TestMatchingCostCensus(unittest.TestCase):
         )
 
         # Compute the cost_volume
-        with pytest.raises(SystemExit):
+        with pytest.raises(AttributeError, match="Right dataset is monoband: r band cannot be selected"):
             _ = matching_cost_.compute_cost_volume(
                 left, right, left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max")
             )
