@@ -24,7 +24,6 @@ This module contains functions associated to the cost volume measure step.
 """
 # pylint:disable=too-many-branches
 import sys
-import logging
 from abc import ABCMeta, abstractmethod
 from math import ceil, floor
 from typing import Tuple, List, Union, Dict
@@ -162,8 +161,7 @@ class AbstractMatchingCost:
 
         if "pandora2d" not in sys.modules:
             if "step" in cfg and cfg["step"] != 1:
-                logging.error("Step parameter cannot be different from 1")
-                sys.exit(1)
+                raise ValueError("Step parameter cannot be different from 1")
         if "step" not in cfg:
             cfg["step"] = self._STEP_COL  # type: ignore
 
@@ -195,16 +193,13 @@ class AbstractMatchingCost:
             try:
                 list(img_right.band_im.data)
             except AttributeError:
-                logging.error("Right dataset is monoband: %s band cannot be selected", self._band)
-                sys.exit(1)
+                raise AttributeError(f"Right dataset is monoband: {self._band} band cannot be selected")
             try:
                 list(img_left.band_im.data)
             except AttributeError:
-                logging.error("Left dataset is monoband: %s band cannot be selected", self._band)
-                sys.exit(1)
+                raise AttributeError(f"Left dataset is monoband: {self._band} band cannot be selected")
             if (self._band not in list(img_right.band_im.data)) or (self._band not in list(img_left.band_im.data)):
-                logging.error("Wrong band instantiate : %s not in img_left or img_right", self._band)
-                sys.exit(1)
+                raise AttributeError(f"Wrong band instantiate : {self._band} not in img_left or img_right")
         else:
             try:
                 list(img_right.band_im.data)
@@ -215,8 +210,7 @@ class AbstractMatchingCost:
             except AttributeError:
                 return
             if (img_right.band_im.data is not None) or (img_left.band_im.data is not None):
-                logging.error("Band must be instantiated in matching cost step")
-                sys.exit(1)
+                raise AttributeError("Band must be instantiated in matching cost step")
 
     @abstractmethod
     def compute_cost_volume(

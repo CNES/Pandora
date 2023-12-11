@@ -103,7 +103,6 @@ max-nested-blocks=6
 # inconsistent-return-statements if a never returning function is called then
 # it will be considered as an explicit return statement and no message will be
 # printed.
-never-returning-functions=sys.exit
 
 
 [SPELLING]

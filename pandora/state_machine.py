@@ -30,7 +30,6 @@ from __future__ import annotations
 
 import copy
 import logging
-import sys
 import warnings
 from typing import Dict, Union, List
 
@@ -782,12 +781,11 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # If vegetation_band is present in semantic_segmentation, check that the bands are present
         # in the input left classification
         if "vegetation_band" in cfg["semantic_segmentation"]:
-            if not "classif" in self.left_img.data_vars:
-                logging.error(
-                    "For performing the semantic_segmentation step in the pipeline,"
-                    " classif must be present in left image."
+            if "classif" not in self.left_img.data_vars:
+                raise ValueError(
+                    "For performing the semantic_segmentation step in the pipeline, "
+                    "classif must be present in left image."
                 )
-                sys.exit(1)
             self.check_band_pipeline(
                 self.left_img.coords["band_classif"].data,
                 cfg["semantic_segmentation"]["segmentation_method"],
@@ -812,11 +810,10 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         if "geometric_prior" in cfg["optimization"]:
             source = cfg["optimization"]["geometric_prior"]["source"]
             if source in ["classif", "segm"]:
-                if not source in self.left_img.data_vars:
-                    logging.error(
-                        "For performing the 3SGM optimization step in the pipeline, left %s must be present.", source
+                if source not in self.left_img.data_vars:
+                    raise AttributeError(
+                        f"For performing the 3SGM optimization step in the pipeline left {source} must be present."
                     )
-                    sys.exit(1)
                 # If sgm optimization is present with geometric_prior classification, check that the
                 # classes bands are present in the input classification
                 if "classes" in cfg["optimization"]["geometric_prior"]:
@@ -841,7 +838,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         validation_ = validation.AbstractValidation(**cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = validation_.cfg
         if "interpolated_disparity" in validation_.cfg:
-            interpolate_ = validation.AbstractInterpolation(  # type:ignore # pylint:disable=unused-variable
+            _ = validation.AbstractInterpolation(  # type:ignore
                 **cfg[input_step]
             )
 
@@ -853,11 +850,10 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             isinstance(self.left_img.attrs["disparity_source"], str)
             and self.right_img.attrs["disparity_source"] is None
         ):
-            logging.error(
-                "The cross-checking step cannot be processed if disp_min, disp_max are paths to the left "
-                "disparity grids and disp_right_min, disp_right_max are none."
+            raise AttributeError(
+                "The cross-checking step cannot be processed if disp_min, disp_max are paths to the "
+                "left disparity grids and disp_right_min, disp_right_max are none."
             )
-            sys.exit(1)
 
     def multiscale_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -867,7 +863,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type cfg: dict
         :param input_step: current step
         :type input_step: string
-        :return:
+        :return: None
         """
         multiscale_ = multiscale.AbstractMultiscale(self.left_img, self.right_img, **cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = multiscale_.cfg
@@ -897,7 +893,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type  img_left: xarray.Dataset
         :param img_right: image right with metadata
         :type  img_right: xarray.Dataset
-        :return:
+        :param right_left_img_check: if right image has been checked
+        :type right_left_img_check: bool
+        :return: None
         """
 
         self.left_img = img_left
@@ -928,8 +926,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                     self.trigger(check_input, cfg["pipeline"], input_step)
 
             except (MachineError, KeyError, AttributeError):
-                logging.error("A problem occurs during Pandora checking. Be sure of your sequencement")
-                raise
+                raise MachineError("A problem occurs during Pandora checking. Be sure of your sequencing")
 
         # Remove transitions
         self.remove_transitions(self._transitions_check)
@@ -953,14 +950,14 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         # Transition is removed using trigger name. But one trigger name can be used by multiple transitions
         # In this case, the 'remove_transition' function removes all transitions using this trigger name
-        # deleted_triggers list is used to avoid multiple call of 'remove_transition'' with the same trigger name.
+        # deleted_triggers list is used to avoid multiple call of 'remove_transition' with the same trigger name.
         deleted_triggers = []
         for trans in transition_list:
             if trans not in deleted_triggers:
                 self.remove_transition(trans["trigger"])
                 deleted_triggers.append(trans["trigger"])
 
-    def is_not_last_scale(self, input_step: str, cfg: Dict[str, dict]) -> bool:  # pylint:disable=unused-argument
+    def is_not_last_scale(self, _: str, __: Dict[str, dict]) -> bool:
         """
         Check if the current scale is the last scale
         :param cfg: configuration
@@ -991,16 +988,13 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # If no bands are given, then the input image shall be monoband
         if not band_used:
             if len(band_list) != 1:
-                logging.error("Missing band instantiate on %s step : input image is multiband", step)
-                sys.exit(1)
+                raise AttributeError(f"Missing band instantiate on {step} step : input image is multiband")
         # check that the image have the band names
         elif isinstance(band_used, dict):
             for _, band in band_used.items():
-                if not band in band_list:
-                    logging.error("Wrong band instantiate on %s step: %s not in input image", step, band)
-                    sys.exit(1)
+                if band not in band_list:
+                    raise AttributeError(f"Wrong band instantiate on {step} step: {band} not in input image")
         else:
             for band in band_used:
-                if not band in band_list:
-                    logging.error("Wrong band instantiate %s step: %s not in input image", step, band)
-                    sys.exit(1)
+                if band not in band_list:
+                    raise AttributeError(f"Wrong band instantiate on {step} step: {band} not in input image")

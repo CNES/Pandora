@@ -23,8 +23,6 @@
 This module contains functions associated to the multi-scale pyramid method.
 """
 
-import logging
-import sys
 import warnings
 from typing import Dict, Union, Tuple
 
@@ -86,8 +84,7 @@ class FixedZoomPyramid(multiscale.AbstractMultiscale):
 
         # input disparities cannot be grids
         if isinstance(left_img.attrs["disparity_source"], str) or isinstance(right_img.attrs["disparity_source"], str):
-            logging.error("Multiscale processing does not accept input disparity grids.")
-            sys.exit(1)
+            raise TypeError("Multiscale processing does not accept input disparity grids.")
 
         schema = {
             "multiscale_method": And(str, lambda x: "fixed_zoom_pyramid"),
