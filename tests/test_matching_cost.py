@@ -29,8 +29,10 @@ import numpy as np
 import xarray as xr
 import pytest
 
+from skimage.io import imsave
 from pandora import matching_cost
 from pandora.margins.descriptors import HalfWindowMargins
+from pandora.img_tools import create_dataset_from_inputs
 
 from tests import common
 
@@ -95,88 +97,68 @@ class TestMatchingCost:
 
         np.testing.assert_array_equal(result, expected)
 
+    @pytest.fixture()
+    def default_image_path(self, tmp_path):
+        """
+        Create a fake image to test ROI in create_dataset_from_inputs
+        """
+        image_path = tmp_path / "left_img.tif"
+        imarray = np.array(
+            (
+                [np.inf, 1, 2, 5, 1, 3, 6, 4, 9, 7, 8],
+                [5, 1, 2, 7, 1, 4, 7, 8, 5, 8, 0],
+                [1, 2, 0, 3, 0, 4, 0, 6, 7, 4, 9],
+                [4, 9, 4, 0, 1, 4, 7, 4, 6, 9, 2],
+                [2, 3, 5, 0, 1, 5, 9, 2, 8, 6, 7],
+                [1, 2, 4, 5, 2, 6, 7, 7, 3, 7, 0],
+                [1, 2, 0, 3, 0, 4, 0, 6, 7, 4, 9],
+                [np.inf, 9, 4, 0, 1, 3, 7, 4, 6, 9, 2],
+            )
+        )
+
+        imsave(image_path, imarray, plugin="tifffile", photometric="MINISBLACK")
+
+        return image_path
+
+    @pytest.fixture()
+    def default_input_roi(self, default_image_path):
+        """
+        Create an input configuration to test ROI in create_dataset_from_inputs
+        """
+        input_config = {
+            "left": {
+                "img": default_image_path,
+                "nodata": -9999,
+                "disp": [-60, 0],
+            }
+        }
+
+        return input_config
+
     @pytest.mark.parametrize(
-        ["img_left", "user_cfg", "step", "col", "ground_truth_attrs"],
+        ["step", "col", "ground_truth_attrs"],
         [
             pytest.param(
-                common.matching_cost_tests_setup()[0],
-                {},
                 1,  # step value
-                np.arange(0, 6, 1),  # col coords left image
+                np.arange(0, 11, 1),  # col coords left image
                 {
                     "sampling_interval": 1,
-                    "roi_origin": (0, 0),
-                    "cv_origin": (0, 0),
-                    "col_to_compute": np.array([0, 1, 2, 3, 4, 5]),
+                    "col_to_compute": np.arange(0, 11, 1),
                 },
                 id="no ROI in user_configuration and step = 1",
             ),
-            pytest.param(
-                common.matching_cost_tests_setup()[0],
-                {
-                    "ROI": {
-                        "col": {"first": 2, "last": 3},
-                        "row": {"first": 2, "last": 3},
-                        "margins": [2, 2, 2, 2],
-                    }
-                },
-                2,  # step value
-                np.arange(0, 6, 2),  # col coords left image
-                {
-                    "sampling_interval": 2,
-                    "roi_origin": (2, 2),
-                    "cv_origin": (2, 1),
-                    "col_to_compute": np.array([0, 2, 4]),
-                },
-                id="ROI in user_configuration and margin % step == 0",
-            ),
-            pytest.param(
-                common.matching_cost_tests_setup()[0],
-                {
-                    "ROI": {
-                        "col": {"first": 2, "last": 3},
-                        "row": {"first": 2, "last": 3},
-                        "margins": [2, 2, 2, 2],
-                    }
-                },
-                3,  # step value
-                np.arange(0, 6, 3),  # col coords left image
-                {
-                    "sampling_interval": 3,
-                    "roi_origin": (2, 2),
-                    "cv_origin": (2, 0),
-                    "col_to_compute": np.array([2, 5]),
-                },
-                id="ROI in user_configuration and margin % step != 0 with margin < step",
-            ),
-            pytest.param(
-                xr.Dataset(
-                    {"im": (["row", "col"], np.ones((8, 8), dtype=np.float64))},
-                    coords={"row": np.arange(8), "col": np.arange(8)},
-                ).assign_attrs(common.img_attrs),
-                {
-                    "ROI": {
-                        "col": {"first": 3, "last": 3},
-                        "row": {"first": 3, "last": 3},
-                        "margins": [3, 3, 3, 3],
-                    }
-                },
-                2,  # step value
-                np.arange(0, 8, 2),  # col coords left image
-                {
-                    "sampling_interval": 2,
-                    "roi_origin": (3, 3),
-                    "cv_origin": (3, 1),
-                    "col_to_compute": np.array([1, 3, 5, 7]),
-                },
-                id="ROI in user_configuration and margin % step != 0 with margin > step",
-            ),
         ],
     )
-    def test_grid_estimation(self, img_left, user_cfg, step, col, ground_truth_attrs):
+    def test_grid_estimation(self, default_input_roi, step, col, ground_truth_attrs):
         """
         Test the grid_estimation function
         """
+
+        # Input configuration
+        input_config = default_input_roi
+
+        # Create dataset with ROI
+        img_left = create_dataset_from_inputs(input_config=input_config["left"])
 
         # Create matching cost object
         matching_cost_ = matching_cost.AbstractMatchingCost(**common.basic_pipeline_cfg["matching_cost"])
@@ -185,7 +167,121 @@ class TestMatchingCost:
         matching_cost_._step_col = step  # pylint: disable=protected-access
 
         # Grid estimation
-        grid = matching_cost_.grid_estimation(img_left, user_cfg)
+        grid = matching_cost_.grid_estimation(img_left, input_config)
+
+        # Create ground truth for output of grid_estimation() function
+        c_row = img_left["im"].coords["row"]
+        row = np.arange(c_row[0], c_row[-1] + 1)
+
+        ground_truth = xr.Dataset(
+            {},
+            coords={"row": row, "col": col},
+        )
+
+        ground_truth.attrs = img_left.attrs
+        ground_truth.attrs.update(ground_truth_attrs)
+
+        print(f"{grid=}")
+
+        xr.testing.assert_identical(grid, ground_truth)
+
+    @pytest.mark.parametrize(
+        ["roi", "step", "col", "ground_truth_attrs"],
+        [
+            pytest.param(
+                {"col": {"first": 3, "last": 5}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]},
+                2,  # step value
+                np.arange(1, 8, 2),  # col coords left image
+                {
+                    "sampling_interval": 2,
+                    "col_to_compute": np.array([1, 3, 5, 7]),
+                },
+                id="ROI in user_configuration and margin % step == 0",
+            ),
+            pytest.param(
+                {"col": {"first": 3, "last": 5}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]},
+                3,  # step value
+                np.arange(1, 8, 3),  # col coords left image
+                {
+                    "sampling_interval": 3,
+                    "col_to_compute": np.array([3, 6]),
+                },
+                id="ROI in user_configuration and margin % step != 0 with margin < step",
+            ),
+            pytest.param(
+                {"col": {"first": 3, "last": 4}, "row": {"first": 3, "last": 4}, "margins": [3, 3, 3, 3]},
+                2,  # step value
+                np.arange(0, 7, 2),  # col coords left image
+                {
+                    "sampling_interval": 2,
+                    "col_to_compute": np.array([1, 3, 5, 7]),
+                },
+                id="ROI in user_configuration and margin % step != 0 with margin > step",
+            ),
+            pytest.param(
+                {"col": {"first": 0, "last": 2}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]},
+                2,  # step value
+                np.arange(0, 5, 2),  # col coords left image
+                {
+                    "sampling_interval": 2,
+                    "col_to_compute": np.array([0, 2, 4]),
+                },
+                id="ROI overlap on left side",
+            ),
+            pytest.param(
+                {"col": {"first": 10, "last": 12}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]},
+                3,  # step value
+                np.arange(8, 11, 3),  # col coords left image
+                {
+                    "sampling_interval": 3,
+                    "col_to_compute": np.array([10]),
+                },
+                id="ROI overlap on right side",
+            ),
+            pytest.param(
+                {"col": {"first": 3, "last": 5}, "row": {"first": -1, "last": 5}, "margins": [2, 2, 2, 2]},
+                2,  # step value
+                np.arange(1, 8, 2),  # col coords left image
+                {
+                    "sampling_interval": 2,
+                    "col_to_compute": np.array([1, 3, 5, 7]),
+                },
+                id="ROI overlap on up side",
+            ),
+            pytest.param(
+                {"col": {"first": 3, "last": 5}, "row": {"first": 7, "last": 11}, "margins": [2, 2, 2, 2]},
+                2,  # step value
+                np.arange(1, 8, 2),  # col coords left image
+                {
+                    "sampling_interval": 2,
+                    "col_to_compute": np.array([1, 3, 5, 7]),
+                },
+                id="ROI overlap on down side",
+            ),
+        ],
+    )
+    def test_grid_estimation_with_roi(self, default_input_roi, roi, step, col, ground_truth_attrs):
+        """
+        Test the grid_estimation function with a ROI
+        """
+
+        # Input configuration
+        input_config = default_input_roi
+
+        # ROI
+        input_config["ROI"] = roi
+
+        # Create dataset with ROI
+        img_left = create_dataset_from_inputs(input_config=input_config["left"], roi=roi)
+
+        # Create matching cost object
+        matching_cost_ = matching_cost.AbstractMatchingCost(**common.basic_pipeline_cfg["matching_cost"])
+
+        # Update step for matching cost
+        matching_cost_._step_col = step  # pylint: disable=protected-access
+
+        # Grid estimation
+        grid = matching_cost_.grid_estimation(img_left, input_config)
 
         # Create ground truth for output of grid_estimation() function
         c_row = img_left["im"].coords["row"]

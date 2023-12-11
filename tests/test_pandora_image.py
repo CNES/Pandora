@@ -876,6 +876,98 @@ class TestCreateDatasetFromInputs:
         with pytest.raises(ValueError, match=string_match):
             create_dataset_from_inputs(input_config=input_config)
 
+    @pytest.fixture()
+    def default_image_path(self, tmp_path):
+        """
+        Create a fake image to test ROI in create_dataset_from_inputs
+        """
+        image_path = tmp_path / "left_img.tif"
+        imarray = np.array(
+            (
+                [np.inf, 1, 2, 5, 1, 3, 6, 4, 9, 7, 8],
+                [5, 1, 2, 7, 1, 4, 7, 8, 5, 8, 0],
+                [1, 2, 0, 3, 0, 4, 0, 6, 7, 4, 9],
+                [4, 9, 4, 0, 1, 3, 7, 4, 6, 9, 2],
+                [2, 3, 5, 0, 1, 5, 9, 2, 8, 6, 7],
+                [1, 2, 4, 5, 2, 6, 7, 7, 3, 7, 0],
+                [1, 2, 0, 3, 0, 4, 0, 6, 7, 4, 9],
+                [np.inf, 9, 4, 0, 1, 3, 7, 4, 6, 9, 2],
+            )
+        )
+
+        imsave(image_path, imarray, plugin="tifffile", photometric="MINISBLACK")
+
+        return image_path
+
+    @pytest.fixture()
+    def default_input_roi(self, default_cfg, default_image_path):
+        """
+        Create an input configuration to test ROI in create_dataset_from_inputs
+        """
+        input_config = {
+            "left": {
+                "img": default_image_path,
+                "nodata": default_cfg["input"]["left"]["nodata"],
+                "disp": [-60, 0],
+            }
+        }
+
+        return input_config
+
+    @pytest.mark.parametrize(
+        ["roi", "expected"],
+        [
+            pytest.param(
+                {"col": {"first": 3, "last": 5}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]},
+                {"row": np.arange(1, 8), "col": np.arange(1, 8)},
+                id="ROI inside the image",
+            ),
+            pytest.param(
+                {"col": {"first": 0, "last": 2}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]},
+                {"row": np.arange(1, 8), "col": np.arange(0, 5)},
+                id="ROI overlap on left side",
+            ),
+            pytest.param(
+                {"col": {"first": 10, "last": 12}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]},
+                {"row": np.arange(1, 8), "col": np.arange(8, 11)},
+                id="ROI overlap on right side",
+            ),
+            pytest.param(
+                {"col": {"first": 3, "last": 5}, "row": {"first": -1, "last": 5}, "margins": [2, 2, 2, 2]},
+                {"row": np.arange(0, 8), "col": np.arange(1, 8)},
+                id="ROI overlap on up side",
+            ),
+            pytest.param(
+                {"col": {"first": 3, "last": 5}, "row": {"first": 9, "last": 11}, "margins": [2, 2, 2, 2]},
+                {"row": np.arange(7, 8), "col": np.arange(1, 8)},
+                id="ROI overlap on down side",
+            ),
+        ],
+    )
+    def test_coords_roi(self, default_input_roi, roi, expected):
+        """
+        Test the create_dataset_from_inputs method when the config has a roi
+
+        """
+
+        # ROI
+        roi_tested = roi
+
+        # Expected coordinates
+        coords_gt = expected
+
+        # Input configuration
+        input_config = default_input_roi
+
+        # Create dataset with ROI
+        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"], roi=roi_tested)
+
+        # Test if row coordinates are equals
+        np.testing.assert_array_equal(dst_left.coords["row"], coords_gt["row"])
+
+        # Test if col coordinates are equals
+        np.testing.assert_array_equal(dst_left.coords["col"], coords_gt["col"])
+
 
 class TestShiftRightImg:
     """Test shift_right_img function."""
