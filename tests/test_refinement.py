@@ -696,9 +696,10 @@ class TestRefinement(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
-        cv = matching_cost_matcher.compute_cost_volume(
-            img_left, img_right, img_left["disparity"].sel(band_disp="min"), img_left["disparity"].sel(band_disp="max")
+        grid = matching_cost_matcher.allocate_cost_volume(
+            img_left, (img_left["disparity"].sel(band_disp="min"), img_left["disparity"].sel(band_disp="max"))
         )
+        cv = matching_cost_matcher.compute_cost_volume(img_left, img_right, grid)
         # Cost volume :
         # array([[[nan, 49., 15.],
         #         [40.,  6., 54.],

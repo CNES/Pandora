@@ -193,8 +193,8 @@ class TestMain:
         # Run Pandora pipeline
         pandora.main(config_path, str(tmp_path), verbose=False)
 
-        with (tmp_path / "cfg" / "config.json").open() as fp:
-            result = json.load(fp)
+        with (tmp_path / "cfg" / "config.json").open() as file_path:
+            result = json.load(file_path)
 
         assert result["margins"] == {
             "cumulative margins": {
@@ -425,7 +425,6 @@ class TestPandora(unittest.TestCase):
         left, right = pandora.run(pandora_machine, self.left, self.right, cfg)
 
         # Check the left disparity map
-        print("error", self.error(left["disparity_map"].data, self.disp_left, 1))
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.20:
             raise AssertionError
 

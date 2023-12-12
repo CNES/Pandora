@@ -61,11 +61,11 @@ class TestMatchingCostZncc(unittest.TestCase):
             **{"matching_cost_method": "zncc", "window_size": 5, "subpix": 1}
         )
 
+        grid = matching_cost_matcher.allocate_cost_volume(
+            self.left, (self.left["disparity"].sel(band_disp="min"), self.left["disparity"].sel(band_disp="max"))
+        )
         cost_volume_zncc = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left,
-            img_right=self.right,
-            grid_disp_min=self.left["disparity"].sel(band_disp="min"),
-            grid_disp_max=self.left["disparity"].sel(band_disp="max"),
+            img_left=self.left, img_right=self.right, cost_volume=grid
         )
         matching_cost_matcher.cv_masked(
             self.left,
@@ -138,12 +138,10 @@ class TestMatchingCostZncc(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 2}
         )
 
-        cv_zncc_subpixel = matching_cost_matcher.compute_cost_volume(
-            img_left=left,
-            img_right=right,
-            grid_disp_min=left["disparity"].sel(band_disp="min"),
-            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_matcher.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+        cv_zncc_subpixel = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         matching_cost_matcher.cv_masked(
             left,
             right,
@@ -243,12 +241,10 @@ class TestMatchingCostZncc(unittest.TestCase):
             **{"matching_cost_method": "zncc", "window_size": 3, "subpix": 1}
         )
 
-        cv = matching_cost_.compute_cost_volume(
-            img_left=left,
-            img_right=right,
-            grid_disp_min=left["disparity"].sel(band_disp="min"),
-            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         matching_cost_.cv_masked(
             left,
             right,
@@ -346,12 +342,10 @@ class TestMatchingCostZncc(unittest.TestCase):
             **{"matching_cost_method": "zncc", "window_size": 3, "subpix": 2}
         )
         # Compute the cost volume and invalidate pixels if need
-        cv = matching_cost_.compute_cost_volume(
-            img_left=left,
-            img_right=right,
-            grid_disp_min=left["disparity"].sel(band_disp="min"),
-            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         matching_cost_.cv_masked(
             left,
             right,
@@ -433,6 +427,7 @@ class TestMatchingCostZncc(unittest.TestCase):
             },
         )
         left.attrs = common.img_attrs
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         # Initialize multiband data
         data = np.zeros((2, 4, 4))
@@ -469,18 +464,26 @@ class TestMatchingCostZncc(unittest.TestCase):
             **{"matching_cost_method": "zncc", "window_size": 3, "subpix": 1, "band": "b"}
         )
 
+        grid = matching_cost_.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
+        )
+
         # Compute the cost_volume
         with pytest.raises(AttributeError, match="Wrong band instantiate : b not in img_left or img_right"):
-            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
 
         # Initialization of matching_cost plugin with no band
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "zncc", "window_size": 3, "subpix": 1}
         )
 
+        grid = matching_cost_.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
+        )
+
         # Compute the cost_volume
         with pytest.raises(AttributeError, match="Band must be instantiated in matching cost step"):
-            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
 
 
 if __name__ == "__main__":

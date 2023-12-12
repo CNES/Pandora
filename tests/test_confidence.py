@@ -380,12 +380,10 @@ class TestConfidence(unittest.TestCase):
         std_bright_ground_truth = std_bright_ground_truth.reshape((5, 6, 1))
 
         # compute with compute_cost_volume
-        cv = stereo_matcher.compute_cost_volume(
-            img_left=left,
-            img_right=right,
-            grid_disp_min=left["disparity"].sel(band_disp="min"),
-            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        grid = stereo_matcher.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+        cv = stereo_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         stereo_matcher.cv_masked(
             left,
             right,
@@ -477,12 +475,10 @@ class TestConfidence(unittest.TestCase):
         std_bright_ground_truth = std_bright_ground_truth.reshape((5, 6, 1))
 
         # compute with compute_cost_volume
-        cv = stereo_matcher.compute_cost_volume(
-            img_left=left,
-            img_right=right,
-            grid_disp_min=left["disparity"].sel(band_disp="min"),
-            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        grid = stereo_matcher.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+        cv = stereo_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         stereo_matcher.cv_masked(
             left,
             right,

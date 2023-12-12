@@ -84,12 +84,10 @@ class TestDisparityMask(unittest.TestCase):
         matching_cost_plugin = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
-        cv = matching_cost_plugin.compute_cost_volume(
-            self.left,
-            self.right,
-            self.left["disparity"].sel(band_disp="min"),
-            self.left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_plugin.allocate_cost_volume(
+            self.left, (self.left["disparity"].sel(band_disp="min"), self.left["disparity"].sel(band_disp="max"))
         )
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, cost_volume=grid)
 
         # Compute the disparity map and validity mask
         disparity_ = disparity.AbstractDisparity(**{"disparity_method": "wta", "invalid_disparity": 0})
@@ -128,12 +126,10 @@ class TestDisparityMask(unittest.TestCase):
         add_disparity(self.left, [1, 2], None)
 
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min 1 disp_max 2
-        cv = matching_cost_plugin.compute_cost_volume(
-            self.left,
-            self.right,
-            self.left["disparity"].sel(band_disp="min"),
-            self.left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_plugin.allocate_cost_volume(
+            self.left, (self.left["disparity"].sel(band_disp="min"), self.left["disparity"].sel(band_disp="max"))
         )
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, cost_volume=grid)
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
         disparity_.validity_mask(dataset, self.left, self.right, cv)
@@ -155,12 +151,10 @@ class TestDisparityMask(unittest.TestCase):
         add_disparity(self.left, [-1, 1], None)
 
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min -1 disp_max 1
-        cv = matching_cost_plugin.compute_cost_volume(
-            self.left,
-            self.right,
-            self.left["disparity"].sel(band_disp="min"),
-            self.left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_plugin.allocate_cost_volume(
+            self.left, (self.left["disparity"].sel(band_disp="min"), self.left["disparity"].sel(band_disp="max"))
         )
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, cost_volume=grid)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
@@ -205,9 +199,8 @@ class TestDisparityMask(unittest.TestCase):
         matching_cost_plugin = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
-        cv = matching_cost_plugin.compute_cost_volume(
-            img_left=self.left, img_right=self.right, grid_disp_min=disp_min_grid, grid_disp_max=disp_max_grid
-        )
+        grid = matching_cost_plugin.allocate_cost_volume(self.left, (disp_min_grid, disp_max_grid))
+        cv = matching_cost_plugin.compute_cost_volume(img_left=self.left, img_right=self.right, cost_volume=grid)
         matching_cost_plugin.cv_masked(self.left, self.right, cv, disp_min_grid, disp_max_grid)
 
         # Compute the disparity map and validity mask
@@ -257,12 +250,10 @@ class TestDisparityMask(unittest.TestCase):
         matching_cost_plugin = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
-        cv = matching_cost_plugin.compute_cost_volume(
-            self.left,
-            self.right,
-            self.left["disparity"].sel(band_disp="min"),
-            self.left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_plugin.allocate_cost_volume(
+            self.left, (self.left["disparity"].sel(band_disp="min"), self.left["disparity"].sel(band_disp="max"))
         )
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, cost_volume=grid)
 
         # Compute the disparity map and validity mask
         disparity_ = disparity.AbstractDisparity(**{"disparity_method": "wta", "invalid_disparity": 0})
@@ -302,12 +293,10 @@ class TestDisparityMask(unittest.TestCase):
         add_disparity(self.left, [1, 2], None)
 
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min 1 disp_max 2
-        cv = matching_cost_plugin.compute_cost_volume(
-            self.left,
-            self.right,
-            self.left["disparity"].sel(band_disp="min"),
-            self.left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_plugin.allocate_cost_volume(
+            self.left, (self.left["disparity"].sel(band_disp="min"), self.left["disparity"].sel(band_disp="max"))
         )
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, cost_volume=grid)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
@@ -346,12 +335,10 @@ class TestDisparityMask(unittest.TestCase):
         add_disparity(self.left, [-1, 1], None)
 
         # Create the left cost volume, with SAD measure window size 1, subpixel 1, disp_min -1 disp_max 1
-        cv = matching_cost_plugin.compute_cost_volume(
-            self.left,
-            self.right,
-            self.left["disparity"].sel(band_disp="min"),
-            self.left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_plugin.allocate_cost_volume(
+            self.left, (self.left["disparity"].sel(band_disp="min"), self.left["disparity"].sel(band_disp="max"))
         )
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, cost_volume=grid)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
@@ -409,9 +396,8 @@ class TestDisparityMask(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
 
-        cv = matching_cost_plugin.compute_cost_volume(
-            img_left=self.left, img_right=self.right, grid_disp_min=disp_min_grid, grid_disp_max=disp_max_grid
-        )
+        grid = matching_cost_plugin.allocate_cost_volume(self.left, (disp_min_grid, disp_max_grid))
+        cv = matching_cost_plugin.compute_cost_volume(img_left=self.left, img_right=self.right, cost_volume=grid)
         matching_cost_plugin.cv_masked(self.left, self.right, cv, disp_min_grid, disp_max_grid)
 
         # Compute the disparity map and validity mask
@@ -460,12 +446,10 @@ class TestDisparityMask(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
         # ------ Negative and positive disparities ------
-        cv = matching_cost_plugin.compute_cost_volume(
-            self.left,
-            self.right,
-            self.left["disparity"].sel(band_disp="min"),
-            self.left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_plugin.allocate_cost_volume(
+            self.left, (self.left["disparity"].sel(band_disp="min"), self.left["disparity"].sel(band_disp="max"))
         )
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, cost_volume=grid)
 
         # Validity mask ground truth ( for disparities -1 0 1 2 )
         gt_mask = np.array(
@@ -503,12 +487,10 @@ class TestDisparityMask(unittest.TestCase):
         # Add disparities on left image
         add_disparity(self.left, [1, 2], None)
 
-        cv = matching_cost_plugin.compute_cost_volume(
-            self.left,
-            self.right,
-            self.left["disparity"].sel(band_disp="min"),
-            self.left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_plugin.allocate_cost_volume(
+            self.left, (self.left["disparity"].sel(band_disp="min"), self.left["disparity"].sel(band_disp="max"))
         )
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, cost_volume=grid)
         # Validity mask ground truth ( for disparities -2 -1 )
         gt_mask = np.array(
             [
@@ -545,12 +527,10 @@ class TestDisparityMask(unittest.TestCase):
         # Add disparities on left image
         add_disparity(self.left, [-2, -1], None)
 
-        cv = matching_cost_plugin.compute_cost_volume(
-            self.left,
-            self.right,
-            self.left["disparity"].sel(band_disp="min"),
-            self.left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_plugin.allocate_cost_volume(
+            self.left, (self.left["disparity"].sel(band_disp="min"), self.left["disparity"].sel(band_disp="max"))
         )
+        cv = matching_cost_plugin.compute_cost_volume(self.left, self.right, cost_volume=grid)
         # Validity mask ground truth ( for disparities 1 2 )
         gt_mask = np.array(
             [
@@ -628,9 +608,10 @@ class TestDisparityMask(unittest.TestCase):
         matching_cost_plugin = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
-        cv = matching_cost_plugin.compute_cost_volume(
-            left, right, left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max")
+        grid = matching_cost_plugin.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+        cv = matching_cost_plugin.compute_cost_volume(left, right, grid)
 
         # Compute the disparity map and validity mask
         disparity_ = disparity.AbstractDisparity(**{"disparity_method": "wta", "invalid_disparity": 0})
@@ -675,9 +656,10 @@ class TestDisparityMask(unittest.TestCase):
         # Add disparity on left image
         add_disparity(left, [-2, -1], None)
 
-        cv = matching_cost_plugin.compute_cost_volume(
-            left, right, left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max")
+        grid = matching_cost_plugin.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+        cv = matching_cost_plugin.compute_cost_volume(left, right, grid)
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
         disparity_.validity_mask(dataset, left, right, cv)
@@ -719,9 +701,10 @@ class TestDisparityMask(unittest.TestCase):
         # Add disparity on left image
         add_disparity(left, [1, 2], None)
 
-        cv = matching_cost_plugin.compute_cost_volume(
-            left, right, left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max")
+        grid = matching_cost_plugin.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+        cv = matching_cost_plugin.compute_cost_volume(left, right, grid)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
@@ -791,9 +774,10 @@ class TestDisparityMask(unittest.TestCase):
         matching_cost_plugin = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
-        cv = matching_cost_plugin.compute_cost_volume(
-            left, right, left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max")
+        grid = matching_cost_plugin.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+        cv = matching_cost_plugin.compute_cost_volume(left, right, grid)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
@@ -880,9 +864,10 @@ class TestDisparityMask(unittest.TestCase):
         matching_cost_plugin = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
-        cv = matching_cost_plugin.compute_cost_volume(
-            left, right, left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max")
+        grid = matching_cost_plugin.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+        cv = matching_cost_plugin.compute_cost_volume(left, right, grid)
 
         # Compute the disparity map and validity mask
         dataset = disparity_.to_disp(cv)
@@ -1073,12 +1058,10 @@ class TestDisparityMask(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
 
-        cv = matching_cost_plugin.compute_cost_volume(
-            img_left=left,
-            img_right=right,
-            grid_disp_min=left["disparity"].sel(band_disp="min"),
-            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_plugin.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+        cv = matching_cost_plugin.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         matching_cost_plugin.cv_masked(
             left,
             right,
