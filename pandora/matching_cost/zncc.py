@@ -75,35 +75,42 @@ class Zncc(matching_cost.AbstractMatchingCost):
         print("zncc similarity measure")
 
     def compute_cost_volume(
-        self, img_left: xr.Dataset, img_right: xr.Dataset, grid_disp_min: np.ndarray, grid_disp_max: np.ndarray
+        self,
+        img_left: xr.Dataset,
+        img_right: xr.Dataset,
+        grid_disp_min: np.ndarray,
+        grid_disp_max: np.ndarray,
+        cost_volume: xr.Dataset,
     ) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
 
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing :
+        :param img_left: left Dataset image containing :
+
                 - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
                 - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
-        :param img_right: right Dataset image
-        :type img_right:
-            xarray.Dataset containing :
+        :type img_left: xarray.Dataset
+        :param img_right: right Dataset image containing :
+
                 - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
                 - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+        :type img_right: xarray.Dataset
         :param grid_disp_min: minimum disparity
         :type grid_disp_min: np.ndarray
         :param grid_disp_max: maximum disparity
         :type grid_disp_max: np.ndarray
-        :return: the cost volume dataset
-        :rtype:
-            xarray.Dataset, with the data variables:
+        :param cost_volume: a empty cost volume
+        :type cost_volume: xr.Dataset
+        :return: the cost volume dataset , with the data variables:
+
                 - cost_volume 3D xarray.DataArray (row, col, disp)
+        :rtype: xarray.Dataset
         """
         # Obtain absolute min and max disparities
         disp_min, disp_max = self.get_min_max_from_grid(grid_disp_min, grid_disp_max)
@@ -130,15 +137,13 @@ class Zncc(matching_cost.AbstractMatchingCost):
 
         # Cost volume metadata
         offset_row_col = int((self._window_size - 1) / 2)
-        metadata = {
-            "measure": "zncc",
-            "subpixel": self._subpix,
-            "offset_row_col": offset_row_col,
-            "window_size": self._window_size,
-            "type_measure": "max",
-            "cmax": 1,  # Maximal cost of the cost volume with zncc measure
-            "band_correl": self._band,
-        }
+        cost_volume.attrs.update(
+            {
+                "measure": "zncc",
+                "type_measure": "max",
+                "cmax": 1,  # Maximal cost of the cost volume with zncc measure
+            }
+        )
 
         disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
         cv = self.allocate_numpy_cost_volume(img_left, disparity_range)
@@ -198,11 +203,13 @@ class Zncc(matching_cost.AbstractMatchingCost):
         # Computations were optimized with a cost_volume of dimensions (disp, row, col)
         # As we are expected to return a cost_volume of dimensions (row, col, disp),
         # we swap axes.
-        cv = self.allocate_costvolume(
-            img_left, self._subpix, disp_min, disp_max, self._window_size, metadata, np.swapaxes(cv, 0, 2)
-        )
+        cv = np.swapaxes(cv, 0, 2)
+        index_col = cost_volume.attrs["col_to_compute"]
+        if index_col[0] != 0:
+            index_col = index_col - index_col[0]
+        cost_volume["cost_volume"].data = cv[:, index_col, :]
 
-        return cv
+        return cost_volume
 
 
 def apply_divide_standard(

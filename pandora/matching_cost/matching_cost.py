@@ -213,7 +213,12 @@ class AbstractMatchingCost:
 
     @abstractmethod
     def compute_cost_volume(
-        self, img_left: xr.Dataset, img_right: xr.Dataset, grid_disp_min: np.ndarray, grid_disp_max: np.ndarray
+        self,
+        img_left: xr.Dataset,
+        img_right: xr.Dataset,
+        grid_disp_min: np.ndarray,
+        grid_disp_max: np.ndarray,
+        cost_volume: xr.Dataset,
     ) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
@@ -226,7 +231,7 @@ class AbstractMatchingCost:
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
-        :param img_right: right Dataset  containing :
+        :param img_right: right Dataset image containing :
 
                 - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
                 - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
@@ -238,19 +243,25 @@ class AbstractMatchingCost:
         :type grid_disp_min: np.ndarray
         :param grid_disp_max: maximum disparity
         :type grid_disp_max: np.ndarray
-        :return: the cost volume dataset with the data variables:
+        :param cost_volume: a empty cost volume
+        :type cost_volume: xr.Dataset
+        :return: the cost volume dataset , with the data variables:
 
                 - cost_volume 3D xarray.DataArray (row, col, disp)
         :rtype: xarray.Dataset
         """
 
-    def grid_estimation(self, img: xr.Dataset, cfg: Dict[str, dict]) -> xr.Dataset:
+    def grid_estimation(
+        self, img: xr.Dataset, cfg: Dict[str, dict], disparity_grids: Tuple[np.ndarray, np.ndarray]
+    ) -> xr.Dataset:
         """
         :param img: left Dataset image
         :type img: xarray.Dataset
         :param cfg: user configuration
         :type cfg: dict
-        :return: a grid with:
+        :param disparity_grids: Tuple of disparity grids min and max
+        :type disparity_grids: Tuple[np.ndarray, np.ndarray]
+        :return: a grid with coordinates and a attributes list with:
 
                 - indexs of columns to compute
                 - size
@@ -261,11 +272,15 @@ class AbstractMatchingCost:
         c_col = img["im"].coords["col"]
         col = np.arange(c_col[0], c_col[-1] + 1, self._step_col)  # type: np.ndarray
 
+        # get disparity_range
+        disparity_min, disparity_max = self.get_min_max_from_grid(*disparity_grids)
+        disparity_range = self.get_disparity_range(disparity_min, disparity_max, self._subpix)
+
         # Index to be kept in the cost volume once it has been calculated
         index_compute_col = col
 
         # Get the index of the columns that should be computed
-        if "ROI" in cfg:
+        if cfg and "ROI" in cfg:
             left_margin = cfg["ROI"]["margins"][0]
 
             # Check if the first column of roi is inside the final CV (with the step)
@@ -313,7 +328,7 @@ class AbstractMatchingCost:
         # Instantiate grid
         grid = xr.Dataset(
             {},
-            coords={"row": img["im"].coords["row"], "col": col},
+            coords={"row": img["im"].coords["row"], "col": index_compute_col, "disp": disparity_range},
         )
 
         # Add img attributes
@@ -324,73 +339,35 @@ class AbstractMatchingCost:
         grid.attrs["col_to_compute"] = index_compute_col
         return grid
 
-    def allocate_costvolume(
-        self,
-        img_left: xr.Dataset,
-        subpix: int,
-        disp_min: int,
-        disp_max: int,
-        window_size: int,
-        metadata: dict,
-        np_data: np.ndarray = None,
+    def allocate_cost_volume(
+        self, image: xr.Dataset, disparity_grids: Tuple[np.ndarray, np.ndarray], cfg: Dict = None
     ) -> xr.Dataset:
         """
-        Allocate the cost volume
+        Create a cost_volume dataset.
 
-        :param img_left: left Dataset image containing :
-
-                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
-                - disparity: 3D (disp, row, col) xarray.DataArray float32
-                - msk (optional): 2D (row, col) xarray.DataArray int16
-                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
-                - segm (optional): 2D (row, col) xarray.DataArray int16
-        :type img_left: xarray.Dataset
-        :param subpix: subpixel precision = (1 or 2 or 4)
-        :type subpix: int
-        :param disp_min: minimum disparity
-        :type disp_min: int
-        :param disp_max: maximum disparity
-        :type disp_max: int
-        :param window_size: size of the aggregation window
-        :type window_size: int, odd number
-        :param metadata: dictionary storing arbitrary metadata
-        :type metadata: dictionary
-        :param step: step
-        :type step: int
-        :param np_data: the array’s data
-        :type np_data: 3D numpy array, dtype=np.float32
-        :return: the dataset cost volume with the cost_volume :
-
-                - cost_volume 3D xarray.DataArray (row, col, disp)
-        :rtype: xarray.Dataset
+        :param image: Image to compute cost volume from
+        :type image: xr.Dataset
+        :param cfg: user configuration
+        :type cfg: Dict
+        :param disparity_grids: Tuple of disparity grids min and max
+        :type disparity_grids: Tuple[np.ndarray, np.ndarray]
+        :return: a empty grid
+        :rtype: xr.Dataset
         """
-        c_row = img_left["im"].coords["row"]
-        c_col = img_left["im"].coords["col"]
-
-        # First pixel in the image that is fully computable (aggregation windows are complete)
-        row = np.arange(c_row[0], c_row[-1] + 1)  # type: np.ndarray
-        col = np.arange(c_col[0], c_col[-1] + 1, self._step_col)  # type: np.ndarray
-
-        disparity_range = AbstractMatchingCost.get_disparity_range(disp_min, disp_max, subpix)
-
-        # Create the cost volume
-        if np_data is None:
-            np_data = np.zeros((*img_left["im"].shape, len(disparity_range)), dtype=np.float32)
-
-        cost_volume = xr.Dataset(
-            {"cost_volume": (["row", "col", "disp"], np_data[:, :: self._step_col, :])},
-            coords={"row": row, "col": col, "disp": disparity_range},
+        cv = self.grid_estimation(image, cfg, disparity_grids)
+        cv["cost_volume"] = (
+            ["row", "col", "disp"],
+            np.full((cv.dims["row"], cv.dims["col"], cv.dims["disp"]), np.nan, dtype=np.float32),
         )
-        cost_volume.attrs = metadata
-
-        cost_volume.attrs["crs"] = img_left.attrs["crs"]
-        cost_volume.attrs["transform"] = img_left.attrs["transform"]
-
-        cost_volume.attrs["window_size"] = window_size
-
-        cost_volume.attrs["disparity_source"] = img_left.attrs["disparity_source"]
-
-        return cost_volume
+        cv.attrs.update(
+            {
+                "window_size": self._window_size,
+                "subpixel": self._subpix,
+                "band_correl": self._band,
+                "offset_row_col": int((self._window_size - 1) / 2),
+            }
+        )
+        return cv
 
     @staticmethod
     def get_disparity_range(disparity_min: int, disparity_max: int, subpix: int) -> np.ndarray:

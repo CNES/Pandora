@@ -301,7 +301,17 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :return: None
         """
         self.matching_cost_ = matching_cost.AbstractMatchingCost(**cfg["pipeline"][input_step])  # type: ignore
-        _ = self.matching_cost_.grid_estimation(self.left_img, cfg)
+        # Update min and max disparity according to the current scale
+        self.disp_min = self.disp_min * self.scale_factor
+        self.disp_max = self.disp_max * self.scale_factor
+        self.left_cv = self.matching_cost_.allocate_cost_volume(self.left_img, (self.disp_min, self.disp_max), cfg)
+        if self.right_disp_map == "cross_checking_accurate":
+            # Update min and max disparity according to the current scale
+            self.right_disp_min = self.right_disp_min * self.scale_factor
+            self.right_disp_max = self.right_disp_max * self.scale_factor
+            self.right_cv = self.matching_cost_.allocate_cost_volume(
+                self.right_img, (self.right_disp_min, self.right_disp_max), cfg
+            )
 
     def matching_cost_run(self, _: Dict[str, dict], __: str) -> None:
         """
@@ -310,13 +320,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         """
         logging.info("Matching cost computation...")
 
-        # Update min and max disparity according to the current scale
-        self.disp_min = self.disp_min * self.scale_factor
-        self.disp_max = self.disp_max * self.scale_factor
-
         # Compute cost volume and mask it
         self.left_cv = self.matching_cost_.compute_cost_volume(
-            self.left_img, self.right_img, self.disp_min, self.disp_max
+            self.left_img, self.right_img, self.disp_min, self.disp_max, self.left_cv
         )
         self.matching_cost_.cv_masked(
             self.left_img,
@@ -327,13 +333,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         )
 
         if self.right_disp_map == "cross_checking_accurate":
-            # Update min and max disparity according to the current scale
-            self.right_disp_min = self.right_disp_min * self.scale_factor
-            self.right_disp_max = self.right_disp_max * self.scale_factor
-
             # Compute right cost volume and mask it
             self.right_cv = self.matching_cost_.compute_cost_volume(
-                self.right_img, self.left_img, self.right_disp_min, self.right_disp_max
+                self.right_img, self.left_img, self.right_disp_min, self.right_disp_max, self.right_cv
             )
             self.matching_cost_.cv_masked(
                 self.right_img,

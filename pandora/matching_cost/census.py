@@ -75,7 +75,12 @@ class Census(matching_cost.AbstractMatchingCost):
         print("census similarity measure")
 
     def compute_cost_volume(
-        self, img_left: xr.Dataset, img_right: xr.Dataset, grid_disp_min: np.ndarray, grid_disp_max: np.ndarray
+        self,
+        img_left: xr.Dataset,
+        img_right: xr.Dataset,
+        grid_disp_min: np.ndarray,
+        grid_disp_max: np.ndarray,
+        cost_volume: xr.Dataset,
     ) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
@@ -100,6 +105,8 @@ class Census(matching_cost.AbstractMatchingCost):
         :type grid_disp_min: np.ndarray
         :param grid_disp_max: maximum disparity
         :type grid_disp_max: np.ndarray
+        :param cost_volume: a empty cost volume
+        :type cost_volume: xr.Dataset
         :return: the cost volume dataset , with the data variables:
 
                 - cost_volume 3D xarray.DataArray (row, col, disp)
@@ -116,15 +123,13 @@ class Census(matching_cost.AbstractMatchingCost):
         # Maximal cost of the cost volume with census measure
         cmax = int(self._window_size**2)
         offset_row_col = int((self._window_size - 1) / 2)
-        metadata = {
-            "measure": "census",
-            "subpixel": self._subpix,
-            "offset_row_col": offset_row_col,
-            "window_size": self._window_size,
-            "type_measure": "min",
-            "cmax": cmax,
-            "band_correl": self._band,
-        }
+        cost_volume.attrs.update(
+            {
+                "measure": "census",
+                "type_measure": "min",
+                "cmax": cmax,
+            }
+        )
 
         # Apply census transformation
         left = census_transform(img_left, self._window_size, self._band)
@@ -177,14 +182,16 @@ class Census(matching_cost.AbstractMatchingCost):
         # Computations were optimized with a cost_volume of dimensions (disp, row, col)
         # As we are expected to return a cost_volume of dimensions (row, col, disp),
         # we swap axes.
-        cv = self.allocate_costvolume(
-            img_left, self._subpix, disp_min, disp_max, self._window_size, metadata, np.swapaxes(cv, 0, 2)
-        )
+        cv = np.swapaxes(cv, 0, 2)
+        index_col = cost_volume.attrs["col_to_compute"]
+        if index_col[0] != 0:
+            index_col = index_col - index_col[0]
+        cost_volume["cost_volume"].data = cv[:, index_col, :]
 
         # Remove temporary values
         del left, img_right_shift
 
-        return cv
+        return cost_volume
 
     def census_cost(
         self,
