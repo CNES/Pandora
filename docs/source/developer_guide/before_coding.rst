@@ -70,6 +70,7 @@ Here are some rules to apply when developing a new functionality:
  - Do not add new dependencies unless it is absolutely necessary, and only if it has a permissive license.
  - Use the type hints provided by the *typing* python module.
  - Correct project pylint errors (see below)
+ - Use 'raise' with an appropriate error to exit the run due to a user mistake.
 
 
 Pre-commit validation
