@@ -306,10 +306,6 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
     def matching_cost_run(self, _: Dict[str, dict], __: str) -> None:
         """
         Matching cost computation
-        :param cfg: pipeline configuration
-        :type  cfg: dict
-        :param input_step: step to trigger
-        :type input_step: str
         :return: None
         """
         logging.info("Matching cost computation...")
