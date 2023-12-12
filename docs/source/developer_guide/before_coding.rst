@@ -83,7 +83,7 @@ Pre-commit hooks (black, pylint, mypy, sphinx-checking, nbstripout) for code ana
 
 This command installs the pre-commit hooks in `.git/hooks/pre-commit`  from `.pre-commit-config.yaml` file configuration.
 
-It is possible to test pre-commit before commiting:
+It is possible to test pre-commit before committing:
 
 .. code-block:: bash
 
@@ -101,4 +101,3 @@ It is possible to run only pylint tool to check code modifications:
 
 Pylint messages can be avoided (in particular cases !) adding "#pylint: disable=error-message-name" in the file or line.
 Look at examples in code.
-
