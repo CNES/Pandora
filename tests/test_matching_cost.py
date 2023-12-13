@@ -322,6 +322,111 @@ class TestMatchingCost:
 
         xr.testing.assert_identical(grid, ground_truth)
 
+    @pytest.mark.parametrize("method", ["zncc", "census", "sad", "ssd"])
+    @pytest.mark.parametrize(
+        ["step", "roi", "grid_expected"],
+        [
+            pytest.param(
+                1,
+                None,
+                xr.Dataset(
+                    {"cost_volume": (["row", "col", "disp"], np.full((5, 6, 2), np.nan, dtype=np.float32))},
+                    coords={"row": np.arange(5), "col": np.arange(6), "disp": np.arange(-1, 1)},
+                    attrs={},
+                ),
+                id="method with step=1",
+            ),
+            pytest.param(
+                2,
+                None,
+                xr.Dataset(
+                    {"cost_volume": (["row", "col", "disp"], np.full((5, 3, 2), np.nan, dtype=np.float32))},
+                    coords={"row": np.arange(5), "col": np.arange(0, 6, 2), "disp": np.arange(-1, 1)},
+                    attrs={},
+                ),
+                id="method with step=2",
+            ),
+            pytest.param(
+                6,
+                None,
+                xr.Dataset(
+                    {"cost_volume": (["row", "col", "disp"], np.full((5, 1, 2), np.nan, dtype=np.float32))},
+                    coords={"row": np.arange(5), "col": np.arange(1), "disp": np.arange(-1, 1)},
+                    attrs={},
+                ),
+                id="method with step=6",
+            ),
+            pytest.param(
+                1,
+                {
+                    "ROI": {
+                        "col": {"first": 3, "last": 3},
+                        "row": {"first": 3, "last": 3},
+                        "margins": [3, 3, 3, 3],
+                    }
+                },
+                xr.Dataset(
+                    {"cost_volume": (["row", "col", "disp"], np.full((5, 6, 2), np.nan, dtype=np.float32))},
+                    coords={"row": np.arange(5), "col": np.arange(6), "disp": np.arange(-1, 1)},
+                    attrs={},
+                ),
+                id="method with step=1 and roi",
+            ),
+            pytest.param(
+                2,
+                {
+                    "ROI": {
+                        "col": {"first": 3, "last": 3},
+                        "row": {"first": 3, "last": 3},
+                        "margins": [3, 3, 3, 3],
+                    }
+                },
+                xr.Dataset(
+                    {"cost_volume": (["row", "col", "disp"], np.full((5, 3, 2), np.nan, dtype=np.float32))},
+                    coords={"row": np.arange(5), "col": np.arange(1, 6, 2), "disp": np.arange(-1, 1)},
+                    attrs={},
+                ),
+                id="method with step=2 and roi",
+            ),
+            pytest.param(
+                4,
+                {
+                    "ROI": {
+                        "col": {"first": 3, "last": 3},
+                        "row": {"first": 3, "last": 3},
+                        "margins": [3, 3, 3, 3],
+                    }
+                },
+                xr.Dataset(
+                    {"cost_volume": (["row", "col", "disp"], np.full((5, 1, 2), np.nan, dtype=np.float32))},
+                    coords={"row": np.arange(5), "col": np.arange(3, 4), "disp": np.arange(-1, 1)},
+                    attrs={},
+                ),
+                id="method with step=4 and roi",
+            ),
+        ],
+    )
+    def test_allocate_cost_volume(self, left, step, roi, grid_expected, method):
+        """
+        Test the allocate_cost_volume function
+        """
+        cfg_mc = {"matching_cost_method": method}
+        left.pipe(add_disparity, disparity=[-1, 0], window=None)
+
+        # Create matching cost object
+        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg_mc)
+        # Update step for matching cost
+        matching_cost_._step_col = step  # pylint: disable=protected-access
+
+        # Allocate an empty cost volume
+        grid = matching_cost_.allocate_cost_volume(
+            image=left,
+            disparity_grids=(left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max")),
+            cfg=roi,
+        )
+
+        xr.testing.assert_identical(grid["cost_volume"], grid_expected["cost_volume"])
+
     @pytest.mark.parametrize(
         ["disparity_min", "disparity_max", "subpix", "expected"],
         [
