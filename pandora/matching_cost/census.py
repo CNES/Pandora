@@ -67,13 +67,6 @@ class Census(matching_cost.AbstractMatchingCost):
         checker.validate(cfg)
         return cfg
 
-    def desc(self) -> None:
-        """
-        Describes the matching cost method
-        :return: None
-        """
-        print("census similarity measure")
-
     def compute_cost_volume(
         self,
         img_left: xr.Dataset,
@@ -116,7 +109,6 @@ class Census(matching_cost.AbstractMatchingCost):
         cmax = int(self._window_size**2)
         cost_volume.attrs.update(
             {
-                "measure": "census",
                 "type_measure": "min",
                 "cmax": cmax,
             }

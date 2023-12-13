@@ -50,6 +50,7 @@ class AbstractMatchingCost:
     cfg = None
     _band = None
     _step_col = None
+    _method = None
 
     # Default configuration, do not change these values
     _WINDOW_SIZE = 5
@@ -119,13 +120,12 @@ class AbstractMatchingCost:
 
         return decorator
 
-    @abstractmethod
     def desc(self) -> None:
         """
         Describes the matching cost method
         :return: None
         """
-        print("Matching cost description")
+        print(f"{self._method} similarity measure")
 
     def instantiate_class(self, **cfg: Union[str, int]) -> None:
         """
@@ -139,6 +139,7 @@ class AbstractMatchingCost:
         self._subpix = int(self.cfg["subpix"])
         self._band = self.cfg["band"]
         self._step_col = int(self.cfg["step"])
+        self._method = str(self.cfg["matching_cost_method"])
 
     def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict:
         """
@@ -359,6 +360,7 @@ class AbstractMatchingCost:
                 "subpixel": self._subpix,
                 "band_correl": self._band,
                 "offset_row_col": int((self._window_size - 1) / 2),
+                "measure": self._method,
             }
         )
         return cv

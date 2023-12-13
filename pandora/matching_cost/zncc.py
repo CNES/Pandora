@@ -67,13 +67,6 @@ class Zncc(matching_cost.AbstractMatchingCost):
         checker.validate(cfg)
         return cfg
 
-    def desc(self) -> None:
-        """
-        Describes the matching cost method
-        :return: None
-        """
-        print("zncc similarity measure")
-
     def compute_cost_volume(
         self,
         img_left: xr.Dataset,
@@ -130,7 +123,6 @@ class Zncc(matching_cost.AbstractMatchingCost):
         offset_row_col = cost_volume.attrs["offset_row_col"]
         cost_volume.attrs.update(
             {
-                "measure": "zncc",
                 "type_measure": "max",
                 "cmax": 1,  # Maximal cost of the cost volume with zncc measure
             }

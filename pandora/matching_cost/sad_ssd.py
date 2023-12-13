@@ -48,7 +48,6 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         """
 
         super().instantiate_class(**cfg)
-        self._method = str(self.cfg["matching_cost_method"])
         self._pixel_wise_methods = {"sad": self.ad_cost, "ssd": self.sd_cost}
 
     def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
@@ -69,13 +68,6 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         checker = Checker(schema)
         checker.validate(cfg)
         return cfg
-
-    def desc(self) -> None:
-        """
-        Describes the matching cost method
-        :return: None
-        """
-        print(str(self._method) + " similarity measure")
 
     def compute_cost_volume(
         self,
@@ -140,7 +132,6 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         offset_row_col = cost_volume.attrs["offset_row_col"]
         cost_volume.attrs.update(
             {
-                "measure": self._method,
                 "type_measure": "min",
                 "cmax": cmax,
             }
