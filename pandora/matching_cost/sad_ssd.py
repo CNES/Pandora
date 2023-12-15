@@ -81,8 +81,6 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         self,
         img_left: xr.Dataset,
         img_right: xr.Dataset,
-        grid_disp_min: np.ndarray,
-        grid_disp_max: np.ndarray,
         cost_volume: xr.Dataset,
     ) -> xr.Dataset:
         """
@@ -104,20 +102,13 @@ class SadSsd(matching_cost.AbstractMatchingCost):
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
-        :param grid_disp_min: minimum disparity
-        :type grid_disp_min: np.ndarray
-        :param grid_disp_max: maximum disparity
-        :type grid_disp_max: np.ndarray
-        :param cost_volume: a empty cost volume
+        :param cost_volume: an empty cost volume
         :type cost_volume: xr.Dataset
         :return: the cost volume dataset , with the data variables:
 
                 - cost_volume 3D xarray.DataArray (row, col, disp)
         :rtype: xarray.Dataset
         """
-        # Obtain absolute min and max disparities
-        disp_min, disp_max = self.get_min_max_from_grid(grid_disp_min, grid_disp_max)
-
         # check band parameter
         self.check_band_input_mc(img_left, img_right)
 
@@ -146,7 +137,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         if self._method == "ssd":
             # Maximal cost of the cost volume with ssd measure
             cmax = int(max(abs(max_left - min_right) ** 2, abs(max_right - min_left) ** 2) * (self._window_size**2))
-        offset_row_col = int((self._window_size - 1) / 2)
+        offset_row_col = cost_volume.attrs["offset_row_col"]
         cost_volume.attrs.update(
             {
                 "measure": self._method,
@@ -155,7 +146,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             }
         )
 
-        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
+        disparity_range = cost_volume.coords["disp"].data
         cv_enlarge = self.allocate_numpy_cost_volume(img_left, disparity_range, offset_row_col)
         cv = self.crop_cost_volume(cv_enlarge, offset_row_col)
 
@@ -206,8 +197,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         # we swap axes.
         cv = np.swapaxes(cv, 0, 2)
         index_col = cost_volume.attrs["col_to_compute"]
-        if index_col[0] != 0:
-            index_col = index_col - index_col[0]
+        index_col = index_col - img_left.coords["col"].data[0]  # If first col coordinate is not 0
 
         if offset_row_col:
             # Pixel wise aggregation modifies border values so it is important to reconvert to nan values

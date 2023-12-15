@@ -321,9 +321,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         logging.info("Matching cost computation...")
 
         # Compute cost volume and mask it
-        self.left_cv = self.matching_cost_.compute_cost_volume(
-            self.left_img, self.right_img, self.disp_min, self.disp_max, self.left_cv
-        )
+        self.left_cv = self.matching_cost_.compute_cost_volume(self.left_img, self.right_img, self.left_cv)
         self.matching_cost_.cv_masked(
             self.left_img,
             self.right_img,
@@ -334,9 +332,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         if self.right_disp_map == "cross_checking_accurate":
             # Compute right cost volume and mask it
-            self.right_cv = self.matching_cost_.compute_cost_volume(
-                self.right_img, self.left_img, self.right_disp_min, self.right_disp_max, self.right_cv
-            )
+            self.right_cv = self.matching_cost_.compute_cost_volume(self.right_img, self.left_img, self.right_cv)
             self.matching_cost_.cv_masked(
                 self.right_img,
                 self.left_img,

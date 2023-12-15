@@ -216,8 +216,6 @@ class AbstractMatchingCost:
         self,
         img_left: xr.Dataset,
         img_right: xr.Dataset,
-        grid_disp_min: np.ndarray,
-        grid_disp_max: np.ndarray,
         cost_volume: xr.Dataset,
     ) -> xr.Dataset:
         """
@@ -239,11 +237,7 @@ class AbstractMatchingCost:
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
-        :param grid_disp_min: minimum disparity
-        :type grid_disp_min: np.ndarray
-        :param grid_disp_max: maximum disparity
-        :type grid_disp_max: np.ndarray
-        :param cost_volume: a empty cost volume
+        :param cost_volume: an empty cost volume
         :type cost_volume: xr.Dataset
         :return: the cost volume dataset , with the data variables:
 
@@ -252,7 +246,7 @@ class AbstractMatchingCost:
         """
 
     def grid_estimation(
-        self, img: xr.Dataset, cfg: Dict[str, dict], disparity_grids: Tuple[np.ndarray, np.ndarray]
+        self, img: xr.Dataset, cfg: Union[Dict[str, dict], None], disparity_grids: Tuple[np.ndarray, np.ndarray]
     ) -> xr.Dataset:
         """
         :param img: left Dataset image

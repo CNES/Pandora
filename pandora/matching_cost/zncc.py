@@ -78,8 +78,6 @@ class Zncc(matching_cost.AbstractMatchingCost):
         self,
         img_left: xr.Dataset,
         img_right: xr.Dataset,
-        grid_disp_min: np.ndarray,
-        grid_disp_max: np.ndarray,
         cost_volume: xr.Dataset,
     ) -> xr.Dataset:
         """
@@ -101,20 +99,13 @@ class Zncc(matching_cost.AbstractMatchingCost):
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
-        :param grid_disp_min: minimum disparity
-        :type grid_disp_min: np.ndarray
-        :param grid_disp_max: maximum disparity
-        :type grid_disp_max: np.ndarray
-        :param cost_volume: a empty cost volume
+        :param cost_volume: an empty cost volume
         :type cost_volume: xr.Dataset
         :return: the cost volume dataset , with the data variables:
 
                 - cost_volume 3D xarray.DataArray (row, col, disp)
         :rtype: xarray.Dataset
         """
-        # Obtain absolute min and max disparities
-        disp_min, disp_max = self.get_min_max_from_grid(grid_disp_min, grid_disp_max)
-
         # check band parameter
         self.check_band_input_mc(img_left, img_right)
 
@@ -136,7 +127,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
             img_right_mean.append(compute_mean_raster(img, self._window_size, self._band))
 
         # Cost volume metadata
-        offset_row_col = int((self._window_size - 1) / 2)
+        offset_row_col = cost_volume.attrs["offset_row_col"]
         cost_volume.attrs.update(
             {
                 "measure": "zncc",
@@ -145,7 +136,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
             }
         )
 
-        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
+        disparity_range = cost_volume.coords["disp"].data
         cv = self.allocate_numpy_cost_volume(img_left, disparity_range)
         cv_crop = self.crop_cost_volume(cv, offset_row_col)
 
@@ -205,8 +196,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
         # we swap axes.
         cv = np.swapaxes(cv, 0, 2)
         index_col = cost_volume.attrs["col_to_compute"]
-        if index_col[0] != 0:
-            index_col = index_col - index_col[0]
+        index_col = index_col - img_left.coords["col"].data[0]  # If first col coordinate is not 0
         cost_volume["cost_volume"].data = cv[:, index_col, :]
 
         return cost_volume
