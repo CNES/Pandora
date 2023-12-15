@@ -299,13 +299,15 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
 
     # ROI
     window = get_window(roi, nx_, ny_) if roi else None
+    # col_off and row_off = coordinates of top-left point of ROI
+    col_off, row_off = (window.col_off, window.row_off) if roi else (0, 0)
 
     # If only one band is present, consider data as 2 dimensions
     if img_ds.count == 1:
         data = img_ds.read(1, out_dtype=np.float32, window=window)
         nx_, ny_ = data.shape[1], data.shape[0]
         image = {"im": (["row", "col"], data)}
-        coords = {"row": np.arange(ny_), "col": np.arange(nx_)}
+        coords = {"row": np.arange(row_off, ny_ + row_off), "col": np.arange(col_off, nx_ + col_off)}
     # if image is 3 dimensions we create a dataset with [band row col] dims for dataArray
     else:
         data = img_ds.read(out_dtype=np.float32, window=window)
@@ -314,8 +316,8 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
         # Band names are in the image metadata
         coords = {
             "band_im": list(img_ds.descriptions),  # type: ignore
-            "row": np.arange(ny_),
-            "col": np.arange(nx_),
+            "row": np.arange(row_off, ny_ + row_off),
+            "col": np.arange(col_off, nx_ + col_off),
         }
 
     crs = img_ds.profile["crs"]
