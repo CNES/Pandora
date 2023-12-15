@@ -28,7 +28,6 @@ from __future__ import annotations
 import copy
 import json
 import logging
-import sys
 from collections.abc import Mapping
 from os import PathLike
 from typing import Dict, Union, List, Tuple
@@ -83,15 +82,15 @@ def check_shape(dataset: xr.Dataset, ref: str, test: str) -> None:
 
     :param dataset: dataset
     :type dataset: xr.Dataset
-    :param ref: the reference image
-    :type str: name of image
+    :param ref: name of the reference image
+    :type ref: str
     :param test: the tested image
-    :type str: name of image
+    :type test: str
+    :return: None
     """
     # check only the rows and columns, the last two elements of the shape
     if dataset[ref].data.shape[-2:] != dataset[test].data.shape[-2:]:
-        logging.error("%s and %s must have the same shape", ref, test)
-        sys.exit(1)
+        raise ValueError(f" {ref} and {test} must have the same shape")
 
 
 def check_attributes(dataset: xr.Dataset, attribute_list: set) -> None:
@@ -100,13 +99,13 @@ def check_attributes(dataset: xr.Dataset, attribute_list: set) -> None:
 
     :param dataset: dataset
     :type dataset: xr.Dataset
-    :param attribute: the atribute to test
-    :type set: list of attribute names
+    :param attribute_list: the attribute to test
+    :type attribute_list: list
+    :return: None
     """
     attribute = attribute_list - set(dataset.attrs)
     if attribute:
-        logging.error("User must provide the % attribute(s)", attribute)
-        sys.exit(1)
+        raise AttributeError(f"User must provide the {attribute} attribute(s)")
 
 
 def check_dataset(dataset: xr.Dataset) -> None:
@@ -115,20 +114,19 @@ def check_dataset(dataset: xr.Dataset) -> None:
 
     :param dataset: dataset
     :type dataset: xr.Dataset
+    :return: None
     """
 
     # Check image
     if "im" not in dataset:
-        logging.error("User must provide an image im")
-        sys.exit(1)
+        raise AttributeError("User must provide an image im")
 
     # Check band in "band_im" coordinates
     check_band_names(dataset)
 
     # Check not empty image (all nan values)
     if np.isnan(dataset["im"].data).all():
-        logging.error("Image contains only nan values")
-        sys.exit(1)
+        raise ValueError("Image contains only nan values")
 
     # Check disparities
     if "disparity" in dataset:
@@ -147,10 +145,11 @@ def check_datasets(left: xr.Dataset, right: xr.Dataset) -> None:
     """
     Check that left and right datasets are correct
 
-    :param left: dataset
-    :type dataset: xr.Dataset
-    :param right: dataset
-    :type dataset: xr.Dataset
+    :param left: left dataset
+    :type left: xr.Dataset
+    :param right: right dataset
+    :type right: xr.Dataset
+    :return: None
     """
 
     # Check the dataset content
@@ -158,15 +157,13 @@ def check_datasets(left: xr.Dataset, right: xr.Dataset) -> None:
     check_dataset(right)
 
     # Check disparities at least on the left
-    if not "disparity" in left:
-        logging.error("left dataset must have disparity DataArray")
-        sys.exit(1)
+    if "disparity" not in left:
+        raise AttributeError("left dataset must have disparity DataArray")
 
     # Check shape
     # check only the rows and columns, the last two elements of the shape
     if left["im"].data.shape[-2:] != right["im"].data.shape[-2:]:
-        logging.error("left and right datasets must have the same shape")
-        sys.exit(1)
+        raise AttributeError("left and right datasets must have the same shape")
 
 
 def check_image_dimension(img1: rasterio.io.DatasetReader, img2: rasterio.io.DatasetReader) -> None:
@@ -180,8 +177,7 @@ def check_image_dimension(img1: rasterio.io.DatasetReader, img2: rasterio.io.Dat
     :return: None
     """
     if (img1.width != img2.width) or (img1.height != img2.height):
-        logging.error("Images must have the same size")
-        sys.exit(1)
+        raise AttributeError("Images must have the same size")
 
 
 def check_images(user_cfg: Dict[str, dict]) -> None:
@@ -218,8 +214,7 @@ def check_band_names(dataset: xr.Dataset) -> None:
     """
 
     if "band_im" in dataset.coords and not all(isinstance(band, str) for band in dataset.coords["band_im"].data):
-        logging.error("Band value must be str")
-        sys.exit(1)
+        raise TypeError("Band value must be str")
 
 
 def check_disparities_from_input(
@@ -229,7 +224,7 @@ def check_disparities_from_input(
     """
     Check disparities from user configuration
 
-    :param disparity: disparity to check if list it is a list of two values: min and max.
+    :param disparity: disparity to check if disparity is a list of two values: min and max.
     :type disparity:  list[int] | str | None
     :param img_left: path to the left image
     :type img_left: str
@@ -237,10 +232,9 @@ def check_disparities_from_input(
     """
     # disparities are integers
     if isinstance(disparity, list) and disparity[1] < disparity[0]:
-        logging.error("Disp_max must be bigger than Disp_min")
-        sys.exit(1)
+        raise ValueError("disp_max must be bigger than disp_min")
 
-    # disparites are grids
+    # disparities are grids
     if isinstance(disparity, str):
         # Load an image to compare the grid size
         img_left_ = rasterio_open(img_left)
@@ -249,17 +243,14 @@ def check_disparities_from_input(
 
         # check that disparity grids is a 2-channel grid
         if disparity_reader.count != 2:
-            logging.error("Disparity grids must be a 2-channel grid")
-            sys.exit(1)
+            raise AttributeError("Disparity grids must be a 2-channel grid")
 
         # check that disp_min has the same size as the image
         if (disparity_reader.width != img_left_.width) or (disparity_reader.height != img_left_.height):
-            logging.error("Disparity grids and image must have the same size")
-            sys.exit(1)
+            raise AttributeError("Disparity grids and image must have the same size")
 
         if (disparity_reader.read(1) > disparity_reader.read(2)).any():
-            logging.error("Disp_max must be bigger than Disp_min")
-            sys.exit(1)
+            raise ValueError("disp_max must be bigger than disp_min")
 
 
 def check_disparities_from_dataset(disparity: xr.DataArray) -> None:
@@ -274,15 +265,12 @@ def check_disparities_from_dataset(disparity: xr.DataArray) -> None:
     :return: None
     """
     if "band_disp" not in disparity.coords:
-        logging.error("Disparity xr.Dataset must have a band_disp coordinate")
-        sys.exit(1)
+        raise AttributeError("Disparity xr.Dataset must have a band_disp coordinate")
     band_disp = disparity.coords["band_disp"].data
     if not {"min", "max"}.issubset(band_disp):
-        logging.error("Disparity xr.Dataset must have a band_disp coordinate with min and max band")
-        sys.exit(1)
+        raise AttributeError("Disparity xr.Dataset must have a band_disp coordinate with min and max band")
     if (disparity.sel(band_disp="min").data > disparity.sel(band_disp="max").data).any():
-        logging.error("Disp_max grid must be bigger than Disp_min grid for each pixel")
-        sys.exit(1)
+        raise AttributeError("Disp_max grid must be bigger than Disp_min grid for each pixel")
 
 
 def get_config_input(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
@@ -356,8 +344,7 @@ def memory_consumption_estimation(
         input_cfg = {"left": {"disp": disparity_interval, "img": img_path}, "right": {"img": img_path}}
         user_input = {"input": input_cfg}
     else:
-        logging.error("%s must be a Dict or a Tuple", user_input)
-        sys.exit(1)
+        raise TypeError(f"{user_input} must be a dict or a tuple")
 
     # Read input image
     img = rasterio_open(img_path)

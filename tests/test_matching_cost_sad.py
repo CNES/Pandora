@@ -1093,7 +1093,7 @@ class TestMatchingCostSAD(unittest.TestCase):
         )
 
         # Compute the cost_volume
-        with pytest.raises(SystemExit):
+        with pytest.raises(AttributeError, match="Wrong band instantiate : b not in img_left or img_right"):
             _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
 
         # Initialization of matching_cost plugin with no band
@@ -1102,7 +1102,7 @@ class TestMatchingCostSAD(unittest.TestCase):
         )
 
         # Compute the cost_volume
-        with pytest.raises(SystemExit):
+        with pytest.raises(AttributeError, match="Band must be instantiated in matching cost step"):
             _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
 
 
