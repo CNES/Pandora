@@ -96,12 +96,10 @@ class TestAggregation(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 2}
         )
 
-        sad = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left,
-            img_right=self.right,
-            grid_disp_min=self.left["disparity"].sel(band_disp="min"),
-            grid_disp_max=self.left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_matcher.allocate_cost_volume(
+            self.left, (self.left["disparity"].sel(band_disp="min"), self.left["disparity"].sel(band_disp="max"))
         )
+        sad = matching_cost_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, cost_volume=grid)
         matching_cost_matcher.cv_masked(
             self.left,
             self.right,
@@ -340,12 +338,10 @@ class TestAggregation(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
 
-        sad = matching_cost_matcher.compute_cost_volume(
-            img_left=left,
-            img_right=right,
-            grid_disp_min=left["disparity"].sel(band_disp="min"),
-            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_matcher.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+        sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         matching_cost_matcher.cv_masked(
             left,
             right,
@@ -413,12 +409,10 @@ class TestAggregation(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
 
-        sad = matching_cost_matcher.compute_cost_volume(
-            img_left=left,
-            img_right=right,
-            grid_disp_min=left["disparity"].sel(band_disp="min"),
-            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_matcher.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+        sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         matching_cost_matcher.cv_masked(
             left,
             right,
@@ -505,12 +499,10 @@ class TestAggregation(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
 
-        sad = matching_cost_matcher.compute_cost_volume(
-            img_left=left,
-            img_right=right,
-            grid_disp_min=left["disparity"].sel(band_disp="min"),
-            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_matcher.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+        sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         matching_cost_matcher.cv_masked(
             left,
             right,
@@ -593,12 +585,10 @@ class TestAggregation(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
 
-        sad = matching_cost_matcher.compute_cost_volume(
-            img_left=left,
-            img_right=right,
-            grid_disp_min=left["disparity"].sel(band_disp="min"),
-            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_matcher.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+        sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         matching_cost_matcher.cv_masked(
             left,
             right,
@@ -682,12 +672,10 @@ class TestAggregation(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 2}
         )
 
-        sad = matching_cost_matcher.compute_cost_volume(
-            img_left=left,
-            img_right=right,
-            grid_disp_min=left["disparity"].sel(band_disp="min"),
-            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_matcher.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+        sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         matching_cost_matcher.cv_masked(
             left,
             right,
@@ -751,12 +739,10 @@ class TestAggregation(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 2}
         )
 
-        sad = matching_cost_matcher.compute_cost_volume(
-            img_left=left,
-            img_right=right,
-            grid_disp_min=left["disparity"].sel(band_disp="min"),
-            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_matcher.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+        sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         matching_cost_matcher.cv_masked(
             left,
             right,
@@ -820,12 +806,10 @@ class TestAggregation(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1}
         )
 
-        sad = matching_cost_matcher.compute_cost_volume(
-            img_left=left,
-            img_right=right,
-            grid_disp_min=left["disparity"].sel(band_disp="min"),
-            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_matcher.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+        sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         matching_cost_matcher.cv_masked(
             left,
             right,
