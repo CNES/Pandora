@@ -27,15 +27,14 @@ from __future__ import annotations
 import logging
 import logging.config
 from os import PathLike
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple
 
 import xarray as xr
-import numpy as np
 from pkg_resources import iter_entry_points
 
 from . import common
-from .img_tools import create_dataset_from_inputs
 from .check_configuration import check_conf, check_datasets, read_config_file, read_multiscale_params
+from .img_tools import create_dataset_from_inputs
 from .state_machine import PandoraMachine
 
 
