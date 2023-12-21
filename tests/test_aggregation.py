@@ -34,6 +34,7 @@ from rasterio import Affine
 from tests import common
 from pandora.margins.descriptors import NullMargins
 from pandora.img_tools import add_disparity
+from pandora.criteria import validity_mask
 from pandora import aggregation
 from pandora.aggregation import cbca
 from pandora import matching_cost
@@ -99,6 +100,10 @@ class TestAggregation(unittest.TestCase):
         grid = matching_cost_matcher.allocate_cost_volume(
             self.left, (self.left["disparity"].sel(band_disp="min"), self.left["disparity"].sel(band_disp="max"))
         )
+
+        # Compute validity mask
+        grid = validity_mask(self.left, self.right, grid)
+
         sad = matching_cost_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, cost_volume=grid)
         matching_cost_matcher.cv_masked(
             self.left,
@@ -338,10 +343,17 @@ class TestAggregation(unittest.TestCase):
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
 
+        # Allocate cost volume
         grid = matching_cost_matcher.allocate_cost_volume(
             left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
-        sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
+
+        # Compute validity mask
+        grid = validity_mask(left, right, grid)
+
+        # Compute cost volume
+        sad = matching_cost_matcher.compute_cost_volume(left, right, grid)
+
         matching_cost_matcher.cv_masked(
             left,
             right,
@@ -412,6 +424,10 @@ class TestAggregation(unittest.TestCase):
         grid = matching_cost_matcher.allocate_cost_volume(
             left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+
+        # Compute validity mask
+        grid = validity_mask(left, right, grid)
+
         sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         matching_cost_matcher.cv_masked(
             left,
@@ -502,6 +518,10 @@ class TestAggregation(unittest.TestCase):
         grid = matching_cost_matcher.allocate_cost_volume(
             left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+
+        # Compute validity mask
+        grid = validity_mask(left, right, grid)
+
         sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         matching_cost_matcher.cv_masked(
             left,
@@ -588,6 +608,10 @@ class TestAggregation(unittest.TestCase):
         grid = matching_cost_matcher.allocate_cost_volume(
             left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+
+        # Compute validity mask
+        grid = validity_mask(left, right, grid)
+
         sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         matching_cost_matcher.cv_masked(
             left,
@@ -675,6 +699,10 @@ class TestAggregation(unittest.TestCase):
         grid = matching_cost_matcher.allocate_cost_volume(
             left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+
+        # Compute validity mask
+        grid = validity_mask(left, right, grid)
+
         sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         matching_cost_matcher.cv_masked(
             left,
@@ -742,6 +770,10 @@ class TestAggregation(unittest.TestCase):
         grid = matching_cost_matcher.allocate_cost_volume(
             left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+
+        # Compute validity mask
+        grid = validity_mask(left, right, grid)
+
         sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         matching_cost_matcher.cv_masked(
             left,
@@ -809,6 +841,10 @@ class TestAggregation(unittest.TestCase):
         grid = matching_cost_matcher.allocate_cost_volume(
             left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+
+        # Compute validity mask
+        grid = validity_mask(left, right, grid)
+
         sad = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         matching_cost_matcher.cv_masked(
             left,

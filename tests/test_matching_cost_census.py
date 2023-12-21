@@ -32,6 +32,7 @@ from rasterio import Affine
 
 from pandora import matching_cost
 from pandora.img_tools import add_disparity
+from pandora.criteria import validity_mask
 
 from tests import common
 
@@ -109,6 +110,10 @@ class TestMatchingCostCensus(unittest.TestCase):
         grid = matching_cost_matcher.allocate_cost_volume(
             left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+
+        # Compute validity mask
+        grid = validity_mask(left, right, grid)
+
         census = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         matching_cost_matcher.cv_masked(
             left,
@@ -207,6 +212,10 @@ class TestMatchingCostCensus(unittest.TestCase):
 
         # Compute the cost_volume
         grid = matching_cost_.allocate_cost_volume(left, (dmin_grid, dmax_grid))
+
+        # Compute validity mask
+        grid = validity_mask(left, right, grid)
+
         cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
 
         # Compute the masked cost volume
@@ -627,6 +636,10 @@ class TestMatchingCostCensus(unittest.TestCase):
         left.attrs["disparity_source"] = [int(np.nanmin(dmin_grid)), int(np.nanmax(dmax_grid))]
 
         grid = matching_cost_.allocate_cost_volume(left, (dmin_grid, dmax_grid))
+
+        # Compute validity mask
+        grid = validity_mask(left, right, grid)
+
         cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         # Compute the masked cost volume
         matching_cost_.cv_masked(img_left=left, img_right=right, cost_volume=cv, disp_min=dmin_grid, disp_max=dmax_grid)
@@ -787,7 +800,6 @@ class TestMatchingCostCensus(unittest.TestCase):
         grid = matching_cost_.allocate_cost_volume(
             left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
-
         # Compute the cost_volume
         with pytest.raises(AttributeError, match="Band must be instantiated in matching cost step"):
             _ = matching_cost_.compute_cost_volume(left, right, grid)
@@ -840,7 +852,6 @@ class TestMatchingCostCensus(unittest.TestCase):
         grid = matching_cost_.allocate_cost_volume(
             left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
-
         # Compute the cost_volume
         with pytest.raises(AttributeError, match="Right dataset is monoband: r band cannot be selected"):
             _ = matching_cost_.compute_cost_volume(left, right, grid)
