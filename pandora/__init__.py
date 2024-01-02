@@ -26,17 +26,21 @@ from __future__ import annotations
 
 import logging
 import logging.config
+import sys
 from os import PathLike
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple
 
 import xarray as xr
-import numpy as np
-from pkg_resources import iter_entry_points
 
 from . import common
-from .img_tools import create_dataset_from_inputs
 from .check_configuration import check_conf, check_datasets, read_config_file, read_multiscale_params
+from .img_tools import create_dataset_from_inputs
 from .state_machine import PandoraMachine
+
+if sys.version_info < (3, 10):
+    from importlib_metadata import entry_points
+else:
+    from importlib.metadata import entry_points
 
 
 # pylint: disable=too-many-arguments
@@ -133,7 +137,7 @@ def import_plugin() -> None:
     Load all the registered entry points
     :return: None
     """
-    for entry_point in iter_entry_points(group="pandora.plugin"):
+    for entry_point in entry_points(group="pandora.plugin"):
         entry_point.load()
 
 

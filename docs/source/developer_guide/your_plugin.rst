@@ -72,22 +72,18 @@ Each subpackage of Pandora, representing one particular step, defines an `abstra
 Pandora works with `entry point specification <https://packaging.python.org/specifications/entry-points/>`_
 and can load all plugin refered in the "pandora.plugin" group.
 
-So, you must declare, on your setup.py file, an entry point:
+So, you must declare, on your `setup.cfg` file, an entry point:
 
-.. sourcecode:: python
+.. sourcecode:: cfg
 
-    setup(name='plugin_my_matching_cost_method',
-          setup_requires=['very-good-setuptools-git-version'],
-          description='Pandora plugin to compute cost volume with my new matching cost algorithm',
-          long_description=readme(),
-          packages=find_packages(),
-          install_requires=requirements,
-          entry_points="""
-              [pandora.plugin]
-              plugin_my_matching_cost_method = plugin_my_matching_cost_method.my_matching_cost_method:MYMATCHINGCOST
-          """,
-          cmdclass=cmdclass,
-          )
+    [metadata]
+    name = plugin_my_matching_cost_method
+    description = Pandora plugin to compute cost volume with my new matching cost algorithm
 
+    [options]
+    setup_requires =
+        very-good-setuptools-git-version
 
-
+    [options.entry_points]
+    pandora.plugin =
+        plugin_my_matching_cost_method = plugin_my_matching_cost_method.my_matching_cost_method:MYMATCHINGCOST
