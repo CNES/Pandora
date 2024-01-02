@@ -423,7 +423,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         logging.info("Disparity filtering...")
         filter_ = filter.AbstractFilter(
             cfg=cfg["pipeline"][input_step],
-            image_shape=(self.left_img.dims["row"], self.left_img.dims["col"]),
+            image_shape=(self.left_img.sizes["row"], self.left_img.sizes["col"]),
         )  # type: ignore
         filter_.filter_disparity(self.left_disparity)
         if self.right_disp_map == "cross_checking_accurate":
@@ -718,7 +718,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         filter_config = copy.deepcopy(cfg[input_step])
         filter_ = filter.AbstractFilter(
             cfg=filter_config,
-            image_shape=(self.left_img.dims["row"], self.left_img.dims["col"]),
+            image_shape=(self.left_img.sizes["row"], self.left_img.sizes["col"]),
         )  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = filter_.cfg
         self.margins.add_non_cumulative(input_step, filter_.margins)
