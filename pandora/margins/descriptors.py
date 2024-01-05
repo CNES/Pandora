@@ -94,31 +94,6 @@ class NullMargins(UniformMargins):
         super().__init__(0)
 
 
-class UniformMarginsFromAttribute(ReadOnlyDescriptor):
-    """Getter returns Margins with same fixed values in all directions read from another attribute."""
-
-    # pylint:disable=too-few-public-methods
-
-    def __init__(self, reference_attribute: str) -> None:
-        self.reference_attribute = reference_attribute
-
-    @overload
-    def __get__(self, instance: None, owner: None) -> UniformMarginsFromAttribute:
-        ...
-
-    @overload
-    def __get__(self, instance: object, owner: type[object]) -> Margins:
-        ...
-
-    def __get__(
-        self, instance: object | None, owner: type[object] | None = None
-    ) -> UniformMarginsFromAttribute | Margins:
-        if instance is None:
-            return self
-        value = instance.__dict__[self.reference_attribute]
-        return Margins(value, value, value, value)
-
-
 class HalfWindowMargins(ReadOnlyDescriptor):
     """Getter returns Margins corresponding to half window.
 

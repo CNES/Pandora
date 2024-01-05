@@ -25,7 +25,6 @@ from pandora.margins.descriptors import (
     FixedMargins,
     UniformMargins,
     NullMargins,
-    UniformMarginsFromAttribute,
     HalfWindowMargins,
 )
 
@@ -115,31 +114,6 @@ class TestNullMargins:
         assert margin.up == 0
         assert margin.right == 0
         assert margin.down == 0
-
-
-class TestUniformMarginsFromAttribute:
-    """Test UniformMarginsFromAttribute."""
-
-    def test_is_read_only(self):
-        assert issubclass(NullMargins, ReadOnlyDescriptor)
-
-    @pytest.mark.parametrize("value", [3, 5])
-    @pytest.mark.parametrize("reference_attribute", ["_FILTER_SIZE ", "nawak"])
-    def test_returns_margins(self, mocker, reference_attribute, value):
-        """We expect to get a Margins object."""
-        parent_class = mocker.Mock()
-        setattr(parent_class, reference_attribute, value)
-
-        descriptor = UniformMarginsFromAttribute(reference_attribute)
-        # See https://github.com/pylint-dev/pylint/issues/8265 for why we disable pylint
-        # We ignore typing because mypy does not seem to understand the call to __get__ with Mock object of type Any
-        margin = descriptor.__get__(parent_class)  # type: ignore[call-overload]  # pylint:disable=unnecessary-dunder-call
-
-        assert margin.astuple() == (value, value, value, value)
-        assert margin.left == value
-        assert margin.up == value
-        assert margin.right == value
-        assert margin.down == value
 
 
 class TestHalfWindowMargins:
