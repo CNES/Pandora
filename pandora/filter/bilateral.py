@@ -46,7 +46,7 @@ class BilateralFilter(filter.AbstractFilter):
     _SIGMA_COLOR = 2.0
     _SIGMA_SPACE = 6.0
 
-    def __init__(self, cfg: Dict, image_shape: Tuple[int, int]):
+    def __init__(self, cfg: Dict, image_shape: Tuple[int, int], step: int = 1):
         """
         :param cfg: optional configuration, {'sigmaColor' : value, 'sigmaSpace' : value, 'image_shape': value}
         :type cfg: dict
@@ -55,11 +55,12 @@ class BilateralFilter(filter.AbstractFilter):
         self._sigma_color = float(self.cfg["sigma_color"])
         self._sigma_space = float(self.cfg["sigma_space"])
         self._image_shape = [] if image_shape is None else image_shape
+        self._step = step
 
     @property
     def margins(self):
         sigma = int(3 * self._sigma_space + 1)
-        value = min(*self._image_shape, sigma)
+        value = min(*self._image_shape, sigma) * self._step
         return Margins(value, value, value, value)
 
     def check_conf(self, cfg: Dict) -> Dict[str, Union[str, float]]:
