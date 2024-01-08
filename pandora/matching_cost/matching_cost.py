@@ -352,7 +352,7 @@ class AbstractMatchingCost:
         cv = self.grid_estimation(image, cfg, disparity_grids)
         cv["cost_volume"] = (
             ["row", "col", "disp"],
-            np.full((cv.dims["row"], cv.dims["col"], cv.dims["disp"]), np.nan, dtype=np.float32),
+            np.full((cv.sizes["row"], cv.sizes["col"], cv.sizes["disp"]), np.nan, dtype=np.float32),
         )
         cv.attrs.update(
             {
@@ -412,8 +412,8 @@ class AbstractMatchingCost:
         :return: the range of the left and right image over which the similarity measure will be applied
         :rtype: tuple
         """
-        nx_left = int(img_left.dims["col"])
-        nx_right = int(img_right.dims["col"])
+        nx_left = int(img_left.sizes["col"])
+        nx_right = int(img_right.sizes["col"])
 
         # range in the left image
         point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))
@@ -489,7 +489,7 @@ class AbstractMatchingCost:
             dilatate_left_mask[dil] = np.nan
         else:
             # All pixels are valid
-            dilatate_left_mask = np.zeros((img_left.dims["row"], img_left.dims["col"]))
+            dilatate_left_mask = np.zeros((img_left.sizes["row"], img_left.sizes["col"]))
 
         # Create the right mask with the convention : 0 = valid, nan = invalid and no_data
         if "msk" in img_right.data_vars:
@@ -510,9 +510,9 @@ class AbstractMatchingCost:
             dilatate_right_mask[dil] = np.nan
         else:
             # All pixels are valid
-            dilatate_right_mask = np.zeros((img_left.dims["row"], img_left.dims["col"]))
+            dilatate_right_mask = np.zeros((img_left.sizes["row"], img_left.sizes["col"]))
 
-        ny_, nx_ = img_left.dims["row"], img_left.dims["col"]
+        ny_, nx_ = img_left.sizes["row"], img_left.sizes["col"]
 
         row = np.arange(0, ny_)
         col = np.arange(0, nx_)
@@ -711,7 +711,7 @@ class AbstractMatchingCost:
         """
 
         return np.full(
-            (len(disparity_range), int(img_left.dims["col"]), int(img_left.dims["row"])),
+            (len(disparity_range), int(img_left.sizes["col"]), int(img_left.sizes["row"])),
             np.nan,
             dtype=np.float32,
         )

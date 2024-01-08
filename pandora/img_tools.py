@@ -128,8 +128,8 @@ def add_disparity(
             dataset["disparity"] = xr.DataArray(
                 np.array(
                     [
-                        np.full((dataset.dims["row"], dataset.dims["col"]), disparity[0]),
-                        np.full((dataset.dims["row"], dataset.dims["col"]), disparity[1]),
+                        np.full((dataset.sizes["row"], dataset.sizes["col"]), disparity[0]),
+                        np.full((dataset.sizes["row"], dataset.sizes["col"]), disparity[1]),
                     ]
                 ),
                 dims=["band_disp", "row", "col"],
@@ -480,7 +480,7 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
                 )
     else:
         msk = np.full(
-            (dataset.dims["row"], dataset.dims["col"]),
+            (dataset.sizes["row"], dataset.sizes["col"]),
             int(dataset.attrs["valid_pixels"]),
         )
         img = dataset["im"].data
@@ -621,7 +621,7 @@ def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None) -> Lis
     :rtype: array of xarray.Dataset
     """
     img_right_shift = [img_right]
-    ny_, nx_ = img_right.dims["row"], img_right.dims["col"]
+    ny_, nx_ = img_right.sizes["row"], img_right.sizes["col"]
 
     if band is None:
         selected_band = img_right["im"].data
@@ -660,7 +660,7 @@ def check_inside_image(img: xr.Dataset, row: int, col: int) -> bool:
     :return: True if the coordinates row,col are inside the image
     :rtype: boolean
     """
-    ny_, nx_ = img.dims["row"], img.dims["col"]
+    ny_, nx_ = img.sizes["row"], img.sizes["col"]
     return 0 <= row < nx_ and 0 <= col < ny_
 
 
@@ -679,7 +679,7 @@ def census_transform(image: xr.Dataset, window_size: int, band: str = None) -> x
     :rtype: xarray.Dataset
     """
 
-    ny_, nx_ = image.dims["row"], image.dims["col"]
+    ny_, nx_ = image.sizes["row"], image.sizes["col"]
 
     if len(image["im"].shape) > 2:
         band_index = list(image.band_im.data).index(band)
@@ -740,7 +740,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.
     :rtype: numpy array
     """
     # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
-    ny_, nx_ = img.dims["row"], img.dims["col"]
+    ny_, nx_ = img.sizes["row"], img.sizes["col"]
     if len(img["im"].shape) > 2:
         band_index = list(img.band_im.data).index(band)
         # Example with win_size = 3 and the input :

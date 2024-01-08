@@ -210,8 +210,8 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         return np.full(
             (
                 len(disparity_range),
-                int((img_left.dims["col"] + 2 * offset_row_col)),
-                int((img_left.dims["row"] + 2 * offset_row_col)),
+                int((img_left.sizes["col"] + 2 * offset_row_col)),
+                int((img_left.sizes["row"] + 2 * offset_row_col)),
             ),
             np.nan,
             dtype=np.float32,
