@@ -152,6 +152,7 @@ When matching is impossible, the matching cost is np.nan.
 This Dataset also has a :
 
 - xarray.DataArray 3D confidence_measure, which contains quality indicators, depending on what is activated. It can be enriched by indicators calculated in the different plugins.
+- xarray.DataArray validity_mask which represents the :ref:`validity_mask`.
 - xarray.DataArray disp_indices, which contains the minimum cost indices calculated in step *Disparity computation*.
 
 
@@ -169,6 +170,7 @@ Example of a cost volume
       * indicator     (indicator) object 'confidence_from_intensity_std'
     Data variables:
         cost_volume   (row, col, disp) float32 nan nan nan nan ... nan nan nan nan
+        validity_mask (row, col) uint16 1 1 1 1 1 1 1 1 1 ... 1 1 1 1 1 1 1 1
         confidence_measure   (row, col, indicator) float32 nan nan nan nan ... nan nan nan nan
         disp_indices  (row, col) float32 10.0 10.0 10.0 10.0 ... -10.0 -9.0 -10.0
     Attributes:
