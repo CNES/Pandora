@@ -256,6 +256,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # right disparity map
         self.right_disparity: xr.Dataset = None
 
+        self.step: int = 1
+
         # Pandora's pipeline configuration
         self.pipeline_cfg: Dict = {"pipeline": {}}
 
@@ -435,6 +437,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         filter_ = filter.AbstractFilter(
             cfg=cfg["pipeline"][input_step],
             image_shape=(self.left_img.sizes["row"], self.left_img.sizes["col"]),
+            step=self.step,
         )  # type: ignore
         filter_.filter_disparity(self.left_disparity)
         if self.right_disp_map == "cross_checking_accurate":
@@ -687,6 +690,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # Create matching_cost object to check its step configuration
         matching_cost_ = matching_cost.AbstractMatchingCost(**cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = matching_cost_.cfg
+        self.step = matching_cost_.cfg["step"]
         self.margins.add_cumulative(input_step, matching_cost_.margins)
 
         # Check the coherence between the band selected for the matching_cost step
@@ -730,6 +734,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         filter_ = filter.AbstractFilter(
             cfg=filter_config,
             image_shape=(self.left_img.sizes["row"], self.left_img.sizes["col"]),
+            step=self.step,
         )  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = filter_.cfg
         self.margins.add_non_cumulative(input_step, filter_.margins)
