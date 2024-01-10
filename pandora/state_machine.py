@@ -812,6 +812,11 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :type input_step: string
         :return: None
         """
+
+        # When SGM optimization is used the only permitted step value is 1
+        if self.step != 1:
+            raise AttributeError("For performing the SGM optimization step, step attribute must be equal to 1")
+
         optimization_ = optimization.AbstractOptimization(self.left_img, **cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = optimization_.cfg
 
