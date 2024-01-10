@@ -28,6 +28,7 @@ import numpy as np
 import pytest
 import xarray as xr
 from pytest_mock import MockerFixture
+from pandora import check_configuration
 from pandora.margins import Margins
 from pandora import PandoraMachine
 
@@ -537,3 +538,74 @@ class TestGlobalMarginsWithStep:
         pandora_machine.check_conf(configuration, pandora_machine.left_img, pandora_machine.right_img)
 
         assert pandora_machine.margins.global_margins == expected
+
+
+# pylint: disable=too-few-public-methods
+class TestStepMatchingCost:
+    """Test step in the matching cost"""
+
+    def test_update_pandora_machine_step(
+        self, bypass_matching_cost_step_verification, pandora_machine_builder, monoband_image
+    ):
+        """
+        Test that pandora_machine.step is updated after matching_cost_check_conf()
+
+        """
+
+        pipeline_cfg = {
+            "pipeline": {
+                "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "step": 2},
+                "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
+                "refinement": {"refinement_method": "vfit"},
+                "filter": {"filter_method": "median", "filter_size": 3},
+                "validation": {"validation_method": "cross_checking_accurate", "cross_checking_threshold": 1.0},
+            }
+        }
+
+        # Update the user configuration with default values
+        cfg = check_configuration.update_conf(check_configuration.default_short_configuration, pipeline_cfg)
+
+        pandora_machine = pandora_machine_builder((10, 10), monoband_image)
+
+        # pandora_machine.matching_cost_._step_col = 2 # pylint: disable=protected-access
+        pandora_machine.check_conf(cfg, pandora_machine.left_img, pandora_machine.right_img)
+
+        assert pandora_machine.step == cfg["pipeline"]["matching_cost"]["step"]
+
+
+# pylint: disable=too-few-public-methods
+class TestStepSGM:
+    """Test that the SGM optimisation cannot be run with a step different from 1"""
+
+    @staticmethod
+    def test_sgm_step_different_one():
+        """
+        Test the optimization_check_conf method error message with sgm optimization step when the step value is 1
+
+        """
+
+        pipeline_cfg = {
+            "pipeline": {
+                "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2},
+                "optimization": {
+                    "optimization_method": "sgm",
+                    "penalty": {"penalty_method": "sgm_penalty", "P1": 8, "P2": 32, "p2_method": "constant"},
+                },
+                "disparity": {"disparity_method": "wta", "invalid_disparity": -9999},
+                "refinement": {"refinement_method": "vfit"},
+                "filter": {"filter_method": "median", "filter_size": 3},
+                "validation": {"validation_method": "cross_checking_accurate", "cross_checking_threshold": 1.0},
+            }
+        }
+
+        pandora_machine = PandoraMachine()
+
+        # In this test we force the use of a step equals to 2.
+        # This allows to check that we raise an exception when we try to use SGM optimization
+        # with a step different from 1
+        pandora_machine.step = 2
+
+        with pytest.raises(
+            AttributeError, match="For performing the SGM optimization step, step attribute must be equal to 1"
+        ):
+            pandora_machine.optimization_check_conf(pipeline_cfg, "optimization")
