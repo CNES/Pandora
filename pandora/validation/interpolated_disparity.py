@@ -34,6 +34,7 @@ from numba import njit
 
 import pandora.constants as cst
 from pandora.img_tools import find_valid_neighbors
+from pandora.criteria import mask_border
 
 
 class AbstractInterpolation:
@@ -235,6 +236,10 @@ class McCnnInterpolation(AbstractInterpolation):
         ) = self.interpolate_mismatch_mc_cnn(left["disparity_map"].data, left["validity_mask"].data)
 
         left.attrs["interpolated_disparity"] = "mc-cnn"
+
+        # Update validity mask to make sure that PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER criteria is marked
+        if left.attrs["offset_row_col"] > 0:
+            left["validity_mask"] = mask_border(left)
 
     @staticmethod
     @njit()

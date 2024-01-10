@@ -28,13 +28,13 @@ from abc import ABCMeta, abstractmethod
 from math import ceil, floor
 from typing import Tuple, List, Union, Dict
 from json_checker import And, Or
-
 import numpy as np
 import xarray as xr
 from scipy.ndimage import binary_dilation
 
 from pandora.margins.descriptors import HalfWindowMargins
 from pandora.img_tools import shift_right_img
+from pandora.criteria import mask_invalid_variable_disparity_range
 
 
 class AbstractMatchingCost:
@@ -250,6 +250,8 @@ class AbstractMatchingCost:
         self, img: xr.Dataset, cfg: Union[Dict[str, dict], None], disparity_grids: Tuple[np.ndarray, np.ndarray]
     ) -> xr.Dataset:
         """
+        Estimation of the grid xarray dataset that will store the cost volume.
+
         :param img: left Dataset image
         :type img: xarray.Dataset
         :param cfg: user configuration
@@ -616,6 +618,7 @@ class AbstractMatchingCost:
         :type disp_max: np.ndarray
         :return: None
         """
+
         ny_, nx_, nd_ = cost_volume["cost_volume"].shape
 
         dmin, _ = self.get_min_max_from_grid(disp_min, disp_max)
@@ -687,6 +690,13 @@ class AbstractMatchingCost:
                 )
             )
             cost_volume["cost_volume"].data[masking[0], masking[1], dsp] = np.nan
+
+        # The disp_min and disp_max used to search missing disparity interval are not the local disp_min and disp_max
+        # in case of a variable range of disparities. So there may be pixels that have missing disparity range (all
+        # cost are np.nan), but are not detected in the validity_mask function. To find the pixels that have a missing
+        # disparity range, we search in the cost volume pixels where cost_volume(row,col, for all d) = np.nan
+
+        mask_invalid_variable_disparity_range(cost_volume)
 
     def allocate_numpy_cost_volume(self, img_left: xr.Dataset, disparity_range: Union[np.ndarray, List]) -> np.ndarray:
         """

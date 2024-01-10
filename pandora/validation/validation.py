@@ -35,6 +35,7 @@ from pandora import common
 from pandora.cost_volume_confidence.cost_volume_confidence import (
     AbstractCostVolumeConfidence,
 )
+from pandora.criteria import mask_border
 from pandora.disparity import extract_disparity_range_from_disparity_map
 
 
@@ -353,5 +354,9 @@ class CrossCheckingAccurate(AbstractValidation):
         dataset_left, _ = AbstractCostVolumeConfidence.allocate_confidence_map(
             "left_right_consistency", conf_measure, dataset_left, cv
         )
+
+        # Update validity mask to make sure that PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER criteria is marked
+        if dataset_left.attrs["offset_row_col"] > 0:
+            dataset_left["validity_mask"] = mask_border(dataset_left)
 
         return dataset_left

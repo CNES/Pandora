@@ -35,6 +35,7 @@ import pandora.cost_volume_confidence as confidence
 from pandora import matching_cost
 from pandora.state_machine import PandoraMachine
 from pandora.img_tools import add_disparity
+from pandora.criteria import validity_mask
 
 
 class TestConfidence(unittest.TestCase):
@@ -383,6 +384,10 @@ class TestConfidence(unittest.TestCase):
         grid = stereo_matcher.allocate_cost_volume(
             left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+
+        # Compute validity mask
+        grid = validity_mask(left, right, grid)
+
         cv = stereo_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         stereo_matcher.cv_masked(
             left,
@@ -478,6 +483,10 @@ class TestConfidence(unittest.TestCase):
         grid = stereo_matcher.allocate_cost_volume(
             left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+
+        # Compute validity mask
+        grid = validity_mask(left, right, grid)
+
         cv = stereo_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         stereo_matcher.cv_masked(
             left,
