@@ -49,3 +49,5 @@ PANDORA_MSK_PIXEL_OCCLUSION = 1 << 8
 PANDORA_MSK_PIXEL_MISMATCH = 1 << 9
 # if bit 10 activate : Information : Nodata was filled
 PANDORA_MSK_PIXEL_FILLED_NODATA = 1 << 10
+# if bit 11 activate : Information : Interval was in a regularization zone
+PANDORA_MSK_PIXEL_INTERVAL_REGULARIZED = 1 << 11
