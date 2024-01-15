@@ -155,26 +155,26 @@ class AbstractCostVolumeConfidence:
 
                 # Remove confidence_measure dataArray from the dataset to update it
                 cv = cv.drop_dims("indicator")
-                coords_conficende_measure = [
+                coords_confidence_measure = [
                     cv.coords["row"],
                     cv.coords["col"],
                     indicator,
                 ]
                 cv["confidence_measure"] = xr.DataArray(
                     data=conf_measure,
-                    coords=coords_conficende_measure,
+                    coords=coords_confidence_measure,
                     dims=["row", "col", "indicator"],
                 )
             # Allocate the confidence measure in the cost volume Dataset
             else:
-                coords_conficende_measure = [
+                coords_confidence_measure = [
                     cv.coords["row"],
                     cv.coords["col"],
                     [name_confidence_measure],
                 ]
                 cv["confidence_measure"] = xr.DataArray(
                     data=confidence_map[:, :, np.newaxis].astype(np.float32),
-                    coords=coords_conficende_measure,
+                    coords=coords_confidence_measure,
                     dims=["row", "col", "indicator"],
                 )
 
@@ -195,28 +195,28 @@ class AbstractCostVolumeConfidence:
 
                 # Remove confidence_measure dataArray from the dataset to update it
                 disp = disp.drop_dims("indicator")
-                coords_conficende_measure = [
+                coords_confidence_measure = [
                     disp.coords["row"],
                     disp.coords["col"],
                     indicator,
                 ]
                 disp["confidence_measure"] = xr.DataArray(
                     data=conf_measure,
-                    coords=coords_conficende_measure,
+                    coords=coords_confidence_measure,
                     dims=["row", "col", "indicator"],
                 )
             else:
                 if cv is not None:
                     disp["confidence_measure"] = cv["confidence_measure"]
                 else:
-                    coords_conficende_measure = [
+                    coords_confidence_measure = [
                         disp.coords["row"],
                         disp.coords["col"],
                         [name_confidence_measure],
                     ]
                     disp["confidence_measure"] = xr.DataArray(
                         data=confidence_map[:, :, np.newaxis].astype(np.float32),
-                        coords=coords_conficende_measure,
+                        coords=coords_confidence_measure,
                         dims=["row", "col", "indicator"],
                     )
         return disp, cv

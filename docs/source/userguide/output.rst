@@ -55,38 +55,54 @@ Validity mask indicates why a pixel in the image is invalid and
 provide information on the reliability of the match. These masks are 16-bit encoded: each bit
 represents a rejection / information criterion (= 1 if rejection / information, = 0 otherwise):
 
- +---------+------------------+--------------------------------------------------------------------------------------------------+
- | **Bit** |    **Binary**    | **Description**                                                                                  |
- +---------+------------------+--------------------------------------------------------------------------------------------------+
- |         |                  | The point is invalid, there are two possible cases:                                              |
- |         |                  |                                                                                                  |
- |    0    | 0000000000000001 |   - border of left image                                                                         |
- |         |                  |   - nodata of left image                                                                         |
- +---------+------------------+--------------------------------------------------------------------------------------------------+
- |         |                  | The point is invalid, there are two possible cases:                                              |
- |         |                  |                                                                                                  |
- |    1    | 0000000000000010 |   - Disparity range does not permit to find any point on the right image                         |
- |         |                  |   - nodata of right image                                                                        |
- +---------+------------------+--------------------------------------------------------------------------------------------------+
- |    2    | 0000000000000100 | Information : disparity range cannot be used completely , reaching border of right image         |
- +---------+------------------+--------------------------------------------------------------------------------------------------+
- |    3    | 0000000000001000 | Information: calculations stopped at the pixel stage, sub-pixel interpolation was not successful |
- |         |                  | (for vfit: pixels d-1 and/or d+1 could not be calculated)                                        |
- +---------+------------------+--------------------------------------------------------------------------------------------------+
- |    4    | 0000000000010000 | Information : filled occlusion                                                                   |
- +---------+------------------+--------------------------------------------------------------------------------------------------+
- |    5    | 0000000000100000 | Information : filled mismatch                                                                    |
- +---------+------------------+--------------------------------------------------------------------------------------------------+
- |    6    | 0000000001000000 | The point is invalid: invalidated by the validity mask associated to the left image              |
- +---------+------------------+--------------------------------------------------------------------------------------------------+
- |    7    | 0000000010000000 | The point is invalid: right positions to be scanned invalidated by the mask of the right image   |
- +---------+------------------+--------------------------------------------------------------------------------------------------+
- |    8    | 0000000100000000 | The point is invalid: point located in an occlusion area                                         |
- +---------+------------------+--------------------------------------------------------------------------------------------------+
- |    9    | 0000001000000000 | The point is invalid: mismatch                                                                   |
- +---------+------------------+--------------------------------------------------------------------------------------------------+
- |   10    | 0000010000000000 | Information : filled no data                                                                     |
- +---------+------------------+--------------------------------------------------------------------------------------------------+
+.. list-table:: Mask values
+   :widths: 5 19 57
+   :header-rows: 1
+
+
+   * - **Bit**
+     - **Binary**
+     - **Description**
+   * - 0
+     - 0000000000000001
+     - | The point is invalid, there are two possible cases:
+       | - border of left image
+       | - nodata of left image
+   * - 1
+     - 0000000000000010
+     - | The point is invalid, there are two possible cases:
+       | - Disparity range does not permit to find any point on the right image
+       | - nodata of right image
+   * - 2
+     - 0000000000000100
+     - Information : disparity range cannot be used completely , reaching border of right image
+   * - 3
+     - 0000000000001000
+     - Information : calculations stopped at the pixel stage, sub-pixel interpolation was not successful (for vfit, pixels d-1 and/or d+1 could not be calculated)
+   * - 4
+     - 0000000000010000
+     - Information : filled occlusion
+   * - 5
+     - 0000000000100000
+     - Information : filled mismatch
+   * - 6
+     - 0000000001000000
+     - The point is invalid: invalidated by the validity mask associated to the left image
+   * - 7
+     - 0000000010000000
+     - The point is invalid: right positions to be scanned invalidated by the mask of the right image
+   * - 8
+     - 0000000100000000
+     - The point is invalid: point located in an occlusion area
+   * - 9
+     - 0000001000000000
+     - The point is invalid: mismatch
+   * - 10
+     - 0000010000000000
+     - Information : No data was filled
+   * - 11
+     - 0000100000000000
+     - Information : Interval was in a regularization zone during filtering
 
 Memory consumption estimation
 *****************************

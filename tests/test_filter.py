@@ -624,3 +624,130 @@ class TestBilateralFilter:
         filter_bilateral.filter_disparity(disp_dataset)
 
         np.testing.assert_allclose(gt_disp, disp_dataset["disparity_map"].data, rtol=1e-07)
+
+
+class TestMedianForIntervalsFilter:
+    """Test MedianForIntervalsFilter"""
+
+    @pytest.fixture()
+    def int_inf(self):
+        """Initial interval bound inf"""
+        int_inf = np.array([[4, 5, 7, 7, 8], [5, 84, 0, 35, 4], [2, 7, 21, 10, 1], [5, 0, 8, 1, 3]], dtype=np.float32)
+        return int_inf
+
+    @pytest.fixture()
+    def int_sup(self):
+        """Initial interval bound sup"""
+        int_sup = np.array(
+            [[6, 7, 9, 9, 10], [7, 86, 2, 37, 6], [4, 10, 23, 12, 3], [7, 2, 10, 3, 5]], dtype=np.float32
+        )
+        return int_sup
+
+    @pytest.mark.parametrize("filter_size", [1, 3])
+    def test_margins(self, filter_size):
+        """Check that margin computation is correct."""
+        filter_median_for_intervals = flt.AbstractFilter(
+            cfg={"filter_method": "median_for_intervals", "filter_size": filter_size}
+        )
+        assert filter_median_for_intervals.margins == Margins(filter_size, filter_size, filter_size, filter_size)
+
+    def test_median_for_intervals(self, int_inf, int_sup):
+        """
+        Test the median filter for intervals
+        """
+
+        gt_inf = np.array([[4, 5, 7, 7, 8], [5, 5, 7, 7, 4], [2, 5, 8, 4, 1], [5, 0, 8, 1, 3]], dtype=np.float32)
+        gt_sup = np.array([[6, 7, 9, 9, 10], [7, 7, 10, 9, 6], [4, 7, 10, 6, 3], [7, 2, 10, 3, 5]], dtype=np.float32)
+
+        disp_dataset = xr.Dataset(
+            {
+                "disparity_map": (["row", "col"], np.full(gt_inf.shape, 0, dtype=np.float32)),
+                "confidence_measure": (["row", "col", "indicator"], np.stack((int_inf, int_sup), axis=2)),
+            },
+            coords={
+                "row": np.arange(4),
+                "col": np.arange(5),
+                "indicator": ["confidence_from_interval_bounds_inf", "confidence_from_interval_bounds_sup"],
+            },
+        )
+
+        filter_median = flt.AbstractFilter(cfg={"filter_method": "median_for_intervals", "filter_size": 3})
+
+        # Apply median filter to the interval confidence map.
+        filter_median.filter_disparity(disp_dataset)
+
+        # Check if the calculated intervals are equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(
+            disp_dataset["confidence_measure"].sel({"indicator": "confidence_from_interval_bounds_inf"}).data, gt_inf
+        )
+        np.testing.assert_array_equal(
+            disp_dataset["confidence_measure"].sel({"indicator": "confidence_from_interval_bounds_sup"}).data, gt_sup
+        )
+
+    def test_median_for_intervals_with_reg(self, int_inf, int_sup):
+        """
+        Test the median filter for intervals
+        """
+
+        gt_inf = np.array(
+            [[4.8, 4.8, 4.8, 7, 8], [4.8, 4.8, 7, 7, 4], [2, 5, 8, 2.2, 1], [5, 0, 2.2, 2.2, 3]], dtype=np.float32
+        )
+
+        gt_sup = np.array(
+            [[7.4, 7.4, 7.4, 9, 10], [7.4, 7.4, 10, 9, 6], [4, 7, 10, 8.4, 3], [7, 2, 8.4, 8.4, 5]], dtype=np.float32
+        )
+
+        validity_mask_gt = np.array(
+            [[2048, 2048, 2048, 0, 0], [2048, 2048, 0, 0, 0], [0, 0, 0, 2048, 0], [0, 0, 2048, 2048, 0]], dtype=np.int16
+        )
+
+        amb = np.array(
+            [
+                [1.0, 0.7, 1.0, 1.0, 1.0],
+                [0.7, 1.0, 1.0, 1.0, 1.0],
+                [1.0, 1.0, 1.0, 1.0, 0.7],
+                [1.0, 1.0, 1.0, 0.7, 1.0],
+            ],
+            dtype=np.float32,
+        )
+
+        disp_dataset = xr.Dataset(
+            {
+                "disparity_map": (["row", "col"], np.full(gt_inf.shape, 0, dtype=np.float32)),
+                "confidence_measure": (["row", "col", "indicator"], np.stack((amb, int_inf, int_sup), axis=2)),
+                "validity_mask": (["row", "col"], np.full(gt_inf.shape, 0, dtype=np.int16)),
+            },
+            coords={
+                "row": np.arange(4),
+                "col": np.arange(5),
+                "indicator": [
+                    "confidence_from_ambiguity",
+                    "confidence_from_interval_bounds_inf",
+                    "confidence_from_interval_bounds_sup",
+                ],
+            },
+        )
+
+        filter_median = flt.AbstractFilter(
+            cfg={
+                "filter_method": "median_for_intervals",
+                "filter_size": 3,
+                "regularization": True,
+                "ambiguity_kernel_size": 3,
+                "ambiguity_threshold": 0.8,
+                "vertical_depth": 2,
+                "quantile_regularization": 0.8,
+            }
+        )
+
+        # Apply median filter to the interval confidence map.
+        filter_median.filter_disparity(disp_dataset)
+
+        # Check if the calculated intervals are equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_array_equal(
+            disp_dataset["confidence_measure"].sel({"indicator": "confidence_from_interval_bounds_inf"}).data, gt_inf
+        )
+        np.testing.assert_array_equal(
+            disp_dataset["confidence_measure"].sel({"indicator": "confidence_from_interval_bounds_sup"}).data, gt_sup
+        )
+        np.testing.assert_array_equal(disp_dataset["validity_mask"].data, validity_mask_gt)
