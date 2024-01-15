@@ -104,7 +104,10 @@ ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial
      - Cost volume confidence method
      - str
      -
-     - "std_intensity" , "ambiguity", "risk", "interval_bounds"
+     - | "std_intensity",
+       | "ambiguity",
+       | "risk",
+       | "interval_bounds"
      - Yes
    * - *eta_max*
      - Maximum :math:`\eta`

@@ -30,7 +30,9 @@ The filtering methods allow to homogenize the disparity maps, those available in
      - Filtering method
      - str
      -
-     - "median", "bilateral", "median_for_intervals"
+     - | "median",
+       | "bilateral",
+       | "median_for_intervals"
      - Yes
    * - *filter_size*
      - Filter's size

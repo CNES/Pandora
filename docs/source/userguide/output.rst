@@ -99,7 +99,7 @@ represents a rejection / information criterion (= 1 if rejection / information, 
      - The point is invalid: mismatch
    * - 10
      - 0000010000000000
-     - Information : Nadata was filled
+     - Information : No data was filled
    * - 11
      - 0000100000000000
      - Information : Interval was in a regularization zone during filtering
