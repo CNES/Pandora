@@ -38,7 +38,17 @@ class TestMedianFilter:
 
     @pytest.fixture()
     def filter_median(self, request):
-        return flt.AbstractFilter(cfg={"filter_method": "median", "filter_size": request.param})
+        """
+        Instantiate a Median Filter.
+
+        :param request: Iterable of parameters : filter_size, step
+        :type request: Iterable
+        :return: Filter
+        :rtype: flt.AbstractFilter
+        """
+        return flt.AbstractFilter(
+            cfg={"filter_method": "median", "filter_size": request.param[0]}, step=request.param[1]
+        )
 
     @pytest.fixture()
     def dataset1(self):
@@ -189,25 +199,25 @@ class TestMedianFilter:
         ],
         [
             pytest.param(
-                3,
+                [3, 1],
                 "dataset1",
                 np.array([[5, 6, 7, 8, 9], [6, 6, 9, 8, 5], [5, 6, 9, 5, 2], [6, 1, 9, 2, 4]], dtype=np.float32),
                 id="Case1",
             ),
             pytest.param(
-                3,
+                [3, 1],
                 "dataset2",
                 np.array([[7, 8, 4, 5, 5], [5, 9, 4, 3.5, 8], [5, 2, 7, 2, 2], [6, 1, 9, 2, 4]], dtype=np.float32),
                 id="Case2",
             ),
             pytest.param(
-                3,
+                [3, 1],
                 "dataset3",
                 np.array([[7, 8, 4, 5, 5], [5, 5, 4, 4, 8], [5, 5, 3, 4, 2], [6, 1, 9, 2, 4]], dtype=np.float32),
                 id="Case3",
             ),
             pytest.param(
-                5,
+                [5, 1],
                 "dataset4",
                 np.array(
                     [[7, 8, 4, 5, 5], [5, 9, 4, 3, 8], [5, 2, 5, 2, 2], [6, 1, 9, 2, 4], [1, 6, 2, 7, 8]],
@@ -230,10 +240,18 @@ class TestMedianFilter:
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(disp_dataset["disparity_map"].data, gt_disp)
 
-    @pytest.mark.parametrize(["filter_median", "filter_size"], [(1, 1), (3, 3)], indirect=["filter_median"])
-    def test_margins(self, filter_median, filter_size):
+    @pytest.mark.parametrize(
+        ["filter_median", "expected"],
+        [
+            pytest.param([1, 1], Margins(1, 1, 1, 1)),
+            pytest.param([3, 1], Margins(3, 3, 3, 3)),
+            pytest.param([3, 2], Margins(6, 6, 6, 6)),
+        ],
+        indirect=["filter_median"],
+    )
+    def test_margins(self, filter_median, expected):
         """Check that margin computation is correct."""
-        assert filter_median.margins == Margins(filter_size, filter_size, filter_size, filter_size)
+        assert filter_median.margins == expected
 
 
 class TestBilateralFilter:
@@ -242,13 +260,29 @@ class TestBilateralFilter:
     """
 
     @pytest.mark.parametrize(
-        ["sigma_space", "row_length", "col_length", "expected"],
+        ["sigma_space", "row_length", "col_length", "step", "expected"],
         [
-            pytest.param(1.0, 5, 5, Margins(4, 4, 4, 4), id="Result should be computed from sigma_space"),
-            pytest.param(2.0, 7, 6, Margins(6, 6, 6, 6), id="Result should be lowest image's dimension"),
+            pytest.param(1.0, 5, 5, 1, Margins(4, 4, 4, 4), id="Result should be computed from sigma_space"),
+            pytest.param(2.0, 7, 6, 1, Margins(6, 6, 6, 6), id="Result should be lowest image's dimension"),
+            pytest.param(
+                1.0,
+                5,
+                5,
+                4,
+                Margins(16, 16, 16, 16),
+                id="Result should be computed from sigma_space taking step into account",
+            ),
+            pytest.param(
+                2.0,
+                7,
+                6,
+                2,
+                Margins(12, 12, 12, 12),
+                id="Result should be lowest image's dimension taking step into account",
+            ),
         ],
     )
-    def test_margins(self, sigma_space, row_length, col_length, expected):
+    def test_margins(self, sigma_space, row_length, col_length, step, expected):
         """Check that margin computation is correct."""
         filter_config = {
             "filter_method": "bilateral",
@@ -256,7 +290,7 @@ class TestBilateralFilter:
             "sigma_space": sigma_space,
         }
 
-        filter_ = flt.AbstractFilter(cfg=filter_config, image_shape=(row_length, col_length))
+        filter_ = flt.AbstractFilter(cfg=filter_config, image_shape=(row_length, col_length), step=step)
         assert filter_.margins == expected
 
     @pytest.mark.parametrize("missing_key", ["filter_method"])
@@ -643,13 +677,21 @@ class TestMedianForIntervalsFilter:
         )
         return int_sup
 
-    @pytest.mark.parametrize("filter_size", [1, 3])
-    def test_margins(self, filter_size):
+    @pytest.mark.parametrize(
+        ["filter_size", "step", "expected"],
+        [
+            pytest.param(1, 1, Margins(1, 1, 1, 1)),
+            pytest.param(3, 1, Margins(3, 3, 3, 3)),
+            pytest.param(3, 2, Margins(6, 6, 6, 6)),
+        ],
+    )
+    def test_margins(self, filter_size, step, expected):
         """Check that margin computation is correct."""
         filter_median_for_intervals = flt.AbstractFilter(
-            cfg={"filter_method": "median_for_intervals", "filter_size": filter_size}
+            cfg={"filter_method": "median_for_intervals", "filter_size": filter_size},
+            step=step,
         )
-        assert filter_median_for_intervals.margins == Margins(filter_size, filter_size, filter_size, filter_size)
+        assert filter_median_for_intervals.margins == expected
 
     def test_median_for_intervals(self, int_inf, int_sup):
         """

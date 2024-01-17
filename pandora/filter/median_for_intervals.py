@@ -28,7 +28,8 @@ import numpy as np
 from json_checker import Checker, And
 import xarray as xr
 
-from pandora.margins.descriptors import UniformMarginsFromAttribute
+from pandora.margins import Margins
+
 from . import filter  # pylint: disable= redefined-builtin
 from ..constants import PANDORA_MSK_PIXEL_INTERVAL_REGULARIZED
 from ..interval_tools import interval_regularization
@@ -48,10 +49,7 @@ class MedianForIntervalsFilter(filter.AbstractFilter):
     _VERTICAL_DEPTH = 0
     _QUANTILE_REGULARIZATION = 1.0
 
-    # We ignore type because we just override a null value.
-    margins = UniformMarginsFromAttribute("_filter_size")  # type: ignore
-
-    def __init__(self, cfg: Dict, *args, **kwargs):  # pylint:disable=unused-argument
+    def __init__(self, *args, cfg: Dict, step: int = 1, **kwargs):  # pylint:disable=unused-argument
         """
         :param cfg: optional configuration, {'filter_size': value}
         :type cfg: dictionary
@@ -65,6 +63,7 @@ class MedianForIntervalsFilter(filter.AbstractFilter):
         self._ambiguity_indicator = str(self.cfg["ambiguity_indicator"])
         self._ambiguity_threshold = float(self.cfg["ambiguity_threshold"])
         self._ambiguity_kernel_size = int(self.cfg["ambiguity_kernel_size"])
+        self._step = step
 
     def check_conf(self, cfg: Dict) -> Dict:
         """
@@ -114,6 +113,11 @@ class MedianForIntervalsFilter(filter.AbstractFilter):
         Describes the filtering method
         """
         print("Median filter for intervals description")
+
+    @property
+    def margins(self):
+        value = self._filter_size * self._step
+        return Margins(value, value, value, value)
 
     def filter_disparity(
         self,
