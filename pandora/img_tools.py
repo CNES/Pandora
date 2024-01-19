@@ -756,7 +756,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.
     #           10 | 5  | 3
     #            2 | 10 | 5
     #            5 | 3  | 1
-    r_mean = np.cumsum(r_mean, axis=0)
+    r_mean = np.nancumsum(r_mean, axis=0)
     # r_mean :   0 | 0  | 0
     #           10 | 5  | 3
     #           12 | 15 | 8
