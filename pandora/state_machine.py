@@ -321,7 +321,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             )
 
             # Compute validity mask to identify invalid points in cost volume
-            self.right_cv = validity_mask(self.left_img, self.right_img, self.right_cv)
+            self.right_cv = validity_mask(self.right_img, self.left_img, self.right_cv)
 
     def matching_cost_run(self, _: Dict[str, dict], __: str) -> None:
         """
