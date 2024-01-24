@@ -49,15 +49,15 @@ Configuration and parameters
 
 **Example**
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
       "input" : {
-            ...
+            // ...
       },
       "pipeline" :
        {
-            ...
+            // ...
             "multiscale": {
                 "multiscale_method": "fixed_zoom_pyramid",
                 "num_scales": 3,

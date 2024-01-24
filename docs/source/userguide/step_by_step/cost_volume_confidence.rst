@@ -175,22 +175,22 @@ ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial
 
 **Example**
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input" :
         {
-            ...
+            // ...
         },
         "pipeline" :
         {
-            ...
+            // ...
             "cost_volume_confidence":
             {
                 "confidence_method": "ambiguity",
                 "eta_max": 0.7,
                 "eta_step": 0.01
             }
-            ...
+            // ...
         }
     }

@@ -57,21 +57,21 @@ Configuration and parameters
 
 **Example**
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
       "input" : {
-            ...
+            // ...
       },
       "pipeline" :
        {
-            ...
+            // ...
             "semantic_segmentation": {
                 "segmentation_method": "ARNN",
                 "RGB_bands": {"R": "r", "G": "g", "B": "b"},
                 "vegetation_band": {"classes" : ["olive tree", "forest"]}
             }
-            ...
+            // ...
        }
     }
 

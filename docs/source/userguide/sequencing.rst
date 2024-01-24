@@ -64,7 +64,7 @@ SSD measurement and filtered disparity map
 Configuration to produce a disparity map, computed by SSD method, and filtered by
 median filter method.
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input":
@@ -112,7 +112,7 @@ SSD measurement, filtered disparity map and compute right map
 
 The same configuration as the previous example but right disparity map is also computed.
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input":
@@ -157,7 +157,7 @@ The same configuration as the previous example but right disparity map is also c
 An impossible sequencing
 ########################
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input":
@@ -220,7 +220,7 @@ if the Pandora Machine is in *disp_map*.
 Same step, multiple times
 #########################
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input": {
@@ -269,7 +269,7 @@ Multiscale
 
 Configuration to produce a disparity map, computed by SSD method with multiscale processing (3 scales)
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input":

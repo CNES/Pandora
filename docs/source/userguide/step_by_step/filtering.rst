@@ -94,20 +94,20 @@ The filtering methods allow to homogenize the disparity maps, those available in
 
 **Example**
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input" :
         {
-            ...
+            // ...
         },
         "pipeline" :
         {
-            ...
+            // ...
             "filter":
             {
                 "filter_method": "median"
             }
-            ...
+            // ...
         }
     }
