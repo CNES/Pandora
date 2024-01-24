@@ -34,7 +34,7 @@ from scipy.ndimage import binary_dilation
 
 from pandora.margins.descriptors import HalfWindowMargins
 from pandora.img_tools import shift_right_img
-from pandora.criteria import mask_invalid_variable_disparity_range
+from pandora.criteria import mask_invalid_variable_disparity_range, mask_border
 
 
 class AbstractMatchingCost:
@@ -697,6 +697,11 @@ class AbstractMatchingCost:
         # disparity range, we search in the cost volume pixels where cost_volume(row,col, for all d) = np.nan
 
         mask_invalid_variable_disparity_range(cost_volume)
+
+        # Mask border pixels
+        offset = cost_volume.attrs["offset_row_col"]
+        if offset > 0:
+            mask_border(cost_volume)
 
     def allocate_numpy_cost_volume(self, img_left: xr.Dataset, disparity_range: Union[np.ndarray, List]) -> np.ndarray:
         """
