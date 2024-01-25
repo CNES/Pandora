@@ -144,9 +144,6 @@ def validity_mask(
     if "msk" in img_right.data_vars:
         allocate_right_mask(cv, img_right, bit_1)
 
-    if offset > 0:
-        cv["validity_mask"] = mask_border(cv)
-
     return cv
 
 
@@ -279,7 +276,7 @@ def mask_invalid_variable_disparity_range(cv: xr.Dataset) -> None:
         cv["validity_mask"].data[missing_range_y, missing_range_x]
         & cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
         == 0
-    ) & (cv["validity_mask"].data[missing_range_y, missing_range_x] & cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER == 0)
+    )
     masking_value = (
         cv["validity_mask"].data[missing_range_y, missing_range_x]
         + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING

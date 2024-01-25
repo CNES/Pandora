@@ -232,8 +232,7 @@ class TestCriteria:
                             + cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                            cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
-                            + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                            cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                         ],
                         [
                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
@@ -241,18 +240,15 @@ class TestCriteria:
                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
                             + cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                             cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT
-                            + cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
-                            + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                            + cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                         ],
                         [
                             cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT
                             + cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
                             + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                            cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
-                            + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                            cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
-                            + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                            cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                            cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
                             + cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                         ],
@@ -318,19 +314,8 @@ class TestCriteria:
         # Compute cost volume
         cv = matching_cost_plugin.compute_cost_volume(left, right, grid)
 
-        print(cv["cost_volume"])
-
-        matching_cost_plugin.cv_masked(
-            left,
-            right,
-            cv,
-            left["disparity"].sel(band_disp="min"),
-            left["disparity"].sel(band_disp="max"),
-        )
-
-        print(cv["cost_volume"])
-        # # We had a value that is equal np.nan for all disparities
-        # cv["cost_volume"][1, 0, :] = np.nan
+        # # We add a value that is equal np.nan for all disparities
+        cv["cost_volume"][1, 0, :] = np.nan
 
         mask_invalid_variable_disparity_range(cv)
 
@@ -760,7 +745,8 @@ class TestCriteria:
                     [
                         [
                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
-                            + cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                            + cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
+                            + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                             0,
                             0,
                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
@@ -769,7 +755,8 @@ class TestCriteria:
                         ],
                         [
                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                            cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                            cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
+                            + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                             cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT
                             + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
@@ -782,7 +769,8 @@ class TestCriteria:
                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
                             + cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
-                            + cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT,
+                            + cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT
+                            + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                         ],
                     ],
                     dtype=np.uint16,
@@ -821,7 +809,8 @@ class TestCriteria:
                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
                             + cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
-                            + cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT,
+                            + cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT
+                            + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                             cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT
                             + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                             0,
@@ -832,7 +821,8 @@ class TestCriteria:
                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
                             + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                             cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                            cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                            cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
+                            + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                         ],
                     ],
                     dtype=np.uint16,
@@ -861,7 +851,8 @@ class TestCriteria:
                 np.array(
                     [
                         [
-                            cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                            cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
+                            + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                             cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT
                             + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                             cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT
@@ -871,7 +862,8 @@ class TestCriteria:
                         ],
                         [
                             0,
-                            cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                            cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
+                            + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
                             + cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT
                             + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
@@ -936,8 +928,10 @@ class TestCriteria:
                         [
                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
-                            + cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                            cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                            + cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
+                            + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                            cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
+                            + cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                             cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                             cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                         ],
