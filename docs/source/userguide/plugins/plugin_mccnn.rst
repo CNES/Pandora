@@ -56,24 +56,24 @@ Configuration and parameters
 
 **Example**
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input" :
         {
-            ...
+            //...
         },
         "pipeline" :
         {
-            ...
+            // ...
             "matching_cost":
             {
                 "matching_cost_method": "mc_cnn",
-                "model_path": "plugin_mc-cnn/weights/mc_cnn_fast_mb_weights.pt"
+                "model_path": "plugin_mc-cnn/weights/mc_cnn_fast_mb_weights.pt",
                 "window_size": 11,
                 "subpix": 1
             }
-            ...
+            // ...
         }
     }
 

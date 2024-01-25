@@ -29,21 +29,21 @@ Configuration and parameters
 
 **Example**
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input" :
         {
-            ...
+            // ...
         },
         "pipeline" :
         {
-            ...
+            // ...
             "disparity":
             {
                 "disparity _method": "wta",
                 "invalid_disparity": "NaN"
             }
-            ...
+            // ...
         }
     }

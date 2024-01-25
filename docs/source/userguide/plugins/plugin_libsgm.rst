@@ -166,15 +166,15 @@ There are some parameters depending on penalty_method choice and p2_method choic
 
 **Example using sgm optimization**
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
       "input" : {
-            ...
+            // ...
       },
       "pipeline" :
        {
-            ...
+            // ...
             "optimization": {
                 "optimization_method": "sgm",
                 "penalty": {
@@ -183,28 +183,28 @@ There are some parameters depending on penalty_method choice and p2_method choic
                     "P2": 20
                 }
             }
-            ...
+            // ...
         }
     }
 
 
 **Example using 3sgm optimization and geometric_prior classif**
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
       "input" : {
             "left": {
-                "img": PATH,
-                "classif": PATH
+                "img": "PATH",
+                "classif": "PATH"
             },
             "right": {
-                "img": PATH
+                "img": "PATH"
             }
       },
       "pipeline" :
        {
-            ...
+            // ...
             "optimization": {
                 "optimization_method": "3sgm",
                 "penalty": {
@@ -216,7 +216,7 @@ There are some parameters depending on penalty_method choice and p2_method choic
                                     "classes": ["roads", "buildings"]
                                },
             }
-            ...
+            // ...
         }
     }
 

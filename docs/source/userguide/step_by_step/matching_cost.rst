@@ -61,38 +61,38 @@ Configuration and parameters
 
 **Example for mono band images**
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input" :
         {
-            ...
+            // ...
         },
         "pipeline" :
         {
-            ...
+            // ...
             "matching_cost":
             {
                 "matching_cost_method": "ssd",
                 "window_size": 7,
                 "subpix": 4
             }
-            ...
+            // ...
         }
     }
 
 **Example for multiband images**
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input" :
         {
-            ...
+            // ...
         },
         "pipeline" :
         {
-            ...
+            // ...
             "matching_cost":
             {
                 "matching_cost_method": "ssd",
@@ -100,6 +100,6 @@ Configuration and parameters
                 "window_size": 7,
                 "subpix": 4
             }
-            ...
+            // ...
         }
     }

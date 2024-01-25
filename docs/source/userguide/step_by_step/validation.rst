@@ -88,20 +88,20 @@ Configuration and parameters
 
 **Example**
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input" :
         {
-            ...
+            // ...
         },
         "pipeline" :
         {
-            ...
+            // ...
             "validation":
             {
                "validation_method": "cross_checking_accurate"
             }
-            ...
+            // ...
         }
     }

@@ -91,16 +91,16 @@ run according to the parameters chosen by the user.
 
 Pandora works with JSON formatted data with the following nested structures.
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input" :
         {
-            ...
+            // ...
         },
         "pipeline" :
         {
-            ...
+            // ...
         }
     }
 
@@ -121,7 +121,7 @@ Example
 
 2. Create a configuration file
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input":

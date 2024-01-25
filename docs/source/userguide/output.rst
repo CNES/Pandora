@@ -25,7 +25,7 @@ Saved images
 .. note::
     If more than one cost_volume_confidence is set on the pipeline (like for example `cost_volume_confidence` and `cost_volume_confidence.after`), then the corresponding band name will include the step indicator suffix (like `.after` in the example). For instance, with the following pipeline :
 
-    .. sourcecode:: text
+    .. sourcecode:: json
 
         "cost_volume_confidence":
             {
