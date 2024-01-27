@@ -1,8 +1,38 @@
 # Changelog
 
-## Unreleased
+## 1.6.0 (January 2023)
 
-## 1.6.0a1 (Novembre 2023)
+### Added
+- Using new check_datasets function and modification to the check_band_names API. [#338]
+- Added margin calculation for the treatment chain with ROI image. [#341]
+- Addition of a method that estimates the grid to be calculated. [#342]
+- Add calculations for criteria 0,1,2,6,7 to the previously allocated cost_volume. [#325]
+- Add a new confidence mesure, interval_confidence.
+- Added an additional check not to use sgm with a step other than 1. [#378]
+
+### Fixed
+- Fix memory_consumption_estimation method with disparity grids. [#367]
+- Fix step in matching cost zncc method.
+- Fix disparity_source word.
+- Fix readthedocs. [#373]
+- Fix warning for xarray.Dataset.dims. [#375]
+- Fix margins for filter step. [#374]
+- Fix error in compute_mean_raster method. [#379]
+- Fix criteria computation ordre. [#382]
+- Correction of mistakes in the documentation. [#381]
+
+### Changed
+- Update user configuration file with new keys : "left" & "right". [#314]
+- Updating information in the various xarrays. [#368]
+- Parametrization of numba parallelization.
+- Replacing sys.exit by raises. [#370]
+- Xarray coordinates updated if a ROI is used in the create_dataset_from_inputs function. [#371]
+- Move allocate_cost_volume. [#343]
+- Change pkg_resources to importlib.metadata. [#349]
+- Update of the minimal version for python. [#377]
+
+
+## 1.6.0a1 (November 2023)
 
 ### Added
 - Addition of a step for matching_cost (only usable with Pandora2d). [#337]
