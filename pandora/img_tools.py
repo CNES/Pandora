@@ -25,10 +25,8 @@ This module contains functions associated to raster images.
 
 from __future__ import annotations
 
-import logging
 import warnings
 from typing import List, Union, Tuple, cast, Dict
-import sys
 
 import numpy as np
 import rasterio
@@ -87,8 +85,7 @@ def get_window(roi: Dict, width: int, height: int) -> Window:
 
     # check roi outside
     if col_off > width or row_off > height or (col_off + roi_width) < 0 or (row_off + roi_height) < 0:
-        logging.error("Roi specified is outside the image")
-        sys.exit(1)
+        raise ValueError("Roi specified is outside the image")
 
     # overlap roi and image
     # right side
@@ -131,8 +128,8 @@ def add_disparity(
             dataset["disparity"] = xr.DataArray(
                 np.array(
                     [
-                        np.full((dataset.dims["row"], dataset.dims["col"]), disparity[0]),
-                        np.full((dataset.dims["row"], dataset.dims["col"]), disparity[1]),
+                        np.full((dataset.sizes["row"], dataset.sizes["col"]), disparity[0]),
+                        np.full((dataset.sizes["row"], dataset.sizes["col"]), disparity[1]),
                     ]
                 ),
                 dims=["band_disp", "row", "col"],
@@ -144,7 +141,7 @@ def add_disparity(
 
 def add_classif(dataset: xr.Dataset, classif: Union[str, None], window: Window) -> xr.Dataset:
     """
-    Add classification informations and image to datasaet
+    Add classification information and image to dataset
 
     :param dataset: xarray dataset without classification
     :type dataset: xr.Dataset
@@ -169,7 +166,7 @@ def add_classif(dataset: xr.Dataset, classif: Union[str, None], window: Window) 
 
 def add_segm(dataset: xr.Dataset, segm: Union[str, None], window: Window) -> xr.Dataset:
     """
-    Add Segmentation informations and image to datasaet
+    Add Segmentation information and image to dataset
 
     :param dataset: xarray dataset without segmentation
     :type dataset: xr.Dataset
@@ -191,9 +188,9 @@ def add_segm(dataset: xr.Dataset, segm: Union[str, None], window: Window) -> xr.
 
 def add_no_data(dataset: xr.Dataset, no_data: Union[int, float], no_data_pixels: np.ndarray) -> xr.Dataset:
     """
-    Add no data informations to datasaet
+    Add no data information to dataset
 
-    :param dataset: xarray dataset without no_data informations
+    :param dataset: xarray dataset without no_data information
     :type dataset: xr.Dataset
     :param no_data: value
     :type no_data: int or float
@@ -216,7 +213,7 @@ def add_mask(
     dataset: xr.Dataset, mask: Union[str, None], no_data_pixels: np.ndarray, width: int, height: int, window: Window
 ) -> xr.Dataset:
     """
-    Add mask informations and image to datasaet
+    Add mask information and image to dataset
 
     :param dataset: xarray dataset without mask
     :type dataset: xr.Dataset
@@ -228,6 +225,8 @@ def add_mask(
     :type width: int
     :param height: nb rows
     :type height: int
+    :param window: information about window
+    :type window: rasterio.window
     :return: dataset : updated dataset
     :rtype: xr.Dataset
     """
@@ -273,7 +272,7 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
 
     :param input_config: configuration used to create dataset.
     :type input_config: dict
-    :param roi: dictionnary with a roi
+    :param roi: dictionary with a roi
 
             "col": {"first": <value - int>, "last": <value - int>},
             "row": {"first": <value - int>, "last": <value - int>},
@@ -300,13 +299,15 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
 
     # ROI
     window = get_window(roi, nx_, ny_) if roi else None
+    # col_off and row_off = coordinates of top-left point of ROI
+    col_off, row_off = (window.col_off, window.row_off) if roi else (0, 0)
 
-    # If only one band is present, consider data as 2 dimensional
+    # If only one band is present, consider data as 2 dimensions
     if img_ds.count == 1:
         data = img_ds.read(1, out_dtype=np.float32, window=window)
         nx_, ny_ = data.shape[1], data.shape[0]
         image = {"im": (["row", "col"], data)}
-        coords = {"row": np.arange(ny_), "col": np.arange(nx_)}
+        coords = {"row": np.arange(row_off, ny_ + row_off), "col": np.arange(col_off, nx_ + col_off)}
     # if image is 3 dimensions we create a dataset with [band row col] dims for dataArray
     else:
         data = img_ds.read(out_dtype=np.float32, window=window)
@@ -315,8 +316,8 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
         # Band names are in the image metadata
         coords = {
             "band_im": list(img_ds.descriptions),  # type: ignore
-            "row": np.arange(ny_),
-            "col": np.arange(nx_),
+            "row": np.arange(row_off, ny_ + row_off),
+            "col": np.arange(col_off, nx_ + col_off),
         }
 
     crs = img_ds.profile["crs"]
@@ -479,7 +480,7 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
                 )
     else:
         msk = np.full(
-            (dataset.dims["row"], dataset.dims["col"]),
+            (dataset.sizes["row"], dataset.sizes["col"]),
             int(dataset.attrs["valid_pixels"]),
         )
         img = dataset["im"].data
@@ -497,9 +498,9 @@ def interpolate_nodata_sgm(img: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarr
     IEEE Transactions on pattern analysis and machine intelligence, 2007, vol. 30, no 2, p. 328-341.
 
     :param img: input image
-    :type img: 2D np.array (row, col)
+    :type img: 2D np.ndarray (row, col)
     :param valid: validity mask
-    :type valid: 2D np.array (row, col)
+    :type valid: 2D np.ndarray (row, col)
     :return: the interpolate input image, with the validity mask update :
 
         - If out & PANDORA_MSK_PIXEL_FILLED_NODATA != 0 : Invalid pixel : filled nodata pixel
@@ -540,11 +541,10 @@ def masks_pyramid(msk: np.ndarray, scale_factor: int, num_scales: int) -> List[n
     :return: a List that contains the different scaled masks
     :rtype: List of np.ndarray
     """
-    msk_pyramid = []
+    msk_pyramid = [msk]
     # Add the full resolution mask
-    msk_pyramid.append(msk)
     tmp_msk = msk
-    for scale in range(num_scales - 1):  # pylint: disable=unused-variable
+    for _ in range(num_scales - 1):
         # Decimate in the two axis
         tmp_msk = tmp_msk[::scale_factor, ::scale_factor]
         msk_pyramid.append(tmp_msk)
@@ -621,7 +621,7 @@ def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None) -> Lis
     :rtype: array of xarray.Dataset
     """
     img_right_shift = [img_right]
-    ny_, nx_ = img_right.dims["row"], img_right.dims["col"]
+    ny_, nx_ = img_right.sizes["row"], img_right.sizes["col"]
 
     if band is None:
         selected_band = img_right["im"].data
@@ -657,10 +657,10 @@ def check_inside_image(img: xr.Dataset, row: int, col: int) -> bool:
     :type row: int
     :param col: column coordinates
     :type col: int
-    :return: a boolean
+    :return: True if the coordinates row,col are inside the image
     :rtype: boolean
     """
-    ny_, nx_ = img.dims["row"], img.dims["col"]
+    ny_, nx_ = img.sizes["row"], img.sizes["col"]
     return 0 <= row < nx_ and 0 <= col < ny_
 
 
@@ -679,7 +679,7 @@ def census_transform(image: xr.Dataset, window_size: int, band: str = None) -> x
     :rtype: xarray.Dataset
     """
 
-    ny_, nx_ = image.dims["row"], image.dims["col"]
+    ny_, nx_ = image.sizes["row"], image.sizes["col"]
 
     if len(image["im"].shape) > 2:
         band_index = list(image.band_im.data).index(band)
@@ -691,7 +691,7 @@ def census_transform(image: xr.Dataset, window_size: int, band: str = None) -> x
 
     # Create a sliding window of using as_strided function : this function create a new a view (by manipulating data
     #  pointer) of the image array with a different shape. The new view pointing to the same memory block as
-    # image so it does not consume any additional memory.
+    # image, so it does not consume any additional memory.
     str_row, str_col = selected_band.strides
     shape_windows = (
         ny_ - (window_size - 1),
@@ -740,7 +740,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.
     :rtype: numpy array
     """
     # Right image can have 3 dim if its from dataset or 2 if its from shift_right_image function
-    ny_, nx_ = img.dims["row"], img.dims["col"]
+    ny_, nx_ = img.sizes["row"], img.sizes["col"]
     if len(img["im"].shape) > 2:
         band_index = list(img.band_im.data).index(band)
         # Example with win_size = 3 and the input :
@@ -756,7 +756,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.
     #           10 | 5  | 3
     #            2 | 10 | 5
     #            5 | 3  | 1
-    r_mean = np.cumsum(r_mean, axis=0)
+    r_mean = np.nancumsum(r_mean, axis=0)
     # r_mean :   0 | 0  | 0
     #           10 | 5  | 3
     #           12 | 15 | 8
@@ -780,22 +780,22 @@ def find_valid_neighbors(dirs: np.ndarray, disp: np.ndarray, valid: np.ndarray, 
     Find valid neighbors along directions
 
     :param dirs: directions
-    :type dirs: 2D np.array (row, col)
+    :type dirs: 2D np.ndarray (row, col)
     :param disp: disparity map
-    :type disp: 2D np.array (row, col)
+    :type disp: 2D np.ndarray (row, col)
     :param valid: validity mask
-    :type valid: 2D np.array (row, col)
+    :type valid: 2D np.ndarray (row, col)
     :param row: row current value
     :type row: int
     :param col: col current value
     :type col: int
     :return: valid neighbors
-    :rtype: 2D np.array
+    :rtype: 2D np.ndarray
     """
     ncol, nrow = disp.shape
     # Maximum path length
     max_path_length = max(nrow, ncol)
-    # For each directions
+    # For each direction
     valid_neighbors = np.zeros(8, dtype=np.float32)
     for direction in range(8):
         # Find the first valid pixel in the current path
@@ -843,8 +843,7 @@ def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np
             dtype=np.float32,
         )
 
-    logging.error("The window is outside the image")
-    raise IndexError
+    raise IndexError("The window is outside the image")
 
 
 def compute_std_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.ndarray:
@@ -903,7 +902,7 @@ def read_disp(disparity: tuple[int, int] | list[int] | str) -> tuple[int, int] |
 
     if not isinstance(disparity, str):
         # cast because of mypy when we give list as input while it expects a tuple as output
-        # not sure it is the best solution
+        # not sure if it is the best solution
         return cast(Tuple[int, int], tuple(disparity))
 
     raster_disparity = rasterio_open(disparity)

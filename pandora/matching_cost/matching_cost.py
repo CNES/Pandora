@@ -24,17 +24,17 @@ This module contains functions associated to the cost volume measure step.
 """
 # pylint:disable=too-many-branches
 import sys
-import logging
 from abc import ABCMeta, abstractmethod
 from math import ceil, floor
 from typing import Tuple, List, Union, Dict
 from json_checker import And, Or
-
 import numpy as np
 import xarray as xr
 from scipy.ndimage import binary_dilation
 
+from pandora.margins.descriptors import HalfWindowMargins
 from pandora.img_tools import shift_right_img
+from pandora.criteria import mask_invalid_variable_disparity_range, mask_border
 
 
 class AbstractMatchingCost:
@@ -50,6 +50,7 @@ class AbstractMatchingCost:
     cfg = None
     _band = None
     _step_col = None
+    _method = None
 
     # Default configuration, do not change these values
     _WINDOW_SIZE = 5
@@ -63,6 +64,8 @@ class AbstractMatchingCost:
         "band": Or(str, lambda input: input is None),
         "step": And(int, lambda y: y >= 1),
     }
+
+    margins = HalfWindowMargins()
 
     def __new__(cls, **cfg: Union[str, int]):
         """
@@ -117,13 +120,12 @@ class AbstractMatchingCost:
 
         return decorator
 
-    @abstractmethod
     def desc(self) -> None:
         """
         Describes the matching cost method
         :return: None
         """
-        print("Matching cost description")
+        print(f"{self._method} similarity measure")
 
     def instantiate_class(self, **cfg: Union[str, int]) -> None:
         """
@@ -137,8 +139,9 @@ class AbstractMatchingCost:
         self._subpix = int(self.cfg["subpix"])
         self._band = self.cfg["band"]
         self._step_col = int(self.cfg["step"])
+        self._method = str(self.cfg["matching_cost_method"])
 
-    def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
+    def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
@@ -158,12 +161,11 @@ class AbstractMatchingCost:
 
         if "pandora2d" not in sys.modules:
             if "step" in cfg and cfg["step"] != 1:
-                logging.error("Step parameter cannot be different from 1")
-                sys.exit(1)
+                raise ValueError("Step parameter cannot be different from 1")
         if "step" not in cfg:
             cfg["step"] = self._STEP_COL  # type: ignore
 
-        return cfg  # type: ignore
+        return cfg
 
     def check_band_input_mc(self, img_left: xr.Dataset, img_right: xr.Dataset) -> None:
         """
@@ -191,16 +193,13 @@ class AbstractMatchingCost:
             try:
                 list(img_right.band_im.data)
             except AttributeError:
-                logging.error("Right dataset is monoband: %s band cannot be selected", self._band)
-                sys.exit(1)
+                raise AttributeError(f"Right dataset is monoband: {self._band} band cannot be selected")
             try:
                 list(img_left.band_im.data)
             except AttributeError:
-                logging.error("Left dataset is monoband: %s band cannot be selected", self._band)
-                sys.exit(1)
+                raise AttributeError(f"Left dataset is monoband: {self._band} band cannot be selected")
             if (self._band not in list(img_right.band_im.data)) or (self._band not in list(img_left.band_im.data)):
-                logging.error("Wrong band instantiate : %s not in img_left or img_right", self._band)
-                sys.exit(1)
+                raise AttributeError(f"Wrong band instantiate : {self._band} not in img_left or img_right")
         else:
             try:
                 list(img_right.band_im.data)
@@ -211,12 +210,14 @@ class AbstractMatchingCost:
             except AttributeError:
                 return
             if (img_right.band_im.data is not None) or (img_left.band_im.data is not None):
-                logging.error("Band must be instantiated in matching cost step")
-                sys.exit(1)
+                raise AttributeError("Band must be instantiated in matching cost step")
 
     @abstractmethod
     def compute_cost_volume(
-        self, img_left: xr.Dataset, img_right: xr.Dataset, grid_disp_min: np.ndarray, grid_disp_max: np.ndarray
+        self,
+        img_left: xr.Dataset,
+        img_right: xr.Dataset,
+        cost_volume: xr.Dataset,
     ) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
@@ -229,7 +230,7 @@ class AbstractMatchingCost:
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
-        :param img_right: right Dataset  containing :
+        :param img_right: right Dataset image containing :
 
                 - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
                 - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
@@ -237,81 +238,134 @@ class AbstractMatchingCost:
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
-        :param grid_disp_min: minimum disparity
-        :type grid_disp_min: np.ndarray
-        :param grid_disp_max: maximum disparity
-        :type grid_disp_max: np.ndarray
-        :return: the cost volume dataset with the data variables:
+        :param cost_volume: an empty cost volume
+        :type cost_volume: xr.Dataset
+        :return: the cost volume dataset , with the data variables:
 
                 - cost_volume 3D xarray.DataArray (row, col, disp)
         :rtype: xarray.Dataset
         """
 
-    def allocate_costvolume(
-        self,
-        img_left: xr.Dataset,
-        subpix: int,
-        disp_min: int,
-        disp_max: int,
-        window_size: int,
-        metadata: dict,
-        np_data: np.ndarray = None,
+    def grid_estimation(
+        self, img: xr.Dataset, cfg: Union[Dict[str, dict], None], disparity_grids: Tuple[np.ndarray, np.ndarray]
     ) -> xr.Dataset:
         """
-        Allocate the cost volume
+        Estimation of the grid xarray dataset that will store the cost volume.
 
-        :param img_left: left Dataset image containing :
+        :param img: left Dataset image
+        :type img: xarray.Dataset
+        :param cfg: user configuration
+        :type cfg: dict
+        :param disparity_grids: Tuple of disparity grids min and max
+        :type disparity_grids: Tuple[np.ndarray, np.ndarray]
+        :return: a grid with coordinates and a attributes list with:
 
-                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
-                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
-                - msk (optional): 2D (row, col) xarray.DataArray int16
-                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
-                - segm (optional): 2D (row, col) xarray.DataArray int16
-        :type img_left: xarray.Dataset
-        :param subpix: subpixel precision = (1 or 2 or 4)
-        :type subpix: int
-        :param disp_min: minimum disparity
-        :type disp_min: int
-        :param disp_max: maximum disparity
-        :type disp_max: int
-        :param window_size: size of the aggregation window
-        :type window_size: int, odd number
-        :param metadata: dictionary storing arbitrary metadata
-        :type metadata: dictionary
-        :param step: step
-        :type step: int
-        :param np_data: the array’s data
-        :type np_data: 3D numpy array, dtype=np.float32
-        :return: the dataset cost volume with the cost_volume :
-
-                - cost_volume 3D xarray.DataArray (row, col, disp)
+                - indexs of columns to compute
+                - size
+                - sampling interval
         :rtype: xarray.Dataset
         """
-        c_row = img_left["im"].coords["row"]
-        c_col = img_left["im"].coords["col"]
-
-        # First pixel in the image that is fully computable (aggregation windows are complete)
-        row = np.arange(c_row[0], c_row[-1] + 1)  # type: np.ndarray
+        # Get col dimension
+        c_col = img["im"].coords["col"]
         col = np.arange(c_col[0], c_col[-1] + 1, self._step_col)  # type: np.ndarray
 
-        disparity_range = AbstractMatchingCost.get_disparity_range(disp_min, disp_max, subpix)
+        # get disparity_range
+        disparity_min, disparity_max = self.get_min_max_from_grid(*disparity_grids)
+        disparity_range = self.get_disparity_range(disparity_min, disparity_max, self._subpix)
 
-        # Create the cost volume
-        if np_data is None:
-            np_data = np.zeros((len(row), len(col), len(disparity_range)), dtype=np.float32)
+        # Index to be kept in the cost volume once it has been calculated
+        index_compute_col = col
 
-        cost_volume = xr.Dataset(
-            {"cost_volume": (["row", "col", "disp"], np_data)},
-            coords={"row": row, "col": col, "disp": disparity_range},
+        # Get the index of the columns that should be computed
+        if cfg and "ROI" in cfg:
+            left_margin = cfg["ROI"]["margins"][0]
+
+            # Check if the first column of roi is inside the final CV (with the step)
+            if left_margin % self._step_col != 0:
+                if left_margin < self._step_col:
+                    # For example, given left_margin = 2 and step = 3
+                    #
+                    # roi_img = M M M M M M M
+                    #           M M 1 2 3 M M
+                    #           M M 4 5 6 M M
+                    #           M M 7 8 9 M M
+                    #           M M M M M M M
+                    #
+                    # Our starting point would be at index left_margin = 2 --> starting point = 1st point of ROI
+                    # We are directly on the first point to compute
+
+                    index_compute_col = np.arange(c_col[0] + left_margin, c_col[-1] + 1, self._step_col)
+                else:
+                    # For example, given left_margin = 3 and step = 2
+                    #
+                    # roi_img = M M M M M M M M M
+                    #           M M M 1 2 3 M M M
+                    #           M M M 4 5 6 M M M
+                    #           M M M 7 8 9 M M M
+                    #           M M M M M M M M M
+                    #
+                    # Our starting point would be at index 1 --> starting point = 2nd M
+                    # With a step of 2, the first point of ROI is calculated without cropping margins too much
+                    #
+                    # For example, given left_margin = 4 and step = 3
+                    #
+                    # roi_img = M M M M M M M M M M M
+                    #           M M M M 1 2 3 M M M M
+                    #           M M M M 4 5 6 M M M M
+                    #           M M M M 7 8 9 M M M M
+                    #           M M M M M M M M M M M
+                    #
+                    # Our starting point would be at index 1 --> starting point = 2nd M
+                    # With a step of 3, the first point of ROI is calculated without cropping margins too much
+
+                    # give the number of the first column to compute
+                    start = self._step_col - (self.find_nearest_multiple_of_step(left_margin) - left_margin)
+                    index_compute_col = np.arange(c_col[0] + start, c_col[-1] + 1, self._step_col)
+
+        # Instantiate grid
+        grid = xr.Dataset(
+            {},
+            coords={"row": img["im"].coords["row"], "col": index_compute_col, "disp": disparity_range},
         )
-        cost_volume.attrs = metadata
 
-        cost_volume.attrs["crs"] = img_left.attrs["crs"]
-        cost_volume.attrs["transform"] = img_left.attrs["transform"]
+        # Add img attributes
+        grid.attrs = img.attrs
+        # Add step in grid attributes
+        grid.attrs["sampling_interval"] = self._step_col
+        # Add index of columns to compute in grid attributes
+        grid.attrs["col_to_compute"] = index_compute_col
+        return grid
 
-        cost_volume.attrs["window_size"] = window_size
+    def allocate_cost_volume(
+        self, image: xr.Dataset, disparity_grids: Tuple[np.ndarray, np.ndarray], cfg: Dict = None
+    ) -> xr.Dataset:
+        """
+        Create a cost_volume dataset.
 
-        return cost_volume
+        :param image: Image to compute cost volume from
+        :type image: xr.Dataset
+        :param cfg: user configuration
+        :type cfg: Dict
+        :param disparity_grids: Tuple of disparity grids min and max
+        :type disparity_grids: Tuple[np.ndarray, np.ndarray]
+        :return: a empty grid
+        :rtype: xr.Dataset
+        """
+        cv = self.grid_estimation(image, cfg, disparity_grids)
+        cv["cost_volume"] = (
+            ["row", "col", "disp"],
+            np.full((cv.sizes["row"], cv.sizes["col"], cv.sizes["disp"]), np.nan, dtype=np.float32),
+        )
+        cv.attrs.update(
+            {
+                "window_size": self._window_size,
+                "subpixel": self._subpix,
+                "band_correl": self._band,
+                "offset_row_col": int((self._window_size - 1) / 2),
+                "measure": self._method,
+            }
+        )
+        return cv
 
     @staticmethod
     def get_disparity_range(disparity_min: int, disparity_max: int, subpix: int) -> np.ndarray:
@@ -360,8 +414,8 @@ class AbstractMatchingCost:
         :return: the range of the left and right image over which the similarity measure will be applied
         :rtype: tuple
         """
-        nx_left = int(img_left.dims["col"] / self._step_col)
-        nx_right = int(img_right.dims["col"] / self._step_col)
+        nx_left = int(img_left.sizes["col"])
+        nx_right = int(img_right.sizes["col"])
 
         # range in the left image
         point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))
@@ -437,7 +491,7 @@ class AbstractMatchingCost:
             dilatate_left_mask[dil] = np.nan
         else:
             # All pixels are valid
-            dilatate_left_mask = np.zeros((img_left.dims["row"], img_left.dims["col"]))
+            dilatate_left_mask = np.zeros((img_left.sizes["row"], img_left.sizes["col"]))
 
         # Create the right mask with the convention : 0 = valid, nan = invalid and no_data
         if "msk" in img_right.data_vars:
@@ -458,9 +512,9 @@ class AbstractMatchingCost:
             dilatate_right_mask[dil] = np.nan
         else:
             # All pixels are valid
-            dilatate_right_mask = np.zeros((img_left.dims["row"], img_left.dims["col"]))
+            dilatate_right_mask = np.zeros((img_left.sizes["row"], img_left.sizes["col"]))
 
-        ny_, nx_ = img_left.dims["row"], img_left.dims["col"]
+        ny_, nx_ = img_left.sizes["row"], img_left.sizes["col"]
 
         row = np.arange(0, ny_)
         col = np.arange(0, nx_)
@@ -510,6 +564,19 @@ class AbstractMatchingCost:
         """
         return int(np.nanmin(disp_min)), int(np.nanmax(disp_max))
 
+    def find_nearest_multiple_of_step(self, value: int) -> int:
+        """
+        In case value is not a multiple of step, find nearest greater value for which it is the case.
+
+        :param value: Initial value.
+        :type: value: int
+        :return: nearest multiple of step.
+        :rtype: int
+        """
+        while value % self._step_col != 0:
+            value += 1
+        return value
+
     def cv_masked(
         self,
         img_left: xr.Dataset,
@@ -551,6 +618,7 @@ class AbstractMatchingCost:
         :type disp_max: np.ndarray
         :return: None
         """
+
         ny_, nx_, nd_ = cost_volume["cost_volume"].shape
 
         dmin, _ = self.get_min_max_from_grid(disp_min, disp_max)
@@ -558,7 +626,7 @@ class AbstractMatchingCost:
         # ----- Masking invalid pixels -----
 
         # Contains the shifted right images
-        img_right_shift = shift_right_img(img_right, self._subpix, self._band)  # type: ignore
+        img_right_shift = shift_right_img(img_right, self._subpix, self._band)
 
         # Computes the validity mask of the cost volume : invalid pixels or no_data are masked with the value nan.
         # Valid pixels are = 0
@@ -568,19 +636,40 @@ class AbstractMatchingCost:
             i_right = int((disp % 1) * self._subpix)
             point_p, point_q = self.point_interval(img_left, img_right_shift[i_right], disp)
 
+            # For the 2 images of shape (3,4) with a cost volume at disp
+            #               1  4 -5  nan
+            #               1  0  1  nan
+            #               5  2 -1  nan
+            # the intervals given by the point_interval function:
+            #   - point_p [0, 1, 2]
+            #   - point_q [1, 2 ,3]
+            # and the _step_col parameter is 2
+            # new index for point_p and point_q must be:
+            #   - point_p [0, 2]
+            #   - point_q [2] but here with np.arange(q_0, point_q[1], self._step_col) with have [1, 3]
+            # To solve this problem, we look for the new point in the cost volume in relation to the step
+            # chosen by the user by calling find_nearest_multiple_of_step.
+            # This function return p_0 = 0 and q_0 = 2
+            p_0 = self.find_nearest_multiple_of_step(point_p[0])
+            q_0 = self.find_nearest_multiple_of_step(point_q[0])
+
             # Point interval in the left image
-            p_mask = (point_p[0], point_p[1])
+            p_mask = np.arange(p_0, point_p[1], self._step_col)
             # Point interval in the right image
-            q_mask = (point_q[0], point_q[1])
+            q_mask = np.arange(q_0, point_q[1], self._step_col)
+            # Point interval in the cost volume
+            # Here the indices for the left image must be divided by the step
+            # to correspond to the cost volume column.
+            p_cv = (p_mask / self._step_col).astype(int)
 
             i_mask_right = min(1, i_right)
             dsp = int((disp - dmin) * self._subpix)
 
             # Invalid costs in the cost volume
-            cost_volume["cost_volume"].data[:, p_mask[0] : p_mask[1], dsp] += (
-                mask_right[i_mask_right].data[:, q_mask[0] : q_mask[1]] + mask_left.data[:, p_mask[0] : p_mask[1]]
-            )
-
+            if p_mask.size > 0:
+                cost_volume["cost_volume"].data[:, p_cv, dsp] += mask_left.data[:, p_mask]
+                if q_mask.size > 0:
+                    cost_volume["cost_volume"].data[:, p_cv, dsp] += mask_right[i_mask_right].data[:, q_mask]
         # ----- Masking disparity range -----
 
         # Fixed range of disparities
@@ -601,6 +690,18 @@ class AbstractMatchingCost:
                 )
             )
             cost_volume["cost_volume"].data[masking[0], masking[1], dsp] = np.nan
+
+        # The disp_min and disp_max used to search missing disparity interval are not the local disp_min and disp_max
+        # in case of a variable range of disparities. So there may be pixels that have missing disparity range (all
+        # cost are np.nan), but are not detected in the validity_mask function. To find the pixels that have a missing
+        # disparity range, we search in the cost volume pixels where cost_volume(row,col, for all d) = np.nan
+
+        mask_invalid_variable_disparity_range(cost_volume)
+
+        # Mask border pixels
+        offset = cost_volume.attrs["offset_row_col"]
+        if offset > 0:
+            mask_border(cost_volume)
 
     def allocate_numpy_cost_volume(self, img_left: xr.Dataset, disparity_range: Union[np.ndarray, List]) -> np.ndarray:
         """
@@ -625,7 +726,7 @@ class AbstractMatchingCost:
         """
 
         return np.full(
-            (len(disparity_range), int(img_left.dims["col"] / self._step_col), int(img_left.dims["row"])),
+            (len(disparity_range), int(img_left.sizes["col"]), int(img_left.sizes["row"])),
             np.nan,
             dtype=np.float32,
         )

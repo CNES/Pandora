@@ -33,7 +33,7 @@ ifeq (, $(PYTHON))
 endif
 
 # Check Python version supported globally
-PYTHON_VERSION_MIN = 3.7
+PYTHON_VERSION_MIN = 3.8
 PYTHON_VERSION_CUR=$(shell $(PYTHON) -c 'import sys; print("%d.%d"% sys.version_info[0:2])')
 PYTHON_VERSION_OK=$(shell $(PYTHON) -c 'import sys; cur_ver = sys.version_info[0:2]; min_ver = tuple(map(int, "$(PYTHON_VERSION_MIN)".split("."))); print(int(cur_ver >= min_ver))')
 ifeq ($(PYTHON_VERSION_OK), 0)

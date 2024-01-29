@@ -32,6 +32,7 @@ import xarray as xr
 
 from pandora import matching_cost
 from pandora.img_tools import add_disparity
+from pandora.criteria import validity_mask
 from tests import common
 
 
@@ -73,12 +74,10 @@ class TestMatchingCostSSD(unittest.TestCase):
             **{"matching_cost_method": "ssd", "window_size": 1, "subpix": 1}
         )
 
-        ssd = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left,
-            img_right=self.right,
-            grid_disp_min=self.left["disparity"].sel(band_disp="min"),
-            grid_disp_max=self.left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_matcher.allocate_cost_volume(
+            self.left, (self.left["disparity"].sel(band_disp="min"), self.left["disparity"].sel(band_disp="max"))
         )
+        ssd = matching_cost_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, cost_volume=grid)
 
         # Check if the calculated sd cost is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(ssd["cost_volume"].sel(disp=0), sd_ground_truth)
@@ -100,12 +99,13 @@ class TestMatchingCostSSD(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "ssd", "window_size": 5, "subpix": 1}
         )
-        ssd = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left,
-            img_right=self.right,
-            grid_disp_min=self.left["disparity"].sel(band_disp="min"),
-            grid_disp_max=self.left["disparity"].sel(band_disp="max"),
+        grid = matching_cost_matcher.allocate_cost_volume(
+            self.left, (self.left["disparity"].sel(band_disp="min"), self.left["disparity"].sel(band_disp="max"))
         )
+        # Compute validity mask
+        grid = validity_mask(self.left, self.right, grid)
+
+        ssd = matching_cost_matcher.compute_cost_volume(img_left=self.left, img_right=self.right, cost_volume=grid)
         matching_cost_matcher.cv_masked(
             self.left,
             self.right,
@@ -137,11 +137,15 @@ class TestMatchingCostSSD(unittest.TestCase):
             **{"matching_cost_method": "ssd", "window_size": 1, "subpix": 1, "band": "r"}
         )
 
+        grid = matching_cost_matcher.allocate_cost_volume(
+            self.left_multiband,
+            (
+                self.left_multiband["disparity"].sel(band_disp="min"),
+                self.left_multiband["disparity"].sel(band_disp="max"),
+            ),
+        )
         ssd = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left_multiband,
-            img_right=self.right_multiband,
-            grid_disp_min=self.left_multiband["disparity"].sel(band_disp="min"),
-            grid_disp_max=self.left_multiband["disparity"].sel(band_disp="max"),
+            img_left=self.left_multiband, img_right=self.right_multiband, cost_volume=grid
         )
 
         # Check if the calculated sd cost is equal to the ground truth (same shape and all elements equals)
@@ -167,11 +171,19 @@ class TestMatchingCostSSD(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "ssd", "window_size": 5, "subpix": 1, "band": "r"}
         )
+        grid = matching_cost_matcher.allocate_cost_volume(
+            self.left_multiband,
+            (
+                self.left_multiband["disparity"].sel(band_disp="min"),
+                self.left_multiband["disparity"].sel(band_disp="max"),
+            ),
+        )
+
+        # Compute validity mask
+        grid = validity_mask(self.left, self.right, grid)
+
         ssd = matching_cost_matcher.compute_cost_volume(
-            img_left=self.left_multiband,
-            img_right=self.right_multiband,
-            grid_disp_min=self.left_multiband["disparity"].sel(band_disp="min"),
-            grid_disp_max=self.left_multiband["disparity"].sel(band_disp="max"),
+            img_left=self.left_multiband, img_right=self.right_multiband, cost_volume=grid
         )
         matching_cost_matcher.cv_masked(
             self.left_multiband,
@@ -222,6 +234,7 @@ class TestMatchingCostSSD(unittest.TestCase):
             },
         )
         left.attrs = common.img_attrs
+        left.pipe(add_disparity, disparity=[-1, 1], window=None)
 
         # Initialize multiband data
         data = np.zeros((2, 4, 4))
@@ -258,18 +271,26 @@ class TestMatchingCostSSD(unittest.TestCase):
             **{"matching_cost_method": "ssd", "window_size": 3, "subpix": 1, "band": "b"}
         )
 
+        grid = matching_cost_.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
+        )
+
         # Compute the cost_volume
-        with pytest.raises(SystemExit):
-            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
+        with pytest.raises(AttributeError, match="Wrong band instantiate : b not in img_left or img_right"):
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
 
         # Initialization of matching_cost plugin with no band
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "ssd", "window_size": 3, "subpix": 1}
         )
 
+        grid = matching_cost_.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
+        )
+
         # Compute the cost_volume
-        with pytest.raises(SystemExit):
-            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, grid_disp_min=-1, grid_disp_max=1)
+        with pytest.raises(AttributeError, match="Band must be instantiated in matching cost step"):
+            _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
 
 
 if __name__ == "__main__":

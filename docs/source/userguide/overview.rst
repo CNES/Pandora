@@ -91,16 +91,16 @@ run according to the parameters chosen by the user.
 
 Pandora works with JSON formatted data with the following nested structures.
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input" :
         {
-            ...
+            // ...
         },
         "pipeline" :
         {
-            ...
+            // ...
         }
     }
 
@@ -121,16 +121,21 @@ Example
 
 2. Create a configuration file
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input":
         {
-            "img_left": "tests/pandora/left.png",
-            "img_right": "tests/pandora/right.png",
-            "disp_left": [-60, 0]
-        }
-        ,
+            "left": 
+            {
+                "img": "tests/pandora/left.png",
+                "disp": [-60, 0]
+            },
+            "right": 
+            {
+                "img": "tests/pandora/right.png",
+            }
+        },
         "pipeline" :
         {
             "matching_cost" :

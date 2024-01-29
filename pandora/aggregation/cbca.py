@@ -231,7 +231,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         img_right_shift = shift_right_img(img_right, subpix)
 
         # Median filter on valid pixels
-        filter_ = AbstractFilter(**{"filter_method": "median", "filter_size": 3})  # type: ignore
+        filter_ = AbstractFilter(cfg={"filter_method": "median", "filter_size": 3})  # type: ignore
 
         # Invalid and no data pixels are masked with np.nan to avoid propagating the values with the median filter
         left_masked = np.copy(img_left["im"].data)

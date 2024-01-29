@@ -75,9 +75,13 @@ User configuration file, *pandora_conf.json*:
 
     {
       "input": {
-        "img_left": "./left_rgb.tif",
-        "img_right": "./right_rgb.tif",
-        "disp_left": [-60, 0]
+        "left": {
+          "img": "./left_rgb.tif",
+          "disp": [-60, 0]
+        },
+        "right": {
+          "img": "./right_rgb.tif",
+        }
       },
       "pipeline": {
         "matching_cost": {
@@ -111,11 +115,14 @@ And the python script.
     user_cfg = read_config_file(cfg_path)
 
     # Read images 
-    input_config = common.split_inputs(cfg["input"])
-    img_left = create_dataset_from_inputs(input_config=input_config["left"])
-    img_right = create_dataset_from_inputs(input_config=input_config["right"])
+    img_left = create_dataset_from_inputs(input_config=cfg['input']["left"])
+    img_right = create_dataset_from_inputs(input_config=cfg['input']["right"])
 
-    # Check dataset
-    check_dataset(img_left)
-    check_dataset(img_right)
+    # Check datasets: shape, format and content
+    check_datasets(img_left, img_right)
 
+How can I disable numba parallelization?
+****************************************
+
+Some functions of Pandora are parallelized using the numba package. To prevent the use of this tool, it is possible to set
+an environment variable named **PANDORA_NUMBA_PARALLEL** to **false**.

@@ -48,7 +48,6 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         """
 
         super().instantiate_class(**cfg)
-        self._method = str(self.cfg["matching_cost_method"])
         self._pixel_wise_methods = {"sad": self.ad_cost, "ssd": self.sd_cost}
 
     def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
@@ -70,52 +69,43 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         checker.validate(cfg)
         return cfg
 
-    def desc(self) -> None:
-        """
-        Describes the matching cost method
-        :return: None
-        """
-        print(str(self._method) + " similarity measure")
-
     def compute_cost_volume(
-        self, img_left: xr.Dataset, img_right: xr.Dataset, grid_disp_min: np.ndarray, grid_disp_max: np.ndarray
+        self,
+        img_left: xr.Dataset,
+        img_right: xr.Dataset,
+        cost_volume: xr.Dataset,
     ) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
 
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing :
-                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
-                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
-                - msk (optional): 2D (row, col) xarray.DataArray int16
-                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
-                - segm (optional): 2D (row, col) xarray.DataArray int16
-        :param img_right: right Dataset image
-        :type img_right:
-            xarray.Dataset containing :
-                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
-                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
-                - msk (optional): 2D (row, col) xarray.DataArray int16
-                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
-                - segm (optional): 2D (row, col) xarray.DataArray int16
-        :param grid_disp_min: minimum disparity
-        :type grid_disp_min: np.ndarray
-        :param grid_disp_max: maximum disparity
-        :type grid_disp_max: np.ndarray
-        :return: the cost volume dataset
-        :rtype:
-            xarray.Dataset, with the data variables:
-                - cost_volume 3D xarray.DataArray (row, col, disp)
-        """
-        # Obtain absolute min and max disparities
-        disp_min, disp_max = self.get_min_max_from_grid(grid_disp_min, grid_disp_max)
+        :param img_left: left Dataset image containing :
 
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
+        :type img_left: xarray.Dataset
+        :param img_right: right Dataset image containing :
+
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
+        :type img_right: xarray.Dataset
+        :param cost_volume: an empty cost volume
+        :type cost_volume: xr.Dataset
+        :return: the cost volume dataset , with the data variables:
+
+                - cost_volume 3D xarray.DataArray (row, col, disp)
+        :rtype: xarray.Dataset
+        """
         # check band parameter
         self.check_band_input_mc(img_left, img_right)
 
         # Contains the shifted right images
-        img_right_shift = shift_right_img(img_right, self._subpix, self._band)  # type: ignore
+        img_right_shift = shift_right_img(img_right, self._subpix, self._band)
         if self._band is not None:
             band_index_left = list(img_left.band_im.data).index(self._band)
             band_index_right = list(img_right.band_im.data).index(self._band)
@@ -139,18 +129,15 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         if self._method == "ssd":
             # Maximal cost of the cost volume with ssd measure
             cmax = int(max(abs(max_left - min_right) ** 2, abs(max_right - min_left) ** 2) * (self._window_size**2))
-        offset_row_col = int((self._window_size - 1) / 2)
-        metadata = {
-            "measure": self._method,
-            "subpixel": self._subpix,
-            "offset_row_col": offset_row_col,
-            "window_size": self._window_size,
-            "type_measure": "min",
-            "cmax": cmax,
-            "band_correl": self._band,
-        }
+        offset_row_col = cost_volume.attrs["offset_row_col"]
+        cost_volume.attrs.update(
+            {
+                "type_measure": "min",
+                "cmax": cmax,
+            }
+        )
 
-        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
+        disparity_range = cost_volume.coords["disp"].data
         cv_enlarge = self.allocate_numpy_cost_volume(img_left, disparity_range, offset_row_col)
         cv = self.crop_cost_volume(cv_enlarge, offset_row_col)
 
@@ -200,6 +187,8 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         # As we are expected to return a cost_volume of dimensions (row, col, disp),
         # we swap axes.
         cv = np.swapaxes(cv, 0, 2)
+        index_col = cost_volume.attrs["col_to_compute"]
+        index_col = index_col - img_left.coords["col"].data[0]  # If first col coordinate is not 0
 
         if offset_row_col:
             # Pixel wise aggregation modifies border values so it is important to reconvert to nan values
@@ -208,10 +197,8 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             cv[:, :offset_row_col, :] = np.nan
             cv[:, -offset_row_col:, :] = np.nan
 
-        # Create the xarray.DataSet that will contain the cv of dimensions (row, col, disp)
-        cv = self.allocate_costvolume(img_left, self._subpix, disp_min, disp_max, self._window_size, metadata, cv)
-
-        return cv
+        cost_volume["cost_volume"].data = cv[:, index_col, :]
+        return cost_volume
 
     def allocate_numpy_cost_volume(
         self, img_left: xr.Dataset, disparity_range: Union[np.ndarray, List], offset_row_col: int = 0
@@ -223,8 +210,8 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         return np.full(
             (
                 len(disparity_range),
-                int((img_left.dims["col"] + 2 * offset_row_col) / self._step_col),
-                int((img_left.dims["row"] + 2 * offset_row_col) / self._step_col),
+                int((img_left.sizes["col"] + 2 * offset_row_col)),
+                int((img_left.sizes["row"] + 2 * offset_row_col)),
             ),
             np.nan,
             dtype=np.float32,

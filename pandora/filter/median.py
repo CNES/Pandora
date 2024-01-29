@@ -30,6 +30,7 @@ import xarray as xr
 from json_checker import Checker, And
 
 import pandora.constants as cst
+from pandora.margins import Margins
 from . import filter  # pylint: disable= redefined-builtin
 from ..common import sliding_window
 
@@ -42,16 +43,23 @@ class MedianFilter(filter.AbstractFilter):
 
     # Default configuration, do not change this value
     _FILTER_SIZE = 3
+    # We ignore type because we just override a null value.
 
-    def __init__(self, **cfg: Union[str, int]):
+    def __init__(self, *args, cfg: Dict, step: int = 1, **kwargs):  # pylint:disable=unused-argument
         """
         :param cfg: optional configuration, {'filter_size': value}
         :type cfg: dictionary
         """
-        self.cfg = self.check_conf(**cfg)
+        self.cfg = self.check_conf(cfg)
         self._filter_size = cast(int, self.cfg["filter_size"])
+        self._step = step
 
-    def check_conf(self, **cfg: Union[str, int]) -> Dict[str, Union[str, int]]:
+    @property
+    def margins(self):
+        value = self._filter_size * self._step
+        return Margins(value, value, value, value)
+
+    def check_conf(self, cfg: Dict) -> Dict[str, Union[str, int]]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 

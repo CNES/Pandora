@@ -64,17 +64,23 @@ SSD measurement and filtered disparity map
 Configuration to produce a disparity map, computed by SSD method, and filtered by
 median filter method.
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input":
         {
-            "left_mask": null,
-            "right_mask": null,
-            "disp_right": null,
-            "img_left": "img_left.png",
-            "img_right": "img_left.png",
-            "disp_left": [-100, 100]
+            "left": 
+            {
+                "mask": null,
+                "disp": [-100, 100],
+                "img": "img_left.png"
+            },
+            "right": 
+            {
+                "mask": null,
+                "disp": null,
+                "img": "img_right.png",
+            }
         },
         "pipeline":
         {
@@ -106,17 +112,23 @@ SSD measurement, filtered disparity map and compute right map
 
 The same configuration as the previous example but right disparity map is also computed.
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input":
         {
-            "left_mask": null,
-            "right_mask": null,
-            "disp_right": null,
-            "img_left": "img_left.png",
-            "img_right": "img_left.png",
-            "disp_left": [-100, 100]
+            "left": 
+            {
+                "mask": null,
+                "disp": [-100, 100],
+                "img": "img_left.png"
+            },
+            "right": 
+            {
+                "mask": null,
+                "disp": null,
+                "img": "img_right.png",
+            }
         },
         "pipeline":
         {
@@ -145,17 +157,23 @@ The same configuration as the previous example but right disparity map is also c
 An impossible sequencing
 ########################
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input":
         {
-            "left_mask": null,
-            "right_mask": null,
-            "disp_right": null,
-            "img_left": "img_left.png",
-            "img_right": "img_left.png",
-            "disp_left": [-100, 100]
+            "left": 
+            {
+                "mask": null,
+                "disp": [-100, 100],
+                "img": "img_left.png"
+            },
+            "right": 
+            {
+                "mask": null,
+                "disp": null,
+                "img": "img_right.png",
+            }
         },
         "pipeline":
         {
@@ -202,16 +220,22 @@ if the Pandora Machine is in *disp_map*.
 Same step, multiple times
 #########################
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input": {
-            "left_mask": null,
-            "right_mask": null,
-            "disp_right": null,
-            "img_left": "img_left.png",
-            "img_right": "img_left.png",
-            "disp_left": [-100, 100]
+            "left": 
+            {
+                "mask": null,
+                "disp": [-100, 100],
+                "img": "img_left.png"
+            },
+            "right": 
+            {
+                "mask": null,
+                "disp": null,
+                "img": "img_right.png",
+            }
         },
         "pipeline":
         {
@@ -245,17 +269,23 @@ Multiscale
 
 Configuration to produce a disparity map, computed by SSD method with multiscale processing (3 scales)
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input":
         {
-            "left_mask": null,
-            "right_mask": null,
-            "disp_right": null,
-            "img_left": "img_left.png",
-            "img_right": "img_left.png",
-            "disp_left": [-100, 100]
+            "left": 
+            {
+                "mask": null,
+                "disp": [-100, 100],
+                "img": "img_left.png"
+            },
+            "right": 
+            {
+                "mask": null,
+                "disp": null,
+                "img": "img_right.png",
+            }
         },
         "pipeline":
         {

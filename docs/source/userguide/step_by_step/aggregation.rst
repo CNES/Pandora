@@ -35,21 +35,21 @@ Configuration and parameters
 
 **Example**
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input" :
         {
-            ...
+            // ...
         },
         "pipeline" :
         {
-            ...
+            // ...
             "aggregation":
             {
                 "aggregation_method": "cbca",
                 "cbca_intensity": 25.0
             }
-            ...
+            // ...
         }
     }

@@ -35,7 +35,6 @@ import pytest
 import xarray as xr
 from rasterio import Affine
 
-from pandora.common import split_inputs
 from tests import common
 import pandora
 from pandora import import_plugin
@@ -179,6 +178,35 @@ class TestMain:
 
         # Check the right disparity map
         assert error(-1 * rasterio_open(str(tmp_path / "right_disparity.tif")).read(1), disp_right, 1) <= 0.20
+
+    def test_margins_are_stored_in_final_output_configuration(self, tmp_path):
+        """We expect to find information about used margins in the output configuration."""
+        cfg = {
+            "input": copy.deepcopy(common.input_cfg_left_grids),
+            "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
+        }
+
+        config_path = tmp_path / "config.json"
+        with open(config_path, "w", encoding="utf-8") as file_:
+            json.dump(cfg, file_, indent=2)
+
+        # Run Pandora pipeline
+        pandora.main(config_path, str(tmp_path), verbose=False)
+
+        with (tmp_path / "cfg" / "config.json").open() as file_path:
+            result = json.load(file_path)
+
+        assert result["margins"] == {
+            "cumulative margins": {
+                "matching_cost": {"left": 2, "up": 2, "right": 2, "down": 2},
+                "disparity": {"left": 0, "up": 0, "right": 0, "down": 0},
+                "refinement": {"down": 0, "left": 0, "right": 0, "up": 0},
+            },
+            "non-cumulative margins": {
+                "filter": {"left": 3, "up": 3, "right": 3, "down": 3},
+            },
+            "global margins": {"left": 3, "up": 3, "right": 3, "down": 3},
+        }
 
 
 class TestPandora(unittest.TestCase):
@@ -397,7 +425,6 @@ class TestPandora(unittest.TestCase):
         left, right = pandora.run(pandora_machine, self.left, self.right, cfg)
 
         # Check the left disparity map
-        print("error", self.error(left["disparity_map"].data, self.disp_left, 1))
         if self.error(left["disparity_map"].data, self.disp_left, 1) > 0.20:
             raise AssertionError
 
@@ -457,13 +484,14 @@ class TestPandora(unittest.TestCase):
         )
         img_right.attrs["crs"] = None
         img_right.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+        img_right.pipe(add_disparity, disparity=[-2, 2], window=None)
 
         # Load a configuration
         user_cfg = {
             "input": copy.deepcopy(common.input_cfg_basic_with_none_right_disp),
             "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
         }
-        user_cfg["input"]["disp_left"] = (-2, 2)
+        user_cfg["input"]["left"]["disp"] = (-2, 2)
         user_cfg["pipeline"]["matching_cost"]["matching_cost_method"] = "census"
         user_cfg["pipeline"]["matching_cost"]["subpix"] = 1
         user_cfg["pipeline"]["disparity"]["invalid_disparity"] = -10
@@ -526,8 +554,8 @@ class TestPandora(unittest.TestCase):
             "input": copy.deepcopy(common.input_cfg_basic_with_none_right_disp),
             "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
         }
-        user_cfg["input"]["nodata_left"] = np.nan
-        user_cfg["input"]["nodata_right"] = np.nan
+        user_cfg["input"]["left"]["nodata"] = np.nan
+        user_cfg["input"]["right"]["nodata"] = np.nan
         user_cfg["pipeline"]["matching_cost"]["matching_cost_method"] = "census"
 
         pandora_machine = PandoraMachine()
@@ -535,9 +563,8 @@ class TestPandora(unittest.TestCase):
         # Update the user configuration with default values
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
-        input_config = split_inputs(user_cfg["input"])
-        left_img = create_dataset_from_inputs(input_config=input_config["left"])
-        right_img = create_dataset_from_inputs(input_config=input_config["right"])
+        left_img = create_dataset_from_inputs(input_config=user_cfg["input"]["left"])
+        right_img = create_dataset_from_inputs(input_config=user_cfg["input"]["right"])
 
         # Run the pandora pipeline on images without modified coordinates
         left_origin, right_origin = pandora.run(pandora_machine, left_img, right_img, cfg)
@@ -566,15 +593,14 @@ class TestPandora(unittest.TestCase):
             "input": copy.deepcopy(common.input_multiband_cfg),
             "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
         }
-        user_cfg["input"]["nodata_left"] = np.nan
-        user_cfg["input"]["nodata_right"] = np.nan
-        user_cfg["input"]["disp_right"] = None
+        user_cfg["input"]["left"]["nodata"] = np.nan
+        user_cfg["input"]["right"]["nodata"] = np.nan
+        user_cfg["input"]["right"]["disp"] = None
         # working on green band
         user_cfg["pipeline"]["matching_cost"]["band"] = "g"
 
-        input_config = split_inputs(user_cfg["input"])
-        left_rgb = create_dataset_from_inputs(input_config=input_config["left"])
-        right_rgb = create_dataset_from_inputs(input_config=input_config["right"])
+        left_rgb = create_dataset_from_inputs(input_config=user_cfg["input"]["left"])
+        right_rgb = create_dataset_from_inputs(input_config=user_cfg["input"]["right"])
 
         pandora_machine = PandoraMachine()
         # Update the user configuration with default values
@@ -597,12 +623,12 @@ class TestPandora(unittest.TestCase):
             "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
         }
         # add masks
-        user_cfg["input"]["left_mask"] = "tests/pandora/occlusion.png"
+        user_cfg["input"]["left"]["mask"] = "tests/pandora/occlusion.png"
 
         # working on green band
         user_cfg["pipeline"]["matching_cost"]["band"] = "g"
 
-        input_config = split_inputs(user_cfg["input"])
+        input_config = user_cfg["input"]
         input_config["left"]["mask"] = None
         input_config["right"]["mask"] = None
         input_config["left"]["nodata"] = np.nan
@@ -632,12 +658,12 @@ class TestPandora(unittest.TestCase):
             "pipeline": copy.deepcopy(common.multiscale_pipeline_cfg),
         }
         # add masks
-        user_cfg["input"]["left_mask"] = "tests/pandora/occlusion.png"
+        user_cfg["input"]["left"]["mask"] = "tests/pandora/occlusion.png"
 
         # working on green band
         user_cfg["pipeline"]["matching_cost"]["band"] = "g"
 
-        input_config = split_inputs(user_cfg["input"])
+        input_config = user_cfg["input"]
         input_config["left"]["mask"] = None
         input_config["right"]["mask"] = None
         input_config["left"]["nodata"] = np.nan
@@ -667,17 +693,17 @@ class TestPandora(unittest.TestCase):
             "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
         }
         # add masks
-        user_cfg["input"]["left_mask"] = "tests/pandora/occlusion.png"
+        user_cfg["input"]["left"]["mask"] = "tests/pandora/occlusion.png"
 
         # working on green band
         user_cfg["pipeline"]["matching_cost"]["band"] = "g"
-        user_cfg["input"]["nodata_left"] = np.nan
-        user_cfg["input"]["nodata_right"] = np.nan
+        user_cfg["input"]["left"]["nodata"] = np.nan
+        user_cfg["input"]["right"]["nodata"] = np.nan
+
         # Update the user configuration with default values
         cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
 
-        input_config = split_inputs(cfg["input"])
-        new_input_config = copy.deepcopy(input_config)
+        new_input_config = copy.deepcopy(cfg["input"])
         new_input_config["left"]["mask"] = None
         left_rgb = create_dataset_from_inputs(input_config=new_input_config["left"])
         right_rgb = create_dataset_from_inputs(input_config=new_input_config["right"])

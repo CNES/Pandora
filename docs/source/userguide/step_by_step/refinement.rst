@@ -67,21 +67,21 @@ Configuration and parameters
 
 **Example**
 
-.. sourcecode:: text
+.. sourcecode:: json
 
     {
         "input" :
         {
-            ...
+            // ...
         },
         "pipeline" :
         {
-            ...
+            // ...
             "refinement":
             {
                "refinement_method": "vfit"
             }
-            ...
+            // ...
         }
     }
 

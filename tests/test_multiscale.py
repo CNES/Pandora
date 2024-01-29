@@ -241,7 +241,7 @@ class TestMultiScale(unittest.TestCase):
 
         """
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(TypeError, match="Multiscale processing does not accept input disparity grids."):
             _ = multiscale.AbstractMultiscale(
                 self.img_with_grid_disp,  # left img
                 self.img_with_grid_disp,  # right img
@@ -249,7 +249,7 @@ class TestMultiScale(unittest.TestCase):
             )
 
         # String for disp_min/disp_max for left img
-        with pytest.raises(SystemExit):
+        with pytest.raises(TypeError, match="Multiscale processing does not accept input disparity grids."):
             _ = multiscale.AbstractMultiscale(
                 self.img_with_grid_disp,
                 self.img_with_none_disp,

@@ -36,6 +36,9 @@ from pandora import refinement
 from pandora import matching_cost
 import pandora.filter as flt
 from pandora import disparity
+from pandora.margins.descriptors import NullMargins
+from pandora.img_tools import add_disparity
+from pandora.criteria import validity_mask
 
 
 class TestRefinement(unittest.TestCase):
@@ -77,6 +80,9 @@ class TestRefinement(unittest.TestCase):
             },
             coords={"row": [1], "col": [0, 1, 2, 3]},
         )
+
+    def test_margins(self):
+        assert isinstance(refinement.AbstractRefinement.margins, NullMargins)
 
     def test_quadratic(self):
         """
@@ -666,6 +672,9 @@ class TestRefinement(unittest.TestCase):
         img_left.attrs["crs"] = None
         img_left.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
 
+        # Add disparity on left image
+        img_left.pipe(add_disparity, disparity=[-1, 1], window=None)
+
         data_right = np.array(
             [
                 [82.0, 116.0, 176.0, 172.0],
@@ -688,9 +697,17 @@ class TestRefinement(unittest.TestCase):
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "sad", "window_size": 1, "subpix": 1}
         )
-        cv = matching_cost_matcher.compute_cost_volume(
-            img_left=img_left, img_right=img_right, grid_disp_min=-1, grid_disp_max=1
+        # Allocate cost volume
+        grid = matching_cost_matcher.allocate_cost_volume(
+            img_left, (img_left["disparity"].sel(band_disp="min"), img_left["disparity"].sel(band_disp="max"))
         )
+
+        # Compute validity mask
+        grid = validity_mask(img_left, img_right, grid)
+
+        # Compute cost volume
+        cv = matching_cost_matcher.compute_cost_volume(img_left, img_right, grid)
+
         # Cost volume :
         # array([[[nan, 49., 15.],
         #         [40.,  6., 54.],
@@ -712,10 +729,17 @@ class TestRefinement(unittest.TestCase):
         #         [29., 36., 85.],
         #         [ 4., 45., nan]]], dtype=float32)
 
+        matching_cost_matcher.cv_masked(
+            img_left,
+            img_right,
+            cv,
+            img_left["disparity"].sel(band_disp="min"),
+            img_left["disparity"].sel(band_disp="max"),
+        )
+
         #  Computes disparity map
         disparity_ = disparity.AbstractDisparity(**{"disparity_method": "wta", "invalid_disparity": 0})
         disp = disparity_.to_disp(cv, img_left, img_right)
-        disparity_.validity_mask(disp, img_left, img_right, cv)
 
         # Disparity map :
         # [[ 1.  0. -1.  0.]
@@ -724,7 +748,7 @@ class TestRefinement(unittest.TestCase):
         #  [ 1.  0. -1. -1.]]
 
         # Apply median filter to the disparity map
-        filter_median = flt.AbstractFilter(**{"filter_method": "median", "filter_size": 3})
+        filter_median = flt.AbstractFilter(cfg={"filter_method": "median", "filter_size": 3})
         filter_median.filter_disparity(disp)
 
         # Disparity map with median filter :

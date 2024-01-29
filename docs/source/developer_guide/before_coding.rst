@@ -70,6 +70,7 @@ Here are some rules to apply when developing a new functionality:
  - Do not add new dependencies unless it is absolutely necessary, and only if it has a permissive license.
  - Use the type hints provided by the *typing* python module.
  - Correct project pylint errors (see below)
+ - Use 'raise' with an appropriate error to exit the run due to a user mistake.
 
 
 Pre-commit validation
@@ -83,7 +84,7 @@ Pre-commit hooks (black, pylint, mypy, sphinx-checking, nbstripout) for code ana
 
 This command installs the pre-commit hooks in `.git/hooks/pre-commit`  from `.pre-commit-config.yaml` file configuration.
 
-It is possible to test pre-commit before commiting:
+It is possible to test pre-commit before committing:
 
 .. code-block:: bash
 
@@ -101,4 +102,3 @@ It is possible to run only pylint tool to check code modifications:
 
 Pylint messages can be avoided (in particular cases !) adding "#pylint: disable=error-message-name" in the file or line.
 Look at examples in code.
-

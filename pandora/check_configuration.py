@@ -28,7 +28,6 @@ from __future__ import annotations
 import copy
 import json
 import logging
-import sys
 from collections.abc import Mapping
 from os import PathLike
 from typing import Dict, Union, List, Tuple
@@ -40,8 +39,6 @@ from json_checker import Checker, Or, And
 
 from pandora.state_machine import PandoraMachine
 from pandora.img_tools import rasterio_open, get_metadata
-from pandora.common import split_inputs
-
 from pandora import multiscale
 
 
@@ -85,15 +82,15 @@ def check_shape(dataset: xr.Dataset, ref: str, test: str) -> None:
 
     :param dataset: dataset
     :type dataset: xr.Dataset
-    :param ref: the reference image
-    :type str: name of image
+    :param ref: name of the reference image
+    :type ref: str
     :param test: the tested image
-    :type str: name of image
+    :type test: str
+    :return: None
     """
     # check only the rows and columns, the last two elements of the shape
     if dataset[ref].data.shape[-2:] != dataset[test].data.shape[-2:]:
-        logging.error("%s and %s must have the same shape", ref, test)
-        sys.exit(1)
+        raise ValueError(f" {ref} and {test} must have the same shape")
 
 
 def check_attributes(dataset: xr.Dataset, attribute_list: set) -> None:
@@ -102,13 +99,13 @@ def check_attributes(dataset: xr.Dataset, attribute_list: set) -> None:
 
     :param dataset: dataset
     :type dataset: xr.Dataset
-    :param attribute: the atribute to test
-    :type set: list of attribute names
+    :param attribute_list: the attribute to test
+    :type attribute_list: list
+    :return: None
     """
     attribute = attribute_list - set(dataset.attrs)
     if attribute:
-        logging.error("User must provide the % attribute(s)", attribute)
-        sys.exit(1)
+        raise AttributeError(f"User must provide the {attribute} attribute(s)")
 
 
 def check_dataset(dataset: xr.Dataset) -> None:
@@ -117,20 +114,19 @@ def check_dataset(dataset: xr.Dataset) -> None:
 
     :param dataset: dataset
     :type dataset: xr.Dataset
+    :return: None
     """
 
     # Check image
     if "im" not in dataset:
-        logging.error("User must provide an image im")
-        sys.exit(1)
+        raise AttributeError("User must provide an image im")
 
     # Check band in "band_im" coordinates
     check_band_names(dataset)
 
     # Check not empty image (all nan values)
     if np.isnan(dataset["im"].data).all():
-        logging.error("Image contains lony nan values")
-        sys.exit(1)
+        raise ValueError("Image contains only nan values")
 
     # Check disparities
     if "disparity" in dataset:
@@ -149,10 +145,11 @@ def check_datasets(left: xr.Dataset, right: xr.Dataset) -> None:
     """
     Check that left and right datasets are correct
 
-    :param left: dataset
-    :type dataset: xr.Dataset
-    :param right: dataset
-    :type dataset: xr.Dataset
+    :param left: left dataset
+    :type left: xr.Dataset
+    :param right: right dataset
+    :type right: xr.Dataset
+    :return: None
     """
 
     # Check the dataset content
@@ -160,15 +157,13 @@ def check_datasets(left: xr.Dataset, right: xr.Dataset) -> None:
     check_dataset(right)
 
     # Check disparities at least on the left
-    if not "disparity" in left:
-        logging.error("left dataset must have disparity DataArray")
-        sys.exit(1)
+    if "disparity" not in left:
+        raise AttributeError("left dataset must have disparity DataArray")
 
     # Check shape
     # check only the rows and columns, the last two elements of the shape
     if left["im"].data.shape[-2:] != right["im"].data.shape[-2:]:
-        logging.error("left and right datasets must have the same shape")
-        sys.exit(1)
+        raise AttributeError("left and right datasets must have the same shape")
 
 
 def check_image_dimension(img1: rasterio.io.DatasetReader, img2: rasterio.io.DatasetReader) -> None:
@@ -182,8 +177,7 @@ def check_image_dimension(img1: rasterio.io.DatasetReader, img2: rasterio.io.Dat
     :return: None
     """
     if (img1.width != img2.width) or (img1.height != img2.height):
-        logging.error("Images must have the same size")
-        sys.exit(1)
+        raise AttributeError("Images must have the same size")
 
 
 def check_images(user_cfg: Dict[str, dict]) -> None:
@@ -210,34 +204,17 @@ def check_images(user_cfg: Dict[str, dict]) -> None:
             check_image_dimension(right_, rasterio_open(user_cfg["right"][img]))
 
 
-def check_band_names(img: str | xr.Dataset) -> None:
+def check_band_names(dataset: xr.Dataset) -> None:
     """
-    Check that band names have the correct format
+    Check that band names have the correct format : band names must be strings.
 
-    :param img: path to the image
-    :type img: string
+    :param dataset: dataset
+    :type dataset: xr.Dataset
     :return: None
     """
 
-    bands = []
-    if isinstance(img, str):
-        # open image
-        img_ds = rasterio_open(img)
-        # check that the image have the band names
-        if img_ds.count != 1:
-            if not img_ds.descriptions:
-                logging.error("Image is missing band names metadata")
-                sys.exit(1)
-            bands = list(img_ds.descriptions)
-            logging.info("Image has not band")
-    else:  # img is a dataset
-        if "band_im" in img.coords:
-            bands = list(img.coords["band_im"].data)
-
-    # Check type
-    if not all(isinstance(band, str) for band in bands):
-        logging.error("Band value must be str")
-        sys.exit(1)
+    if "band_im" in dataset.coords and not all(isinstance(band, str) for band in dataset.coords["band_im"].data):
+        raise TypeError("Band value must be str")
 
 
 def check_disparities_from_input(
@@ -247,7 +224,7 @@ def check_disparities_from_input(
     """
     Check disparities from user configuration
 
-    :param disparity: disparity to check if list it is a list of two values: min and max.
+    :param disparity: disparity to check if disparity is a list of two values: min and max.
     :type disparity:  list[int] | str | None
     :param img_left: path to the left image
     :type img_left: str
@@ -255,10 +232,9 @@ def check_disparities_from_input(
     """
     # disparities are integers
     if isinstance(disparity, list) and disparity[1] < disparity[0]:
-        logging.error("Disp_max must be bigger than Disp_min")
-        sys.exit(1)
+        raise ValueError("disp_max must be bigger than disp_min")
 
-    # disparites are grids
+    # disparities are grids
     if isinstance(disparity, str):
         # Load an image to compare the grid size
         img_left_ = rasterio_open(img_left)
@@ -267,17 +243,14 @@ def check_disparities_from_input(
 
         # check that disparity grids is a 2-channel grid
         if disparity_reader.count != 2:
-            logging.error("Disparity grids must be a 2-channel grid")
-            sys.exit(1)
+            raise AttributeError("Disparity grids must be a 2-channel grid")
 
         # check that disp_min has the same size as the image
         if (disparity_reader.width != img_left_.width) or (disparity_reader.height != img_left_.height):
-            logging.error("Disparity grids and image must have the same size")
-            sys.exit(1)
+            raise AttributeError("Disparity grids and image must have the same size")
 
         if (disparity_reader.read(1) > disparity_reader.read(2)).any():
-            logging.error("Disp_max must be bigger than Disp_min")
-            sys.exit(1)
+            raise ValueError("disp_max must be bigger than disp_min")
 
 
 def check_disparities_from_dataset(disparity: xr.DataArray) -> None:
@@ -292,15 +265,12 @@ def check_disparities_from_dataset(disparity: xr.DataArray) -> None:
     :return: None
     """
     if "band_disp" not in disparity.coords:
-        logging.error("Disparity xr.Dataset must have a band_disp coordinate")
-        sys.exit(1)
+        raise AttributeError("Disparity xr.Dataset must have a band_disp coordinate")
     band_disp = disparity.coords["band_disp"].data
     if not {"min", "max"}.issubset(band_disp):
-        logging.error("Disparity xr.Dataset must have a band_disp coordinate with min and max band")
-        sys.exit(1)
+        raise AttributeError("Disparity xr.Dataset must have a band_disp coordinate with min and max band")
     if (disparity.sel(band_disp="min").data > disparity.sel(band_disp="max").data).any():
-        logging.error("Disp_max grid must be bigger than Disp_min grid for each pixel")
-        sys.exit(1)
+        raise AttributeError("Disp_max grid must be bigger than Disp_min grid for each pixel")
 
 
 def get_config_input(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
@@ -341,7 +311,7 @@ def get_config_pipeline(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
 
 def memory_consumption_estimation(
     user_pipeline_cfg: Dict[str, dict],
-    user_input: Union[Dict[str, dict], Tuple[str, int, int]],
+    user_input: Union[Dict[str, dict], Tuple[str, int, int], Tuple[str, str]],
     pandora_machine: PandoraMachine,
     checked_cfg_flag: bool = False,
 ) -> Union[Tuple[float, float], None]:
@@ -350,8 +320,11 @@ def memory_consumption_estimation(
 
     :param user_pipeline_cfg: user pipeline configuration
     :type user_pipeline_cfg: dict
-    :param user_input: user input configuration, may be given as a dict or directly as img_path, disp_min, disp_max.
-    :type user_input: dict or Tuple[str, int, int]
+    :param user_input: user input configuration, may be given as a dict
+        or directly as (img_path, disp_min, disp_max) where [disp_min, disp_max] is the disparity interval used,
+        or as (img_path, disparity_path) where disparity_path leads to a disparity grid containing two bands:
+        min and max.
+    :type user_input: dict or Tuple[str, int, int] or Tuple[str, str]
     :param pandora_machine: instance of PandoraMachine
     :type pandora_machine: PandoraMachine object
     :param checked_cfg_flag: Flag for checking pipeline
@@ -359,20 +332,29 @@ def memory_consumption_estimation(
     :return: minimum and maximum memory consumption
     :rtype: Tuple[float, float]
     """
-    # If the input configuration is given as a dict
+
     if isinstance(user_input, dict):
-        disparity_interval = user_input["input"]["disp_left"]
-        img_path = user_input["input"]["img_left"]
-    else:
+        disparity_interval = user_input["input"]["left"]["disp"]
+        img_path = user_input["input"]["left"]["img"]
+    elif isinstance(user_input, tuple):
         img_path, *disparity_interval = user_input
+        if isinstance(disparity_interval[0], str):
+            disparity_interval = disparity_interval[0]
         # Since only the size is to be used for the memory computation, the same path is set on left and right
-        input_cfg = {"disparity_interval": disparity_interval, "img_left": img_path, "img_right": img_path}
+        input_cfg = {"left": {"disp": disparity_interval, "img": img_path}, "right": {"img": img_path}}
         user_input = {"input": input_cfg}
+    else:
+        raise TypeError(f"{user_input} must be a dict or a tuple")
 
     # Read input image
     img = rasterio_open(img_path)
     # Obtain cost volume size
-    dmin, dmax = disparity_interval
+    if isinstance(disparity_interval, str):
+        disparity_reader = rasterio.open(disparity_interval)
+        dmin = np.nanmin(disparity_reader.read(1))
+        dmax = np.nanmax(disparity_reader.read(2))
+    else:
+        dmin, dmax = disparity_interval
     cv_size = img.width * img.height * np.abs(dmax - dmin)
     if checked_cfg_flag:
         # Obtain pipeline cfg
@@ -380,8 +362,8 @@ def memory_consumption_estimation(
     else:
         # First, check if the configuration is valid
         cfg = {"pipeline": user_pipeline_cfg["pipeline"], "input": user_input["input"]}
-        img_left_metadata = get_metadata(cfg["input"]["img_left"], disparity_interval)
-        img_right_metadata = get_metadata(cfg["input"]["img_right"], None, None)
+        img_left_metadata = get_metadata(cfg["input"]["left"]["img"], disparity_interval)
+        img_right_metadata = get_metadata(cfg["input"]["right"]["img"], None, None)
         checked_cfg = check_pipeline_section(cfg, img_left_metadata, img_right_metadata, pandora_machine)
         # Obtain pipeline cfg
         pipeline_cfg = checked_cfg["pipeline"]
@@ -456,14 +438,16 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     # Disparity can be integer type, or string type (path to the disparity grid)
     # If the left disparity is string type, right disparity must be string type or none
     # if the left disparity is integer type, right disparity must be none
-    if isinstance(cfg["input"]["disp_left"], list):
+    if isinstance(cfg["input"]["left"]["disp"], list):
         base_input_configuration_schema = input_configuration_schema_integer_disparity
-    elif isinstance(cfg["input"]["disp_right"], str):
+    elif isinstance(cfg["input"]["right"]["disp"], str):
         base_input_configuration_schema = input_configuration_schema_left_disparity_grids_right_grids
     else:
         base_input_configuration_schema = input_configuration_schema_left_disparity_grids_right_none
 
-    input_configuration_schema.update(base_input_configuration_schema)
+    input_configuration_schema["left"].update(base_input_configuration_schema["left"])
+    input_configuration_schema["right"].update(base_input_configuration_schema["right"])
+
     # check schema
     configuration_schema = {"input": input_configuration_schema}
 
@@ -474,19 +458,16 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
 
     # check left disparities
     check_disparities_from_input(
-        cfg["input"]["disp_left"],
-        cfg["input"]["img_left"],
+        cfg["input"]["left"]["disp"],
+        cfg["input"]["left"]["img"],
     )
     # check right disparities
     check_disparities_from_input(
-        cfg["input"]["disp_right"],
-        cfg["input"]["img_right"],
+        cfg["input"]["right"]["disp"],
+        cfg["input"]["right"]["img"],
     )
-    # check bands
-    check_band_names(cfg["input"]["img_left"])
-    check_band_names(cfg["input"]["img_right"])
 
-    check_images(split_inputs(cfg["input"]))
+    check_images(cfg["input"])
 
     return cfg
 
@@ -509,16 +490,16 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> di
 
     # read metadata from left and right images
     img_left_metadata = get_metadata(
-        cfg_input["input"]["img_left"],
-        cfg_input["input"]["disp_left"],
-        cfg_input["input"]["left_classif"],
-        cfg_input["input"]["left_segm"],
+        cfg_input["input"]["left"]["img"],
+        cfg_input["input"]["left"]["disp"],
+        cfg_input["input"]["left"]["classif"],
+        cfg_input["input"]["left"]["segm"],
     )
     img_right_metadata = get_metadata(
-        cfg_input["input"]["img_right"],
-        cfg_input["input"]["disp_right"],
-        cfg_input["input"]["right_classif"],
-        cfg_input["input"]["right_segm"],
+        cfg_input["input"]["right"]["img"],
+        cfg_input["input"]["right"]["disp"],
+        cfg_input["input"]["right"]["classif"],
+        cfg_input["input"]["right"]["segm"],
     )
 
     # check pipeline
@@ -574,47 +555,67 @@ def read_multiscale_params(cfg: Dict[str, dict]) -> Tuple[int, int]:
 
 
 input_configuration_schema = {
-    "img_left": And(str, rasterio_can_open_mandatory),
-    "img_right": And(str, rasterio_can_open_mandatory),
-    "nodata_left": Or(int, lambda input: np.isnan(input)),
-    "nodata_right": Or(int, lambda input: np.isnan(input)),
-    "left_mask": And(Or(str, lambda input: input is None), rasterio_can_open),
-    "right_mask": And(Or(str, lambda input: input is None), rasterio_can_open),
-    "left_classif": And(Or(str, lambda x: x is None), rasterio_can_open),
-    "right_classif": And(Or(str, lambda x: x is None), rasterio_can_open),
-    "left_segm": And(Or(str, lambda x: x is None), rasterio_can_open),
-    "right_segm": And(Or(str, lambda x: x is None), rasterio_can_open),
+    "left": {
+        "img": And(str, rasterio_can_open_mandatory),
+        "nodata": Or(int, lambda input: np.isnan(input)),
+        "mask": And(Or(str, lambda input: input is None), rasterio_can_open),
+        "classif": And(Or(str, lambda x: x is None), rasterio_can_open),
+        "segm": And(Or(str, lambda x: x is None), rasterio_can_open),
+    },
+    "right": {
+        "img": And(str, rasterio_can_open_mandatory),
+        "nodata": Or(int, lambda input: np.isnan(input)),
+        "mask": And(Or(str, lambda input: input is None), rasterio_can_open),
+        "classif": And(Or(str, lambda x: x is None), rasterio_can_open),
+        "segm": And(Or(str, lambda x: x is None), rasterio_can_open),
+    },
 }
 
 # Input configuration when disparity is integer
-input_configuration_schema_integer_disparity = {
-    "disp_left": [int, int],
-    "disp_right": (lambda input: input is None),
+input_configuration_schema_integer_disparity: Mapping = {
+    "left": {
+        "disp": [int, int],
+    },
+    "right": {
+        "disp": (lambda input: input is None),
+    },
 }
 
 # Input configuration when left disparity is a grid, and right not provided
-input_configuration_schema_left_disparity_grids_right_none = {
-    "disp_left": And(str, rasterio_can_open),
-    "disp_right": (lambda input: input is None),
+input_configuration_schema_left_disparity_grids_right_none: Mapping = {
+    "left": {
+        "disp": And(str, rasterio_can_open),
+    },
+    "right": {
+        "disp": (lambda input: input is None),
+    },
 }
 
 # Input configuration when left and right disparity are grids
-input_configuration_schema_left_disparity_grids_right_grids = {
-    "disp_left": And(str, rasterio_can_open),
-    "disp_right": And(str, rasterio_can_open),
+input_configuration_schema_left_disparity_grids_right_grids: Mapping = {
+    "left": {
+        "disp": And(str, rasterio_can_open),
+    },
+    "right": {
+        "disp": And(str, rasterio_can_open),
+    },
 }
 
 default_short_configuration_input = {
     "input": {
-        "nodata_left": -9999,
-        "nodata_right": -9999,
-        "left_mask": None,
-        "right_mask": None,
-        "left_classif": None,
-        "right_classif": None,
-        "left_segm": None,
-        "right_segm": None,
-        "disp_right": None,
+        "left": {
+            "nodata": -9999,
+            "mask": None,
+            "classif": None,
+            "segm": None,
+        },
+        "right": {
+            "nodata": -9999,
+            "mask": None,
+            "classif": None,
+            "segm": None,
+            "disp": None,
+        },
     }
 }
 

@@ -28,6 +28,8 @@ from typing import Dict
 
 import xarray as xr
 
+from pandora.margins.descriptors import UniformMargins
+
 
 class AbstractOptimization:
     """
@@ -38,6 +40,7 @@ class AbstractOptimization:
 
     optimization_methods_avail: Dict = {}
     cfg = None
+    margins = UniformMargins(40)
 
     def __new__(cls, _img: xr.Dataset, **cfg: Dict[str, dict]):
         """

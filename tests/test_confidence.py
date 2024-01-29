@@ -35,6 +35,7 @@ import pandora.cost_volume_confidence as confidence
 from pandora import matching_cost
 from pandora.state_machine import PandoraMachine
 from pandora.img_tools import add_disparity
+from pandora.criteria import validity_mask
 
 
 class TestConfidence(unittest.TestCase):
@@ -380,12 +381,14 @@ class TestConfidence(unittest.TestCase):
         std_bright_ground_truth = std_bright_ground_truth.reshape((5, 6, 1))
 
         # compute with compute_cost_volume
-        cv = stereo_matcher.compute_cost_volume(
-            img_left=left,
-            img_right=right,
-            grid_disp_min=left["disparity"].sel(band_disp="min"),
-            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        grid = stereo_matcher.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+
+        # Compute validity mask
+        grid = validity_mask(left, right, grid)
+
+        cv = stereo_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         stereo_matcher.cv_masked(
             left,
             right,
@@ -477,12 +480,14 @@ class TestConfidence(unittest.TestCase):
         std_bright_ground_truth = std_bright_ground_truth.reshape((5, 6, 1))
 
         # compute with compute_cost_volume
-        cv = stereo_matcher.compute_cost_volume(
-            img_left=left,
-            img_right=right,
-            grid_disp_min=left["disparity"].sel(band_disp="min"),
-            grid_disp_max=left["disparity"].sel(band_disp="max"),
+        grid = stereo_matcher.allocate_cost_volume(
+            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
+
+        # Compute validity mask
+        grid = validity_mask(left, right, grid)
+
+        cv = stereo_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
         stereo_matcher.cv_masked(
             left,
             right,
@@ -701,6 +706,130 @@ class TestConfidence(unittest.TestCase):
         # Check if the calculated sampled risks are equal to the ground truth (same shape and all elements equals)
         np.testing.assert_allclose(gt_sampled_risk_max, sampled_risk_max, rtol=1e-06)
         np.testing.assert_allclose(gt_sampled_risk_min, sampled_risk_min, rtol=1e-06)
+
+    @staticmethod
+    def test_interval_bounds():
+        """
+        Test the interval bounds method using the pandora run method
+
+        """
+        # Create left and right images
+        left_im = np.array([[2, 5, 3, 1], [5, 3, 2, 1], [4, 2, 3, 2], [4, 5, 3, 2]], dtype=np.float32)
+
+        mask_ = np.array([[0, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 0], [0, 0, 0, 1]], dtype=np.int16)
+
+        left_im = xr.Dataset(
+            {"im": (["row", "col"], left_im), "msk": (["row", "col"], mask_)},
+            coords={"row": np.arange(left_im.shape[0]), "col": np.arange(left_im.shape[1])},
+        )
+        # Add image conf to the image dataset
+
+        left_im.attrs = {
+            "no_data_img": 0,
+            "valid_pixels": 0,
+            "no_data_mask": 1,
+            "crs": None,
+            "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+        }
+        left_im.pipe(add_disparity, disparity=[-1, 1], window=None)
+
+        right_im = np.array([[1, 2, 1, 2], [2, 3, 5, 3], [0, 2, 4, 2], [5, 3, 1, 4]], dtype=np.float32)
+
+        mask_ = np.full((4, 4), 0, dtype=np.int16)
+
+        right_im = xr.Dataset(
+            {"im": (["row", "col"], right_im), "msk": (["row", "col"], mask_)},
+            coords={"row": np.arange(right_im.shape[0]), "col": np.arange(right_im.shape[1])},
+        )
+        # Add image conf to the image dataset
+        right_im.attrs = {
+            "no_data_img": 0,
+            "valid_pixels": 0,
+            "no_data_mask": 1,
+            "crs": None,
+            "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+        }
+        right_im.pipe(add_disparity, disparity=[-1, 1], window=None)
+
+        user_cfg = {
+            "input": {"left": {"disp_min": -1, "disp_max": 1}},
+            "pipeline": {
+                "matching_cost": {"matching_cost_method": "sad", "window_size": 1, "subpix": 1},
+                "cost_volume_confidence": {"confidence_method": "interval_bounds", "possibility_threshold": 0.7},
+                "disparity": {"disparity_method": "wta"},
+                "filter": {"filter_method": "median"},
+            },
+        }
+        pandora_machine = PandoraMachine()
+
+        # Update the user configuration with default values
+        cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
+
+        # Run the pandora pipeline
+        left, _ = pandora.run(pandora_machine, left_im, right_im, cfg)
+
+        assert (
+            np.sum(
+                left.coords["indicator"].data
+                != [
+                    "confidence_from_interval_bounds_inf",
+                    "confidence_from_interval_bounds_sup",
+                ]
+            )
+            == 0
+        )
+
+        # ----- Check interval results ------
+
+        # Cost volume               Normalized cost volume
+        # [[[nan  1.  0.]           [[[ nan 0.25 0.  ]
+        #   [ 4.  3.  4.]            [1.   0.75 1.  ]
+        #   [ 1.  2.  1.]            [0.25 0.5  0.25]
+        #   [ 0.  1. nan]]           [0.   0.25  nan]]
+        #  [[nan  3.  2.]           [[ nan 0.75 0.5 ]
+        #   [nan nan nan]            [ nan  nan  nan]
+        #   [ 1.  3.  1.]            [0.25 0.75 0.25]
+        #   [ 4.  2. nan]]           [1.   0.5   nan]]
+        #  [[nan  4.  2.]           [[ nan 1.   0.5 ]
+        #   [ 2.  0.  2.]            [0.5  0.   0.5 ]
+        #   [ 1.  1.  1.]            [0.25 0.25 0.25]
+        #   [ 2.  0. nan]]           [0.5  0.    nan]]
+        #  [[nan  1.  1.]           [[ nan 0.25 0.25]
+        #   [ 0.  2.  4.]            [0.   0.5  1.  ]
+        #   [ 0.  2.  1.]            [0.   0.5  0.25]
+        #   [nan nan nan]]]          [ nan  nan  nan]]]
+        #
+        #
+        #
+        # Possibility
+        # [[[ nan, 0.75, 1.  ],
+        #   [0.75, 1.  , 0.75],
+        #   [1.  , 0.75, 1.  ],
+        #   [1.  , 0.75,  nan]],
+        #  [[ nan, 0.75, 1.  ],
+        #   [ nan,  nan,  nan],
+        #   [1.  , 0.5 , 1.  ],
+        #   [0.5 , 1.  ,  nan]],
+        #  [[ nan, 0.5 , 1.  ],
+        #   [0.5 , 1.  , 0.5 ],
+        #   [1.  , 1.  , 1.  ],
+        #   [0.5 , 1.  ,  nan]],
+        #  [[ nan, 1.  , 1.  ],
+        #   [1.  , 0.5 , 0.  ],
+        #   [1.  , 0.5 , 0.75],
+        #   [ nan,  nan,  nan]]]
+
+        # Infimum and supremum bound of the interval confidence
+        # If the interval bound has a possibility of 1,
+        # the intervals are extended by one (refinement)
+        inf_bound_gt = np.array(
+            [[0, -1, -1, -1], [0, np.nan, -1, -1], [0, -1, -1, -1], [-1, -1, -1, np.nan]], dtype=np.float32
+        )
+        sup_bound_gt = np.array([[1, 1, 1, 0], [1, np.nan, 1, 1], [1, 1, 1, 1], [1, 0, 1, np.nan]], dtype=np.float32)
+
+        # Check if the calculated intervals is equal to the ground truth (same shape and all elements equals)
+        np.testing.assert_allclose(left["confidence_measure"].data[:, :, 0], inf_bound_gt, rtol=1e-06)
+        np.testing.assert_allclose(left["confidence_measure"].data[:, :, 1], sup_bound_gt, rtol=1e-06)
 
 
 if __name__ == "__main__":

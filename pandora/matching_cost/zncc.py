@@ -67,80 +67,68 @@ class Zncc(matching_cost.AbstractMatchingCost):
         checker.validate(cfg)
         return cfg
 
-    def desc(self) -> None:
-        """
-        Describes the matching cost method
-        :return: None
-        """
-        print("zncc similarity measure")
-
     def compute_cost_volume(
-        self, img_left: xr.Dataset, img_right: xr.Dataset, grid_disp_min: np.ndarray, grid_disp_max: np.ndarray
+        self,
+        img_left: xr.Dataset,
+        img_right: xr.Dataset,
+        cost_volume: xr.Dataset,
     ) -> xr.Dataset:
         """
         Computes the cost volume for a pair of images
 
-        :param img_left: left Dataset image
-        :type img_left:
-            xarray.Dataset containing :
-                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
-                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
-                - msk (optional): 2D (row, col) xarray.DataArray int16
-                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
-                - segm (optional): 2D (row, col) xarray.DataArray int16
-        :param img_right: right Dataset image
-        :type img_right:
-            xarray.Dataset containing :
-                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
-                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
-                - msk (optional): 2D (row, col) xarray.DataArray int16
-                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
-                - segm (optional): 2D (row, col) xarray.DataArray int16
-        :param grid_disp_min: minimum disparity
-        :type grid_disp_min: np.ndarray
-        :param grid_disp_max: maximum disparity
-        :type grid_disp_max: np.ndarray
-        :return: the cost volume dataset
-        :rtype:
-            xarray.Dataset, with the data variables:
-                - cost_volume 3D xarray.DataArray (row, col, disp)
-        """
-        # Obtain absolute min and max disparities
-        disp_min, disp_max = self.get_min_max_from_grid(grid_disp_min, grid_disp_max)
+        :param img_left: left Dataset image containing :
 
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
+        :type img_left: xarray.Dataset
+        :param img_right: right Dataset image containing :
+
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
+        :type img_right: xarray.Dataset
+        :param cost_volume: an empty cost volume
+        :type cost_volume: xr.Dataset
+        :return: the cost volume dataset , with the data variables:
+
+                - cost_volume 3D xarray.DataArray (row, col, disp)
+        :rtype: xarray.Dataset
+        """
         # check band parameter
         self.check_band_input_mc(img_left, img_right)
 
         # Contains the shifted right images
-        img_right_shift = shift_right_img(img_right, self._subpix, self._band)  # type: ignore
+        img_right_shift = shift_right_img(img_right, self._subpix, self._band)
 
         # Computes the standard deviation raster for the whole images
         # The standard deviation raster is truncated for points that are not calculable
-        img_left_std = compute_std_raster(img_left, self._window_size, self._band)  # type: ignore
+        img_left_std = compute_std_raster(img_left, self._window_size, self._band)
         img_right_std = []
         for i, img in enumerate(img_right_shift):  # pylint: disable=unused-variable
-            img_right_std.append(compute_std_raster(img, self._window_size, self._band))  # type: ignore
+            img_right_std.append(compute_std_raster(img, self._window_size, self._band))
 
         # Computes the mean raster for the whole images
         # The standard mean raster is truncated for points that are not calculable
-        img_left_mean = compute_mean_raster(img_left, self._window_size, self._band)  # type: ignore
+        img_left_mean = compute_mean_raster(img_left, self._window_size, self._band)
         img_right_mean = []
         for i, img in enumerate(img_right_shift):
-            img_right_mean.append(compute_mean_raster(img, self._window_size, self._band))  # type: ignore
+            img_right_mean.append(compute_mean_raster(img, self._window_size, self._band))
 
         # Cost volume metadata
-        offset_row_col = int((self._window_size - 1) / 2)
-        metadata = {
-            "measure": "zncc",
-            "subpixel": self._subpix,
-            "offset_row_col": offset_row_col,
-            "window_size": self._window_size,
-            "type_measure": "max",
-            "cmax": 1,  # Maximal cost of the cost volume with zncc measure
-            "band_correl": self._band,
-        }
+        offset_row_col = cost_volume.attrs["offset_row_col"]
+        cost_volume.attrs.update(
+            {
+                "type_measure": "max",
+                "cmax": 1,  # Maximal cost of the cost volume with zncc measure
+            }
+        )
 
-        disparity_range = self.get_disparity_range(disp_min, disp_max, self._subpix)
+        disparity_range = cost_volume.coords["disp"].data
         cv = self.allocate_numpy_cost_volume(img_left, disparity_range)
         cv_crop = self.crop_cost_volume(cv, offset_row_col)
 
@@ -184,7 +172,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
                     "col": np.arange(zncc_.shape[1]),
                 },
             )
-            zncc_ = compute_mean_raster(zncc_, self._window_size, self._band)  # type: ignore
+            zncc_ = compute_mean_raster(zncc_, self._window_size, self._band)
             # Subtracting  the  local mean  value  of  intensities
             zncc_ -= img_left_mean[:, p_std[0] : p_std[1]] * img_right_mean[i_right][:, q_std[0] : q_std[1]]
 
@@ -198,15 +186,16 @@ class Zncc(matching_cost.AbstractMatchingCost):
         # Computations were optimized with a cost_volume of dimensions (disp, row, col)
         # As we are expected to return a cost_volume of dimensions (row, col, disp),
         # we swap axes.
-        cv = self.allocate_costvolume(
-            img_left, self._subpix, disp_min, disp_max, self._window_size, metadata, np.swapaxes(cv, 0, 2)
-        )
+        cv = np.swapaxes(cv, 0, 2)
+        index_col = cost_volume.attrs["col_to_compute"]
+        index_col = index_col - img_left.coords["col"].data[0]  # If first col coordinate is not 0
+        cost_volume["cost_volume"].data = cv[:, index_col, :]
 
-        return cv
+        return cost_volume
 
 
 def apply_divide_standard(
-    zncc: xr.Dataset,
+    zncc: np.ndarray,
     img_left: np.ndarray,
     img_right: List[np.ndarray],
     p_std: Tuple[int, int],
@@ -217,7 +206,7 @@ def apply_divide_standard(
     Divide by the standard deviation of the intensities of the images
 
     :param zncc:
-    :type zncc: xr.Dataset
+    :type zncc: np.ndarray
     :param img_left: standard deviation raster of left image
     :type img_left: np.ndarray
     :param img_right: standard deviation raster list of right image (for each subpix)

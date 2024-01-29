@@ -27,6 +27,7 @@ This module contains functions to test all the methods in img_tools module.
 
 # pylint: disable=redefined-outer-name
 
+import re
 import copy
 import numpy as np
 import pytest
@@ -354,7 +355,7 @@ class TestGetWindow:
         """
         img_height, img_width = default_image_shape
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(ValueError, match="Roi specified is outside the image"):
             img_tools.get_window(roi, img_width, img_height)
 
 
@@ -387,7 +388,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": "tests/image/left_img.tif",
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "mask": "tests/image/mask_left.tif",
                 "disp": [-60, 0],
             }
@@ -471,7 +472,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": "tests/pandora/left.png",
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "classif": "tests/pandora/left_classif.tif",
                 "disp": [-60, 0],
             }
@@ -495,7 +496,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": "tests/pandora/left_rgb.tif",
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "classif": "tests/pandora/left_classif.tif",
                 "disp": [-60, 0],
             }
@@ -566,7 +567,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": "tests/image/left_img.tif",
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "segm": "tests/image/mask_left.tif",
                 "disp": [-60, 0],
             }
@@ -591,7 +592,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": "tests/pandora/left.png",
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "disp": [-60, 0],
             }
         }
@@ -614,7 +615,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": "tests/image/left_img.tif",
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "disp": [-60, 0],
             }
         }
@@ -695,7 +696,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": image_path,
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "disp": [-60, 0],
             }
         }
@@ -723,7 +724,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": image_path,
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "disp": [-60, 0],
             }
         }
@@ -742,7 +743,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": "tests/pandora/left.png",
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "classif": "tests/pandora/left_classif.tif",
                 "disp": [-60, 0],
             }
@@ -774,7 +775,7 @@ class TestCreateDatasetFromInputs:
         input_config = {
             "left": {
                 "img": "tests/image/left_img.tif",
-                "nodata": default_cfg["input"]["nodata_left"],
+                "nodata": default_cfg["input"]["left"]["nodata"],
                 "segm": "tests/image/mask_left.tif",
                 "disp": [-60, 0],
             }
@@ -837,23 +838,25 @@ class TestCreateDatasetFromInputs:
         np.testing.assert_array_equal(dst_left["disparity"].data, expected)
 
     @pytest.mark.parametrize(
-        ["img_path", "classif_path", "segm_path"],
+        ["img_path", "classif_path", "segm_path", "size"],
         [
             pytest.param(
                 "tests/image/left_img.tif",
                 "tests/pandora/left_classif.tif",
                 None,
+                "4",
                 id="between img and classif",
             ),
             pytest.param(
                 "tests/pandora/left.png",
                 None,
                 "tests/image/mask_left.tif",
+                "375",
                 id="between img and segm",
             ),
         ],
     )
-    def test_fails_with_different_shape(self, img_path, classif_path, segm_path):
+    def test_fails_with_different_shape(self, img_path, classif_path, segm_path, size):
         """
         Test with wrong image shapes
         """
@@ -866,9 +869,104 @@ class TestCreateDatasetFromInputs:
             "classif": classif_path,
             "segm": segm_path,
         }
-
-        with pytest.raises((ValueError, SystemExit)):
+        string_match = re.escape(
+            "cannot reindex or align along dimension 'row' because of conflicting dimension sizes:"
+            " {4, 375} (note: an index is found along that dimension with size=" + size + ")"
+        )
+        with pytest.raises(ValueError, match=string_match):
             create_dataset_from_inputs(input_config=input_config)
+
+    @pytest.fixture()
+    def default_image_path(self, tmp_path):
+        """
+        Create a fake image to test ROI in create_dataset_from_inputs
+        """
+        image_path = tmp_path / "left_img.tif"
+        imarray = np.array(
+            (
+                [np.inf, 1, 2, 5, 1, 3, 6, 4, 9, 7, 8],
+                [5, 1, 2, 7, 1, 4, 7, 8, 5, 8, 0],
+                [1, 2, 0, 3, 0, 4, 0, 6, 7, 4, 9],
+                [4, 9, 4, 0, 1, 3, 7, 4, 6, 9, 2],
+                [2, 3, 5, 0, 1, 5, 9, 2, 8, 6, 7],
+                [1, 2, 4, 5, 2, 6, 7, 7, 3, 7, 0],
+                [1, 2, 0, 3, 0, 4, 0, 6, 7, 4, 9],
+                [np.inf, 9, 4, 0, 1, 3, 7, 4, 6, 9, 2],
+            )
+        )
+
+        imsave(image_path, imarray, plugin="tifffile", photometric="MINISBLACK")
+
+        return image_path
+
+    @pytest.fixture()
+    def default_input_roi(self, default_cfg, default_image_path):
+        """
+        Create an input configuration to test ROI in create_dataset_from_inputs
+        """
+        input_config = {
+            "left": {
+                "img": default_image_path,
+                "nodata": default_cfg["input"]["left"]["nodata"],
+                "disp": [-60, 0],
+            }
+        }
+
+        return input_config
+
+    @pytest.mark.parametrize(
+        ["roi", "expected"],
+        [
+            pytest.param(
+                {"col": {"first": 3, "last": 5}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]},
+                {"row": np.arange(1, 8), "col": np.arange(1, 8)},
+                id="ROI inside the image",
+            ),
+            pytest.param(
+                {"col": {"first": 0, "last": 2}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]},
+                {"row": np.arange(1, 8), "col": np.arange(0, 5)},
+                id="ROI overlap on left side",
+            ),
+            pytest.param(
+                {"col": {"first": 10, "last": 12}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]},
+                {"row": np.arange(1, 8), "col": np.arange(8, 11)},
+                id="ROI overlap on right side",
+            ),
+            pytest.param(
+                {"col": {"first": 3, "last": 5}, "row": {"first": -1, "last": 5}, "margins": [2, 2, 2, 2]},
+                {"row": np.arange(0, 8), "col": np.arange(1, 8)},
+                id="ROI overlap on up side",
+            ),
+            pytest.param(
+                {"col": {"first": 3, "last": 5}, "row": {"first": 9, "last": 11}, "margins": [2, 2, 2, 2]},
+                {"row": np.arange(7, 8), "col": np.arange(1, 8)},
+                id="ROI overlap on down side",
+            ),
+        ],
+    )
+    def test_coords_roi(self, default_input_roi, roi, expected):
+        """
+        Test the create_dataset_from_inputs method when the config has a roi
+
+        """
+
+        # ROI
+        roi_tested = roi
+
+        # Expected coordinates
+        coords_gt = expected
+
+        # Input configuration
+        input_config = default_input_roi
+
+        # Create dataset with ROI
+        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"], roi=roi_tested)
+
+        # Test if row coordinates are equals
+        np.testing.assert_array_equal(dst_left.coords["row"], coords_gt["row"])
+
+        # Test if col coordinates are equals
+        np.testing.assert_array_equal(dst_left.coords["col"], coords_gt["col"])
 
 
 class TestShiftRightImg:
@@ -969,7 +1067,7 @@ class TestGetMetadata:
 
     def test_get_metadata_succeed(self, input_cfg):
         """
-        Test the method get_metadata with all good informations
+        Test the method get_metadata with all good information
 
         """
         # Metadata ground truth
@@ -979,7 +1077,7 @@ class TestGetMetadata:
         )
 
         # get metadata without classif and mask
-        metadata_img = img_tools.get_metadata(input_cfg["input"]["img_left"], input_cfg["input"]["disp_left"])
+        metadata_img = img_tools.get_metadata(input_cfg["input"]["left"]["img"], input_cfg["input"]["left"]["disp"])
 
         # Check that the get_metadata function run whitout error
         assert metadata_img.coords["band_im"] == metadata_gt.coords["band_im"]
@@ -997,25 +1095,25 @@ class TestGetMetadata:
     )
     def test_fail_with_wrong_img_path(self, input_cfg, img_path):
         """
-        Test the method get_metadata with wrong informations for img param
+        Test the method get_metadata with wrong information for img param
 
         """
         with pytest.raises((TypeError, RasterioIOError)):
-            img_tools.get_metadata(img=img_path, disparity=input_cfg["input"]["disp_left"])
+            img_tools.get_metadata(img=img_path, disparity=input_cfg["input"]["left"]["disp"])
 
     @pytest.mark.parametrize(
-        ["classif"],
+        ["classif", "expected_error"],
         [
-            pytest.param(True, id="Boolean for classification path"),
-            pytest.param(1, id="Integer for classification path"),
+            pytest.param(True, "invalid path or file: True", id="Boolean for classification path"),
+            pytest.param(1, "invalid path or file: 1", id="Integer for classification path"),
         ],
     )
-    def test_fail_with_wrong_classification_param(self, input_cfg, classif):
+    def test_fail_with_wrong_classification_param(self, input_cfg, classif, expected_error):
         """
-        Test the method get_metadata with wrong informations for classif param
+        Test the method get_metadata with wrong information for classif param
 
         """
-        with pytest.raises(TypeError):
+        with pytest.raises(TypeError, match=expected_error):
             img_tools.get_metadata(
-                img=input_cfg["input"]["img_left"], disparity=input_cfg["input"]["disp_left"], classif=classif
+                img=input_cfg["input"]["left"]["img"], disparity=input_cfg["input"]["left"]["disp"], classif=classif
             )

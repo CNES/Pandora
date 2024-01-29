@@ -28,7 +28,11 @@ This module contains functions to test the matching cost step.
 import numpy as np
 import xarray as xr
 import pytest
+
+from skimage.io import imsave
 from pandora import matching_cost
+from pandora.margins.descriptors import HalfWindowMargins
+from pandora.img_tools import create_dataset_from_inputs, add_disparity
 
 from tests import common
 
@@ -93,42 +97,335 @@ class TestMatchingCost:
 
         np.testing.assert_array_equal(result, expected)
 
-    def test_allocate_cost_volume(self, left):
-        """ "
-        Test the allocate_cost_volume function
+    @pytest.fixture()
+    def default_image_path(self, tmp_path):
         """
-
-        # Create matching cost object
-        matching_cost_ = matching_cost.AbstractMatchingCost(
-            **{"matching_cost_method": "census", "window_size": 5, "subpix": 4, "band": "b"}
+        Create a fake image to test ROI in create_dataset_from_inputs
+        """
+        image_path = tmp_path / "left_img.tif"
+        imarray = np.array(
+            (
+                [np.inf, 1, 2, 5, 1, 3, 6, 4, 9, 7, 8],
+                [5, 1, 2, 7, 1, 4, 7, 8, 5, 8, 0],
+                [1, 2, 0, 3, 0, 4, 0, 6, 7, 4, 9],
+                [4, 9, 4, 0, 1, 4, 7, 4, 6, 9, 2],
+                [2, 3, 5, 0, 1, 5, 9, 2, 8, 6, 7],
+                [1, 2, 4, 5, 2, 6, 7, 7, 3, 7, 0],
+                [1, 2, 0, 3, 0, 4, 0, 6, 7, 4, 9],
+                [np.inf, 9, 4, 0, 1, 3, 7, 4, 6, 9, 2],
+            )
         )
 
-        dataset_cv = matching_cost_.allocate_costvolume(left, 4, -2, 2, 5, {"metadata": "metadata"})
+        imsave(image_path, imarray, plugin="tifffile", photometric="MINISBLACK")
 
-        c_row = [0, 1, 2, 3, 4]
-        c_col = [0, 1, 2, 3, 4, 5]
+        return image_path
 
-        # First pixel in the image that is fully computable (aggregation windows are complete)
-        row = np.arange(c_row[0], c_row[-1] + 1)  # type: np.ndarray
-        col = np.arange(c_col[0], c_col[-1] + 1)  # type: np.ndarray
-
-        disparity_range = np.arange(-2, 2, step=1 / float(4), dtype=np.float64)
-        disparity_range = np.append(disparity_range, [2])
-
-        np_data = np.zeros((len(row), len(col), len(disparity_range)), dtype=np.float32)
-
-        ground_truth = xr.Dataset(
-            {"cost_volume": (["row", "col", "disp"], np_data)},
-            coords={"row": row, "col": col, "disp": disparity_range},
-        )
-
-        ground_truth.attrs = {
-            "crs": left.attrs["crs"],
-            "transform": left.attrs["transform"],
-            "window_size": 5,
+    @pytest.fixture()
+    def default_input_roi(self, default_image_path):
+        """
+        Create an input configuration to test ROI in create_dataset_from_inputs
+        """
+        input_config = {
+            "left": {
+                "img": default_image_path,
+                "nodata": -9999,
+                "disp": [-60, 0],
+            }
         }
 
-        assert ground_truth.equals(dataset_cv)
+        return input_config
+
+    @pytest.mark.parametrize(
+        ["step", "ground_truth_attrs"],
+        [
+            pytest.param(
+                1,  # step value
+                {
+                    "sampling_interval": 1,
+                    "col_to_compute": np.arange(0, 11, 1),
+                },
+                id="no ROI in user_configuration and step = 1",
+            ),
+            pytest.param(
+                3,  # step value
+                {
+                    "sampling_interval": 3,
+                    "col_to_compute": np.arange(0, 11, 3),
+                },
+                id="no ROI in user_configuration and step = 3",
+            ),
+            pytest.param(
+                12,  # step value
+                {
+                    "sampling_interval": 12,
+                    "col_to_compute": np.arange(0, 11, 12),
+                },
+                id="no ROI in user_configuration and step > shape.col",
+            ),
+        ],
+    )
+    def test_grid_estimation(self, default_input_roi, step, ground_truth_attrs):
+        """
+        Test the grid_estimation function
+        """
+        # Input configuration
+        input_config = default_input_roi
+
+        # Create dataset with ROI
+        img_left = create_dataset_from_inputs(input_config=input_config["left"])
+
+        # Create matching cost object
+        matching_cost_ = matching_cost.AbstractMatchingCost(**common.basic_pipeline_cfg["matching_cost"])
+
+        # Update step for matching cost
+        matching_cost_._step_col = step  # pylint: disable=protected-access
+
+        # Grid estimation
+        grid = matching_cost_.grid_estimation(
+            img_left,
+            input_config,
+            (img_left["disparity"].sel(band_disp="min"), img_left["disparity"].sel(band_disp="max")),
+        )
+
+        # Create ground truth for output of grid_estimation() function
+        c_row = img_left["im"].coords["row"]
+        row = np.arange(c_row[0], c_row[-1] + 1)
+
+        ground_truth = xr.Dataset(
+            {},
+            coords={
+                "row": row,
+                "col": ground_truth_attrs["col_to_compute"],
+                "disp": matching_cost_.get_disparity_range(
+                    -60, 0, common.basic_pipeline_cfg["matching_cost"]["subpix"]
+                ),
+            },
+        )
+
+        ground_truth.attrs = img_left.attrs
+        ground_truth.attrs.update(ground_truth_attrs)
+
+        xr.testing.assert_identical(grid, ground_truth)
+
+    @pytest.mark.parametrize(
+        ["roi", "step", "ground_truth_attrs"],
+        [
+            pytest.param(
+                {"col": {"first": 3, "last": 5}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]},
+                2,  # step value
+                {
+                    "sampling_interval": 2,
+                    "col_to_compute": np.array([1, 3, 5, 7]),
+                },
+                id="ROI in user_configuration and margin % step == 0",
+            ),
+            pytest.param(
+                {"col": {"first": 3, "last": 5}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]},
+                3,  # step value
+                {
+                    "sampling_interval": 3,
+                    "col_to_compute": np.array([3, 6]),
+                },
+                id="ROI in user_configuration and margin % step != 0 with margin < step",
+            ),
+            pytest.param(
+                {"col": {"first": 3, "last": 4}, "row": {"first": 3, "last": 4}, "margins": [3, 3, 3, 3]},
+                2,  # step value
+                {
+                    "sampling_interval": 2,
+                    "col_to_compute": np.array([1, 3, 5, 7]),
+                },
+                id="ROI in user_configuration and margin % step != 0 with margin > step",
+            ),
+            pytest.param(
+                {"col": {"first": 0, "last": 2}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]},
+                2,  # step value
+                {
+                    "sampling_interval": 2,
+                    "col_to_compute": np.array([0, 2, 4]),
+                },
+                id="ROI overlap on left side",
+            ),
+            pytest.param(
+                {"col": {"first": 10, "last": 12}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]},
+                3,  # step value
+                {
+                    "sampling_interval": 3,
+                    "col_to_compute": np.array([10]),
+                },
+                id="ROI overlap on right side",
+            ),
+            pytest.param(
+                {"col": {"first": 3, "last": 5}, "row": {"first": -1, "last": 5}, "margins": [2, 2, 2, 2]},
+                2,  # step value
+                {
+                    "sampling_interval": 2,
+                    "col_to_compute": np.array([1, 3, 5, 7]),
+                },
+                id="ROI overlap on up side",
+            ),
+            pytest.param(
+                {"col": {"first": 3, "last": 5}, "row": {"first": 7, "last": 11}, "margins": [2, 2, 2, 2]},
+                2,  # step value
+                {
+                    "sampling_interval": 2,
+                    "col_to_compute": np.array([1, 3, 5, 7]),
+                },
+                id="ROI overlap on down side",
+            ),
+        ],
+    )
+    def test_grid_estimation_with_roi(self, default_input_roi, roi, step, ground_truth_attrs):
+        """
+        Test the grid_estimation function with a ROI
+        """
+
+        # Input configuration
+        input_config = default_input_roi
+
+        # ROI
+        input_config["ROI"] = roi
+
+        # Create dataset with ROI
+        img_left = create_dataset_from_inputs(input_config=input_config["left"], roi=roi)
+
+        # Create matching cost object
+        matching_cost_ = matching_cost.AbstractMatchingCost(**common.basic_pipeline_cfg["matching_cost"])
+
+        # Update step for matching cost
+        matching_cost_._step_col = step  # pylint: disable=protected-access
+
+        # Grid estimation
+        grid = matching_cost_.grid_estimation(
+            img_left,
+            input_config,
+            (img_left["disparity"].sel(band_disp="min"), img_left["disparity"].sel(band_disp="max")),
+        )
+
+        # Create ground truth for output of grid_estimation() function
+        c_row = img_left["im"].coords["row"]
+        row = np.arange(c_row[0], c_row[-1] + 1)
+
+        ground_truth = xr.Dataset(
+            {},
+            coords={
+                "row": row,
+                "col": ground_truth_attrs["col_to_compute"],
+                "disp": matching_cost_.get_disparity_range(
+                    -60, 0, common.basic_pipeline_cfg["matching_cost"]["subpix"]
+                ),
+            },
+        )
+
+        ground_truth.attrs = img_left.attrs
+        ground_truth.attrs.update(ground_truth_attrs)
+
+        xr.testing.assert_identical(grid, ground_truth)
+
+    @pytest.mark.parametrize("method", ["zncc", "census", "sad", "ssd"])
+    @pytest.mark.parametrize(
+        ["step", "roi", "grid_expected"],
+        [
+            pytest.param(
+                1,
+                None,
+                xr.Dataset(
+                    {"cost_volume": (["row", "col", "disp"], np.full((5, 6, 2), np.nan, dtype=np.float32))},
+                    coords={"row": np.arange(5), "col": np.arange(6), "disp": np.arange(-1, 1)},
+                    attrs={},
+                ),
+                id="method with step=1",
+            ),
+            pytest.param(
+                2,
+                None,
+                xr.Dataset(
+                    {"cost_volume": (["row", "col", "disp"], np.full((5, 3, 2), np.nan, dtype=np.float32))},
+                    coords={"row": np.arange(5), "col": np.arange(0, 6, 2), "disp": np.arange(-1, 1)},
+                    attrs={},
+                ),
+                id="method with step=2",
+            ),
+            pytest.param(
+                6,
+                None,
+                xr.Dataset(
+                    {"cost_volume": (["row", "col", "disp"], np.full((5, 1, 2), np.nan, dtype=np.float32))},
+                    coords={"row": np.arange(5), "col": np.arange(1), "disp": np.arange(-1, 1)},
+                    attrs={},
+                ),
+                id="method with step=6",
+            ),
+            pytest.param(
+                1,
+                {
+                    "ROI": {
+                        "col": {"first": 3, "last": 3},
+                        "row": {"first": 3, "last": 3},
+                        "margins": [3, 3, 3, 3],
+                    }
+                },
+                xr.Dataset(
+                    {"cost_volume": (["row", "col", "disp"], np.full((5, 6, 2), np.nan, dtype=np.float32))},
+                    coords={"row": np.arange(5), "col": np.arange(6), "disp": np.arange(-1, 1)},
+                    attrs={},
+                ),
+                id="method with step=1 and roi",
+            ),
+            pytest.param(
+                2,
+                {
+                    "ROI": {
+                        "col": {"first": 3, "last": 3},
+                        "row": {"first": 3, "last": 3},
+                        "margins": [3, 3, 3, 3],
+                    }
+                },
+                xr.Dataset(
+                    {"cost_volume": (["row", "col", "disp"], np.full((5, 3, 2), np.nan, dtype=np.float32))},
+                    coords={"row": np.arange(5), "col": np.arange(1, 6, 2), "disp": np.arange(-1, 1)},
+                    attrs={},
+                ),
+                id="method with step=2 and roi",
+            ),
+            pytest.param(
+                4,
+                {
+                    "ROI": {
+                        "col": {"first": 3, "last": 3},
+                        "row": {"first": 3, "last": 3},
+                        "margins": [3, 3, 3, 3],
+                    }
+                },
+                xr.Dataset(
+                    {"cost_volume": (["row", "col", "disp"], np.full((5, 1, 2), np.nan, dtype=np.float32))},
+                    coords={"row": np.arange(5), "col": np.arange(3, 4), "disp": np.arange(-1, 1)},
+                    attrs={},
+                ),
+                id="method with step=4 and roi",
+            ),
+        ],
+    )
+    def test_allocate_cost_volume(self, left, step, roi, grid_expected, method):
+        """
+        Test the allocate_cost_volume function
+        """
+        cfg_mc = {"matching_cost_method": method}
+        left.pipe(add_disparity, disparity=[-1, 0], window=None)
+
+        # Create matching cost object
+        matching_cost_ = matching_cost.AbstractMatchingCost(**cfg_mc)
+        # Update step for matching cost
+        matching_cost_._step_col = step  # pylint: disable=protected-access
+
+        # Allocate an empty cost volume
+        grid = matching_cost_.allocate_cost_volume(
+            image=left,
+            disparity_grids=(left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max")),
+            cfg=roi,
+        )
+
+        xr.testing.assert_identical(grid["cost_volume"], grid_expected["cost_volume"])
 
     @pytest.mark.parametrize(
         ["disparity_min", "disparity_max", "subpix", "expected"],
@@ -142,3 +439,24 @@ class TestMatchingCost:
         """Test get_disparity_range."""
         result = matching_cost.AbstractMatchingCost.get_disparity_range(disparity_min, disparity_max, subpix)
         np.testing.assert_array_equal(result, expected)
+
+    def test_margins(self):
+        assert isinstance(matching_cost.AbstractMatchingCost.margins, HalfWindowMargins)
+
+    @pytest.mark.parametrize(
+        ["step_col", "value", "expected"],
+        [
+            pytest.param(2, 2, 2, id="value is a multiple of step"),
+            pytest.param(2, 3, 4, id="value is not a multiple of step"),
+        ],
+    )
+    def test_find_nearest_multiple_of_step(self, step_col, value, expected):
+        """Test values returned by find_nearest_multiple_of_step."""
+        matching_cost_ = matching_cost.AbstractMatchingCost(
+            **{"matching_cost_method": "census", "window_size": 5, "subpix": 4, "band": "b"}
+        )
+        matching_cost_._step_col = step_col  # pylint:disable=protected-access
+
+        result = matching_cost_.find_nearest_multiple_of_step(value)
+
+        assert result == expected

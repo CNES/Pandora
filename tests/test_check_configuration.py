@@ -20,6 +20,7 @@
 """
 This module contains functions to test all the methods in check_configuration module.
 """
+import re
 
 import numpy as np
 import xarray as xr
@@ -27,7 +28,6 @@ from rasterio import Affine
 import pytest
 
 
-from pandora.common import split_inputs
 from pandora.img_tools import create_dataset_from_inputs, add_disparity, rasterio_open
 from pandora.check_configuration import (
     check_dataset,
@@ -51,7 +51,7 @@ class TestCheckDataset:
     def dataset_without_bands(self):
         """Build dataset."""
         # Build the default configuration
-        input_config = split_inputs(default_short_configuration["input"])
+        input_config = default_short_configuration["input"]
         input_config["left"]["img"] = "tests/image/left_img.tif"
         input_config["left"]["disp"] = [-60, 0]
 
@@ -63,10 +63,9 @@ class TestCheckDataset:
         """Build dataset."""
         # Build the default configuration
         input_config = update_conf(default_short_configuration["input"], common.input_multiband_cfg)  # type: ignore
-        input_config_split = split_inputs(input_config)
 
         # Computes the dataset image
-        return create_dataset_from_inputs(input_config=input_config_split["left"])
+        return create_dataset_from_inputs(input_config=input_config["left"])
 
     @pytest.mark.parametrize(
         ["dataset"],
@@ -122,7 +121,7 @@ class TestCheckDataset:
         }
         dataset.pipe(add_disparity, disparity=[-2, 1], window=None)
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(ValueError, match="Image contains only nan values"):
             check_dataset(dataset)
 
 
@@ -173,7 +172,7 @@ class TestCheckDatasets:
         Test the nominal case with image dataset
         """
         dataset_left, dataset_right = datasets
-        with pytest.raises(SystemExit):
+        with pytest.raises(AttributeError, match="left and right datasets must have the same shape"):
             check_datasets(dataset_left, dataset_right)
 
     @pytest.mark.parametrize(
@@ -189,7 +188,7 @@ class TestCheckDatasets:
         Test the nominal case with image dataset
         """
         dataset_left, dataset_right = datasets
-        with pytest.raises(SystemExit):
+        with pytest.raises(AttributeError, match="left dataset must have disparity DataArray"):
             check_datasets(dataset_left, dataset_right)
 
 
@@ -208,19 +207,6 @@ class TestCheckBandNames:
             "segm": None,
         }
         return create_dataset_from_inputs(input_cfg)
-
-    @pytest.mark.parametrize(
-        ["img"],
-        [
-            pytest.param("tests/pandora/left.png", id="image without bands"),
-            pytest.param("tests/pandora/left_rgb.tif", id="image with bands"),
-        ],
-    )
-    def test_nominal_case_path(self, img):
-        """
-        Test the nominal case with image path
-        """
-        check_band_names(img)
 
     @pytest.mark.parametrize(
         "dataset",
@@ -262,7 +248,7 @@ class TestCheckBandNames:
             coords={"band_im": bands, "row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
         )
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(TypeError, match="Band value must be str"):
             check_band_names(dataset)
 
 
@@ -316,7 +302,7 @@ class TestCheckShape:
         dataset.coords["col_occlusion"] = np.arange(data_occlusion.shape[1])
         dataset["occlusion"] = xr.DataArray(data_occlusion, dims=["row_occlusion", "col_occlusion"])
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(ValueError, match="im and occlusion must have the same shape"):
             check_shape(dataset=dataset, ref="im", test="occlusion")
 
 
@@ -342,7 +328,8 @@ class TestCheckAttributes:
         """
         mandatory_attributes = {"no_data_img", "valid_pixels", "no_data_mask", "crs", "transform"}
         del dataset.attrs[missing_attribute]
-        with pytest.raises(SystemExit):
+        match_string = re.escape("User must provide the {'" + missing_attribute + "'} attribute(s)")
+        with pytest.raises(AttributeError, match=match_string):
             check_attributes(dataset, mandatory_attributes)
 
 
@@ -363,7 +350,7 @@ class TestCheckImageDimension:
         """
         img1_ = rasterio_open("tests/pandora/left.png")
         img2_ = rasterio_open("tests/image/mask_left.tif")
-        with pytest.raises(SystemExit):
+        with pytest.raises(AttributeError, match="Images must have the same size"):
             check_image_dimension(img1_, img2_)
 
 
@@ -386,24 +373,30 @@ class TestCheckDisparitiesFromInput:
         check_disparities_from_input(disparity, img_left_path_)
 
     @pytest.mark.parametrize(
-        ["disparity", "img_path"],
+        ["disparity", "img_path", "string_match"],
         [
-            pytest.param([60, 0], "tests/pandora/left.png", id="int list disparities"),
             pytest.param(
-                "tests/pandora/disp_left.tif", "tests/pandora/left.png", id="image path with one band disparity"
+                [60, 0], "tests/pandora/left.png", "disp_max must be bigger than disp_min", id="int list disparities"
+            ),
+            pytest.param(
+                "tests/pandora/disp_left.tif",
+                "tests/pandora/left.png",
+                "Disparity grids must be a 2-channel grid",
+                id="image path with one band disparity",
             ),
             pytest.param(
                 "tests/pandora/tiny_left_disparity_grid.tif",
                 "tests/pandora/left.png",
+                "Disparity grids and image must have the same size",
                 id="image disparity with wrong dimension",
             ),
         ],
     )
-    def test_fails_with_wrong_disparities(self, disparity, img_path):
+    def test_fails_with_wrong_disparities(self, disparity, img_path, string_match):
         """
         Test with wrong disparities
         """
-        with pytest.raises(SystemExit):
+        with pytest.raises((AttributeError, ValueError), match=string_match):
             check_disparities_from_input(disparity, img_path)
 
 
@@ -432,7 +425,7 @@ class TestCheckDisparitiesFromDataset:
         check_disparities_from_dataset(disparity)
 
     @pytest.mark.parametrize(
-        ["disparity"],
+        ["disparity", "string_match"],
         [
             pytest.param(
                 xr.DataArray(
@@ -446,6 +439,7 @@ class TestCheckDisparitiesFromDataset:
                         "col": np.arange(4),
                     },
                 ),
+                "Disparity xr.Dataset must have a band_disp coordinate",
                 id="xarray DataArray with one band",
             ),
             pytest.param(
@@ -464,6 +458,7 @@ class TestCheckDisparitiesFromDataset:
                         "col": np.arange(4),
                     },
                 ),
+                "Disp_max grid must be bigger than Disp_min grid for each",
                 id="xarray DataArray disparities with max < min",
             ),
             pytest.param(
@@ -482,13 +477,14 @@ class TestCheckDisparitiesFromDataset:
                         "col": np.arange(4),
                     },
                 ),
+                "Disparity xr.Dataset must have a band_disp coordinate",
                 id="xarray DataArray disparities with wrong band names",
             ),
         ],
     )
-    def test_fails_with_wrong_disparities(self, disparity):
+    def test_fails_with_wrong_disparities(self, disparity, string_match):
         """
         Test with wrong disparities
         """
-        with pytest.raises(SystemExit):
+        with pytest.raises(AttributeError, match=string_match):
             check_disparities_from_dataset(disparity)

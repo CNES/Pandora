@@ -26,17 +26,21 @@ from __future__ import annotations
 
 import logging
 import logging.config
+import sys
 from os import PathLike
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple
 
 import xarray as xr
-import numpy as np
-from pkg_resources import iter_entry_points
 
 from . import common
+from .check_configuration import check_conf, check_datasets, read_config_file, read_multiscale_params
 from .img_tools import create_dataset_from_inputs
-from .check_configuration import check_conf, read_config_file, read_multiscale_params
 from .state_machine import PandoraMachine
+
+if sys.version_info < (3, 10):
+    from importlib_metadata import entry_points
+else:
+    from importlib.metadata import entry_points
 
 
 # pylint: disable=too-many-arguments
@@ -133,7 +137,7 @@ def import_plugin() -> None:
     Load all the registered entry points
     :return: None
     """
-    for entry_point in iter_entry_points(group="pandora.plugin"):
+    for entry_point in entry_points(group="pandora.plugin"):
         entry_point.load()
 
 
@@ -165,13 +169,15 @@ def main(cfg_path: PathLike | str, output: str, verbose: bool) -> None:
     setup_logging(verbose)
 
     # Read images and masks
-    input_config = common.split_inputs(cfg["input"])
-    img_left = create_dataset_from_inputs(input_config=input_config["left"])
-    # If input_config["right"]["disp"] is None then "disp_right_min" = - "disp_left_max"
+    img_left = create_dataset_from_inputs(input_config=cfg["input"]["left"])
+    # If cfg["input"]["right"]["disp"] is None then "disp_right_min" = - "disp_left_max"
     # and "disp_right_max" = - "disp_left_min"
-    if input_config["right"]["disp"] is None and not isinstance(input_config["left"]["disp"], str):
-        input_config["right"]["disp"] = [-input_config["left"]["disp"][1], -input_config["left"]["disp"][0]]
-    img_right = create_dataset_from_inputs(input_config=input_config["right"])
+    if cfg["input"]["right"]["disp"] is None and not isinstance(cfg["input"]["left"]["disp"], str):
+        cfg["input"]["right"]["disp"] = [-cfg["input"]["left"]["disp"][1], -cfg["input"]["left"]["disp"][0]]
+    img_right = create_dataset_from_inputs(input_config=cfg["input"]["right"])
+
+    # Check datasets: shape, format and content
+    check_datasets(img_left, img_right)
 
     # Run the Pandora pipeline
     left, right = run(pandora_machine, img_left, img_right, cfg)
@@ -179,5 +185,7 @@ def main(cfg_path: PathLike | str, output: str, verbose: bool) -> None:
     # Save the left and right DataArray in tiff files
     common.save_results(left, right, output)
 
+    # Update cfg with margins
+    cfg["margins"] = pandora_machine.margins.to_dict()
     # Save the configuration
     common.save_config(output, cfg)
