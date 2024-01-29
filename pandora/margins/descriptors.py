@@ -63,12 +63,10 @@ class FixedMargins(ReadOnlyDescriptor):
         self.value = Margins(left, up, right, down)
 
     @overload
-    def __get__(self, instance: None, owner: None) -> FixedMargins:
-        ...
+    def __get__(self, instance: None, owner: None) -> FixedMargins: ...
 
     @overload
-    def __get__(self, instance: object, owner: type[object]) -> Margins:
-        ...
+    def __get__(self, instance: object, owner: type[object]) -> Margins: ...
 
     def __get__(self, instance: object | None, owner: type[object] | None = None) -> FixedMargins | Margins:
         if instance is None:
@@ -103,12 +101,10 @@ class HalfWindowMargins(ReadOnlyDescriptor):
     # pylint:disable=too-few-public-methods
 
     @overload
-    def __get__(self, instance: None, owner: None) -> HalfWindowMargins:
-        ...
+    def __get__(self, instance: None, owner: None) -> HalfWindowMargins: ...
 
     @overload
-    def __get__(self, instance: object, owner: type[object]) -> Margins:
-        ...
+    def __get__(self, instance: object, owner: type[object]) -> Margins: ...
 
     def __get__(self, instance: object | None, owner: type[object] | None = None) -> HalfWindowMargins | Margins:
         if instance is None:
