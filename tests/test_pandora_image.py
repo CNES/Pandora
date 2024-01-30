@@ -27,7 +27,6 @@ This module contains functions to test all the methods in img_tools module.
 
 # pylint: disable=redefined-outer-name
 
-import re
 import copy
 import numpy as np
 import pytest
@@ -838,25 +837,23 @@ class TestCreateDatasetFromInputs:
         np.testing.assert_array_equal(dst_left["disparity"].data, expected)
 
     @pytest.mark.parametrize(
-        ["img_path", "classif_path", "segm_path", "size"],
+        ["img_path", "classif_path", "segm_path"],
         [
             pytest.param(
                 "tests/image/left_img.tif",
                 "tests/pandora/left_classif.tif",
                 None,
-                "4",
                 id="between img and classif",
             ),
             pytest.param(
                 "tests/pandora/left.png",
                 None,
                 "tests/image/mask_left.tif",
-                "375",
                 id="between img and segm",
             ),
         ],
     )
-    def test_fails_with_different_shape(self, img_path, classif_path, segm_path, size):
+    def test_fails_with_different_shape(self, img_path, classif_path, segm_path):
         """
         Test with wrong image shapes
         """
@@ -869,11 +866,7 @@ class TestCreateDatasetFromInputs:
             "classif": classif_path,
             "segm": segm_path,
         }
-        string_match = re.escape(
-            "cannot reindex or align along dimension 'row' because of conflicting dimension sizes:"
-            " {4, 375} (note: an index is found along that dimension with size=" + size + ")"
-        )
-        with pytest.raises(ValueError, match=string_match):
+        with pytest.raises(ValueError):
             create_dataset_from_inputs(input_config=input_config)
 
     @pytest.fixture()

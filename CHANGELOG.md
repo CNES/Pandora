@@ -30,6 +30,7 @@
 - Move allocate_cost_volume. [#343]
 - Change pkg_resources to importlib.metadata. [#349]
 - Update of the minimal version for python. [#377]
+- Update of the minimal version for python for CI github. [#365]
 
 
 ## 1.6.0a1 (November 2023)
