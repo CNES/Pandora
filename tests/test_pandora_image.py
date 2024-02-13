@@ -34,7 +34,6 @@ import rasterio
 from rasterio.windows import Window
 from rasterio.errors import RasterioIOError
 import xarray as xr
-from skimage.io import imsave
 
 import pandora
 from pandora import img_tools
@@ -628,12 +627,12 @@ class TestCreateDatasetFromInputs:
         np.testing.assert_array_equal(gt_transform, dst_left.attrs["transform"])
 
     @staticmethod
-    def test_inf_handling(tmp_path):
+    @pytest.mark.filterwarnings("ignore:Dataset has no geotransform")
+    def test_inf_handling(memory_tiff_file):
         """
         Test the create_dataset_from_inputs method when the image has input inf values
 
         """
-        image_path = tmp_path / "left_img.tif"
         imarray = np.array(
             (
                 [np.inf, 1, 2, 5],
@@ -642,17 +641,17 @@ class TestCreateDatasetFromInputs:
                 [4, np.inf, 4, -np.inf],
             )
         )
-        imsave(str(image_path), imarray, plugin="tifffile", photometric="MINISBLACK")
 
-        # Computes the dataset image
-        input_config = {
-            "left": {
-                "img": str(image_path),
-                "nodata": np.inf,
-                "disp": [-60, 0],
+        with memory_tiff_file(imarray) as left_image_file:
+            # Computes the dataset image
+            input_config = {
+                "left": {
+                    "img": left_image_file.name,
+                    "nodata": np.inf,
+                    "disp": [-60, 0],
+                }
             }
-        }
-        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
+            dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
 
         # The inf values should be set as -9999
         dst_img_correct = np.array(
@@ -667,12 +666,12 @@ class TestCreateDatasetFromInputs:
         np.testing.assert_array_equal(dst_img_correct, dst_left["im"].values)
 
     @staticmethod
-    def test_with_full_roi(default_cfg, tmp_path):
+    @pytest.mark.filterwarnings("ignore:Dataset has no geotransform")
+    def test_with_full_roi(default_cfg, memory_tiff_file):
         """
         Test the get_window and create_dataset_from_inputs method when the config has a roi
 
         """
-        image_path = tmp_path / "left_img.tif"
         imarray = np.array(
             (
                 [np.inf, 1, 2, 5, 1, 3, 6, 4, 9, 7, 8],
@@ -685,31 +684,31 @@ class TestCreateDatasetFromInputs:
                 [np.inf, 9, 4, 0, 1, 3, 7, 4, 6, 9, 2],
             )
         )
-        imsave(image_path, imarray, plugin="tifffile", photometric="MINISBLACK")
 
         # Roi
         roi = {"col": {"first": 3, "last": 5}, "row": {"first": 3, "last": 5}, "margins": [2, 2, 2, 2]}
         roi_gt = imarray[1:8, 1:8]
 
         # Check create_dataset_from_inputs
-        input_config = {
-            "left": {
-                "img": image_path,
-                "nodata": default_cfg["input"]["left"]["nodata"],
-                "disp": [-60, 0],
+        with memory_tiff_file(imarray) as left_image_file:
+            input_config = {
+                "left": {
+                    "img": left_image_file.name,
+                    "nodata": default_cfg["input"]["left"]["nodata"],
+                    "disp": [-60, 0],
+                }
             }
-        }
-        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"], roi=roi)
+            dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"], roi=roi)
 
         np.testing.assert_array_equal(dst_left["im"].data, roi_gt)
 
     @staticmethod
-    def test_with_none_roi(tmp_path, default_cfg):
+    @pytest.mark.filterwarnings("ignore:Dataset has no geotransform")
+    def test_with_none_roi(default_cfg, memory_tiff_file):
         """
         Test the create_dataset_from_inputs method when the config hasn't roi
 
         """
-        image_path = tmp_path / "left_img.tif"
         imarray = np.array(
             (
                 [np.inf, 1, 2, 5],
@@ -717,17 +716,17 @@ class TestCreateDatasetFromInputs:
                 [1, 2, np.inf, 3],
             )
         )
-        imsave(image_path, imarray, plugin="tifffile", photometric="MINISBLACK")
 
         # Check create_dataset_from_inputs
-        input_config = {
-            "left": {
-                "img": image_path,
-                "nodata": default_cfg["input"]["left"]["nodata"],
-                "disp": [-60, 0],
+        with memory_tiff_file(imarray) as left_image_file:
+            input_config = {
+                "left": {
+                    "img": left_image_file.name,
+                    "nodata": default_cfg["input"]["left"]["nodata"],
+                    "disp": [-60, 0],
+                }
             }
-        }
-        dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"], roi=None)
+            dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"], roi=None)
 
         np.testing.assert_array_equal(dst_left["im"].data, imarray)
 
@@ -870,11 +869,10 @@ class TestCreateDatasetFromInputs:
             create_dataset_from_inputs(input_config=input_config)
 
     @pytest.fixture()
-    def default_image_path(self, tmp_path):
+    def default_image_path(self, memory_tiff_file):
         """
         Create a fake image to test ROI in create_dataset_from_inputs
         """
-        image_path = tmp_path / "left_img.tif"
         imarray = np.array(
             (
                 [np.inf, 1, 2, 5, 1, 3, 6, 4, 9, 7, 8],
@@ -888,9 +886,8 @@ class TestCreateDatasetFromInputs:
             )
         )
 
-        imsave(image_path, imarray, plugin="tifffile", photometric="MINISBLACK")
-
-        return image_path
+        with memory_tiff_file(imarray) as left_image_file:
+            yield left_image_file.name
 
     @pytest.fixture()
     def default_input_roi(self, default_cfg, default_image_path):
@@ -937,6 +934,7 @@ class TestCreateDatasetFromInputs:
             ),
         ],
     )
+    @pytest.mark.filterwarnings("ignore:Dataset has no geotransform")
     def test_coords_roi(self, default_input_roi, roi, expected):
         """
         Test the create_dataset_from_inputs method when the config has a roi
