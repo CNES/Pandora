@@ -29,7 +29,6 @@ import numpy as np
 import xarray as xr
 import pytest
 
-from skimage.io import imsave
 from pandora import matching_cost
 from pandora.margins.descriptors import HalfWindowMargins
 from pandora.img_tools import create_dataset_from_inputs, add_disparity
@@ -98,11 +97,10 @@ class TestMatchingCost:
         np.testing.assert_array_equal(result, expected)
 
     @pytest.fixture()
-    def default_image_path(self, tmp_path):
+    def default_image_path(self, memory_tiff_file):
         """
         Create a fake image to test ROI in create_dataset_from_inputs
         """
-        image_path = tmp_path / "left_img.tif"
         imarray = np.array(
             (
                 [np.inf, 1, 2, 5, 1, 3, 6, 4, 9, 7, 8],
@@ -116,9 +114,8 @@ class TestMatchingCost:
             )
         )
 
-        imsave(image_path, imarray, plugin="tifffile", photometric="MINISBLACK")
-
-        return image_path
+        with memory_tiff_file(imarray) as tiff_file:
+            yield tiff_file.name
 
     @pytest.fixture()
     def default_input_roi(self, default_image_path):
