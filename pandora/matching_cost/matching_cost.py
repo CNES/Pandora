@@ -250,6 +250,64 @@ class AbstractMatchingCost:
         :rtype: xarray.Dataset
         """
 
+    def get_coordinates(self, margin: int, img_coordinates: np.ndarray) -> np.ndarray:
+        """
+        In the case of a ROI, computes the right coordinates to be sure to process the first point of the ROI.
+
+        :param margin: ROI margin
+        :type margin: int
+        :param img_coordinates: coordinates of the ROI with margins
+        :type img_coordinates: np.ndarray
+        :return: a np.ndarray that contains the right coordinates
+        :rtype: np.ndarray
+        """
+
+        index_compute_col = np.arange(img_coordinates[0], img_coordinates[-1] + 1, self._step_col)  # type: np.ndarray
+
+        # Check if the first column of roi is inside the final CV (with the step)
+        if margin % self._step_col != 0:
+            if margin < self._step_col:
+                # For example, given left_margin = 2 and step = 3
+                #
+                # roi_img = M M M M M M M
+                #           M M 1 2 3 M M
+                #           M M 4 5 6 M M
+                #           M M 7 8 9 M M
+                #           M M M M M M M
+                #
+                # Our starting point would be at index left_margin = 2 --> starting point = 1st point of ROI
+                # We are directly on the first point to compute
+
+                index_compute_col = np.arange(img_coordinates[0] + margin, img_coordinates[-1] + 1, self._step_col)
+            else:
+                # For example, given left_margin = 3 and step = 2
+                #
+                # roi_img = M M M M M M M M M
+                #           M M M 1 2 3 M M M
+                #           M M M 4 5 6 M M M
+                #           M M M 7 8 9 M M M
+                #           M M M M M M M M M
+                #
+                # Our starting point would be at index 1 --> starting point = 2nd M
+                # With a step of 2, the first point of ROI is calculated without cropping margins too much
+                #
+                # For example, given left_margin = 4 and step = 3
+                #
+                # roi_img = M M M M M M M M M M M
+                #           M M M M 1 2 3 M M M M
+                #           M M M M 4 5 6 M M M M
+                #           M M M M 7 8 9 M M M M
+                #           M M M M M M M M M M M
+                #
+                # Our starting point would be at index 1 --> starting point = 2nd M
+                # With a step of 3, the first point of ROI is calculated without cropping margins too much
+
+                # give the number of the first column to compute
+                start = self._step_col - (self.find_nearest_multiple_of_step(margin) - margin)
+                index_compute_col = np.arange(img_coordinates[0] + start, img_coordinates[-1] + 1, self._step_col)
+
+        return index_compute_col
+
     def grid_estimation(
         self, img: xr.Dataset, cfg: Union[Dict[str, dict], None], disparity_grids: Tuple[np.ndarray, np.ndarray]
     ) -> xr.Dataset:
@@ -271,60 +329,16 @@ class AbstractMatchingCost:
         """
         # Get col dimension
         c_col = img["im"].coords["col"]
-        col = np.arange(c_col[0], c_col[-1] + 1, self._step_col)  # type: np.ndarray
+
+        # Get the index of the columns that should be computed
+        if cfg and "ROI" in cfg:
+            index_compute_col = self.get_coordinates(cfg["ROI"]["margins"][0], c_col)
+        else:
+            index_compute_col = np.arange(c_col[0], c_col[-1] + 1, self._step_col)  # type: np.ndarray # type: ignore
 
         # get disparity_range
         disparity_min, disparity_max = self.get_min_max_from_grid(*disparity_grids)
         disparity_range = self.get_disparity_range(disparity_min, disparity_max, self._subpix)
-
-        # Index to be kept in the cost volume once it has been calculated
-        index_compute_col = col
-
-        # Get the index of the columns that should be computed
-        if cfg and "ROI" in cfg:
-            left_margin = cfg["ROI"]["margins"][0]
-
-            # Check if the first column of roi is inside the final CV (with the step)
-            if left_margin % self._step_col != 0:
-                if left_margin < self._step_col:
-                    # For example, given left_margin = 2 and step = 3
-                    #
-                    # roi_img = M M M M M M M
-                    #           M M 1 2 3 M M
-                    #           M M 4 5 6 M M
-                    #           M M 7 8 9 M M
-                    #           M M M M M M M
-                    #
-                    # Our starting point would be at index left_margin = 2 --> starting point = 1st point of ROI
-                    # We are directly on the first point to compute
-
-                    index_compute_col = np.arange(c_col[0] + left_margin, c_col[-1] + 1, self._step_col)
-                else:
-                    # For example, given left_margin = 3 and step = 2
-                    #
-                    # roi_img = M M M M M M M M M
-                    #           M M M 1 2 3 M M M
-                    #           M M M 4 5 6 M M M
-                    #           M M M 7 8 9 M M M
-                    #           M M M M M M M M M
-                    #
-                    # Our starting point would be at index 1 --> starting point = 2nd M
-                    # With a step of 2, the first point of ROI is calculated without cropping margins too much
-                    #
-                    # For example, given left_margin = 4 and step = 3
-                    #
-                    # roi_img = M M M M M M M M M M M
-                    #           M M M M 1 2 3 M M M M
-                    #           M M M M 4 5 6 M M M M
-                    #           M M M M 7 8 9 M M M M
-                    #           M M M M M M M M M M M
-                    #
-                    # Our starting point would be at index 1 --> starting point = 2nd M
-                    # With a step of 3, the first point of ROI is calculated without cropping margins too much
-
-                    # give the number of the first column to compute
-                    start = self._step_col - (self.find_nearest_multiple_of_step(left_margin) - left_margin)
-                    index_compute_col = np.arange(c_col[0] + start, c_col[-1] + 1, self._step_col)
 
         # Instantiate grid
         grid = xr.Dataset(
@@ -338,6 +352,7 @@ class AbstractMatchingCost:
         grid.attrs["sampling_interval"] = self._step_col
         # Add index of columns to compute in grid attributes
         grid.attrs["col_to_compute"] = index_compute_col
+
         return grid
 
     def allocate_cost_volume(
