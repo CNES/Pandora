@@ -9,4 +9,5 @@ This section describes the main conceptual principles used in Pandora.
    :maxdepth: 2
    
    exploring_the_field/criteria.rst
+   exploring_the_field/cv_masked.rst
    
