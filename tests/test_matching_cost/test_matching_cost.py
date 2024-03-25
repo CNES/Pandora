@@ -101,6 +101,48 @@ class TestMatchingCost:
 
         np.testing.assert_array_equal(result, expected)
 
+    @pytest.mark.parametrize(
+        ["step", "margin", "img_coordinates", "ground_truth"],
+        [
+            pytest.param(
+                2,
+                4,
+                np.arange(0, 20, 2),
+                np.arange(0, 20, 2),
+                id="margin % self._step_col = 0",
+            ),
+            pytest.param(
+                3,
+                2,
+                np.arange(8, 24, 3),
+                np.arange(10, 24, 3),
+                id="margin % self._step_col != 0 and margin < self._step_col",
+            ),
+            pytest.param(
+                2,
+                3,
+                np.arange(7, 24, 2),
+                np.arange(8, 24, 2),
+                id="margin % self._step_col != 0 and margin > self._step_col",
+            ),
+        ],
+    )
+    def test_get_coordinates(self, step, margin, img_coordinates, ground_truth):
+        """
+        Test the get_coordinates method
+        """
+
+        # Create matching cost object
+        matching_cost_ = matching_cost.AbstractMatchingCost(**common.basic_pipeline_cfg["matching_cost"])
+
+        # Update step for matching cost
+        matching_cost_._step_col = step  # pylint: disable=protected-access
+
+        # Compute new indexes
+        index_to_compute = matching_cost_.get_coordinates(margin, img_coordinates)
+
+        np.testing.assert_array_equal(index_to_compute, ground_truth)
+
     @pytest.fixture()
     def default_image_path(self, memory_tiff_file):
         """
@@ -233,10 +275,7 @@ class TestMatchingCost:
             pytest.param(
                 {"col": {"first": 3, "last": 4}, "row": {"first": 3, "last": 4}, "margins": [3, 3, 3, 3]},
                 2,  # step value
-                {
-                    "sampling_interval": 2,
-                    "col_to_compute": np.array([1, 3, 5, 7]),
-                },
+                {"sampling_interval": 2, "col_to_compute": np.array([1, 3, 5, 7])},
                 id="ROI in user_configuration and margin % step != 0 with margin > step",
             ),
             pytest.param(
