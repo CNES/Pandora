@@ -134,6 +134,14 @@ class GlobalMargins:
             "global margins": self.global_margins.asdict(),
         }
 
+    def get(self, key):
+        """Find key in cumulative margins or non-cumulative margins and return corresponding margins"""
+        if key in self._cumulatives:
+            return self._cumulatives[key]
+        if key in self._non_cumulatives:
+            return self._non_cumulatives[key]
+        return None
+
 
 def max_margins(margins: Sequence[Margins]) -> Margins:
     """
