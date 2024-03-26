@@ -61,12 +61,14 @@ class TestMarginDict:
     """We test the behavior of some methods that extend a regular dict containing Margins."""
 
     def test_only_accept_margins_values_at_init(self):
+        """MarginDict accept values at init."""
         with pytest.raises(
             ValueError, match="MarginDict only accept values of type Margins. Got <class 'tuple'> instead."
         ):
             MarginDict(step1=(0, 0, 0, 0))
 
     def test_only_accept_margins_values_at_update(self):
+        """MarginDict accept values at update."""
         margin_dict = MarginDict(step1=Margins(0, 0, 0, 0))
         with pytest.raises(
             ValueError, match="MarginDict only accept values of type Margins. Got <class 'tuple'> instead."
@@ -74,6 +76,7 @@ class TestMarginDict:
             margin_dict.update({"step2": (1, 1, 1, 1)})
 
     def test_only_accept_margins_values_at_insertion(self):
+        """MarginDict accept values at insertion."""
         margin_dict = MarginDict(step1=Margins(0, 0, 0, 0))
         with pytest.raises(
             ValueError, match="MarginDict only accept values of type Margins. Got <class 'tuple'> instead."
@@ -82,12 +85,16 @@ class TestMarginDict:
             margin_dict["step2"] = (1, 1, 1, 1)  # type: ignore[assignment]
 
     def test_sum(self):
+        """We test sum method."""
         margin_dict = MarginDict(step1=Margins(0, 0, 0, 0), step2=Margins(1, 1, 1, 1), step3=Margins(2, 2, 2, 2))
         assert margin_dict.sum() == Margins(3, 3, 3, 3)
 
 
 class TestGlobalMargins:
+    """We test GlobalMargins class."""
+
     def test_can_not_add_non_cumulative_margins_if_already_present_in_cumulative(self):
+        """Test add margins if already present in dict."""
         global_margins = GlobalMargins()
         global_margins.add_cumulative("step1", Margins(1, 1, 1, 1))
         with pytest.raises(
@@ -99,6 +106,7 @@ class TestGlobalMargins:
             global_margins.add_non_cumulative("step1", Margins(2, 2, 2, 2))
 
     def test_can_not_add_cumulative_margins_if_already_present_in_non_cumulative(self):
+        """Test add margins if already present in dict."""
         global_margins = GlobalMargins()
         global_margins.add_non_cumulative("step1", Margins(1, 1, 1, 1))
         with pytest.raises(
@@ -111,6 +119,7 @@ class TestGlobalMargins:
             global_margins.add_cumulative("step1", Margins(2, 2, 2, 2))
 
     def test_cumulatives_cannot_be_modified_from_outside(self):
+        """Test dict cannot be updated from outside."""
         global_margins = GlobalMargins()
         global_margins.add_cumulative("step1", Margins(1, 1, 1, 1))
 
@@ -119,6 +128,7 @@ class TestGlobalMargins:
         assert global_margins.cumulatives == MarginDict(step1=Margins(1, 1, 1, 1))
 
     def test_non_cumulatives_cannot_be_modified_from_outside(self):
+        """Test dict cannot be updated from outside."""
         global_margins = GlobalMargins()
         global_margins.add_non_cumulative("step1", Margins(1, 1, 1, 1))
 
@@ -127,6 +137,7 @@ class TestGlobalMargins:
         assert global_margins.non_cumulatives == MarginDict(step1=Margins(1, 1, 1, 1))
 
     def test_can_remove_cumulative_margins(self):
+        """Test dict can remove item."""
         global_margins = GlobalMargins()
         global_margins.add_cumulative("step1", Margins(1, 1, 1, 1))
 
@@ -135,6 +146,7 @@ class TestGlobalMargins:
         assert global_margins.cumulatives == MarginDict()
 
     def test_can_remove_non_cumulative_margins(self):
+        """Test dict can remove item."""
         global_margins = GlobalMargins()
         global_margins.add_non_cumulative("step1", Margins(1, 1, 1, 1))
 
@@ -160,6 +172,7 @@ class TestGlobalMargins:
         ],
     )
     def test_global_property(self, cumulatives, non_cumulatives, expected):
+        """Test add_cumulative and add_non_cumulative method."""
         global_margins = GlobalMargins()
         for step, margins in cumulatives.items():
             global_margins.add_cumulative(step, margins)
@@ -169,6 +182,7 @@ class TestGlobalMargins:
         assert global_margins.global_margins == expected
 
     def test_to_dict(self):
+        """Test to_disp method."""
         global_margins = GlobalMargins()
         global_margins.add_cumulative("matching_cost", Margins(2, 2, 2, 2))
         global_margins.add_cumulative("disparity", Margins(0, 0, 0, 0))
@@ -187,6 +201,42 @@ class TestGlobalMargins:
             },
             "global margins": {"left": 3, "up": 3, "right": 3, "down": 3},
         }
+
+    @pytest.mark.parametrize(
+        ["cumulatives", "non_cumulatives", "key", "expected"],
+        [
+            pytest.param(
+                {"step1": Margins(1, 1, 1, 1), "step2": Margins(1, 1, 1, 1)},
+                {"step3": Margins(3, 3, 3, 3)},
+                "step1",
+                Margins(1, 1, 1, 1),
+                id="cumulative key",
+            ),
+            pytest.param(
+                {"step1": Margins(1, 1, 1, 1), "step2": Margins(4, 1, 1, 1)},
+                {"step3": Margins(3, 3, 3, 3)},
+                "step3",
+                Margins(3, 3, 3, 3),
+                id="Non cumulative key",
+            ),
+            pytest.param(
+                {"step1": Margins(1, 1, 1, 1), "step2": Margins(4, 1, 1, 1)},
+                {"step3": Margins(3, 3, 3, 3)},
+                "step4",
+                None,
+                id="Key not exists",
+            ),
+        ],
+    )
+    def test_get(self, cumulatives, non_cumulatives, key, expected):
+        """Test get method."""
+        global_margins = GlobalMargins()
+        for step, margins in cumulatives.items():
+            global_margins.add_cumulative(step, margins)
+        for step, margins in non_cumulatives.items():
+            global_margins.add_non_cumulative(step, margins)
+
+        assert global_margins.get(key) == expected
 
 
 @pytest.mark.parametrize(
