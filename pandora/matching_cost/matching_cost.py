@@ -250,7 +250,7 @@ class AbstractMatchingCost:
         :rtype: xarray.Dataset
         """
 
-    def get_coordinates(self, margin: int, img_coordinates: np.ndarray) -> np.ndarray:
+    def get_coordinates(self, margin: int, img_coordinates: np.ndarray, step: int) -> np.ndarray:
         """
         In the case of a ROI, computes the right coordinates to be sure to process the first point of the ROI.
 
@@ -258,15 +258,17 @@ class AbstractMatchingCost:
         :type margin: int
         :param img_coordinates: coordinates of the ROI with margins
         :type img_coordinates: np.ndarray
+        :param step: matching cost step value
+        :type step: int
         :return: a np.ndarray that contains the right coordinates
         :rtype: np.ndarray
         """
 
-        index_compute_col = np.arange(img_coordinates[0], img_coordinates[-1] + 1, self._step_col)  # type: np.ndarray
+        index_compute_col = np.arange(img_coordinates[0], img_coordinates[-1] + 1, step)  # type: np.ndarray
 
         # Check if the first column of roi is inside the final CV (with the step)
-        if margin % self._step_col != 0:
-            if margin < self._step_col:
+        if margin % step != 0:
+            if margin < step:
                 # For example, given left_margin = 2 and step = 3
                 #
                 # roi_img = M M M M M M M
@@ -278,7 +280,7 @@ class AbstractMatchingCost:
                 # Our starting point would be at index left_margin = 2 --> starting point = 1st point of ROI
                 # We are directly on the first point to compute
 
-                index_compute_col = np.arange(img_coordinates[0] + margin, img_coordinates[-1] + 1, self._step_col)
+                index_compute_col = np.arange(img_coordinates[0] + margin, img_coordinates[-1] + 1, step)
             else:
                 # For example, given left_margin = 3 and step = 2
                 #
@@ -303,8 +305,8 @@ class AbstractMatchingCost:
                 # With a step of 3, the first point of ROI is calculated without cropping margins too much
 
                 # give the number of the first column to compute
-                start = self._step_col - (self.find_nearest_multiple_of_step(margin) - margin)
-                index_compute_col = np.arange(img_coordinates[0] + start, img_coordinates[-1] + 1, self._step_col)
+                start = step - (self.find_nearest_multiple_of_step(margin, step) - margin)
+                index_compute_col = np.arange(img_coordinates[0] + start, img_coordinates[-1] + 1, step)
 
         return index_compute_col
 
@@ -332,7 +334,7 @@ class AbstractMatchingCost:
 
         # Get the index of the columns that should be computed
         if cfg and "ROI" in cfg:
-            index_compute_col = self.get_coordinates(cfg["ROI"]["margins"][0], c_col)
+            index_compute_col = self.get_coordinates(cfg["ROI"]["margins"][0], c_col, self._step_col)
         else:
             index_compute_col = np.arange(c_col[0], c_col[-1] + 1, self._step_col)  # type: np.ndarray # type: ignore
 
@@ -583,16 +585,18 @@ class AbstractMatchingCost:
         """
         return int(np.nanmin(disp_min)), int(np.nanmax(disp_max))
 
-    def find_nearest_multiple_of_step(self, value: int) -> int:
+    def find_nearest_multiple_of_step(self, value: int, step: int) -> int:
         """
         In case value is not a multiple of step, find nearest greater value for which it is the case.
 
         :param value: Initial value.
         :type: value: int
+        :param step: matching cost step value
+        :type step: int
         :return: nearest multiple of step.
         :rtype: int
         """
-        while value % self._step_col != 0:
+        while value % step != 0:
             value += 1
         return value
 

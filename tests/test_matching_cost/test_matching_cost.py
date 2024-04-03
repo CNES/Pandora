@@ -38,7 +38,7 @@ from pandora import matching_cost
 from pandora.criteria import validity_mask
 from pandora.margins.descriptors import HalfWindowMargins
 from pandora.img_tools import create_dataset_from_inputs, add_disparity, add_disparity_grid
-from tests import common
+from tests import common  # pylint: disable=no-name-in-module
 
 
 @pytest.fixture()
@@ -135,11 +135,8 @@ class TestMatchingCost:
         # Create matching cost object
         matching_cost_ = matching_cost.AbstractMatchingCost(**common.basic_pipeline_cfg["matching_cost"])
 
-        # Update step for matching cost
-        matching_cost_._step_col = step  # pylint: disable=protected-access
-
         # Compute new indexes
-        index_to_compute = matching_cost_.get_coordinates(margin, img_coordinates)
+        index_to_compute = matching_cost_.get_coordinates(margin, img_coordinates, step)
 
         np.testing.assert_array_equal(index_to_compute, ground_truth)
 
@@ -496,9 +493,8 @@ class TestMatchingCost:
         matching_cost_ = matching_cost.AbstractMatchingCost(
             **{"matching_cost_method": "census", "window_size": 5, "subpix": 4, "band": "b"}
         )
-        matching_cost_._step_col = step_col  # pylint:disable=protected-access
 
-        result = matching_cost_.find_nearest_multiple_of_step(value)
+        result = matching_cost_.find_nearest_multiple_of_step(value, step_col)
 
         assert result == expected
 
