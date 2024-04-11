@@ -58,9 +58,17 @@ The filtering methods allow to homogenize the disparity maps, those available in
      - false
      - true, false
      - No. Only available if "median_for_intervals" filter
+   * - *interval_indicator*
+     - | Indicator for which interval to filter.
+       | Ex: If *cfg* contains a step "cost_volume_confidence.intervals"
+       | then *interval_indicator* should be "intervals"
+     - str
+     - ""
+     - 
+     - No. Only available if "median_for_intervals" filter
    * - *ambiguity_indicator*
      - | Indicator for which ambiguity to use during regularization.
-       | Ex: If *cfg* contains a step "confidence_from_ambiguity.amb"
+       | Ex: If *cfg* contains a step "cost_volume_confidence.amb"
        | then *ambiguity_indicator* should be "amb"
      - str
      - ""
