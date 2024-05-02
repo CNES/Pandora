@@ -439,9 +439,17 @@ class AbstractMatchingCost:
         nx_right = int(img_right.sizes["col"])
 
         # range in the left image
-        point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))
+        # if disp is outside the image, point_p corresponds to an empty range
+        if abs(disp) > nx_left:
+            point_p = (nx_left, nx_left)
+        else:
+            point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))  # type: ignore
         # range in the right image
-        point_q = (max(0 + disp, 0), min(nx_right + disp, nx_right))
+        # if disp is outside the image, point_q corresponds to an empty range
+        if abs(disp) > nx_right:
+            point_q = (nx_right, nx_right)
+        else:
+            point_q = (max(0 + disp, 0), min(nx_right + disp, nx_right))  # type: ignore
 
         # Because the disparity can be floating
         if disp < 0:
