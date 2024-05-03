@@ -20,6 +20,8 @@
 Set of fixtures available to all tests.
 """
 
+# pylint: disable=redefined-outer-name
+
 from contextlib import contextmanager
 from typing import Union, Iterable, Generator, Callable
 
@@ -73,3 +75,40 @@ def memory_tiff_file() -> Callable:
             yield memory_file
 
     return context_manager
+
+
+@pytest.fixture()
+def left_img_path():
+    return "tests/pandora/left.png"
+
+
+@pytest.fixture()
+def right_img_path():
+    return "tests/pandora/right.png"
+
+
+@pytest.fixture()
+def correct_input_cfg(disp, left_img_path, right_img_path):
+    return {
+        "input": {
+            "left": {"img": left_img_path, "disp": disp, "nodata": np.nan},
+            "right": {
+                "img": right_img_path,
+                "nodata": np.nan,
+            },
+        },
+    }
+
+
+@pytest.fixture
+def correct_pipeline_cfg(matching_cost_method, window_size, subpix):
+    return {
+        "pipeline": {
+            "matching_cost": {
+                "matching_cost_method": matching_cost_method,
+                "window_size": window_size,
+                "subpix": subpix,
+            },
+            "disparity": {"disparity_method": "wta", "invalid_disparity": "NaN"},
+        }
+    }
