@@ -51,6 +51,11 @@ def left(images):
     return images[0]
 
 
+@pytest.fixture()
+def right(images):
+    return images[1]
+
+
 class TestMatchingCost:
     """
     TestMatchingCost class allows to test the methods in the class MatchingCost
@@ -100,6 +105,94 @@ class TestMatchingCost:
         result = matching_cost.AbstractMatchingCost.crop_cost_volume(cost_volume, offset)  # type:ignore
 
         np.testing.assert_array_equal(result, expected)
+
+    @pytest.mark.parametrize("matching_cost_method", ["census", "sad", "ssd"])
+    @pytest.mark.parametrize(
+        ["disp", "p_ground_truth_disp", "q_ground_truth_disp"],
+        [
+            pytest.param(
+                0,  # for disparity = 0, the similarity measure will be applied over the whole images
+                (0, 6),  # 6 = left["im"].shape[1]
+                (0, 6),  # 6 = right["im"].shape[1]),
+                id="Disparity=0",
+            ),
+            pytest.param(
+                -2,
+                # for disparity = -2, the similarity measure will be applied over the range
+                #          row=2   row=6        row=0   row=4
+                #           1 1 1 1             1 1 1 2
+                #           1 1 2 1             1 1 1 4
+                #           1 4 3 1             1 1 1 4
+                #           1 1 1 1             1 1 1 1
+                #           1 1 1 1             1 1 1 1
+                (2, 6),
+                (0, 4),
+                id="Disparity=-2",
+            ),
+            pytest.param(
+                2,
+                # for disparity = -2, the similarity measure will be applied over the range
+                #          row=0   row=4        row=2   row=6
+                #           1 1 1 1             1 2 2 2
+                #           1 1 1 1             1 4 2 4
+                #           1 1 1 4             1 4 4 1
+                #           1 1 1 1             1 1 1 1
+                #           1 1 1 1             1 1 1 1
+                (0, 4),
+                (2, 6),
+                id="Disparity=2",
+            ),
+            pytest.param(
+                -2.5,  # Test for negative floating disparity
+                (3, 6),
+                (0, 4),
+                id="Disparity=-2.5",
+            ),
+            pytest.param(
+                2.5,  # Test for positive floating disparity
+                (0, 3),
+                (2, 6),
+                id="Disparity=2.5",
+            ),
+            pytest.param(
+                7,  # disparity = 7 outside the image
+                (6, 6),
+                (6, 6),
+                id="Disparity=7",
+            ),
+            pytest.param(
+                -7,  # disparity = -7 outside the image
+                (6, 6),
+                (6, 6),
+                id="Disparity=-7",
+            ),
+            pytest.param(
+                5,
+                (0, 1),
+                (5, 6),
+                id="Disparity=5",
+            ),
+            pytest.param(
+                -5,
+                (5, 6),
+                (0, 1),
+                id="Disparity=-5",
+            ),
+        ],
+    )
+    def test_point_interval(self, matching_cost_method, disp, p_ground_truth_disp, q_ground_truth_disp, left, right):
+        """
+        Test the point interval method
+        """
+        matching_cost_ = matching_cost.AbstractMatchingCost(
+            **{"matching_cost_method": matching_cost_method, "window_size": 3, "subpix": 1}
+        )
+
+        (point_p, point_q) = matching_cost_.point_interval(left, right, disp)
+
+        # Check if the calculated range is equal to the ground truth
+        np.testing.assert_array_equal(point_p, p_ground_truth_disp)
+        np.testing.assert_array_equal(point_q, q_ground_truth_disp)
 
     @pytest.mark.parametrize(
         ["step", "margin", "img_coordinates", "ground_truth"],
