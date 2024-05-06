@@ -167,11 +167,17 @@ ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial
         "pipeline" :
         {
             // ...
-            "cost_volume_confidence":
+            "cost_volume_confidence.amb":
             {
                 "confidence_method": "ambiguity",
                 "eta_max": 0.7,
                 "eta_step": 0.01
+            },
+            "cost_volume_confidence.int":
+            {
+                "confidence_method": "interval_bounds",
+                "regularization": true,
+                "ambiguity_indicator": "amb"  // Using the ambiguity computed above for regularization
             }
             // ...
         }
