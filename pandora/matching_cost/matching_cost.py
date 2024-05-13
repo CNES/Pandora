@@ -439,9 +439,17 @@ class AbstractMatchingCost:
         nx_right = int(img_right.sizes["col"])
 
         # range in the left image
-        point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))
+        # if disp is outside the image, point_p corresponds to an empty range
+        if abs(disp) > nx_left:
+            point_p = (nx_left, nx_left)
+        else:
+            point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))  # type: ignore
         # range in the right image
-        point_q = (max(0 + disp, 0), min(nx_right + disp, nx_right))
+        # if disp is outside the image, point_q corresponds to an empty range
+        if abs(disp) > nx_right:
+            point_q = (nx_right, nx_right)
+        else:
+            point_q = (max(0 + disp, 0), min(nx_right + disp, nx_right))  # type: ignore
 
         # Because the disparity can be floating
         if disp < 0:
@@ -670,11 +678,13 @@ class AbstractMatchingCost:
                 point_p = (point_p[0], self.find_nearest_column(point_p[1], coords_column_left, "-"))
                 point_q = (self.find_nearest_column(point_q[0], coords_column_right, "-"), point_q[1])
 
-        column_interval_left = np.arange(point_p[0], point_p[-1] + 1)
-        column_interval_right = np.arange(point_q[0], point_q[-1] + 1)
-
-        if column_interval_left.shape[0] != column_interval_right.shape[0]:
-            column_interval_right = np.delete(column_interval_right, -1)
+        # if disparity is outside the image, returned column_interval_left and column_interval right are empty
+        if abs(disp) > len(coords_column_right):
+            column_interval_left = np.array([])
+            column_interval_right = np.array([])
+        else:
+            column_interval_left = np.arange(point_p[0], point_p[-1] + 1)
+            column_interval_right = np.arange(point_q[0], point_q[-1] + 1)
 
         return column_interval_left, column_interval_right
 

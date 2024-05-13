@@ -24,6 +24,9 @@
 """
 This module contains functions to test the Zncc matching cost step.
 """
+
+# pylint: disable=redefined-outer-name
+
 import unittest
 import pytest
 
@@ -292,3 +295,106 @@ class TestMatchingCostZncc(unittest.TestCase):
 if __name__ == "__main__":
     common.setup_logging()
     unittest.main()
+
+
+@pytest.fixture()
+def images():
+    return common.matching_cost_tests_setup()
+
+
+@pytest.fixture()
+def left(images):
+    return images[0]
+
+
+@pytest.fixture()
+def right(images):
+    return images[1]
+
+
+@pytest.mark.parametrize(
+    ["disp", "p_ground_truth_disp", "q_ground_truth_disp"],
+    [
+        pytest.param(
+            0,  # for disparity = 0, the similarity measure will be applied over the whole images
+            (0, 6),  # 6 = left["im"].shape[1]
+            (0, 6),  # 6 = right["im"].shape[1]),
+            id="Disparity=0",
+        ),
+        pytest.param(
+            -2,
+            # for disparity = -2, the similarity measure will be applied over the range
+            #          row=2   row=6        row=0   row=4
+            #           1 1 1 1             1 1 1 2
+            #           1 1 2 1             1 1 1 4
+            #           1 4 3 1             1 1 1 4
+            #           1 1 1 1             1 1 1 1
+            #           1 1 1 1             1 1 1 1
+            (2, 6),
+            (0, 4),
+            id="Disparity=-2",
+        ),
+        pytest.param(
+            2,
+            # for disparity = -2, the similarity measure will be applied over the range
+            #          row=0   row=4        row=2   row=6
+            #           1 1 1 1             1 2 2 2
+            #           1 1 1 1             1 4 2 4
+            #           1 1 1 4             1 4 4 1
+            #           1 1 1 1             1 1 1 1
+            #           1 1 1 1             1 1 1 1
+            (0, 4),
+            (2, 6),
+            id="Disparity=2",
+        ),
+        pytest.param(
+            -2.5,  # Test for negative floating disparity
+            (3, 6),
+            (0, 4),
+            id="Disparity=-2.5",
+        ),
+        pytest.param(
+            2.5,  # Test for positive floating disparity
+            (0, 3),
+            (2, 6),
+            id="Disparity=2.5",
+        ),
+        pytest.param(
+            7,  # disparity = 7 outside the image
+            (6, 6),
+            (6, 6),
+            id="Disparity=7",
+        ),
+        pytest.param(
+            -7,  # disparity = -7 outside the image
+            (6, 6),
+            (6, 6),
+            id="Disparity=-7",
+        ),
+        pytest.param(
+            5,  # disparity = 5 --> abs(5) > nb_col - int(window_size/2)*2
+            (6, 6),
+            (6, 6),
+            id="Disparity=5",
+        ),
+        pytest.param(
+            -5,  # disparity = -5 --> abs(5) > nb_col - int(window_size/2)*2
+            (6, 6),
+            (6, 6),
+            id="Disparity=-5",
+        ),
+    ],
+)
+def test_point_interval_zncc(disp, p_ground_truth_disp, q_ground_truth_disp, left, right):
+    """
+    Test the point interval method with zncc similarity measure
+    """
+    matching_cost_ = matching_cost.AbstractMatchingCost(
+        **{"matching_cost_method": "zncc", "window_size": 3, "subpix": 1}
+    )
+
+    (point_p, point_q) = matching_cost_.point_interval(left, right, disp)
+
+    # Check if the calculated range is equal to the ground truth
+    np.testing.assert_array_equal(point_p, p_ground_truth_disp)
+    np.testing.assert_array_equal(point_q, q_ground_truth_disp)

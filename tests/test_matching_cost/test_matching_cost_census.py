@@ -128,39 +128,6 @@ class TestMatchingCostCensus(unittest.TestCase):
         np.testing.assert_array_equal(census["cost_volume"].sel(disp=0), census_ground_truth_d2)
         np.testing.assert_array_equal(census["cost_volume"].sel(disp=1), census_ground_truth_d3)
 
-    def test_point_interval(self):
-        """
-        Test the point interval method
-
-        """
-        matching_cost_matcher = matching_cost.AbstractMatchingCost(
-            **{"matching_cost_method": "census", "window_size": 3, "subpix": 1}
-        )
-
-        # Using the two images in self.left, self.right,
-        # for disparity = 0, the similarity measure will be applied over the whole images
-        p_ground_truth_disp = (0, self.left["im"].shape[1])
-        q_ground_truth_disp = (0, self.right["im"].shape[1])
-        calculated_range = matching_cost_matcher.point_interval(self.left, self.right, 0)
-
-        # Check if the calculated range is equal to the ground truth
-        np.testing.assert_array_equal(calculated_range[0], p_ground_truth_disp)
-        np.testing.assert_array_equal(calculated_range[1], q_ground_truth_disp)
-
-        # for disparity = -2, the similarity measure will be applied over the range
-        #          row=2   row=6        row=0   row=4
-        #           1 1 1 1             1 1 1 2
-        #           1 1 2 1             1 1 1 4
-        #           1 4 3 1             1 1 1 4
-        #           1 1 1 1             1 1 1 1
-        #           1 1 1 1             1 1 1 1
-        p_ground_truth_disp = (2, 6)
-        q_ground_truth_disp = (0, 4)
-        calculated_range = matching_cost_matcher.point_interval(self.left, self.right, -2)
-        # Check if the calculated range is equal to the ground truth
-        np.testing.assert_array_equal(calculated_range[0], p_ground_truth_disp)
-        np.testing.assert_array_equal(calculated_range[1], q_ground_truth_disp)
-
     def test_popcount32b(self):
         """
         Test the popcount32b method
