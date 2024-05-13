@@ -686,9 +686,6 @@ class AbstractMatchingCost:
             column_interval_left = np.arange(point_p[0], point_p[-1] + 1)
             column_interval_right = np.arange(point_q[0], point_q[-1] + 1)
 
-        if column_interval_left.shape[0] != column_interval_right.shape[0]:
-            column_interval_right = np.delete(column_interval_right, -1)
-
         return column_interval_left, column_interval_right
 
     def mask_column_interval(
