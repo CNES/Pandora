@@ -1,0 +1,56 @@
+{
+    "input": {
+      "left": {
+        "img": "./left.png",
+        "disp": [-60, 0]
+      },
+      "right": {
+        "img": "./right.png"
+      }
+    },
+    "pipeline":
+    {
+      "matching_cost" : {
+        "matching_cost_method": "census",
+        "window_size": 5,
+        "subpix": 1
+      },
+      "cost_volume_confidence.before": {
+        "confidence_method": "ambiguity",
+        "eta_max": 0.7,
+        "eta_step": 0.01
+      },
+      "optimization" : {
+        "optimization_method": "sgm",
+        "use_confidence": "cost_volume_confidence.before",
+        "overcounting": false,
+        "penalty" : {
+          "penalty_method": "sgm_penalty",
+          "P1": 8,
+          "P2": 32,
+          "p2_method": "constant"
+        }
+      },
+      "cost_volume_confidence.after": {
+        "confidence_method": "ambiguity",
+        "eta_max": 0.7,
+        "eta_step": 0.01
+      },
+      "disparity": {
+        "disparity_method": "wta",
+        "invalid_disparity": "NaN"
+      },
+      "refinement": {
+        "refinement_method": "vfit"
+      },
+      "filter" : {
+        "filter_method": "median",
+        "filter_size": 3
+      },
+      "validation" : {
+        "validation_method": "cross_checking_accurate",
+        "cross_checking_threshold": 1
+      }
+    }
+  }
+  

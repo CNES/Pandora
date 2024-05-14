@@ -63,6 +63,7 @@ extensions = [
     "sphinx_rtd_theme",
     "sphinx.ext.imgmath",
     "autoapi.extension",
+    "sphinx_tabs.tabs",
 ]
 
 # imgmath configuration
