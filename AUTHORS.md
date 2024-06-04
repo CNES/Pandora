@@ -29,6 +29,7 @@ This file keeps track of authors contributions.
 * Yoann Steux <yoann.steux@csgroup.eu>
 * Mathis Roux <mathis.roux@csgroup.eu>
 * David Youssefi <David.Youssefi@cnes.fr>
+* Roman Malinowski <roman.malinowski@hds.utc.fr>
 
 Update here with new contributors.
 
