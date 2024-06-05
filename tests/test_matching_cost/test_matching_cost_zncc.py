@@ -3,7 +3,7 @@
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2024 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -24,6 +24,9 @@
 """
 This module contains functions to test the Zncc matching cost step.
 """
+
+# pylint: disable=redefined-outer-name
+
 import unittest
 import pytest
 
@@ -196,220 +199,6 @@ class TestMatchingCostZncc(unittest.TestCase):
         np.testing.assert_array_equal(cv_zncc_subpixel["cost_volume"].data, cost_volume_ground_truth)
 
     @staticmethod
-    def test_masks_invalid_pixels():
-        """
-        Test the method masks_invalid_pixels
-
-        """
-        # ------------ Test the method with a left mask ( right mask contains valid pixels ) ------------
-        # Mask convention
-        # cfg['image']['valid_pixels'] = 0
-        # cfg['image']['no_data'] = 1
-        # invalid_pixels all other values
-        data = np.array(([1, 1, 1, 3, 4], [1, 2, 1, 0, 2], [2, 1, 0, 1, 2], [1, 1, 1, 1, 4]), dtype=np.float64)
-        mask = np.array(([0, 0, 2, 0, 1], [0, 2, 0, 0, 0], [0, 0, 0, 0, 0], [1, 0, 0, 0, 2]), dtype=np.int16)
-        left = xr.Dataset(
-            {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
-            coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
-        )
-        left.attrs = common.img_attrs
-
-        data = np.array(([5, 1, 2, 3, 4], [1, 2, 1, 0, 2], [2, 2, 0, 1, 4], [1, 1, 1, 1, 2]), dtype=np.float64)
-        # right mask contains valid pixels
-        mask = np.zeros((4, 5), dtype=np.int16)
-        right = xr.Dataset(
-            {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
-            coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
-        )
-        right.attrs = common.img_attrs
-
-        # ------------ Test the method with a left and right mask with window size 3 and ZNCC ------------
-        # Mask convention
-        # cfg['image']['valid_pixels'] = 0
-        # cfg['image']['no_data'] = 1
-        # invalid_pixels all other values
-        data = np.array(([1, 1, 1, 3, 4], [1, 2, 1, 0, 2], [2, 1, 0, 1, 2], [1, 1, 1, 1, 4]), dtype=np.float64)
-        # left mask contains valid pixels
-        mask = np.array(([1, 0, 0, 2, 0], [0, 0, 0, 0, 0], [0, 0, 2, 0, 0], [2, 0, 0, 0, 1]), dtype=np.int16)
-        left = xr.Dataset(
-            {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
-            coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
-        )
-        left.attrs = common.img_attrs
-        left.pipe(add_disparity, disparity=[-1, 1], window=None)
-
-        data = np.array(([5, 1, 2, 3, 4], [1, 2, 1, 0, 2], [2, 2, 0, 1, 4], [1, 1, 1, 1, 2]), dtype=np.float64)
-        mask = np.array(([0, 2, 0, 0, 1], [0, 0, 0, 0, 0], [0, 0, 0, 2, 0], [1, 0, 2, 0, 0]), dtype=np.int16)
-        right = xr.Dataset(
-            {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
-            coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
-        )
-        right.attrs = common.img_attrs
-
-        matching_cost_ = matching_cost.AbstractMatchingCost(
-            **{"matching_cost_method": "zncc", "window_size": 3, "subpix": 1}
-        )
-
-        grid = matching_cost_.allocate_cost_volume(
-            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
-        )
-
-        # Compute validity mask
-        grid = validity_mask(left, right, grid)
-
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
-        matching_cost_.cv_masked(
-            left,
-            right,
-            cv,
-            left["disparity"].sel(band_disp="min"),
-            left["disparity"].sel(band_disp="max"),
-        )
-
-        # Cost volume ground truth after invalidation
-        cv_ground_truth = np.array(
-            [
-                [
-                    [np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan],
-                ],
-                [
-                    [np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan],
-                    [0.02146693953705469, 0.8980265101338747, np.nan],
-                    [0.40624999999999994, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan],
-                ],
-                [
-                    [np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, 0.2941742027072762],
-                    [np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan],
-                ],
-                [
-                    [np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan],
-                ],
-            ],
-            dtype=np.float32,
-        )
-
-        # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(cv["cost_volume"], cv_ground_truth)
-
-    @staticmethod
-    def test_masks_invalid_pixels_subpixel():
-        """
-        Test the method masks_invalid_pixels with subpixel precision
-
-        """
-        # ------------ Test the method with a right mask with window size 1 subpixel 2 ------------
-        # Mask convention
-        # cfg['image']['valid_pixels'] = 0
-        # cfg['image']['no_data'] = 1
-        # invalid_pixels all other values
-        data = np.array(([1, 1, 1, 3, 4], [1, 1, 1, 1, 4]), dtype=np.float64)
-        # left mask contains valid pixels
-        mask = np.array(([0, 0, 0, 0, 0], [0, 0, 0, 0, 0]), dtype=np.int16)
-        left = xr.Dataset(
-            {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
-            coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
-        )
-        left.attrs = common.img_attrs
-
-        data = np.array(([5, 1, 2, 3, 4], [1, 1, 1, 1, 2]), dtype=np.float64)
-        mask = np.array(([0, 0, 0, 0, 1], [1, 0, 2, 0, 0]), dtype=np.int16)
-        right = xr.Dataset(
-            {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
-            coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
-        )
-        right.attrs = common.img_attrs
-
-        # ------------ Test the method with a left and right mask with window size 3 and ZNCC ------------
-        data = np.array(([1, 1, 1, 3, 4], [1, 2, 1, 0, 2], [2, 1, 0, 1, 2], [1, 1, 1, 1, 4]), dtype=np.float64)
-        # left mask contains valid pixels
-        mask = np.array(([1, 0, 0, 2, 0], [0, 0, 0, 0, 0], [0, 0, 2, 0, 0], [2, 0, 0, 0, 1]), dtype=np.int16)
-        left = xr.Dataset(
-            {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
-            coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
-        )
-        left.attrs = common.img_attrs
-        left.pipe(add_disparity, disparity=[-1, 1], window=None)
-
-        data = np.array(([5, 1, 2, 3, 4], [1, 2, 1, 0, 2], [2, 2, 0, 1, 4], [1, 1, 1, 1, 2]), dtype=np.float64)
-        mask = np.array(([0, 2, 0, 0, 1], [0, 0, 0, 0, 0], [0, 0, 0, 2, 0], [1, 0, 2, 0, 0]), dtype=np.int16)
-        right = xr.Dataset(
-            {"im": (["row", "col"], data), "msk": (["row", "col"], mask)},
-            coords={"row": np.arange(data.shape[0]), "col": np.arange(data.shape[1])},
-        )
-        right.attrs = common.img_attrs
-
-        matching_cost_ = matching_cost.AbstractMatchingCost(
-            **{"matching_cost_method": "zncc", "window_size": 3, "subpix": 2}
-        )
-        # Compute the cost volume and invalidate pixels if need
-        grid = matching_cost_.allocate_cost_volume(
-            left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
-        )
-
-        # Compute validity mask
-        grid = validity_mask(left, right, grid)
-
-        cv = matching_cost_.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
-        matching_cost_.cv_masked(
-            left,
-            right,
-            cv,
-            left["disparity"].sel(band_disp="min"),
-            left["disparity"].sel(band_disp="max"),
-        )
-
-        # Cost volume ground truth after invalidation
-        cv_ground_truth = np.array(
-            [
-                [
-                    [np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan],
-                ],
-                [
-                    [np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [0.02146693953705469, 0.5486081, 0.8980265101338747, np.nan, np.nan],
-                    [0.40624999999999994, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan],
-                ],
-                [
-                    [np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, 0.2941742027072762],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan],
-                ],
-                [
-                    [np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan],
-                ],
-            ],
-            dtype=np.float32,
-        )
-
-        # Check if the calculated cost volume is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(cv["cost_volume"], cv_ground_truth)
-
-    @staticmethod
     def test_check_band_zncc():
         """
         Test the multiband choice for census measure with wrong matching_cost initialization
@@ -506,3 +295,106 @@ class TestMatchingCostZncc(unittest.TestCase):
 if __name__ == "__main__":
     common.setup_logging()
     unittest.main()
+
+
+@pytest.fixture()
+def images():
+    return common.matching_cost_tests_setup()
+
+
+@pytest.fixture()
+def left(images):
+    return images[0]
+
+
+@pytest.fixture()
+def right(images):
+    return images[1]
+
+
+@pytest.mark.parametrize(
+    ["disp", "p_ground_truth_disp", "q_ground_truth_disp"],
+    [
+        pytest.param(
+            0,  # for disparity = 0, the similarity measure will be applied over the whole images
+            (0, 6),  # 6 = left["im"].shape[1]
+            (0, 6),  # 6 = right["im"].shape[1]),
+            id="Disparity=0",
+        ),
+        pytest.param(
+            -2,
+            # for disparity = -2, the similarity measure will be applied over the range
+            #          row=2   row=6        row=0   row=4
+            #           1 1 1 1             1 1 1 2
+            #           1 1 2 1             1 1 1 4
+            #           1 4 3 1             1 1 1 4
+            #           1 1 1 1             1 1 1 1
+            #           1 1 1 1             1 1 1 1
+            (2, 6),
+            (0, 4),
+            id="Disparity=-2",
+        ),
+        pytest.param(
+            2,
+            # for disparity = -2, the similarity measure will be applied over the range
+            #          row=0   row=4        row=2   row=6
+            #           1 1 1 1             1 2 2 2
+            #           1 1 1 1             1 4 2 4
+            #           1 1 1 4             1 4 4 1
+            #           1 1 1 1             1 1 1 1
+            #           1 1 1 1             1 1 1 1
+            (0, 4),
+            (2, 6),
+            id="Disparity=2",
+        ),
+        pytest.param(
+            -2.5,  # Test for negative floating disparity
+            (3, 6),
+            (0, 4),
+            id="Disparity=-2.5",
+        ),
+        pytest.param(
+            2.5,  # Test for positive floating disparity
+            (0, 3),
+            (2, 6),
+            id="Disparity=2.5",
+        ),
+        pytest.param(
+            7,  # disparity = 7 outside the image
+            (6, 6),
+            (6, 6),
+            id="Disparity=7",
+        ),
+        pytest.param(
+            -7,  # disparity = -7 outside the image
+            (6, 6),
+            (6, 6),
+            id="Disparity=-7",
+        ),
+        pytest.param(
+            5,  # disparity = 5 --> abs(5) > nb_col - int(window_size/2)*2
+            (6, 6),
+            (6, 6),
+            id="Disparity=5",
+        ),
+        pytest.param(
+            -5,  # disparity = -5 --> abs(5) > nb_col - int(window_size/2)*2
+            (6, 6),
+            (6, 6),
+            id="Disparity=-5",
+        ),
+    ],
+)
+def test_point_interval_zncc(disp, p_ground_truth_disp, q_ground_truth_disp, left, right):
+    """
+    Test the point interval method with zncc similarity measure
+    """
+    matching_cost_ = matching_cost.AbstractMatchingCost(
+        **{"matching_cost_method": "zncc", "window_size": 3, "subpix": 1}
+    )
+
+    (point_p, point_q) = matching_cost_.point_interval(left, right, disp)
+
+    # Check if the calculated range is equal to the ground truth
+    np.testing.assert_array_equal(point_p, p_ground_truth_disp)
+    np.testing.assert_array_equal(point_q, q_ground_truth_disp)

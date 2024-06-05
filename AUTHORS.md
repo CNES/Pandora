@@ -1,6 +1,6 @@
 # Credits
 
-Copyright (c) 2023 Centre National d'Etudes Spatiales (CNES).
+Copyright (c) 2024 Centre National d'Etudes Spatiales (CNES).
 
 Pandora is licensed under permissive Apache 2 license (See LICENSE file).
 The copyright is kept CNES only for long term maintenance ease.
@@ -29,6 +29,7 @@ This file keeps track of authors contributions.
 * Yoann Steux <yoann.steux@csgroup.eu>
 * Mathis Roux <mathis.roux@csgroup.eu>
 * David Youssefi <David.Youssefi@cnes.fr>
+* Roman Malinowski <roman.malinowski@hds.utc.fr>
 
 Update here with new contributors.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2024 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -104,6 +104,8 @@ def add_disparity(
     """
     Add disparity to dataset
 
+    If `disparity` is None, will return dataset unmodified.
+
     :param dataset: xarray dataset without classification
     :type dataset: xr.Dataset
     :param disparity: disparity, or path to the disparity grid
@@ -114,28 +116,49 @@ def add_disparity(
     :return: dataset : updated dataset
     :rtype: xr.Dataset
     """
-    if disparity is not None:
-        dataset.coords["band_disp"] = ["min", "max"]
-        # disparity is a grid
-        if isinstance(disparity, str):
-            disparity_ds = rasterio_open(disparity)
-            dataset["disparity"] = xr.DataArray(
-                disparity_ds.read(out_dtype=np.float32, window=window),
-                dims=["band_disp", "row", "col"],
-            )
-        # tuple or list
-        else:
-            dataset["disparity"] = xr.DataArray(
-                np.array(
-                    [
-                        np.full((dataset.sizes["row"], dataset.sizes["col"]), disparity[0]),
-                        np.full((dataset.sizes["row"], dataset.sizes["col"]), disparity[1]),
-                    ]
-                ),
-                dims=["band_disp", "row", "col"],
-            )
+    if disparity is None:
+        dataset.attrs["disparity_source"] = None
+        return dataset
 
-    dataset.attrs["disparity_source"] = disparity
+    # disparity is a grid
+    if isinstance(disparity, str):
+        disparity_data = rasterio_open(disparity).read(out_dtype=np.float32, window=window)
+    # tuple or list
+    else:
+        disparity_data = np.array(
+            [
+                np.full((dataset.sizes["row"], dataset.sizes["col"]), disparity[0]),
+                np.full((dataset.sizes["row"], dataset.sizes["col"]), disparity[1]),
+            ]
+        )
+
+    return add_disparity_grid(dataset, xr.DataArray(disparity_data, dims=["band_disp", "row", "col"]), disparity)
+
+
+def add_disparity_grid(
+    dataset: xr.Dataset,
+    disparity_grid: Union[xr.DataArray, None] = None,
+    disparity_source: Union[tuple[int, int], list[int], str, None] = "xr.Dataset",
+) -> xr.Dataset:
+    """
+    Add a disparity grid to dataset.
+
+    If `disparity_grid` is None, will return dataset unmodified.
+
+    :param dataset: xarray dataset without classification
+    :type dataset: xr.Dataset
+    :param disparity_grid: disparity grid dataset with dimensions ["band_disp", "row", "col"] or None.
+    :type disparity_grid: xr.DataArray or None
+    :param disparity_source: source of the disparity:
+                             either a path to a file or `xr.Dataset` if the dataset was directly provided.
+    :type disparity_source: Union[tuple[int, int], list[int], str, None]
+    :return: dataset : updated dataset
+    :rtype: xr.Dataset
+    """
+    if disparity_grid is not None:
+        dataset.coords["band_disp"] = ["min", "max"]
+        dataset["disparity"] = disparity_grid
+        dataset.attrs["disparity_source"] = disparity_source
     return dataset
 
 

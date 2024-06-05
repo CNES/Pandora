@@ -1,6 +1,27 @@
 # Changelog
 
-## 1.6.0 (January 2023)
+## 1.6.1a1 (June 2024)
+
+### Added
+- Add criteria documentation in Exploring the Field section. [#380]
+- Add a new method to add disparity grid in xarray dataset. [#389]
+- Add get method to margins. [#394]
+- Add interval_indicator on filetring documentation.
+
+
+### Fixed
+- Fix link to notebooks in the documentation. [#310]
+- Update cv_masked to be used with a column step. [#391]
+- Fix step in get_coordinates method.
+- Fix disparities bigger than images shape. [#396]
+- Update notebooks after evolution of pandora run_prepare method. [#395]
+
+### Changed 
+- Uniformisation tests for cv_masked method. [#372]
+- Extract col_to_compute from grid_estimation method. [#393]
+- Update pandora after evolution of use_confidence in libsgm plugin. [#397]
+
+## 1.6.0 (January 2024)
 
 ### Added
 - Using new check_datasets function and modification to the check_band_names API. [#338]
@@ -18,7 +39,7 @@
 - Fix warning for xarray.Dataset.dims. [#375]
 - Fix margins for filter step. [#374]
 - Fix error in compute_mean_raster method. [#379]
-- Fix criteria computation ordre. [#382]
+- Fix criteria computation order. [#382]
 - Correction of mistakes in the documentation. [#381]
 
 ### Changed

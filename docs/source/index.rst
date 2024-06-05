@@ -15,6 +15,7 @@ Welcome to Pandora's documentation!
    :caption: Contents:
 
    getting_started
+   exploring_the_field
    userguide
    api_reference/index.rst
    developer_guide

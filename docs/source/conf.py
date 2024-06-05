@@ -1,7 +1,7 @@
 # pylint: skip-file
 #
 # coding: utf8
-# Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2024 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -42,7 +42,7 @@ sys.setrecursionlimit(8 * sys.getrecursionlimit())
 # -- Project information -----------------------------------------------------
 
 project = "Pandora"
-copyright = "2022, CNES"
+copyright = "2024, CNES"
 author = "CNES"
 
 # The full version, including alpha/beta/rc tags
@@ -63,6 +63,7 @@ extensions = [
     "sphinx_rtd_theme",
     "sphinx.ext.imgmath",
     "autoapi.extension",
+    "sphinx_tabs.tabs",
 ]
 
 # imgmath configuration

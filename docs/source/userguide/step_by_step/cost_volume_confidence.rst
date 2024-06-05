@@ -23,8 +23,8 @@ The available methods are :
 
   The ambiguity integral is by default normalized. However, the user may choose not to perform this normalization by setting the `normalization` parameter to `false`.
 
-*Sarrazin, E., Cournet, M., Dumas, L., Defonte, V., Fardet, Q., Steux, Y., Jimenez Diaz, N., Dubois, E., Youssefi, D., Buffe, F., 2021. Ambiguity concept in stereo matching pipeline.
-ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences.*
+`Sarrazin, E., Cournet, M., Dumas, L., Defonte, V., Fardet, Q., Steux, Y., Jimenez Diaz, N., Dubois, E., Youssefi, D., Buffe, F., 2021. Ambiguity concept in stereo matching pipeline.
+ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences. <https://isprs-archives.copernicus.org/articles/XLIII-B2-2021/383/2021/>`_
 
 
 - Risk. This metric consists in evaluating a risk interval associated with the correlation measure, and ultimately the selected disparity, for each point on the disparity map :
@@ -68,25 +68,7 @@ ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial
     
     The intervals sould be regularized in low confidence areas. This can be done directly after computing the intervals, but it is more efficient if done after filtering. To do so, another filtering step using *median_for_intervals* should be added to the pipeline (see :ref:`filter` for more details).
 
-    More info can be found in *(To be published)*
-
-    .. math::
-    
-        I(i,j) = [\min(D_{i,j}), max(D_{i,j})]
-    
-    .. math::
-
-        D = \{d~|~\pi_{i,j}(d)\geq threshold\}
-    
-    .. math::
-    
-        \pi_{i,j}(d) = 1 - \frac{cv(i,j,d) - \min_\delta cv(i,j,\delta)}{\max_{i,j,\delta}cv(i,j,\delta) - \min_{i,j,\delta}cv(i,j,\delta)}
-    
-    The threshold used on :math:`\pi` is 0.9 by default, but can be changed by the users.
-    
-    The intervals sould be regularized in low confidence areas. This can be done directly after computing the intervals, but it is more efficient if done after filtering. To do so, another filtering step using *median_for_intervals* should be added to the pipeline (see :ref:`filter` for more details).
-
-    More info can be found in *(To be published)*
+    More info can be found in `Roman Malinowski, Emmanuelle Sarrazin, Loïc Dumas, Emmanuel Dubois, Sébastien Destercke, 2024. Robust Confidence Intervals in Stereo Matching using Possibility Theory - arXiv:2404.06273 [cs]. <https://arxiv.org/abs/2404.06273>`_
 
 
 .. list-table:: Configuration and parameters
@@ -141,7 +123,7 @@ ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial
      - No. Only available if "interval_bounds" method
    * - *ambiguity_indicator*
      - | Indicator for which ambiguity to use during regularization.
-       | Ex: If *cfg* contains a step "confidence_from_ambiguity.amb"
+       | Ex: If *cfg* contains a step "cost_volume_confidence.amb"
        | then *ambiguity_indicator* should be "amb"
      - str
      - ""
@@ -185,11 +167,17 @@ ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial
         "pipeline" :
         {
             // ...
-            "cost_volume_confidence":
+            "cost_volume_confidence.amb":
             {
                 "confidence_method": "ambiguity",
                 "eta_max": 0.7,
                 "eta_step": 0.01
+            },
+            "cost_volume_confidence.int":
+            {
+                "confidence_method": "interval_bounds",
+                "regularization": true,
+                "ambiguity_indicator": "amb"  // Using the ambiguity computed above for regularization
             }
             // ...
         }

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2024 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -66,6 +66,45 @@ class Zncc(matching_cost.AbstractMatchingCost):
         checker = Checker(schema)
         checker.validate(cfg)
         return cfg
+
+    def point_interval(
+        self, img_left: xr.Dataset, img_right: xr.Dataset, disp: float
+    ) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+        """
+        Update point_p and point_q values if abs(disp) > nb_col - (int(self._window_size / 2) * 2).
+
+        :param img_left: left Dataset image containing :
+
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
+        :type img_left: xarray.Dataset
+        :param img_right: right Dataset image containing :
+
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
+        :type img_right: xarray.Dataset
+        :param disp: current disparity
+        :type disp: float
+        :return: the range of the left and right image over which the similarity measure will be applied
+        :rtype: tuple
+        """
+
+        point_p, point_q = super().point_interval(img_left, img_right, disp)
+
+        nx_left = int(img_left.sizes["col"])
+        nx_right = int(img_right.sizes["col"])
+
+        if abs(disp) > nx_right - (int(self._window_size / 2) * 2):
+            point_p = (nx_left, nx_left)
+            point_q = (nx_right, nx_right)
+
+        return point_p, point_q
 
     def compute_cost_volume(
         self,

@@ -68,7 +68,7 @@ Pandora provides a full python API which can be used to compute disparity maps a
 
             pandora_stereo('./data_samples/json_conf_files/a_local_block_matching.json', './output/', True)
 
-If you want to learn  more, please consult our `Pandora Api tutorial notebook <https://github.com/CNES/Pandora/tree/master/notebooks/...>`_.
+If you want to learn  more, please consult our `Pandora Api tutorial notebook <https://github.com/CNES/Pandora/tree/master/notebooks/>`_.
 It will help you to understand, manipulate and customize our API.
 
 Pandora's data

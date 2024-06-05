@@ -1,7 +1,8 @@
+# pylint: disable=invalid-name
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2024 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -27,13 +28,14 @@ import sys
 from abc import ABCMeta, abstractmethod
 from math import ceil, floor
 from typing import Tuple, List, Union, Dict
+import operator
 from json_checker import And, Or
 import numpy as np
 import xarray as xr
 from scipy.ndimage import binary_dilation
 
+
 from pandora.margins.descriptors import HalfWindowMargins
-from pandora.img_tools import shift_right_img
 from pandora.criteria import mask_invalid_variable_disparity_range, mask_border
 
 
@@ -66,6 +68,8 @@ class AbstractMatchingCost:
     }
 
     margins = HalfWindowMargins()
+
+    ops = {"+": operator.add, "-": operator.sub}
 
     def __new__(cls, **cfg: Union[str, int]):
         """
@@ -246,6 +250,66 @@ class AbstractMatchingCost:
         :rtype: xarray.Dataset
         """
 
+    def get_coordinates(self, margin: int, img_coordinates: np.ndarray, step: int) -> np.ndarray:
+        """
+        In the case of a ROI, computes the right coordinates to be sure to process the first point of the ROI.
+
+        :param margin: ROI margin
+        :type margin: int
+        :param img_coordinates: coordinates of the ROI with margins
+        :type img_coordinates: np.ndarray
+        :param step: matching cost step value
+        :type step: int
+        :return: a np.ndarray that contains the right coordinates
+        :rtype: np.ndarray
+        """
+
+        index_compute_col = np.arange(img_coordinates[0], img_coordinates[-1] + 1, step)  # type: np.ndarray
+
+        # Check if the first column of roi is inside the final CV (with the step)
+        if margin % step != 0:
+            if margin < step:
+                # For example, given left_margin = 2 and step = 3
+                #
+                # roi_img = M M M M M M M
+                #           M M 1 2 3 M M
+                #           M M 4 5 6 M M
+                #           M M 7 8 9 M M
+                #           M M M M M M M
+                #
+                # Our starting point would be at index left_margin = 2 --> starting point = 1st point of ROI
+                # We are directly on the first point to compute
+
+                index_compute_col = np.arange(img_coordinates[0] + margin, img_coordinates[-1] + 1, step)
+            else:
+                # For example, given left_margin = 3 and step = 2
+                #
+                # roi_img = M M M M M M M M M
+                #           M M M 1 2 3 M M M
+                #           M M M 4 5 6 M M M
+                #           M M M 7 8 9 M M M
+                #           M M M M M M M M M
+                #
+                # Our starting point would be at index 1 --> starting point = 2nd M
+                # With a step of 2, the first point of ROI is calculated without cropping margins too much
+                #
+                # For example, given left_margin = 4 and step = 3
+                #
+                # roi_img = M M M M M M M M M M M
+                #           M M M M 1 2 3 M M M M
+                #           M M M M 4 5 6 M M M M
+                #           M M M M 7 8 9 M M M M
+                #           M M M M M M M M M M M
+                #
+                # Our starting point would be at index 1 --> starting point = 2nd M
+                # With a step of 3, the first point of ROI is calculated without cropping margins too much
+
+                # give the number of the first column to compute
+                start = step - (self.find_nearest_multiple_of_step(margin, step) - margin)
+                index_compute_col = np.arange(img_coordinates[0] + start, img_coordinates[-1] + 1, step)
+
+        return index_compute_col
+
     def grid_estimation(
         self, img: xr.Dataset, cfg: Union[Dict[str, dict], None], disparity_grids: Tuple[np.ndarray, np.ndarray]
     ) -> xr.Dataset:
@@ -267,60 +331,16 @@ class AbstractMatchingCost:
         """
         # Get col dimension
         c_col = img["im"].coords["col"]
-        col = np.arange(c_col[0], c_col[-1] + 1, self._step_col)  # type: np.ndarray
+
+        # Get the index of the columns that should be computed
+        if cfg and "ROI" in cfg:
+            index_compute_col = self.get_coordinates(cfg["ROI"]["margins"][0], c_col, self._step_col)
+        else:
+            index_compute_col = np.arange(c_col[0], c_col[-1] + 1, self._step_col)  # type: np.ndarray # type: ignore
 
         # get disparity_range
         disparity_min, disparity_max = self.get_min_max_from_grid(*disparity_grids)
         disparity_range = self.get_disparity_range(disparity_min, disparity_max, self._subpix)
-
-        # Index to be kept in the cost volume once it has been calculated
-        index_compute_col = col
-
-        # Get the index of the columns that should be computed
-        if cfg and "ROI" in cfg:
-            left_margin = cfg["ROI"]["margins"][0]
-
-            # Check if the first column of roi is inside the final CV (with the step)
-            if left_margin % self._step_col != 0:
-                if left_margin < self._step_col:
-                    # For example, given left_margin = 2 and step = 3
-                    #
-                    # roi_img = M M M M M M M
-                    #           M M 1 2 3 M M
-                    #           M M 4 5 6 M M
-                    #           M M 7 8 9 M M
-                    #           M M M M M M M
-                    #
-                    # Our starting point would be at index left_margin = 2 --> starting point = 1st point of ROI
-                    # We are directly on the first point to compute
-
-                    index_compute_col = np.arange(c_col[0] + left_margin, c_col[-1] + 1, self._step_col)
-                else:
-                    # For example, given left_margin = 3 and step = 2
-                    #
-                    # roi_img = M M M M M M M M M
-                    #           M M M 1 2 3 M M M
-                    #           M M M 4 5 6 M M M
-                    #           M M M 7 8 9 M M M
-                    #           M M M M M M M M M
-                    #
-                    # Our starting point would be at index 1 --> starting point = 2nd M
-                    # With a step of 2, the first point of ROI is calculated without cropping margins too much
-                    #
-                    # For example, given left_margin = 4 and step = 3
-                    #
-                    # roi_img = M M M M M M M M M M M
-                    #           M M M M 1 2 3 M M M M
-                    #           M M M M 4 5 6 M M M M
-                    #           M M M M 7 8 9 M M M M
-                    #           M M M M M M M M M M M
-                    #
-                    # Our starting point would be at index 1 --> starting point = 2nd M
-                    # With a step of 3, the first point of ROI is calculated without cropping margins too much
-
-                    # give the number of the first column to compute
-                    start = self._step_col - (self.find_nearest_multiple_of_step(left_margin) - left_margin)
-                    index_compute_col = np.arange(c_col[0] + start, c_col[-1] + 1, self._step_col)
 
         # Instantiate grid
         grid = xr.Dataset(
@@ -334,6 +354,7 @@ class AbstractMatchingCost:
         grid.attrs["sampling_interval"] = self._step_col
         # Add index of columns to compute in grid attributes
         grid.attrs["col_to_compute"] = index_compute_col
+
         return grid
 
     def allocate_cost_volume(
@@ -418,9 +439,17 @@ class AbstractMatchingCost:
         nx_right = int(img_right.sizes["col"])
 
         # range in the left image
-        point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))
+        # if disp is outside the image, point_p corresponds to an empty range
+        if abs(disp) > nx_left:
+            point_p = (nx_left, nx_left)
+        else:
+            point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))  # type: ignore
         # range in the right image
-        point_q = (max(0 + disp, 0), min(nx_right + disp, nx_right))
+        # if disp is outside the image, point_q corresponds to an empty range
+        if abs(disp) > nx_right:
+            point_q = (nx_right, nx_right)
+        else:
+            point_q = (max(0 + disp, 0), min(nx_right + disp, nx_right))  # type: ignore
 
         # Because the disparity can be floating
         if disp < 0:
@@ -514,10 +543,10 @@ class AbstractMatchingCost:
             # All pixels are valid
             dilatate_right_mask = np.zeros((img_left.sizes["row"], img_left.sizes["col"]))
 
-        ny_, nx_ = img_left.sizes["row"], img_left.sizes["col"]
+        nx_ = img_left.sizes["col"]
 
-        row = np.arange(0, ny_)
-        col = np.arange(0, nx_)
+        row = img_left.coords["row"]
+        col = img_left.coords["col"]
 
         # Shift the right mask, for sub-pixel precision. If an no_data or invalid pixel was used to create the
         # sub-pixel point, then the sub-pixel point is invalidated / no_data.
@@ -540,7 +569,7 @@ class AbstractMatchingCost:
 
             # Whatever the sub-pixel precision, only one sub-pixel mask is created,
             # since 0.5 shifted mask == 0.25 shifted mask
-            col_shift = np.arange(0 + 0.5, nx_ - 1, step=1)
+            col_shift = np.arange(col[0] + 0.5, col[0] + nx_ - 1, step=1)  # type: np.ndarray
             dilatate_right_mask_shift = xr.DataArray(
                 dilatate_right_mask_shift, coords=[row, col_shift], dims=["row", "col"]
             )
@@ -564,18 +593,156 @@ class AbstractMatchingCost:
         """
         return int(np.nanmin(disp_min)), int(np.nanmax(disp_max))
 
-    def find_nearest_multiple_of_step(self, value: int) -> int:
+    def find_nearest_multiple_of_step(self, value: int, step: int) -> int:
         """
         In case value is not a multiple of step, find nearest greater value for which it is the case.
 
         :param value: Initial value.
         :type: value: int
+        :param step: matching cost step value
+        :type step: int
         :return: nearest multiple of step.
         :rtype: int
         """
-        while value % self._step_col != 0:
+        while value % step != 0:
             value += 1
         return value
+
+    def find_nearest_column(self, value: int, index: np.ndarray, s: str = "+") -> int:
+        """
+        Find the nearest number in a list in ascending or descending order
+
+        :param value: Initial value.
+        :type: value: int
+        :param index: List with all values
+        :type: index: np.ndarray
+        :param s: operator more ('+') or less ('-')
+        :type: s: str
+        :return: the value in column_index
+        :rtype: int
+        """
+        shift = 1 / self._subpix
+        while value not in index:
+            value = self.ops[s](value, shift)
+            if s == "+" and value > index[-1]:
+                value = index[-1]
+                break
+            if s == "-" and value < index[0]:
+                value = index[0]
+                break
+        return value
+
+    def mask_column_interval_without_step(
+        self, cost_volume: xr.Dataset, coord_mask_right: np.ndarray, disp: float
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Computes the index columns over which the similarity measure will be applied
+
+        :param cost_volume: the cost_volume DataSet with the data variables:
+
+                - cost_volume 3D xarray.DataArray (row, col, disp)
+        :type cost_volume: xarray.Dataset
+        :param coord_mask_right: coordinate of right mask
+        :type coord_mask_right: np.ndarray
+        :param disp: current disparity
+        :type disp: float
+        :return: the range of the left and right image over which the similarity measure will be applied
+        :rtype: tuple
+        """
+
+        # Get coordinates
+        coords_column_left = cost_volume.coords["col"].data
+        ind = int((disp % 1) * self._subpix)
+        if self._subpix != 1 and ind != 0:
+            coords_column_right = coord_mask_right
+        else:
+            coords_column_right = cost_volume.coords["col"].data
+
+        # range in the left image
+        point_p = (
+            max(coords_column_left[0] - disp, coords_column_left[0]),
+            min(coords_column_left[-1] - disp, coords_column_left[-1]),
+        )
+        # range in the right image
+        point_q = (
+            max(coords_column_right[0] + disp, coords_column_right[0]),
+            min(coords_column_right[-1] + disp, coords_column_right[-1]),
+        )
+
+        # Only look for the right interval if it exists
+        if self._subpix != 1 and point_p[0] <= point_p[1]:
+            if disp < 0:
+                point_p = (self.find_nearest_column(point_p[0], coords_column_left, "+"), point_p[1])
+                point_q = (point_q[0], self.find_nearest_column(point_q[1], coords_column_right, "+"))
+            else:
+                point_p = (point_p[0], self.find_nearest_column(point_p[1], coords_column_left, "-"))
+                point_q = (self.find_nearest_column(point_q[0], coords_column_right, "-"), point_q[1])
+
+        # if disparity is outside the image, returned column_interval_left and column_interval right are empty
+        if abs(disp) > len(coords_column_right):
+            column_interval_left = np.array([])
+            column_interval_right = np.array([])
+        else:
+            column_interval_left = np.arange(point_p[0], point_p[-1] + 1)
+            column_interval_right = np.arange(point_q[0], point_q[-1] + 1)
+
+        return column_interval_left, column_interval_right
+
+    def mask_column_interval(
+        self, cost_volume: xr.Dataset, coord_mask_left: np.ndarray, coord_mask_right: np.ndarray, disp: float
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Computes the index columns over which the similarity measure will be applied
+
+        :param cost_volume: the cost_volume DataSet with the data variables:
+
+                - cost_volume 3D xarray.DataArray (row, col, disp)
+        :type cost_volume: xarray.Dataset
+        :param coord_mask_right: coordinate of right mask
+        :type coord_mask_right: np.ndarray
+        :param disp: current disparity
+        :type disp: float
+        :return: the range of the left and right image over which the similarity measure will be applied
+        :rtype: tuple
+        """
+        # OLD METHOD
+        if self._step_col == 1:
+            return self.mask_column_interval_without_step(cost_volume, coord_mask_right, disp)
+
+        # range in the left image
+        p0 = cost_volume.coords["col"].data[0]
+        p1 = cost_volume.coords["col"].data[-1]
+        if disp < 0:
+            idx = 1
+            while (p0 + disp) < coord_mask_left[0]:
+                # Check coordinates list exist
+                if cost_volume.coords["col"].data[idx:].size == 0:
+                    p0 = p1 + self._step_col
+                    break
+                p0 = self.find_nearest_column(p0, cost_volume.coords["col"].data[idx:])
+                idx += 1
+        if disp > 0:
+            idx = cost_volume.sizes["col"] - 1
+            while (p1 + disp) > coord_mask_left[-1]:
+                # Check coordinates list exist
+                if cost_volume.coords["col"].data[:idx].size == 0:
+                    p1 = p0 - self._step_col
+                    break
+                p1 = self.find_nearest_column(p1, cost_volume.coords["col"].data[:idx], "-")
+                idx -= 1
+        column_interval_left = np.arange(p0, p1 + self._step_col, self._step_col)
+
+        # range in the right image
+        # there is a small change to the disp variable because there is no additional mask to create
+        # when slef._subpix = 4 is used. In other words, the mask created for .5 is the same as for .25 and .75.
+        if self._subpix == 4 and disp % 1:
+            if disp < 0:
+                disp = ceil(disp) - 0.5
+            else:
+                disp = floor(disp) + 0.5
+        column_interval_right = column_interval_left + disp
+
+        return column_interval_left, column_interval_right
 
     def cv_masked(
         self,
@@ -625,51 +792,26 @@ class AbstractMatchingCost:
 
         # ----- Masking invalid pixels -----
 
-        # Contains the shifted right images
-        img_right_shift = shift_right_img(img_right, self._subpix, self._band)
-
         # Computes the validity mask of the cost volume : invalid pixels or no_data are masked with the value nan.
         # Valid pixels are = 0
         mask_left, mask_right = self.masks_dilatation(img_left, img_right, self._window_size, self._subpix)
 
         for disp in cost_volume.coords["disp"].data:
             i_right = int((disp % 1) * self._subpix)
-            point_p, point_q = self.point_interval(img_left, img_right_shift[i_right], disp)
-
-            # For the 2 images of shape (3,4) with a cost volume at disp
-            #               1  4 -5  nan
-            #               1  0  1  nan
-            #               5  2 -1  nan
-            # the intervals given by the point_interval function:
-            #   - point_p [0, 1, 2]
-            #   - point_q [1, 2 ,3]
-            # and the _step_col parameter is 2
-            # new index for point_p and point_q must be:
-            #   - point_p [0, 2]
-            #   - point_q [2] but here with np.arange(q_0, point_q[1], self._step_col) with have [1, 3]
-            # To solve this problem, we look for the new point in the cost volume in relation to the step
-            # chosen by the user by calling find_nearest_multiple_of_step.
-            # This function return p_0 = 0 and q_0 = 2
-            p_0 = self.find_nearest_multiple_of_step(point_p[0])
-            q_0 = self.find_nearest_multiple_of_step(point_q[0])
-
-            # Point interval in the left image
-            p_mask = np.arange(p_0, point_p[1], self._step_col)
-            # Point interval in the right image
-            q_mask = np.arange(q_0, point_q[1], self._step_col)
-            # Point interval in the cost volume
-            # Here the indices for the left image must be divided by the step
-            # to correspond to the cost volume column.
-            p_cv = (p_mask / self._step_col).astype(int)
-
             i_mask_right = min(1, i_right)
             dsp = int((disp - dmin) * self._subpix)
 
+            point_p, point_q = self.mask_column_interval(
+                cost_volume, mask_left.coords["col"].data, mask_right[i_mask_right].coords["col"].data, disp
+            )
+
             # Invalid costs in the cost volume
-            if p_mask.size > 0:
-                cost_volume["cost_volume"].data[:, p_cv, dsp] += mask_left.data[:, p_mask]
-                if q_mask.size > 0:
-                    cost_volume["cost_volume"].data[:, p_cv, dsp] += mask_right[i_mask_right].data[:, q_mask]
+            cost_volume["cost_volume"].loc[{"col": point_p, "disp": disp}] = (
+                cost_volume["cost_volume"].loc[{"col": point_p, "disp": disp}].data
+                + mask_right[i_mask_right].loc[{"col": point_q}].data
+                + mask_left.loc[{"col": point_p}].data
+            )
+
         # ----- Masking disparity range -----
 
         # Fixed range of disparities

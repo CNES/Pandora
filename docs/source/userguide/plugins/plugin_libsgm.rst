@@ -82,86 +82,257 @@ Configuration and parameters
 
 There are some parameters depending on sgm but not penalties
 
-.. csv-table::
 
-    **Name**,**Description**,**Type**,**Default value**,**Available value**,**Required**
-    *overcounting*,overcounting correction,Boolean,False,True False,No
-    *min_cost_paths*,Number of sgm paths that give the same final disparity,Boolean,False,True False,No
-    *use_confidence*, Apply confidence to cost volume, Boolean, False, True False, No
-    *geometric_prior source*, Layer to use during piecewise optimization, dict, "internal", \"internal" "classif" or "segm", No
-    *geometric_prior classes*, Classes to use if source is classif, List, , , Only if source is "classif"
-    *penalty*, a dictionary containing all parameters related to penalties, dict, {"penalty_method": "sgm_penalty" "P1": 4 "P2": 20}, *cf. following tables*,No
+.. list-table:: 
+   :widths: 19 19 19 19 19 19
+   :header-rows: 1
+
+   * - Name
+     - Description
+     - Type
+     - Default value
+     - Available value
+     - Required
+   * - *overcounting*
+     - Overcounting correction
+     - Boolean
+     - False
+     - | True or 
+       | False
+     - No
+   * - *min_cost_paths*
+     - | Number of sgm paths that give the same
+       | final disparity
+     - Boolean
+     - False
+     - | True or 
+       | False
+     - No
+   * - *use_confidence*
+     - Apply ambiguity confidence to cost volume
+     - string
+     - None
+     - 
+     - No
+   * - *geometric_prior source*
+     - Layer to use during piecewise optimization
+     - dict
+     - "internal"
+     - | "internal" or 
+       | "classif" or
+       | "segm"
+     - No
+   * - *geometric_prior classes*
+     - Classes to use if source is classif
+     - list
+     - 
+     - 
+     - Only if source is "classif"
+   * - *penalty*
+     - | Dictionary containing all parameters 
+       | related to penalties
+     - dict
+     - | {"penalty_method": "sgm_penalty"
+       | "P1": 4 
+       | "P2": 20}
+     - *cf. following tables*
+     - Only if source is "classif"
 
 
-+------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
-| Name                         | Description                                             | Type   | Default value | Available value                                                | Required                                             |
-+==============================+=========================================================+========+===============+================================================================+======================================================+
-| penalty_method               | Method for penalty estimation                           | string | "sgm_penalty" | "sgm_penalty", "mc_cnn_fast_penalty"                           | No                                                   |
-+------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
-| p2_method                    | sub-method of *sgm_penalty* for P2 penalty estimation   | String | "constant"    | "constant" , "negativeGradient", "inverseGradient"             | No. Only available if *penalty_method = sgm_penalty* |
-+------------------------------+---------------------------------------------------------+--------+---------------+----------------------------------------------------------------+------------------------------------------------------+
+Penalty configuration
+#####################
+
+.. list-table:: Configuration for penalty estimation
+   :widths: 19 19 19 19 19 19
+   :header-rows: 1
+
+   * - Name
+     - Description
+     - Type
+     - Default value
+     - Available value
+     - Required
+   * - penalty_method
+     - Method for penalty estimation
+     - string
+     - "sgm_penalty"
+     - | "sgm_penalty" or 
+       | "mc_cnn_fast_penalty"
+     - No
+   * - p2_method
+     - Sub-method of *sgm_penalty* for P2 penalty estimation
+     - string
+     - "constant"
+     - | "constant" or
+       | "negativeGradient" or
+       | "inverseGradient"
+     - | No. 
+       | Only available if *penalty_method = sgm_penalty*
 
 There are some parameters depending on penalty_method choice and p2_method choice.
 
-- *penalty_method = sgm_penalty* and  *p2_method = constant*
+.. tabs::
 
-+-------+-------------------+--------------+---------------+-----------------+----------+
-| Name  | Description       | Type         | Default value | Available value | Required |
-+=======+===================+==============+===============+=================+==========+
-| P1    | Penalty parameter | int or float | 8             | >0              | No       |
-+-------+-------------------+--------------+---------------+-----------------+----------+
-| P2    | Penalty parameter | int or float | 32            | P2 > P1         | No       |
-+-------+-------------------+--------------+---------------+-----------------+----------+
+    .. tab:: sgm_penalty
 
-.. note::  The default values are intended for use with Census matching cost method. We cannot say that they are suitable with other matching cost method.
+        .. tabs:: 
+            
+            .. tab:: constant
 
-- *penalty_method = sgm_penalty* and *p2_method = negativeGradient*
+                .. list-table:: 
+                    :widths: 19 19 19 19 19 19
+                    :header-rows: 1
 
-+-------+-------------------+--------------+---------------+-----------------+----------+
-| Name  | Description       | Type         | Default value | Available value | Required |
-+=======+===================+==============+===============+=================+==========+
-| P1    | Penalty parameter | int or float | 8             | >0              | No       |
-+-------+-------------------+--------------+---------------+-----------------+----------+
-| P2    | Penalty parameter | int or float | 32            | P2 > P1         | No       |
-+-------+-------------------+--------------+---------------+-----------------+----------+
-| alpha | Penalty parameter | float        | 1.0           |                 | No       |
-+-------+-------------------+--------------+---------------+-----------------+----------+
-| gamma | Penalty parameter | int or float | 1             |                 | No       |
-+-------+-------------------+--------------+---------------+-----------------+----------+
+                    * - Name
+                      - Description
+                      - Type
+                      - Default value
+                      - Available value
+                      - Required
+                    * - P1
+                      - Penalty parameter
+                      - int or float
+                      - 8
+                      - >0
+                      - No
+                    * - P2
+                      - Penalty parameter
+                      - int or float
+                      - 32
+                      - P2 > P1
+                      - No
+                
+                .. note::  The default values are intended for use with Census matching cost method. We cannot say that they are suitable with other matching cost method.
 
-- *penalty_method = sgm_penalty* and *p2_method = inverseGradient*
+            .. tab:: negativeGradient
 
-+-------+-------------------+--------------+---------------+-----------------+----------+
-| Name  | Description       | Type         | Default value | Available value | Required |
-+=======+===================+==============+===============+=================+==========+
-| P1    | Penalty parameter | int or float | 8             | >0              | No       |
-+-------+-------------------+--------------+---------------+-----------------+----------+
-| P2    | Penalty parameter | int or float | 32            | P2 > P1         | No       |
-+-------+-------------------+--------------+---------------+-----------------+----------+
-| alpha | Penalty parameter | float        | 1.0           |                 | No       |
-+-------+-------------------+--------------+---------------+-----------------+----------+
-| beta  | Penalty parameter | int or float | 1             |                 | No       |
-+-------+-------------------+--------------+---------------+-----------------+----------+
-| gamma | Penalty parameter | int or float | 1             |                 | No       |
-+-------+-------------------+--------------+---------------+-----------------+----------+
+                .. list-table:: 
+                    :widths: 19 19 19 19 19 19
+                    :header-rows: 1
 
-- *penalty_method = mc_cnn_fast_penalty*
+                    * - Name
+                      - Description
+                      - Type
+                      - Default value
+                      - Available value
+                      - Required
+                    * - P1
+                      - Penalty parameter
+                      - int or float
+                      - 8
+                      - >0
+                      - No
+                    * - P2
+                      - Penalty parameter
+                      - int or float
+                      - 32
+                      - P2 > P1
+                      - No
+                    * - alpha
+                      - Penalty parameter
+                      - float
+                      - 1.0
+                      - 
+                      - No
+                    * - gamma
+                      - Penalty parameter
+                      - int or float
+                      - 1
+                      - 
+                      - No
 
-+------+-------------------+--------------+---------------+-----------------+----------+
-| Name | Description       | Type         | Default value | Available value | Required |
-+======+===================+==============+===============+=================+==========+
-| P1   | Penalty parameter | int or float | 2.3           | >0              | No       |
-+------+-------------------+--------------+---------------+-----------------+----------+
-| P2   | Penalty parameter | int or float | 55.9          | P2 > P1         | No       |
-+------+-------------------+--------------+---------------+-----------------+----------+
-| Q1   | Penalty parameter | int or float | 4             |                 | No       |
-+------+-------------------+--------------+---------------+-----------------+----------+
-| Q2   | Penalty parameter | int or float | 2             |                 | No       |
-+------+-------------------+--------------+---------------+-----------------+----------+
-| D    | Penalty parameter | int or float | 0.08          |                 | No       |
-+------+-------------------+--------------+---------------+-----------------+----------+
-| V    | Penalty parameter | int or float | 1.5           |                 | No       |
-+------+-------------------+--------------+---------------+-----------------+----------+
+            .. tab:: inverseGradient
+
+                .. list-table:: 
+                    :widths: 19 19 19 19 19 19
+                    :header-rows: 1
+
+                    * - Name
+                      - Description
+                      - Type
+                      - Default value
+                      - Available value
+                      - Required
+                    * - P1
+                      - Penalty parameter
+                      - int or float
+                      - 8
+                      - >0
+                      - No
+                    * - P2
+                      - Penalty parameter
+                      - int or float
+                      - 32
+                      - P2 > P1
+                      - No
+                    * - alpha
+                      - Penalty parameter
+                      - float
+                      - 1.0
+                      - 
+                      - No
+                    * - beta
+                      - Penalty parameter
+                      - int or float
+                      - 1
+                      - 
+                      - No
+                    * - gamma
+                      - Penalty parameter
+                      - int or float
+                      - 1
+                      - 
+                      - No
+
+    
+    .. tab:: mc_cnn_fast_penalty
+
+        .. list-table:: 
+            :widths: 19 19 19 19 19 19
+            :header-rows: 1
+
+            * - Name
+              - Description
+              - Type
+              - Default value
+              - Available value
+              - Required
+            * - P1
+              - Penalty parameter
+              - int or float
+              - 2.3
+              - >0
+              - No
+            * - P2
+              - Penalty parameter
+              - int or float
+              - 55.9
+              - P2 > P1
+              - No
+            * - Q1
+              - Penalty parameter
+              - int or float
+              - 4
+              - 
+              - No
+            * - Q2
+              - Penalty parameter
+              - int or float
+              - 2
+              - 
+              - No
+            * - D
+              - Penalty parameter
+              - int or float
+              - 0.08
+              - 
+              - No
+            * - V
+              - Penalty parameter
+              - int or float
+              - 1.5
+              - 
+              - No
 
 
 **Example using sgm optimization**

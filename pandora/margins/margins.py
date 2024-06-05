@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2024 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -133,6 +133,14 @@ class GlobalMargins:
             "non-cumulative margins": {s: m.asdict() for s, m in self._non_cumulatives.items()},
             "global margins": self.global_margins.asdict(),
         }
+
+    def get(self, key):
+        """Find key in cumulative margins or non-cumulative margins and return corresponding margins"""
+        if key in self._cumulatives:
+            return self._cumulatives[key]
+        if key in self._non_cumulatives:
+            return self._non_cumulatives[key]
+        return None
 
 
 def max_margins(margins: Sequence[Margins]) -> Margins:
