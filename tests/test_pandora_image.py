@@ -1108,3 +1108,54 @@ class TestGetMetadata:
             img_tools.get_metadata(
                 img=input_cfg["input"]["left"]["img"], disparity=input_cfg["input"]["left"]["disp"], classif=classif
             )
+
+
+def test_add_global_disparity(monoband_image):
+    """
+    Test add_global_disparity function
+    """
+
+    dataset = monoband_image
+
+    # add disparity for CARS tiling
+    dataset.attrs["disp_min"] = -2
+    dataset.attrs["disp_max"] = 2
+
+    test_dataset = img_tools.add_global_disparity(dataset, -2, 2)
+
+    assert test_dataset.attrs["global_disparity"] == [-2, 2]
+
+
+@pytest.mark.parametrize(
+    ["disparities", "expected_error"],
+    [
+        pytest.param(
+            [0, 2],
+            "For ambiguity step, the global disparity must be outside the range of the grid disparity",
+            id="global_min error",
+        ),
+        pytest.param(
+            [-2, 1],
+            "For ambiguity step, the global disparity must be outside the range of the grid disparity",
+            id="global_max error",
+        ),
+        pytest.param(
+            [0, 1],
+            "For ambiguity step, the global disparity must be outside the range of the grid disparity",
+            id="global_extremum error",
+        ),
+    ],
+)
+def test_add_global_disparity_failed(monoband_image, disparities, expected_error):
+    """
+    Test add_global_disparity function
+    """
+
+    dataset = monoband_image
+
+    # add disparity for CARS tiling
+    dataset.attrs["disp_min"] = -2
+    dataset.attrs["disp_max"] = 2
+
+    with pytest.raises(ValueError, match=expected_error):
+        _ = img_tools.add_global_disparity(dataset, disparities[0], disparities[1])

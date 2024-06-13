@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.1a2 (June 2024)
+
+### Fixed
+- Fixed calculation of ambiguity and risk with variable disparity. [#400]
+
+### Changed
+- Ambiguity normalisation by external global interval. [#402]
+
 ## 1.6.1a1 (June 2024)
 
 ### Added
