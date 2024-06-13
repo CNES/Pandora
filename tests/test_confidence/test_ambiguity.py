@@ -25,6 +25,7 @@ import numpy as np
 import xarray as xr
 
 import pandora.cost_volume_confidence as confidence
+from pandora import img_tools
 
 
 def test_ambiguity(create_img_for_confidence):
@@ -194,3 +195,33 @@ def test_compute_compute_ambiguity_and_sampled_ambiguity_with_variable_disparity
     # Check if the calculated ambiguity is equal to the ground truth (same shape and all elements equals)
     np.testing.assert_allclose(amb, gt_amb_int, rtol=1e-06)
     np.testing.assert_allclose(amb_sampl, gt_sampl_amb, rtol=1e-06)
+
+
+def test_normalize_with_extremum(create_img_for_confidence):
+    """
+    test normalize_with_extremum function
+    """
+
+    # create datas
+    left_im, _ = create_img_for_confidence
+
+    # Add tiles disparity
+    left_im.attrs["disp_min"] = 0
+    left_im.attrs["disp_max"] = 1
+
+    # Add global disparity
+    left_im = img_tools.add_global_disparity(left_im, -2, 2)
+
+    ambiguity_ = confidence.AbstractCostVolumeConfidence(
+        **{"confidence_method": "ambiguity", "eta_max": 0.2, "eta_step": 0.1}
+    )
+    ambiguity = np.ones((4, 4))
+
+    # normalize_with_extremum function to test
+    amb_test = ambiguity_.normalize_with_extremum(ambiguity, left_im)
+
+    # create ground truth
+    nbr_etas = np.arange(0.0, 0.2, 0.1).shape[0]
+    amb_vt = np.copy(ambiguity) / ((2 - (-2)) * nbr_etas)
+
+    np.testing.assert_array_equal(amb_test, amb_vt)

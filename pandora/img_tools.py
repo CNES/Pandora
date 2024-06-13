@@ -289,6 +289,32 @@ def add_mask(
     return dataset
 
 
+def add_global_disparity(dataset: xr.Dataset, global_disp_min: int, global_disp_max: int) -> xr.Dataset:
+    """
+    Add global disparity information to dataset
+
+    :param dataset: xarray dataset without no_data information
+    :type dataset: xr.Dataset
+    :param global_disp_min: global minimum disparity
+    :type global_disp_min: int
+    :param global_disp_max: global maximum disparity
+    :type global_disp_max: int
+    :return: dataset : updated dataset
+    :rtype: xr.Dataset
+    """
+
+    img_grid_min = dataset.attrs["disp_min"]
+    img_grid_max = dataset.attrs["disp_max"]
+
+    if global_disp_min > img_grid_min or global_disp_max < img_grid_max:
+        raise ValueError("For ambiguity step, the global disparity must be outside the range of the grid disparity")
+
+    # Add global disparity to dataset in case of tiling ambiguity
+    dataset.attrs.update({"global_disparity": [global_disp_min, global_disp_max]})
+
+    return dataset
+
+
 def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Dataset:
     """
     Read image and mask, and return the corresponding xarray.DataSet

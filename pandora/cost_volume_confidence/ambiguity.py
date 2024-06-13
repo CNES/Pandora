@@ -19,7 +19,7 @@
 """
 This module contains functions for estimating confidence from ambiguity.
 """
-
+import logging
 import warnings
 import os
 from typing import Dict, Tuple, Union
@@ -145,7 +145,17 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
 
         # If activated, ambiguity normalization with percentile
         if self._normalization:
-            ambiguity = self.normalize_with_percentile(ambiguity)
+            if "global_disparity" in img_left.attrs:
+                ambiguity = self.normalize_with_extremum(ambiguity, img_left)
+                logging.info(
+                    "You are not using ambiguity normalization by percentile; \n"
+                    "you are in a specific case with the instantiation of global_disparity."
+                )
+            # in case of cross correlation
+            elif "global_disparity" in img_right.attrs:
+                ambiguity = self.normalize_with_extremum(ambiguity, img_right)
+            else:
+                ambiguity = self.normalize_with_percentile(ambiguity)
 
         # Conversion of ambiguity into a confidence measure
         ambiguity = 1 - ambiguity
@@ -154,7 +164,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
 
         return disp, cv
 
-    def normalize_with_percentile(self, ambiguity):
+    def normalize_with_percentile(self, ambiguity: np.ndarray) -> np.ndarray:
         """
         Normalize ambiguity with percentile
 
@@ -163,12 +173,31 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         :return: the normalized ambiguity
         :rtype: 2D np.ndarray (row, col) dtype = float32
         """
+
         norm_amb = np.copy(ambiguity)
         perc_min = np.percentile(norm_amb, self._percentile)
         perc_max = np.percentile(norm_amb, 100 - self._percentile)
         np.clip(norm_amb, perc_min, perc_max, out=norm_amb)
 
         return (norm_amb - np.min(norm_amb)) / (np.max(norm_amb) - np.min(norm_amb))
+
+    def normalize_with_extremum(self, ambiguity: np.ndarray, dataset: xr.Dataset) -> np.ndarray:
+        """
+        Normalize ambiguity with extremum
+
+        :param ambiguity: ambiguity
+        :type ambiguity: 2D np.ndarray (row, col) dtype = float32
+        :param dataset: Dataset image
+        :tye dataset: xarray.Dataset
+        :return: the normalized ambiguity
+        :rtype: 2D np.ndarray (row, col) dtype = float32
+        """
+        norm_amb = np.copy(ambiguity)
+        global_disp_max = dataset.attrs["global_disparity"][1]
+        global_disp_min = dataset.attrs["global_disparity"][0]
+        max_norm = (global_disp_max - global_disp_min) * self._nbr_etas
+
+        return norm_amb / max_norm
 
     @staticmethod
     @njit(

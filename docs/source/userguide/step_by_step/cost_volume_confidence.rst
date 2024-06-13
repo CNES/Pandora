@@ -26,6 +26,10 @@ The available methods are :
 `Sarrazin, E., Cournet, M., Dumas, L., Defonte, V., Fardet, Q., Steux, Y., Jimenez Diaz, N., Dubois, E., Youssefi, D., Buffe, F., 2021. Ambiguity concept in stereo matching pipeline.
 ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences. <https://isprs-archives.copernicus.org/articles/XLIII-B2-2021/383/2021/>`_
 
+.. note ::
+
+ If the user uses pandora while tiling his data, we recommend integrating the add_global_disparity function into the image dataset to avoid a tiling effect. In this case, the ambiguity
+ is normalized using a conventional normalization method.
 
 - Risk. This metric consists in evaluating a risk interval associated with the correlation measure, and ultimately the selected disparity, for each point on the disparity map :
 
