@@ -138,7 +138,7 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
         cv: xr.Dataset = None,
     ) -> Tuple[xr.Dataset, xr.Dataset]:
         """
-        Computes a confidence measure that evaluates the minimum and maximim disparity at
+        Computes a confidence measure that evaluates the minimum and maximum disparity at
         each point with a confidence of possibility_threshold %
 
         :param disp: the disparity map dataset
@@ -216,7 +216,7 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
         :param type_factor: Either 1 or -1. Used to adapt the possibility computation to max or min measures
         :type type_factor: float
         :return: the infimum and supremum (not regularized) of the set containing the true disparity
-        :rtype: Tuple(2D np.array (row, col) dtype = float32, 2D np.array (row, col) dtype = float32)
+        :rtype: Tuple(2D np.ndarray (row, col) dtype = float32, 2D np.ndarray (row, col) dtype = float32)
         """
         # IDEA: instead of transforming the cost curve into a possibility, we can compute the cost
         # threshold T to apply directly to the cost curve to obtain the same result

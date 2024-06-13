@@ -1,6 +1,3 @@
-# pylint: disable=missing-module-docstring
-#
-# coding: utf8
 # Copyright (c) 2024 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
@@ -27,5 +24,3 @@ from .cost_volume_confidence import AbstractCostVolumeConfidence
 from . import interval_bounds
 from . import std_intensity
 from . import risk
-
-# pylint: disable=missing-module-docstring

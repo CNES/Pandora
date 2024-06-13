@@ -119,12 +119,12 @@ class AbstractCostVolumeConfidence:
     ) -> Tuple[xr.Dataset, xr.Dataset]:
         """
         Create or update the confidence measure : confidence_measure (xarray.DataArray of the cost volume and the
-        disparity map) by adding a the indicator
+        disparity map) by adding an indicator
 
         :param name_confidence_measure: the name of the new confidence indicator
         :type name_confidence_measure: string
-        :param confidence_map: the condidence map
-        :type confidence_map: 2D np.array (row, col) dtype=np.float32
+        :param confidence_map: the confidence map
+        :type confidence_map: 2D np.ndarray (row, col) dtype=np.float32
         :param disp: the disparity map dataset or None
         :type disp: xarray.Dataset or None
         :param cv: cost volume dataset
@@ -147,7 +147,7 @@ class AbstractCostVolumeConfidence:
                 conf_measure = np.full((nb_row, nb_col, nb_indicator + 1), np.nan, dtype=np.float32)
                 # old confidence measures
                 conf_measure[:, :, :-1] = cv["confidence_measure"].data
-                #  new confidence measure
+                # new confidence measure
                 conf_measure[:, :, -1] = confidence_map
 
                 indicator = np.copy(cv.coords["indicator"])

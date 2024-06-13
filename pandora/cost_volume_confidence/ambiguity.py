@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# coding: utf8
-#
 # Copyright (c) 2024 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
@@ -68,6 +65,8 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         self._eta_max = float(self.cfg["eta_max"])
         self._eta_step = float(self.cfg["eta_step"])
         self._indicator = self._method + str(self.cfg["indicator"])
+        self._etas = np.arange(self._eta_min, self._eta_max, self._eta_step)
+        self._nbr_etas = self._etas.shape[0]
 
     def check_conf(self, **cfg: Union[str, float]) -> Dict[str, Union[str, float]]:
         """
@@ -130,11 +129,19 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
 
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
+
+        grids = np.array(
+            [img_left["disparity"].sel(band_disp="min"), img_left["disparity"].sel(band_disp="max")], dtype=np.int64
+        )
+        # Get disparity intervals parameters
+        disparity_range = cv["disp"].data.astype(np.float32)
         # This silences numba's TBB threading layer warning
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             # Computes ambiguity using numba in parallel for memory and computation time optimization
-            ambiguity = self.compute_ambiguity(cv["cost_volume"].data, self._eta_min, self._eta_max, self._eta_step)
+            ambiguity = self.compute_ambiguity(
+                cv["cost_volume"].data, self._etas, self._nbr_etas, grids, disparity_range
+            )
 
         # If activated, ambiguity normalization with percentile
         if self._normalization:
@@ -152,9 +159,9 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         Normalize ambiguity with percentile
 
         :param ambiguity: ambiguity
-        :type ambiguity: 2D np.array (row, col) dtype = float32
+        :type ambiguity: 2D np.ndarray (row, col) dtype = float32
         :return: the normalized ambiguity
-        :rtype: 2D np.array (row, col) dtype = float32
+        :rtype: 2D np.ndarray (row, col) dtype = float32
         """
         norm_amb = np.copy(ambiguity)
         perc_min = np.percentile(norm_amb, self._percentile)
@@ -165,32 +172,39 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
 
     @staticmethod
     @njit(
-        "f4[:, :](f4[:, :, :], f4, f4, f4)",
-        parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
+        "f4[:, :](f4[:, :, :], f8[:], i8, i8[:, :, :],f4[:])",
+        parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "False")),
         cache=True,
     )
-    def compute_ambiguity(cv: np.ndarray, _eta_min: float, _eta_max: float, _eta_step: float) -> np.ndarray:
+    def compute_ambiguity(
+        cv: np.ndarray,
+        etas: np.ndarray,
+        nbr_etas: int,
+        grids: np.ndarray,
+        disparity_range: np.ndarray,
+    ) -> np.ndarray:
         """
         Computes ambiguity.
 
         :param cv: cost volume
-        :type cv: 3D np.array (row, col, disp)
-        :param _eta_min: minimal eta
-        :type _eta_min: float
-        :param _eta_max: maximal eta
-        :type _eta_max: float
-        :param _eta_step: eta step
-        :type _eta_step: float
+        :type cv: 3D np.ndarray (row, col, disp)
+        :param etas: range between eta_min and eta_max with step eta_step
+        :type etas: np.ndarray
+        :param nbr_etas: number of etas
+        :type nbr_etas: int
+        :param grids: array containing min and max disparity grids
+        :type grids: 2D np.ndarray (min, max)
+        :param disparity_range: array containing disparity range
+        :type disparity_range: np.ndarray
         :return: the normalized ambiguity
-        :rtype: 2D np.array (row, col) dtype = float32
+        :rtype: 2D np.ndarray (row, col) dtype = float32
         """
-        # Miniumum and maximum of all costs, useful to normalize the cost volume
+
+        # Minimum and maximum of all costs, useful to normalize the cost volume
         min_cost = np.nanmin(cv)
         max_cost = np.nanmax(cv)
 
         n_row, n_col, nb_disps = cv.shape
-
-        etas = np.arange(_eta_min, _eta_max, _eta_step)
 
         # Numba does not support the np.tile operation
         two_dim_etas = np.repeat(etas, nb_disps).reshape((-1, nb_disps)).T.flatten()
@@ -198,88 +212,116 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         # integral of ambiguity
         ambiguity = np.zeros((n_row, n_col), dtype=np.float32)
 
+        diff_cost = max_cost - min_cost
+
         for row in prange(n_row):  # pylint: disable=not-an-iterable
             for col in prange(n_col):  # pylint: disable=not-an-iterable
                 # Normalized minimum cost for one point
-                normalized_min_cost = (np.nanmin(cv[row, col, :]) - min_cost) / (max_cost - min_cost)
+                normalized_min_cost = (np.nanmin(cv[row, col, :]) - min_cost) / diff_cost
 
                 # If all costs are at nan, set the maximum value of the ambiguity for this point
                 if np.isnan(normalized_min_cost):
-                    ambiguity[row, col] = etas.shape[0] * nb_disps
+                    ambiguity[row, col] = nbr_etas * nb_disps
                 else:
-                    normalized_min_cost = np.repeat(normalized_min_cost, nb_disps * etas.shape[0])
 
+                    idx_disp_min = np.searchsorted(disparity_range, grids[0][row, col])
+                    idx_disp_max = np.searchsorted(disparity_range, grids[1][row, col]) + 1
+
+                    normalized_min_cost = np.repeat(normalized_min_cost, nb_disps * nbr_etas)
                     # Normalized cost volume for one point
-                    normalized_cv = (cv[row, col, :] - min_cost) / (max_cost - min_cost)
-                    #  Mask nan to -inf to increase the value of the ambiguity if a point contains nan costs
-                    normalized_cv[np.isnan(normalized_cv)] = -np.inf
-                    normalized_cv = np.repeat(normalized_cv, etas.shape[0])
+                    normalized_cv = (cv[row, col, :] - min_cost) / diff_cost
 
-                    ambiguity[row, col] += np.sum(normalized_cv <= (normalized_min_cost + two_dim_etas))
+                    # Mask nan to -inf to increase the value of the ambiguity if a point contains nan costs
+                    normalized_cv[idx_disp_min:idx_disp_max][
+                        np.isnan(normalized_cv[idx_disp_min:idx_disp_max])
+                    ] = -np.inf
+
+                    normalized_cv[:idx_disp_min][np.isnan(normalized_cv[:idx_disp_min])] = np.inf
+                    normalized_cv[idx_disp_max:][np.isnan(normalized_cv[idx_disp_max:])] = np.inf
+
+                    normalized_cv = np.repeat(normalized_cv, nbr_etas)
+
+                    ambiguity[row, col] += np.nansum(normalized_cv <= (normalized_min_cost + two_dim_etas))
 
         return ambiguity
 
     @staticmethod
     @njit(
-        "Tuple((f4[:, :],f4[:, :, :]))(f4[:, :, :], f4, f4, f4)",
-        parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
+        "Tuple((f4[:, :],f4[:, :, :]))(f4[:, :, :], f8[:], i8, i8[:, :, :], f4[:])",
+        parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "False")),
         cache=True,
     )
-    def compute_ambiguity_and_sampled_ambiguity(cv: np.ndarray, _eta_min: float, _eta_max: float, _eta_step: float):
+    def compute_ambiguity_and_sampled_ambiguity(
+        cv: np.ndarray,
+        etas: np.ndarray,
+        nbr_etas: int,
+        grids: np.ndarray,
+        disparity_range: np.ndarray,
+    ):
         """
         Return the ambiguity and sampled ambiguity, useful for evaluating ambiguity in notebooks
 
         :param cv: cost volume
-        :type cv: 3D np.array (row, col, disp)
-        :param _eta_min: minimal eta
-        :type _eta_min: float
-        :param _eta_max: maximal eta
-        :type _eta_max: float
-        :param _eta_step: eta step
-        :type _eta_step: float
+        :type cv: 3D np.ndarray (row, col, disp)
+        :param etas: range between eta_min and eta_max with step eta_step
+        :type etas: np.ndarray
+        :param nbr_etas: nuber of etas
+        :type nbr_etas: int
+        :param grids: array containing min and max disparity grids
+        :type grids: 2D np.ndarray (min, max)
+        :param disparity_range: array containing disparity range
+        :type disparity_range: np.ndarray
         :return: the normalized ambiguity and sampled ambiguity
-        :rtype: Tuple(2D np.array (row, col) dtype = float32, 3D np.array (row, col) dtype = float32)
+        :rtype: Tuple(2D np.ndarray (row, col) dtype = float32, 3D np.ndarray (row, col) dtype = float32)
         """
-        #  Miniumum and maximum of all costs, useful to normalize the cost volume
+        # Minimum and maximum of all costs, useful to normalize the cost volume
         min_cost = np.nanmin(cv)
         max_cost = np.nanmax(cv)
 
         n_row, n_col, nb_disps = cv.shape
-
-        etas = np.arange(_eta_min, _eta_max, _eta_step)
 
         # Numba does not support the np.tile operation
         two_dim_etas = np.repeat(etas, nb_disps).reshape((-1, nb_disps)).T.flatten()
 
         # integral of ambiguity
         ambiguity = np.zeros((n_row, n_col), dtype=np.float32)
-        sampled_ambiguity = np.zeros((n_row, n_col, etas.shape[0]), dtype=np.float32)
+        sampled_ambiguity = np.zeros((n_row, n_col, nbr_etas), dtype=np.float32)
+
+        diff_cost = max_cost - min_cost
 
         for row in prange(n_row):  # pylint: disable=not-an-iterable
             for col in prange(n_col):  # pylint: disable=not-an-iterable
                 # Normalized minimum cost for one point
-                normalized_min_cost = (np.nanmin(cv[row, col, :]) - min_cost) / (max_cost - min_cost)
+                normalized_min_cost = (np.nanmin(cv[row, col, :]) - min_cost) / diff_cost
 
                 # If all costs are at nan, set the maximum value of the ambiguity for this point
                 if np.isnan(normalized_min_cost):
-                    ambiguity[row, col] = etas.shape[0] * nb_disps
+                    ambiguity[row, col] = nbr_etas * nb_disps
                     sampled_ambiguity[row, col, :] = nb_disps
                 else:
-                    normalized_min_cost = np.repeat(normalized_min_cost, nb_disps * etas.shape[0])
+                    normalized_min_cost = np.repeat(normalized_min_cost, nb_disps * nbr_etas)
 
                     # Normalized cost volume for one point
                     normalized_cv = (cv[row, col, :] - min_cost) / (max_cost - min_cost)
 
-                    #  Mask nan to -inf to increase the value of the ambiguity if a point contains nan costs
-                    normalized_cv[np.isnan(normalized_cv)] = -np.inf
-                    normalized_cv = np.repeat(normalized_cv, etas.shape[0])
+                    idx_disp_min = np.searchsorted(disparity_range, grids[0][row, col])
+                    idx_disp_max = np.searchsorted(disparity_range, grids[1][row, col]) + 1
+
+                    # Mask nan to -inf to increase the value of the ambiguity if a point contains nan costs
+                    normalized_cv[idx_disp_min:idx_disp_max][
+                        np.isnan(normalized_cv[idx_disp_min:idx_disp_max])
+                    ] = -np.inf
+                    normalized_cv[:idx_disp_min][np.isnan(normalized_cv[:idx_disp_min])] = np.inf
+                    normalized_cv[idx_disp_max:][np.isnan(normalized_cv[idx_disp_max:])] = np.inf
+
+                    normalized_cv = np.repeat(normalized_cv, nbr_etas)
 
                     # fill integral ambiguity
-                    ambiguity[row, col] += np.sum(normalized_cv <= (normalized_min_cost + two_dim_etas))
+                    ambiguity[row, col] += np.nansum(normalized_cv <= (normalized_min_cost + two_dim_etas))
 
                     # fill sampled ambiguity
                     costs_comparison = normalized_cv <= (normalized_min_cost + two_dim_etas)
-                    costs_comparison = costs_comparison.reshape((nb_disps, etas.shape[0]))
+                    costs_comparison = costs_comparison.reshape((nb_disps, nbr_etas))
                     sampled_ambiguity[row, col, :] = np.sum(costs_comparison, axis=0)
 
         return ambiguity, sampled_ambiguity

@@ -68,6 +68,8 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         self._eta_max = float(self.cfg["eta_max"])
         self._indicator_max = self._method_max + str(self.cfg["indicator"])
         self._indicator_min = self._method_min + str(self.cfg["indicator"])
+        self._etas = np.arange(self._eta_min, self._eta_max, self._eta_step)
+        self._nbr_etas = self._etas.shape[0]
 
     def check_conf(self, **cfg: Union[str, float]) -> Dict[str, Union[str, float]]:
         """
@@ -125,6 +127,12 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
                 and 'risk_min_confidence' in the
         :rtype: Tuple(xarray.Dataset, xarray.Dataset)
         """
+
+        grids = np.array(
+            [img_left["disparity"].sel(band_disp="min"), img_left["disparity"].sel(band_disp="max")], dtype=np.int64
+        )
+        # Get disparity intervals parameters
+        disparity_range = cv["disp"].data.astype(np.float32)
         # This silences numba's TBB threading layer warning
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
@@ -133,11 +141,16 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
                 **{"confidence_method": "ambiguity"}  # type: ignore
             )
             _, sampled_ambiguity = ambiguity_.compute_ambiguity_and_sampled_ambiguity(  # type: ignore
-                cv["cost_volume"].data, self._eta_min, self._eta_max, self._eta_step
+                cv["cost_volume"].data, self._etas, self._nbr_etas, grids, disparity_range
             )
             # Computes risk using numba in parallel for memory and computation time optimization
             risk_max, risk_min = self.compute_risk(
-                cv["cost_volume"].data, sampled_ambiguity, self._eta_min, self._eta_max, self._eta_step
+                cv["cost_volume"].data,
+                sampled_ambiguity,
+                self._etas,
+                self._nbr_etas,
+                grids,
+                disparity_range,
             )
 
         disp, cv = self.allocate_confidence_map(self._indicator_max, risk_max, disp, cv)
@@ -147,36 +160,41 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
 
     @staticmethod
     @njit(
-        "Tuple((f4[:, :],f4[:, :]))(f4[:, :, :], f4[:, :, :], f4, f4, f4)",
+        "Tuple((f4[:, :],f4[:, :]))(f4[:, :, :], f4[:, :, :], f8[:], i8, i8[:, :, :], f4[:])",
         parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
         cache=True,
     )
     def compute_risk(
-        cv: np.ndarray, sampled_ambiguity: np.ndarray, _eta_min: float, _eta_max: float, _eta_step: float
+        cv: np.ndarray,
+        sampled_ambiguity: np.ndarray,
+        etas: np.ndarray,
+        nbr_etas: int,
+        grids: np.ndarray,
+        disparity_range: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Computes minimum and maximum risk.
 
         :param cv: cost volume
-        :type cv: 3D np.array (row, col, disp)
+        :type cv: 3D np.ndarray (row, col, disp)
         :param sampled_ambiguity: sampled cost volume ambiguity
-        :type sampled_ambiguity: 3D np.array (row, col, eta)
-        :param _eta_min: minimal eta
-        :type _eta_min: float
-        :param _eta_max: maximal eta
-        :type _eta_max: float
-        :param _eta_step: eta step
-        :type _eta_step: float
+        :type sampled_ambiguity: 3D np.ndarray (row, col, eta)
+        :param etas: range between eta_min and eta_max with step eta_step
+        :type etas: np.ndarray
+        :param nbr_etas: number of etas
+        :type nbr_etas: int
+        :param grids: array containing min and max disparity grids
+        :type grids: 2D np.ndarray (min, max)
+        :param disparity_range: array containing disparity range
+        :type disparity_range: np.ndarray
         :return: the minimum and maximum risk
-        :rtype: Tuple(2D np.array (row, col) dtype = float32, 2D np.array (row, col) dtype = float32)
+        :rtype: Tuple(2D np.ndarray (row, col) dtype = float32, 2D np.ndarray (row, col) dtype = float32)
         """
-        #  Miniumum and maximum of all costs, useful to normalize the cost volume
+        # Minimum and maximum of all costs, useful to normalize the cost volume
         min_cost = np.nanmin(cv)
         max_cost = np.nanmax(cv)
 
         n_row, n_col, nb_disps = cv.shape
-
-        etas = np.arange(_eta_min, _eta_max, _eta_step)
 
         # Numba does not support the np.tile operation
         two_dim_etas = np.repeat(etas, nb_disps).reshape((-1, nb_disps)).T.flatten()
@@ -195,24 +213,31 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
                     risk_max[row, col] = np.nan
                     risk_min[row, col] = np.nan
                 else:
-                    normalized_min_cost = np.repeat(normalized_min_cost, nb_disps * etas.shape[0])
+                    normalized_min_cost = np.repeat(normalized_min_cost, nb_disps * nbr_etas)
                     # Normalized cost volume for one point
                     normalized_cv = (cv[row, col, :] - min_cost) / (max_cost - min_cost)
-                    #  Mask nan to -inf to later discard values out of [min; min + eta]
-                    normalized_cv[np.isnan(normalized_cv)] = -np.inf
-                    normalized_cv = np.repeat(normalized_cv, etas.shape[0])
-                    # Initialize all disparties
-                    disp_cv = np.arange(nb_disps) * 1.0
-                    disp_cv = np.repeat(disp_cv, etas.shape[0])
-                    # Remove disparities for every similarity value outside of [min;min+eta[
+                    # Mask nan to -inf to later discard values out of [min; min + eta]
+
+                    idx_disp_min = np.searchsorted(disparity_range, grids[0][row, col])
+                    idx_disp_max = np.searchsorted(disparity_range, grids[1][row, col]) + 1
+
+                    normalized_cv[idx_disp_min:idx_disp_max][
+                        np.isnan(normalized_cv[idx_disp_min:idx_disp_max])
+                    ] = -np.inf
+
+                    normalized_cv = np.repeat(normalized_cv, nbr_etas)
+                    # Initialize all disparities
+                    disp_cv = np.arange(nb_disps, dtype=np.float32)
+                    disp_cv = np.repeat(disp_cv, nbr_etas)
+                    # Remove disparities for every similarity value outside [min;min+eta[
                     disp_cv[normalized_cv > (normalized_min_cost + two_dim_etas)] = np.nan
                     # Reshape to distinguish each sample's disparity range
-                    disp_cv = disp_cv.reshape((nb_disps, etas.shape[0]))
+                    disp_cv = disp_cv.reshape((nb_disps, nbr_etas))
                     # Initialize minimum and maximum disparities
-                    min_disp = np.zeros(etas.shape[0])
-                    max_disp = np.zeros(etas.shape[0])
+                    min_disp = np.zeros(nbr_etas)
+                    max_disp = np.zeros(nbr_etas)
                     # Obtain min and max disparities for each sample
-                    for i in range(etas.shape[0]):
+                    for i in range(nbr_etas):
                         min_disp[i] = np.nanmin(disp_cv[:, i])
                         max_disp[i] = np.nanmax(disp_cv[:, i])
                     # fill mean risks
@@ -224,37 +249,42 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
 
     @staticmethod
     @njit(
-        "Tuple((f4[:, :],f4[:, :],f4[:, :, :],f4[:, :, :]))(f4[:, :, :], f4[:, :, :], f4, f4, f4)",
+        "Tuple((f4[:, :],f4[:, :],f4[:, :, :],f4[:, :, :]))(f4[:, :, :], f4[:, :, :], f8[:], i8, i8[:, :, :], f4[:])",
         parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
         cache=True,
     )
     def compute_risk_and_sampled_risk(
-        cv: np.ndarray, sampled_ambiguity: np.ndarray, _eta_min: float, _eta_max: float, _eta_step: float
+        cv: np.ndarray,
+        sampled_ambiguity: np.ndarray,
+        etas: np.ndarray,
+        nbr_etas: int,
+        grids: np.ndarray,
+        disparity_range: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Computes minimum and maximum risk and sampled_risk.
 
         :param cv: cost volume
-        :type cv: 3D np.array (row, col, disp)
+        :type cv: 3D np.ndarray (row, col, disp)
         :param sampled_ambiguity: sampled cost volume ambiguity
-        :type sampled_ambiguity: 3D np.array (row, col, eta)
-        :param _eta_min: minimal eta
-        :type _eta_min: float
-        :param _eta_max: maximal eta
-        :type _eta_max: float
-        :param _eta_step: eta step
-        :type _eta_step: float
+        :type sampled_ambiguity: 3D np.ndarray (row, col, eta)
+        :param etas: range between eta_min and eta_max with step eta_step
+        :type etas: np.ndarray
+        :param nbr_etas: nuber of etas
+        :type nbr_etas: int
+        :param grids: array containing min and max disparity grids
+        :type grids: 2D np.ndarray (min, max)
+        :param disparity_range: array containing disparity range
+        :type disparity_range: np.ndarray
         :return: the risk
-        :rtype: Tuple(2D np.array (row, col) dtype = float32, 2D np.array (row, col) dtype = float32,
-                     3D np.array (row, col) dtype = float32, 3D np.array (row, col) dtype = float32)
+        :rtype: Tuple(2D np.ndarray (row, col) dtype = float32, 2D np.ndarray (row, col) dtype = float32,
+                     3D np.ndarray (row, col) dtype = float32, 3D np.ndarray (row, col) dtype = float32)
         """
-        #  Miniumum and maximum of all costs, useful to normalize the cost volume
+        # Minimum and maximum of all costs, useful to normalize the cost volume
         min_cost = np.nanmin(cv)
         max_cost = np.nanmax(cv)
 
         n_row, n_col, nb_disps = cv.shape
-
-        etas = np.arange(_eta_min, _eta_max, _eta_step)
 
         # Numba does not support the np.tile operation
         two_dim_etas = np.repeat(etas, nb_disps).reshape((-1, nb_disps)).T.flatten()
@@ -263,8 +293,8 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         risk_max = np.zeros((n_row, n_col), dtype=np.float32)
         risk_min = np.zeros((n_row, n_col), dtype=np.float32)
         # Initialize min and max sampled risks
-        sampled_risk_min = np.zeros((n_row, n_col, etas.shape[0]), dtype=np.float32)
-        sampled_risk_max = np.zeros((n_row, n_col, etas.shape[0]), dtype=np.float32)
+        sampled_risk_min = np.zeros((n_row, n_col, nbr_etas), dtype=np.float32)
+        sampled_risk_max = np.zeros((n_row, n_col, nbr_etas), dtype=np.float32)
 
         for row in prange(n_row):  # pylint: disable=not-an-iterable
             for col in prange(n_col):  # pylint: disable=not-an-iterable
@@ -278,24 +308,33 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
                     risk_max[row, col] = np.nan
                     risk_min[row, col] = np.nan
                 else:
-                    normalized_min_cost = np.repeat(normalized_min_cost, nb_disps * etas.shape[0])
+                    normalized_min_cost = np.repeat(normalized_min_cost, nb_disps * nbr_etas)
                     # Normalized cost volume for one point
                     normalized_cv = (cv[row, col, :] - min_cost) / (max_cost - min_cost)
-                    #  Mask nan to -inf to later discard values out of [min; min + eta]
-                    normalized_cv[np.isnan(normalized_cv)] = -np.inf
-                    normalized_cv = np.repeat(normalized_cv, etas.shape[0])
-                    # Initialize all disparties
-                    disp_cv = np.arange(nb_disps) * 1.0
-                    disp_cv = np.repeat(disp_cv, etas.shape[0])
-                    # Remove disparities for every similarity value outside of [min;min+eta[
+                    # Mask nan to -inf to later discard values out of [min; min + eta]
+                    idx_disp_min = np.searchsorted(disparity_range, grids[0][row, col])
+                    idx_disp_max = np.searchsorted(disparity_range, grids[1][row, col]) + 1
+
+                    normalized_cv[idx_disp_min:idx_disp_max][
+                        np.isnan(normalized_cv[idx_disp_min:idx_disp_max])
+                    ] = -np.inf
+                    normalized_cv[:idx_disp_min][np.isnan(normalized_cv[:idx_disp_min])] = np.nan
+                    normalized_cv[idx_disp_max:][np.isnan(normalized_cv[idx_disp_max:])] = np.nan
+
+                    normalized_cv = np.repeat(normalized_cv, nbr_etas)
+
+                    # Initialize all disparities
+                    disp_cv = np.arange(nb_disps, dtype=np.float32)
+                    disp_cv = np.repeat(disp_cv, nbr_etas)
+                    # Remove disparities for every similarity value outside [min;min+eta[
                     disp_cv[normalized_cv > (normalized_min_cost + two_dim_etas)] = np.nan
                     # Reshape to distinguish each sample's disparity range
-                    disp_cv = disp_cv.reshape((nb_disps, etas.shape[0]))
+                    disp_cv = disp_cv.reshape((nb_disps, nbr_etas))
                     # Initialize minimum and maximum disparities
-                    min_disp = np.zeros(etas.shape[0])
-                    max_disp = np.zeros(etas.shape[0])
+                    min_disp = np.zeros(nbr_etas)
+                    max_disp = np.zeros(nbr_etas)
                     # Obtain min and max disparities for each sample
-                    for i in range(etas.shape[0]):
+                    for i in range(nbr_etas):
                         min_disp[i] = np.nanmin(disp_cv[:, i])
                         max_disp[i] = np.nanmax(disp_cv[:, i])
                     # fill sampled max risk
