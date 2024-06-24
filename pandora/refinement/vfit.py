@@ -72,7 +72,7 @@ class Vfit(refinement.AbstractRefinement):
         print("Vfit refinement method")
 
     @staticmethod
-    @njit()
+    @njit(cache=True)
     def refinement_method(cost: np.ndarray, disp: float, measure: str) -> Tuple[float, float, int]:
         """
         Return the subpixel disparity and cost, by matching a symmetric V shape (linear interpolation)

@@ -31,7 +31,9 @@ import numpy as np
 from numba import njit, prange
 
 
-@njit("b1[:,:](i8[:,:], i8[:,:], i8)", parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")))
+@njit(
+    "b1[:,:](i8[:,:], i8[:,:], i8)", parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")), cache=True
+)
 def create_connected_graph(border_left: np.ndarray, border_right: np.ndarray, depth: int) -> np.ndarray:
     """
     Create a boolean connection matrix from segment coordinates
@@ -78,6 +80,7 @@ def create_connected_graph(border_left: np.ndarray, border_right: np.ndarray, de
 @njit(
     "Tuple([f4[:,:],f4[:,:],b1[:,:]])(f4[:,:],f4[:,:],i8[:,:],i8[:,:],b1[:,:],f8)",
     parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
+    cache=True,
 )
 def graph_regularization(
     interval_inf: np.ndarray,

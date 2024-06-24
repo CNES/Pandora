@@ -536,7 +536,7 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
     return img, msk
 
 
-@njit()
+@njit(cache=True)
 def interpolate_nodata_sgm(img: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """
     Interpolation of the input image to resolve invalid (nodata) pixels.
@@ -823,7 +823,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.
     return r_mean / float(win_size * win_size)
 
 
-@njit()
+@njit(cache=True)
 def find_valid_neighbors(dirs: np.ndarray, disp: np.ndarray, valid: np.ndarray, row: int, col: int):
     """
     Find valid neighbors along directions
