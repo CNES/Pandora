@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.1 (June 2024)
+
+### Changed
+- Fix numpy version.
+
 ## 1.6.1a2 (June 2024)
 
 ### Fixed
