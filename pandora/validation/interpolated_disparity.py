@@ -242,7 +242,7 @@ class McCnnInterpolation(AbstractInterpolation):
             left["validity_mask"] = mask_border(left)
 
     @staticmethod
-    @njit()
+    @njit(cache=True)
     def interpolate_occlusion_mc_cnn(disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Interpolation of the left disparity map to resolve occlusion conflicts.
@@ -299,7 +299,7 @@ class McCnnInterpolation(AbstractInterpolation):
         return out_disp, out_val
 
     @staticmethod
-    @njit()
+    @njit(cache=True)
     def interpolate_mismatch_mc_cnn(disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Interpolation of the left disparity map to resolve mismatch conflicts.
@@ -464,7 +464,7 @@ class SgmInterpolation(AbstractInterpolation):
         left.attrs["interpolated_disparity"] = "sgm"
 
     @staticmethod
-    @njit()
+    @njit(cache=True)
     def interpolate_occlusion_sgm(disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Interpolation of the left disparity map to resolve occlusion conflicts.
@@ -510,7 +510,7 @@ class SgmInterpolation(AbstractInterpolation):
         return out_disp, out_val
 
     @staticmethod
-    @njit()
+    @njit(cache=True)
     def interpolate_mismatch_sgm(disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Interpolation of the left disparity map to resolve mismatch conflicts. Interpolate mismatch by finding the
