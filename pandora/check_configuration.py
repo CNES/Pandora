@@ -243,18 +243,22 @@ def check_disparities_from_input(
     :type img_left: str
     :return: None
     """
-    # Load an image to compare the grid size
-    img_left_ = rasterio_open(img_left)
 
     # disparities are integers
     if isinstance(disparity, list):
         if disparity[1] < disparity[0]:
             raise ValueError("disp_max must be bigger than disp_min")
-        # check that disparity input are not off image
-        check_disparity_ranges_are_inside_image(disparity, img_left_)
+        if img_left is not None:
+            # Load an image to compare the grid size
+            img_left_ = rasterio_open(img_left)
+            # check that disparity input are not off image
+            check_disparity_ranges_are_inside_image(disparity, img_left_)
 
     # disparities are grids
     if isinstance(disparity, str):
+        # Load an image to compare the grid size
+        img_left_ = rasterio_open(img_left)
+
         disparity_reader = rasterio_open(disparity)
         # check that disparity grids is a 2-channel grid
         if disparity_reader.count != 2:
