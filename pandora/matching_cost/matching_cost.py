@@ -62,7 +62,7 @@ class AbstractMatchingCost:
 
     # Matching cost schema confi
     schema = {
-        "subpix": And(int, lambda input: input > 0 and ((input % 2) == 0) or input == 1),
+        "subpix": And(int, lambda sp: sp in [1, 2, 4]),
         "band": Or(str, lambda input: input is None),
         "step": And(int, lambda y: y >= 1),
     }
