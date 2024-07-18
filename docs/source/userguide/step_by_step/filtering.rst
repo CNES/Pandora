@@ -39,7 +39,9 @@ The filtering methods allow to homogenize the disparity maps, those available in
      - int
      - 3
      - >=1
-     - No. Only available if "median" or "median_for_intervals" filter
+     - | No. 
+       | Only available if "median" or "median_for_intervals"
+       | filter
    * - *sigma_color*
      - Bilateral filter parameter
      - float
@@ -54,8 +56,10 @@ The filtering methods allow to homogenize the disparity maps, those available in
      - No. Only available if "bilateral" filter
    * - *interval_indicator*
      - | Indicator for which interval to filter.
-       | Ex: If *cfg* contains a step "cost_volume_confidence.intervals"
-       | then *interval_indicator* should be "intervals"
+       | 
+       | Ex: If *cfg* contains a step 
+       | "cost_volume_confidence.intervals" then
+       | *interval_indicator* should be "intervals"
      - str
      - ""
      - 
@@ -67,9 +71,12 @@ The filtering methods allow to homogenize the disparity maps, those available in
      - true, false
      - No. Only available if "median_for_intervals" filter
    * - *ambiguity_indicator*
-     - | Indicator for which ambiguity to use during regularization.
-       | Ex: If *cfg* contains a step "cost_volume_confidence.amb"
-       | then *ambiguity_indicator* should be "amb"
+     - | Indicator for which ambiguity to use during 
+       | regularization.
+       | 
+       | Ex: If *cfg* contains a step 
+       | "cost_volume_confidence.amb" then
+       | *ambiguity_indicator* should be "amb"
      - str
      - ""
      - 
@@ -81,13 +88,15 @@ The filtering methods allow to homogenize the disparity maps, those available in
      - >0 and <1
      - No. Only available if "median_for_intervals" filter
    * - *ambiguity_kernel_size*
-     - Ambiguity kernel size for regularization. See publication for details.
+     - | Ambiguity kernel size for regularization.
+       | See publication for details.
      - int
      - 5
      - >=0
      - No. Only available if "median_for_intervals" filter
    * - *vertical_depth*
-     - Depth for graph regularization. See publication for details.
+     - | Depth for graph regularization. 
+       | See publication for details.
      - int
      - 2
      - >=0
