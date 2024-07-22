@@ -323,7 +323,7 @@ class TestMatchingCost:
 
         # Create ground truth for output of grid_estimation() function
         c_row = img_left["im"].coords["row"]
-        row = np.arange(c_row[0], c_row[-1] + 1)
+        row = np.arange(c_row.values[0], c_row.values[-1] + 1)
 
         ground_truth = xr.Dataset(
             {},
@@ -435,7 +435,7 @@ class TestMatchingCost:
 
         # Create ground truth for output of grid_estimation() function
         c_row = img_left["im"].coords["row"]
-        row = np.arange(c_row[0], c_row[-1] + 1)
+        row = np.arange(c_row.values[0], c_row.values[-1] + 1)
 
         ground_truth = xr.Dataset(
             {},

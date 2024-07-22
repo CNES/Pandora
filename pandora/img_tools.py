@@ -685,7 +685,7 @@ def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None) -> Lis
             # For each index, shift the right image for subpixel precision 1/subpix*index
             data = zoom(selected_band, (1, (nx_ * subpix - (subpix - 1)) / float(nx_)), order=1)[:, ind::subpix]
             col = np.arange(
-                img_right.coords["col"][0] + shift * ind, img_right.coords["col"][-1], step=1
+                img_right.coords["col"].values[0] + shift * ind, img_right.coords["col"].values[-1], step=1
             )  # type: np.ndarray
             img_right_shift.append(
                 xr.Dataset(

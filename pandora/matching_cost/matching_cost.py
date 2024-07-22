@@ -330,7 +330,7 @@ class AbstractMatchingCost:
         :rtype: xarray.Dataset
         """
         # Get col dimension
-        c_col = img["im"].coords["col"]
+        c_col = img["im"].coords["col"].values
 
         # Get the index of the columns that should be computed
         if cfg and "ROI" in cfg:
@@ -569,7 +569,7 @@ class AbstractMatchingCost:
 
             # Whatever the sub-pixel precision, only one sub-pixel mask is created,
             # since 0.5 shifted mask == 0.25 shifted mask
-            col_shift = np.arange(col[0] + 0.5, col[0] + nx_ - 1, step=1)  # type: np.ndarray
+            col_shift = np.arange(col.values[0] + 0.5, col.values[0] + nx_ - 1, step=1)  # type: np.ndarray
             dilatate_right_mask_shift = xr.DataArray(
                 dilatate_right_mask_shift, coords=[row, col_shift], dims=["row", "col"]
             )
