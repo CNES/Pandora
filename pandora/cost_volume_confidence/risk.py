@@ -51,8 +51,6 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
     # Method name
     _method_max = "risk_max"
     _method_min = "risk_min"
-    # Indicator
-    _indicator = ""
 
     def __init__(self, **cfg: str) -> None:
         """

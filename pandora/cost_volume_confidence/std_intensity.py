@@ -42,8 +42,6 @@ class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
 
     # Method name
     _method = "intensity_std"
-    # Indicator
-    _indicator = ""
 
     def __init__(self, **cfg: str) -> None:
         """

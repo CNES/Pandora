@@ -48,8 +48,6 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
     _NORMALIZATION = True
     # Method name
     _method = "ambiguity"
-    # Indicator
-    _indicator = ""
 
     def __init__(self, **cfg: str) -> None:
         """
