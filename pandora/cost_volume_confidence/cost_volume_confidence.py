@@ -39,6 +39,8 @@ class AbstractCostVolumeConfidence:
 
     confidence_methods_avail = {}
     cfg = None
+    # Indicator
+    _indicator = ""
 
     def __new__(cls, **cfg: dict):
         """

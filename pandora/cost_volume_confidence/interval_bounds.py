@@ -52,8 +52,6 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
 
     # Method name
     _method = "interval_bounds"
-    # Indicator
-    _indicator = ""
 
     def __init__(self, **cfg: str) -> None:
         """
