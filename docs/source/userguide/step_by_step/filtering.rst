@@ -14,100 +14,149 @@ The filtering methods allow to homogenize the disparity maps, those available in
 
 .. note::  Invalid pixels are not filtered. If a valid pixel contains an invalid pixel in its filter, the invalid pixel is ignored for the calculation
 
+**Configuration and parameters**
 
-.. list-table:: Configuration and parameters
-   :widths: 19 19 19 19 19 19
-   :header-rows: 1
+.. tabs:: 
 
+    .. tab:: Median
 
-   * - Name
-     - Description
-     - Type
-     - Default value
-     - Available value
-     - Required
-   * - *filter_method*
-     - Filtering method
-     - str
-     -
-     - | "median",
-       | "bilateral",
-       | "median_for_intervals"
-     - Yes
-   * - *filter_size*
-     - Filter's size
-     - int
-     - 3
-     - >=1
-     - | No. 
-       | Only available if "median" or "median_for_intervals"
-       | filter
-   * - *sigma_color*
-     - Bilateral filter parameter
-     - float
-     - 2.0
-     - 
-     - No. Only available if "bilateral" filter
-   * - *sigma_space*
-     - Bilateral filter parameter
-     - float
-     - 6.0
-     - 
-     - No. Only available if "bilateral" filter
-   * - *interval_indicator*
-     - | Indicator for which interval to filter.
-       | 
-       | Ex: If *cfg* contains a step 
-       | "cost_volume_confidence.intervals" then
-       | *interval_indicator* should be "intervals"
-     - str
-     - ""
-     - 
-     - No. Only available if "median_for_intervals" filter
-   * - *regularization*
-     - Activate regularization
-     - bool
-     - false
-     - true, false
-     - No. Only available if "median_for_intervals" filter
-   * - *ambiguity_indicator*
-     - | Indicator for which ambiguity to use during 
-       | regularization.
-       | 
-       | Ex: If *cfg* contains a step 
-       | "cost_volume_confidence.amb" then
-       | *ambiguity_indicator* should be "amb"
-     - str
-     - ""
-     - 
-     - No. Only available if "median_for_intervals" filter
-   * - *ambiguity_threshold*
-     - A pixel is regularized if threshold>ambiguity
-     - float
-     - 0.6
-     - >0 and <1
-     - No. Only available if "median_for_intervals" filter
-   * - *ambiguity_kernel_size*
-     - | Ambiguity kernel size for regularization.
-       | See publication for details.
-     - int
-     - 5
-     - >=0
-     - No. Only available if "median_for_intervals" filter
-   * - *vertical_depth*
-     - | Depth for graph regularization. 
-       | See publication for details.
-     - int
-     - 2
-     - >=0
-     - No. Only available if "median_for_intervals" filter
-   * - *quantile_regularization*
-     - Quantile used for regularization
-     - float
-     - 0.9
-     - >=0 and <=1
-     - No. Only available if "median_for_intervals" filter
+        .. tabs:: 
 
+            .. list-table:: 
+                :widths: 19 19 19 19 19 19
+                :header-rows: 1
+
+                * - Name
+                  - Description
+                  - Type
+                  - Default value
+                  - Available value
+                  - Required
+                * - filter_method
+                  - Filtering method
+                  - str
+                  - 
+                  - "median"
+                  - Yes
+                * - filter_size
+                  - Filter's size
+                  - int
+                  - 3
+                  - >=1
+                  - No
+
+    .. tab:: Bilateral
+
+        .. tabs:: 
+
+            .. list-table:: 
+                :widths: 19 19 19 19 19 19
+                :header-rows: 1
+
+                * - Name
+                  - Description
+                  - Type
+                  - Default value
+                  - Available value
+                  - Required
+                * - filter_method
+                  - Filtering method
+                  - str
+                  - 
+                  - "bilateral"
+                  - Yes
+                * - sigma_color
+                  - Bilateral filter parameter
+                  - float
+                  - 2.0
+                  - 
+                  - No
+                * - sigma_space
+                  - Bilateral filter parameter
+                  - float
+                  - 6.0
+                  - 
+                  - No
+
+    .. tab:: Median for intervals
+
+        .. tabs:: 
+
+            .. list-table:: 
+                :widths: 19 19 19 19 19 19
+                :header-rows: 1
+
+                * - Name
+                  - Description
+                  - Type
+                  - Default value
+                  - Available value
+                  - Required
+                * - filter_method
+                  - Filtering method
+                  - str
+                  - 
+                  - "median_for_intervals"
+                  - Yes
+                * - filter_size
+                  - Filter’s size
+                  - int
+                  - 3
+                  - >=1
+                  - No
+                * - interval_indicator
+                  - | Indicator for which interval to filter.
+                    |
+                    | Ex: If cfg contains a step
+                    | “cost_volume_confidence.intervals” then
+                    | interval_indicator should be “intervals”
+                  - str
+                  - ""
+                  - 
+                  - No
+                * - regularization
+                  - Activate regularization
+                  - bool
+                  - False
+                  - True, False
+                  - No
+                * - ambiguity_indicator
+                  - | Indicator for which ambiguity to use during
+                    | regularization.
+                    |
+                    | Ex: If cfg contains a step
+                    | “cost_volume_confidence.amb” then
+                    | ambiguity_indicator should be “amb”
+                  - str
+                  - ""
+                  - 
+                  - No
+                * - ambiguity_threshold
+                  - A pixel is regularized if threshold>ambiguity
+                  - float
+                  - 0.6
+                  - >0 and <1
+                  - No
+                * - ambiguity_kernel_size
+                  - | Ambiguity kernel size for regularization.
+                    | See publication for details.
+                  - int
+                  - 5
+                  - >=0
+                  - No
+                * - vertical_depth
+                  - | Depth for graph regularization.
+                    | See publication for details.
+                  - int
+                  - 2
+                  - >=0 
+                  - No
+                * - quantile_regularization
+                  - Quantile used for regularization
+                  - float
+                  - 0.9
+                  - >=0 and <=1
+                  - No        
 
 **Example**
 
