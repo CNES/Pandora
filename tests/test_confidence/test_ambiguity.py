@@ -218,7 +218,7 @@ def test_normalize_with_extremum(create_img_for_confidence):
     ambiguity = np.ones((4, 4))
 
     # normalize_with_extremum function to test
-    amb_test = ambiguity_.normalize_with_extremum(ambiguity, left_im)
+    amb_test = ambiguity_.normalize_with_extremum(ambiguity, left_im, ambiguity_._nbr_etas)
 
     # create ground truth
     nbr_etas = np.arange(0.0, 0.2, 0.1).shape[0]
