@@ -26,6 +26,7 @@ import numpy as np
 import pandora.cost_volume_confidence as confidence
 from pandora import matching_cost
 from pandora.criteria import validity_mask
+from pandora import img_tools
 
 
 def test_compute_risk():
@@ -182,8 +183,8 @@ def test_compute_risk_with_subpix(create_images):
     gt_risk_max = np.array(
         [
             [4.0, 3.3714285, 2.9285715, 4.0],
-            [3.8285713, 3.8428571, 2.3, 4.0],
-            [3.1857142, 1.5142857, 3.7142856, 3.5142858],
+            [1.657143, 3.8428571, 2.3, 4.0],
+            [1.1857142, 1.5142857, 3.7142856, 3.5142858],
             [4.0, 3.2857144, 3.7428572, 3.942857],
         ],
         dtype=np.float32,
@@ -191,8 +192,8 @@ def test_compute_risk_with_subpix(create_images):
     gt_risk_min = np.array(
         [
             [0.8142857, 0.0, 0.0, 1.5714285],
-            [2.1714287, 0.3, 0.0, 1.3714286],
-            [2.0, 0.0, 0.8857143, 0.0],
+            [0.0, 0.3, 0.0, 1.3714286],
+            [0.0, 0.0, 0.8857143, 0.0],
             [0.14285715, 0.0, 0.14285715, 0.27142859],
         ],
         dtype=np.float32,
@@ -226,10 +227,10 @@ def test_compute_risk_with_variable_disparity(
     risk_ = confidence.AbstractCostVolumeConfidence(**{"confidence_method": "risk", "eta_max": 0.2, "eta_step": 0.1})
 
     gt_risk_max = np.array(
-        [[2.0, 1.5, 1.5, 1.0], [2.0, 1.0, 1.5, 2.0], [2.0, 2.0, 1.0, 2.0], [2.0, 1.5, 1.5, 1.0]], dtype=np.float32
+        [[2.0, 1.5, 1.5, 1.0], [2.0, 1.0, 1.5, 2.0], [1.0, 1.0, 0.0, 1.0], [1.0, 1.5, 1.5, 1.0]], dtype=np.float32
     )
     gt_risk_min = np.array(
-        [[0.0, 0.5, 0.5, 0.0], [1.0, 0.0, 0.5, 0.0], [1.0, 1.0, 1.0, 1.0], [1.0, 0.5, 0.5, 0.0]], dtype=np.float32
+        [[0.0, 0.5, 0.5, 0.0], [1.0, 0.0, 0.5, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.5, 0.5, 0.0]], dtype=np.float32
     )
 
     etas = np.arange(0.0, 0.5, 0.3)
@@ -412,3 +413,31 @@ def test_compute_risk_and_sampled_risk_with_variable_disparity(
     # Check if the calculated sampled risks are equal to the ground truth (same shape and all elements equals)
     np.testing.assert_allclose(gt_sampled_risk_max, sampled_risk_max, rtol=1e-06)
     np.testing.assert_allclose(gt_sampled_risk_min, sampled_risk_min, rtol=1e-06)
+
+
+def test_normalize_with_extremum(create_img_for_confidence):
+    """
+    test normalize_with_extremum function
+    """
+
+    # create datas
+    left_im, _ = create_img_for_confidence
+
+    # Add tiles disparity
+    left_im.attrs["disp_min"] = 0
+    left_im.attrs["disp_max"] = 1
+
+    # Add global disparity
+    left_im = img_tools.add_global_disparity(left_im, -2, 2)
+
+    risk_ = confidence.AbstractCostVolumeConfidence(**{"confidence_method": "risk", "eta_max": 0.2, "eta_step": 0.1})
+    sampled_ambiguity = np.ones((4, 4))
+
+    # normalize_with_extremum function to test
+    sampled_ambiguity_test = risk_.normalize_with_extremum(sampled_ambiguity, left_im, risk_._nbr_etas)
+
+    # create ground truth
+    nbr_etas = np.arange(0.0, 0.2, 0.1).shape[0]
+    sampled_ambiguity_vt = np.copy(sampled_ambiguity) / ((2 - (-2)) * nbr_etas)
+
+    np.testing.assert_array_equal(sampled_ambiguity_test, sampled_ambiguity_vt)
