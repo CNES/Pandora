@@ -45,6 +45,8 @@ def test_ambiguity(create_img_for_confidence):
         {"cost_volume": (["row", "col", "disp"], cv_)}, coords={"row": [0, 1], "col": [0, 1, 2], "disp": [-1, 0, 1]}
     )
 
+    cv_.attrs["type_measure"] = "min"
+
     ambiguity_ = confidence.AbstractCostVolumeConfidence(
         **{"confidence_method": "ambiguity", "eta_max": 0.2, "eta_step": 0.1}
     )
@@ -78,6 +80,8 @@ def test_ambiguity_without_normalization(create_img_for_confidence):
     cv_ = xr.Dataset(
         {"cost_volume": (["row", "col", "disp"], cv_)}, coords={"row": [0, 1], "col": [0, 1, 2], "disp": [-1, 0, 1]}
     )
+
+    cv_.attrs["type_measure"] = "min"
 
     ambiguity_ = confidence.AbstractCostVolumeConfidence(
         **{"confidence_method": "ambiguity", "eta_max": 0.2, "eta_step": 0.1, "normalization": False}
@@ -150,7 +154,7 @@ def test_compute_ambiguity_with_variable_disparity(
     etas = np.arange(0.0, 0.2, 0.1)
     nbr_etas = etas.shape[0]
 
-    amb = ambiguity_.compute_ambiguity(cv_, etas, nbr_etas, grids, disparity_range)
+    amb = ambiguity_.compute_ambiguity(cv_, etas, nbr_etas, grids, disparity_range, type_measure_min=True)
 
     # Ambiguity integral
     gt_amb_int = np.array([[6.0, 4.0, 4.0, 4.0], [4.0, 4.0, 4.0, 6.0], [4.0, 4.0, 2.0, 4.0], [4.0, 4.0, 4.0, 4.0]])
@@ -225,3 +229,64 @@ def test_normalize_with_extremum(create_img_for_confidence):
     amb_vt = np.copy(ambiguity) / ((2 - (-2)) * nbr_etas)
 
     np.testing.assert_array_equal(amb_test, amb_vt)
+
+
+def test_perfect_case_min(
+    create_grids_and_disparity_range_with_variable_disparities, create_cv_for_variable_disparities
+):
+    """
+    Test a perfect case for min matching cost functions
+    """
+
+    grids, disparity_range = create_grids_and_disparity_range_with_variable_disparities
+
+    cv_ = create_cv_for_variable_disparities
+
+    value_min = 0.1
+    ind_min = np.nanargmin(cv_[1, 1, :])
+    cv_[1, 1, :] = np.full(3, 24)
+    cv_[1, 1, ind_min] = value_min
+
+    ambiguity_ = confidence.AbstractCostVolumeConfidence(
+        **{"confidence_method": "ambiguity", "eta_max": 0.2, "eta_step": 0.1}
+    )
+
+    amb = ambiguity_.compute_ambiguity(
+        cv_, ambiguity_._etas, ambiguity_._nbr_etas, grids, disparity_range, type_measure_min=True
+    )
+
+    ambiguity = ambiguity_.normalize_with_percentile(amb)
+
+    confidence_measure = 1 - ambiguity
+
+    np.testing.assert_almost_equal(1.0, confidence_measure[1, 1])
+
+
+def test_perfect_case_max(
+    create_grids_and_disparity_range_with_variable_disparities, create_cv_for_variable_disparities
+):
+    """
+    Test a perfect case for max matching cost functions
+    """
+    grids, disparity_range = create_grids_and_disparity_range_with_variable_disparities
+
+    cv_ = create_cv_for_variable_disparities
+
+    value_max = 20
+    ind_max = np.nanargmax(cv_[1, 1, :])
+    cv_[1, 1, :] = np.full(3, -30)
+    cv_[1, 1, ind_max] = value_max
+
+    ambiguity_ = confidence.AbstractCostVolumeConfidence(
+        **{"confidence_method": "ambiguity", "eta_max": 0.2, "eta_step": 0.1}
+    )
+
+    amb = ambiguity_.compute_ambiguity(
+        cv_, ambiguity_._etas, ambiguity_._nbr_etas, grids, disparity_range, type_measure_min=False
+    )
+
+    ambiguity = ambiguity_.normalize_with_percentile(amb)
+
+    confidence_measure = 1 - ambiguity
+
+    np.testing.assert_almost_equal(1.0, confidence_measure[1, 1])
