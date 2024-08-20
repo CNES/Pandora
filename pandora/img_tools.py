@@ -656,7 +656,7 @@ def convert_pyramid_to_dataset(
     return pyramid
 
 
-def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None) -> List[xr.Dataset]:
+def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None, order: int = 1) -> List[xr.Dataset]:
     """
     Return an array that contains the shifted right images
 
@@ -666,6 +666,8 @@ def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None) -> Lis
     :type subpix: int
     :param band: User's value for selected band
     :type band: str
+    :param order: order parameter on zoom method
+    :type order: int
     :return: an array that contains the shifted right images
     :rtype: array of xarray.Dataset
     """
@@ -683,7 +685,7 @@ def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None) -> Lis
         for ind in np.arange(1, subpix):
             shift = 1 / subpix
             # For each index, shift the right image for subpixel precision 1/subpix*index
-            data = zoom(selected_band, (1, (nx_ * subpix - (subpix - 1)) / float(nx_)), order=1)[:, ind::subpix]
+            data = zoom(selected_band, (1, (nx_ * subpix - (subpix - 1)) / float(nx_)), order=order)[:, ind::subpix]
             col = np.arange(
                 img_right.coords["col"].values[0] + shift * ind, img_right.coords["col"].values[-1], step=1
             )  # type: np.ndarray

@@ -105,7 +105,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         self.check_band_input_mc(img_left, img_right)
 
         # Contains the shifted right images
-        img_right_shift = shift_right_img(img_right, self._subpix, self._band)
+        img_right_shift = shift_right_img(img_right, self._subpix, self._band, self._spline_order)
         if self._band is not None:
             band_index_left = list(img_left.band_im.data).index(self._band)
             band_index_right = list(img_right.band_im.data).index(self._band)

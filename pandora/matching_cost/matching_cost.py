@@ -53,18 +53,21 @@ class AbstractMatchingCost:
     _band = None
     _step_col = None
     _method = None
+    _spline_order = None
 
     # Default configuration, do not change these values
     _WINDOW_SIZE = 5
     _SUBPIX = 1
     _BAND = None
     _STEP_COL = 1
+    _SPLINE_ORDER = 1
 
     # Matching cost schema confi
     schema = {
         "subpix": And(int, lambda sp: sp in [1, 2, 4]),
         "band": Or(str, lambda input: input is None),
         "step": And(int, lambda y: y >= 1),
+        "spline_order": And(int, lambda y: 1 <= y <= 5),
     }
 
     margins = HalfWindowMargins()
@@ -144,6 +147,10 @@ class AbstractMatchingCost:
         self._band = self.cfg["band"]
         self._step_col = int(self.cfg["step"])
         self._method = str(self.cfg["matching_cost_method"])
+        self._spline_order = int(self.cfg["spline_order"])
+
+        # Remove spline_order key because it is a pandora2d setting and a need
+        del self.cfg["spline_order"]
 
     def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict:
         """
@@ -168,6 +175,8 @@ class AbstractMatchingCost:
                 raise ValueError("Step parameter cannot be different from 1")
         if "step" not in cfg:
             cfg["step"] = self._STEP_COL  # type: ignore
+        if "spline_order" not in cfg:
+            cfg["spline_order"] = self._SPLINE_ORDER  # type: ignore
 
         return cfg
 

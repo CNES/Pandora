@@ -142,7 +142,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
         self.check_band_input_mc(img_left, img_right)
 
         # Contains the shifted right images
-        img_right_shift = shift_right_img(img_right, self._subpix, self._band)
+        img_right_shift = shift_right_img(img_right, self._subpix, self._band, self._spline_order)
 
         # Computes the standard deviation raster for the whole images
         # The standard deviation raster is truncated for points that are not calculable
