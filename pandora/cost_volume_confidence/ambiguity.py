@@ -186,7 +186,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
     @njit(
         "f4[:, :](f4[:, :, :], f8[:], i8, i8[:, :, :],f4[:], bool_)",
         parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "False")),
-        cache=True,
+        cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")),
     )
     def compute_ambiguity(
         cv: np.ndarray,
@@ -247,7 +247,6 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
                 if np.isnan(normalized_min_cost):
                     ambiguity[row, col] = nbr_etas * nb_disps
                 else:
-
                     idx_disp_min = np.searchsorted(disparity_range, grids[0][row, col])
                     idx_disp_max = np.searchsorted(disparity_range, grids[1][row, col]) + 1
 
@@ -276,7 +275,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
     @njit(
         "Tuple((f4[:, :],f4[:, :, :]))(f4[:, :, :], f8[:], i8, i8[:, :, :], f4[:])",
         parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "False")),
-        cache=True,
+        cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")),
     )
     def compute_ambiguity_and_sampled_ambiguity(
         cv: np.ndarray,

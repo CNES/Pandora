@@ -27,6 +27,8 @@ import logging
 import math
 from abc import ABCMeta, abstractmethod
 from typing import Tuple, Dict
+import os
+from ast import literal_eval
 
 import numpy as np
 import xarray as xr
@@ -242,7 +244,7 @@ class McCnnInterpolation(AbstractInterpolation):
             left["validity_mask"] = mask_border(left)
 
     @staticmethod
-    @njit(cache=True)
+    @njit(cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
     def interpolate_occlusion_mc_cnn(disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Interpolation of the left disparity map to resolve occlusion conflicts.
@@ -299,7 +301,7 @@ class McCnnInterpolation(AbstractInterpolation):
         return out_disp, out_val
 
     @staticmethod
-    @njit(cache=True)
+    @njit(cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
     def interpolate_mismatch_mc_cnn(disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Interpolation of the left disparity map to resolve mismatch conflicts.
@@ -464,7 +466,7 @@ class SgmInterpolation(AbstractInterpolation):
         left.attrs["interpolated_disparity"] = "sgm"
 
     @staticmethod
-    @njit(cache=True)
+    @njit(cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
     def interpolate_occlusion_sgm(disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Interpolation of the left disparity map to resolve occlusion conflicts.
@@ -510,7 +512,7 @@ class SgmInterpolation(AbstractInterpolation):
         return out_disp, out_val
 
     @staticmethod
-    @njit(cache=True)
+    @njit(cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
     def interpolate_mismatch_sgm(disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Interpolation of the left disparity map to resolve mismatch conflicts. Interpolate mismatch by finding the
