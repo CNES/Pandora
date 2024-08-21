@@ -170,7 +170,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
     @njit(
         "Tuple((f4[:, :],f4[:, :]))(f4[:, :, :], f4[:, :, :], f8[:], i8, i8[:, :, :], f4[:])",
         parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
-        cache=True,
+        cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")),
     )
     def compute_risk(
         cv: np.ndarray,
@@ -260,7 +260,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
     @njit(
         "Tuple((f4[:, :],f4[:, :],f4[:, :, :],f4[:, :, :]))(f4[:, :, :], f4[:, :, :], f8[:], i8, i8[:, :, :], f4[:])",
         parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
-        cache=True,
+        cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")),
     )
     def compute_risk_and_sampled_risk(
         cv: np.ndarray,

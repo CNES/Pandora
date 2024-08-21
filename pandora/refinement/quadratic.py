@@ -24,6 +24,8 @@ This module contains functions associated to the quadratic method used in the re
 """
 
 from typing import Dict, Tuple
+from ast import literal_eval
+import os
 
 import numpy as np
 from json_checker import Checker, And
@@ -72,7 +74,7 @@ class Quadratic(refinement.AbstractRefinement):
         print("Quadratic refinement method")
 
     @staticmethod
-    @njit(cache=True)
+    @njit(cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
     def refinement_method(cost: np.ndarray, disp: float, measure: str) -> Tuple[float, float, int]:
         """
         Return the subpixel disparity and cost, by fitting a quadratic curve
