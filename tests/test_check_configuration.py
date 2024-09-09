@@ -25,8 +25,8 @@ import re
 import numpy as np
 import xarray as xr
 from rasterio import Affine
+from skimage.io import imsave
 import pytest
-
 
 from pandora.img_tools import create_dataset_from_inputs, add_disparity, rasterio_open
 from pandora.check_configuration import (
@@ -40,6 +40,7 @@ from pandora.check_configuration import (
     check_disparities_from_input,
     check_disparities_from_dataset,
     check_attributes,
+    check_disparity_ranges_are_inside_image,
 )
 from tests import common
 
@@ -488,3 +489,61 @@ class TestCheckDisparitiesFromDataset:
         """
         with pytest.raises(AttributeError, match=string_match):
             check_disparities_from_dataset(disparity)
+
+
+class TestDisparityRangesAreInsideImage:
+    """Test that out of image disparity range are not allowed."""
+
+    @pytest.fixture()
+    def image_path(self, tmp_path):
+        path = tmp_path / "tiff_file.tif"
+        imsave(path, np.empty((450, 450)))
+        return path
+
+    @pytest.fixture()
+    def disp_left(self):
+        return [-4, 1]
+
+    @pytest.fixture()
+    def disp_right(self):
+        return [-3, 2]
+
+    @pytest.fixture()
+    def configuration(self, image_path, disp_left, disp_right):
+        return {
+            "input": {
+                "left": {"img": str(image_path), "nodata": "NaN", "disp": disp_left},
+                "right": {"img": str(image_path), "nodata": "NaN", "disp": disp_right},
+            }
+        }
+
+    @pytest.fixture()
+    def image_left_data(self, configuration):
+        return rasterio_open(configuration["input"]["left"]["img"])
+
+    @pytest.fixture()
+    def image_right_data(self, configuration):
+        return rasterio_open(configuration["input"]["right"]["img"])
+
+    @pytest.mark.parametrize(
+        "disp_left",
+        [
+            pytest.param([-460, -451], id="Out on left"),
+            pytest.param([451, 460], id="Out on right"),
+        ],
+    )
+    def test_disparity_totally_out(self, configuration, image_left_data):
+        """Totally out disparities should raise an error."""
+        with pytest.raises(ValueError, match="Disparity range out of image"):
+            check_disparity_ranges_are_inside_image(configuration["input"]["left"]["disp"], image_left_data)
+
+    @pytest.mark.parametrize(
+        "disp_right",
+        [
+            pytest.param([-460, -450], id="Partially out on left"),
+            pytest.param([450, 460], id="Partially out on right"),
+        ],
+    )
+    def test_disparity_partially_out(self, configuration, image_right_data):
+        """Partially out should not raise error."""
+        check_disparity_ranges_are_inside_image(configuration["input"]["right"]["disp"], image_right_data)

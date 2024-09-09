@@ -70,7 +70,7 @@ criteria is raised and 0 otherwise.
      - Information
      - pixel interval regularized
 
-These criteria are stored in a xarray `validity_mask` in cost volume et disparity map datasets. 
+These criteria are stored in a Xarray.DataArray `validity_mask` in cost volume and disparity map Xarray.Datasets.
 The `validity_mask` is the same size as the left image.  
 
 Criteria can be linked to user configuration, disparity range, or mismatch and occlusion for instance. 
@@ -148,7 +148,7 @@ is invalid when it contains no data points or when it is outside the image.
 
 Criteria 1 is also set after the cost volume computation for points that meet two conditions: 
 
-- their cost volume is equal to nan for all disparities in the disparity range.
+- their cost volume are NaN for all disparities in the disparity range.
 - they are not on the edge of the image. 
 
 **Criteria 2: right incomplete disparity range**
@@ -212,8 +212,8 @@ For the example with `window_size=3`, `disparity_range=[-2, 2]`, `offset=1` and 
 
 .. image:: ../Images/validity_mask_before_cv.drawio.png
 
-As explained before, the validity_mask is also updated after the cost volume computation : we add criteria 1 for points which have 
-cost volume equals to nan for all disparities and which are not on the border. 
+As explained before, the validity_mask is also updated after the cost volume computation : we add criteria 1 for points which are NaN in the
+cost volume for all disparities and which are not on the border.
 Then, at the end of the matching cost step we obtain the following validity mask: 
 
 .. image:: ../Images/validity_mask_matching_cost.drawio.png
@@ -230,7 +230,7 @@ Criteria 3 is raised when the subpixel interpolation does not succeed for a poin
 Validity mask after refinement step
 -----------------------------------
 
-In our previous example, after a refinement step with a quadratic method with obtain the following validity mask: 
+In our previous example, after a refinement step with a quadratic method we obtain the following validity mask:
 
 .. image:: ../Images/validity_mask_refinement.drawio.png
 

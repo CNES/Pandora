@@ -32,6 +32,7 @@ from typing import NamedTuple
 
 import numpy as np
 import xarray as xr
+import json_checker
 import pytest
 
 from pandora import matching_cost
@@ -323,7 +324,7 @@ class TestMatchingCost:
 
         # Create ground truth for output of grid_estimation() function
         c_row = img_left["im"].coords["row"]
-        row = np.arange(c_row[0], c_row[-1] + 1)
+        row = np.arange(c_row.values[0], c_row.values[-1] + 1)
 
         ground_truth = xr.Dataset(
             {},
@@ -435,7 +436,7 @@ class TestMatchingCost:
 
         # Create ground truth for output of grid_estimation() function
         c_row = img_left["im"].coords["row"]
-        row = np.arange(c_row[0], c_row[-1] + 1)
+        row = np.arange(c_row.values[0], c_row.values[-1] + 1)
 
         ground_truth = xr.Dataset(
             {},
@@ -590,6 +591,54 @@ class TestMatchingCost:
         result = matching_cost_.find_nearest_multiple_of_step(value, step_col)
 
         assert result == expected
+
+
+class TestSplineOrder:
+    """
+    Description : Test spline_order in matching_cost configuration
+    """
+
+    def test_nominal_case(self):
+        matching_cost.AbstractMatchingCost(**{"matching_cost_method": "zncc", "window_size": 5})
+
+    def test_default_spline_order(self):
+        result = matching_cost.AbstractMatchingCost(**{"matching_cost_method": "zncc", "window_size": 5})
+
+        assert result._spline_order == 1  # pylint:disable=protected-access
+
+    def test_fails_with_negative_spline_order(self):
+        """
+        Description : Test if the spline_order is negative
+        """
+        with pytest.raises(json_checker.core.exceptions.DictCheckerError) as err:
+            matching_cost.AbstractMatchingCost(**{"matching_cost_method": "zncc", "window_size": 5, "spline_order": -2})
+        assert "spline_order" in err.value.args[0]
+
+    def test_fails_with_null_spline_order(self):
+        """
+        Description : Test if the spline_order is null
+        """
+        with pytest.raises(json_checker.core.exceptions.DictCheckerError) as err:
+            matching_cost.AbstractMatchingCost(**{"matching_cost_method": "zncc", "window_size": 5, "spline_order": 0})
+        assert "spline_order" in err.value.args[0]
+
+    def test_fails_with_more_than_five(self):
+        """
+        Description : Test if the spline_order is > 5
+        """
+        with pytest.raises(json_checker.core.exceptions.DictCheckerError) as err:
+            matching_cost.AbstractMatchingCost(**{"matching_cost_method": "zncc", "window_size": 5, "spline_order": 6})
+        assert "spline_order" in err.value.args[0]
+
+    def test_fails_with_string_element(self):
+        """
+        Description : Test fails if the spline_order is a string element
+        """
+        with pytest.raises(json_checker.core.exceptions.DictCheckerError) as err:
+            matching_cost.AbstractMatchingCost(
+                **{"matching_cost_method": "zncc", "window_size": 5, "spline_order": "1"}
+            )
+        assert "spline_order" in err.value.args[0]
 
 
 def make_image(data, disparity):

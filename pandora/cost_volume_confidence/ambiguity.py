@@ -48,8 +48,6 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
     _NORMALIZATION = True
     # Method name
     _method = "ambiguity"
-    # Indicator
-    _indicator = ""
 
     def __init__(self, **cfg: str) -> None:
         """
@@ -135,25 +133,28 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         )
         # Get disparity intervals parameters
         disparity_range = cv["disp"].data.astype(np.float32)
+
+        type_measure_min = cv.attrs["type_measure"] == "min"
+
         # This silences numba's TBB threading layer warning
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             # Computes ambiguity using numba in parallel for memory and computation time optimization
             ambiguity = self.compute_ambiguity(
-                cv["cost_volume"].data, self._etas, self._nbr_etas, grids, disparity_range
+                cv["cost_volume"].data, self._etas, self._nbr_etas, grids, disparity_range, type_measure_min
             )
 
         # If activated, ambiguity normalization with percentile
         if self._normalization:
             if "global_disparity" in img_left.attrs:
-                ambiguity = self.normalize_with_extremum(ambiguity, img_left)
+                ambiguity = self.normalize_with_extremum(ambiguity, img_left, nbr_etas=self._nbr_etas)
                 logging.info(
                     "You are not using ambiguity normalization by percentile; \n"
                     "you are in a specific case with the instantiation of global_disparity."
                 )
             # in case of cross correlation
             elif "global_disparity" in img_right.attrs:
-                ambiguity = self.normalize_with_extremum(ambiguity, img_right)
+                ambiguity = self.normalize_with_extremum(ambiguity, img_right, nbr_etas=self._nbr_etas)
             else:
                 ambiguity = self.normalize_with_percentile(ambiguity)
 
@@ -181,29 +182,11 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
 
         return (norm_amb - np.min(norm_amb)) / (np.max(norm_amb) - np.min(norm_amb))
 
-    def normalize_with_extremum(self, ambiguity: np.ndarray, dataset: xr.Dataset) -> np.ndarray:
-        """
-        Normalize ambiguity with extremum
-
-        :param ambiguity: ambiguity
-        :type ambiguity: 2D np.ndarray (row, col) dtype = float32
-        :param dataset: Dataset image
-        :tye dataset: xarray.Dataset
-        :return: the normalized ambiguity
-        :rtype: 2D np.ndarray (row, col) dtype = float32
-        """
-        norm_amb = np.copy(ambiguity)
-        global_disp_max = dataset.attrs["global_disparity"][1]
-        global_disp_min = dataset.attrs["global_disparity"][0]
-        max_norm = (global_disp_max - global_disp_min) * self._nbr_etas
-
-        return norm_amb / max_norm
-
     @staticmethod
     @njit(
-        "f4[:, :](f4[:, :, :], f8[:], i8, i8[:, :, :],f4[:])",
+        "f4[:, :](f4[:, :, :], f8[:], i8, i8[:, :, :],f4[:], bool_)",
         parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "False")),
-        cache=True,
+        cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")),
     )
     def compute_ambiguity(
         cv: np.ndarray,
@@ -211,6 +194,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         nbr_etas: int,
         grids: np.ndarray,
         disparity_range: np.ndarray,
+        type_measure_min: bool,
     ) -> np.ndarray:
         """
         Computes ambiguity.
@@ -225,15 +209,22 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         :type grids: 2D np.ndarray (min, max)
         :param disparity_range: array containing disparity range
         :type disparity_range: np.ndarray
+        :param type_measure_min: True for min and False for max
+        :type type_measure_min: bool
         :return: the normalized ambiguity
         :rtype: 2D np.ndarray (row, col) dtype = float32
         """
 
         # Minimum and maximum of all costs, useful to normalize the cost volume
-        min_cost = np.nanmin(cv)
         max_cost = np.nanmax(cv)
+        min_cost = np.nanmin(cv)
 
         n_row, n_col, nb_disps = cv.shape
+
+        if type_measure_min:
+            extremum_cost = min_cost
+        else:
+            extremum_cost = max_cost
 
         # Numba does not support the np.tile operation
         two_dim_etas = np.repeat(etas, nb_disps).reshape((-1, nb_disps)).T.flatten()
@@ -246,19 +237,22 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         for row in prange(n_row):  # pylint: disable=not-an-iterable
             for col in prange(n_col):  # pylint: disable=not-an-iterable
                 # Normalized minimum cost for one point
-                normalized_min_cost = (np.nanmin(cv[row, col, :]) - min_cost) / diff_cost
+
+                if type_measure_min:
+                    normalized_min_cost = (np.nanmin(cv[row, col, :]) - extremum_cost) / diff_cost
+                else:
+                    normalized_min_cost = (np.nanmax(cv[row, col, :]) - extremum_cost) / diff_cost
 
                 # If all costs are at nan, set the maximum value of the ambiguity for this point
                 if np.isnan(normalized_min_cost):
                     ambiguity[row, col] = nbr_etas * nb_disps
                 else:
-
                     idx_disp_min = np.searchsorted(disparity_range, grids[0][row, col])
                     idx_disp_max = np.searchsorted(disparity_range, grids[1][row, col]) + 1
 
                     normalized_min_cost = np.repeat(normalized_min_cost, nb_disps * nbr_etas)
                     # Normalized cost volume for one point
-                    normalized_cv = (cv[row, col, :] - min_cost) / diff_cost
+                    normalized_cv = (cv[row, col, :] - extremum_cost) / diff_cost
 
                     # Mask nan to -inf to increase the value of the ambiguity if a point contains nan costs
                     normalized_cv[idx_disp_min:idx_disp_max][
@@ -270,7 +264,10 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
 
                     normalized_cv = np.repeat(normalized_cv, nbr_etas)
 
-                    ambiguity[row, col] += np.nansum(normalized_cv <= (normalized_min_cost + two_dim_etas))
+                    if type_measure_min:
+                        ambiguity[row, col] += np.nansum(normalized_cv <= (normalized_min_cost + two_dim_etas))
+                    else:
+                        ambiguity[row, col] += np.nansum(normalized_cv >= (normalized_min_cost - two_dim_etas))
 
         return ambiguity
 
@@ -278,7 +275,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
     @njit(
         "Tuple((f4[:, :],f4[:, :, :]))(f4[:, :, :], f8[:], i8, i8[:, :, :], f4[:])",
         parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "False")),
-        cache=True,
+        cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")),
     )
     def compute_ambiguity_and_sampled_ambiguity(
         cv: np.ndarray,

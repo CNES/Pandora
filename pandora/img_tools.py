@@ -27,6 +27,8 @@ from __future__ import annotations
 
 import warnings
 from typing import List, Union, Tuple, cast, Dict
+from ast import literal_eval
+import os
 
 import numpy as np
 import rasterio
@@ -536,7 +538,7 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
     return img, msk
 
 
-@njit()
+@njit(cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
 def interpolate_nodata_sgm(img: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """
     Interpolation of the input image to resolve invalid (nodata) pixels.
@@ -656,7 +658,7 @@ def convert_pyramid_to_dataset(
     return pyramid
 
 
-def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None) -> List[xr.Dataset]:
+def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None, order: int = 1) -> List[xr.Dataset]:
     """
     Return an array that contains the shifted right images
 
@@ -666,6 +668,8 @@ def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None) -> Lis
     :type subpix: int
     :param band: User's value for selected band
     :type band: str
+    :param order: order parameter on zoom method
+    :type order: int
     :return: an array that contains the shifted right images
     :rtype: array of xarray.Dataset
     """
@@ -683,9 +687,9 @@ def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None) -> Lis
         for ind in np.arange(1, subpix):
             shift = 1 / subpix
             # For each index, shift the right image for subpixel precision 1/subpix*index
-            data = zoom(selected_band, (1, (nx_ * subpix - (subpix - 1)) / float(nx_)), order=1)[:, ind::subpix]
+            data = zoom(selected_band, (1, (nx_ * subpix - (subpix - 1)) / float(nx_)), order=order)[:, ind::subpix]
             col = np.arange(
-                img_right.coords["col"][0] + shift * ind, img_right.coords["col"][-1], step=1
+                img_right.coords["col"].values[0] + shift * ind, img_right.coords["col"].values[-1], step=1
             )  # type: np.ndarray
             img_right_shift.append(
                 xr.Dataset(
@@ -823,7 +827,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.
     return r_mean / float(win_size * win_size)
 
 
-@njit()
+@njit(cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
 def find_valid_neighbors(dirs: np.ndarray, disp: np.ndarray, valid: np.ndarray, row: int, col: int):
     """
     Find valid neighbors along directions

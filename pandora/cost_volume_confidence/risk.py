@@ -22,7 +22,7 @@
 """
 This module contains functions for estimating the risk.
 """
-
+import logging
 import os
 import warnings
 from typing import Dict, Tuple, Union
@@ -51,8 +51,6 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
     # Method name
     _method_max = "risk_max"
     _method_min = "risk_min"
-    # Indicator
-    _indicator = ""
 
     def __init__(self, **cfg: str) -> None:
         """
@@ -143,6 +141,16 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
             _, sampled_ambiguity = ambiguity_.compute_ambiguity_and_sampled_ambiguity(  # type: ignore
                 cv["cost_volume"].data, self._etas, self._nbr_etas, grids, disparity_range
             )
+
+            if "global_disparity" in img_left.attrs:
+                sampled_ambiguity = self.normalize_with_extremum(sampled_ambiguity, img_left, self._nbr_etas)
+                logging.info(
+                    "You are using normalization by \n a specific case with the instantiation of global_disparity"
+                )
+            # in case of cross correlation
+            elif "global_disparity" in img_right.attrs:
+                sampled_ambiguity = self.normalize_with_extremum(sampled_ambiguity, img_right, self._nbr_etas)
+
             # Computes risk using numba in parallel for memory and computation time optimization
             risk_max, risk_min = self.compute_risk(
                 cv["cost_volume"].data,
@@ -162,7 +170,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
     @njit(
         "Tuple((f4[:, :],f4[:, :]))(f4[:, :, :], f4[:, :, :], f8[:], i8, i8[:, :, :], f4[:])",
         parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
-        cache=True,
+        cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")),
     )
     def compute_risk(
         cv: np.ndarray,
@@ -217,13 +225,14 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
                     # Normalized cost volume for one point
                     normalized_cv = (cv[row, col, :] - min_cost) / (max_cost - min_cost)
                     # Mask nan to -inf to later discard values out of [min; min + eta]
-
                     idx_disp_min = np.searchsorted(disparity_range, grids[0][row, col])
                     idx_disp_max = np.searchsorted(disparity_range, grids[1][row, col]) + 1
 
-                    normalized_cv[idx_disp_min:idx_disp_max][
-                        np.isnan(normalized_cv[idx_disp_min:idx_disp_max])
-                    ] = -np.inf
+                    nan_in_normalized_cv = np.isnan(normalized_cv)
+
+                    normalized_cv[idx_disp_min:idx_disp_max][nan_in_normalized_cv[idx_disp_min:idx_disp_max]] = -np.inf
+                    normalized_cv[:idx_disp_min][nan_in_normalized_cv[:idx_disp_min]] = np.inf
+                    normalized_cv[idx_disp_max:][nan_in_normalized_cv[idx_disp_max:]] = np.inf
 
                     normalized_cv = np.repeat(normalized_cv, nbr_etas)
                     # Initialize all disparities
@@ -251,7 +260,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
     @njit(
         "Tuple((f4[:, :],f4[:, :],f4[:, :, :],f4[:, :, :]))(f4[:, :, :], f4[:, :, :], f8[:], i8, i8[:, :, :], f4[:])",
         parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
-        cache=True,
+        cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")),
     )
     def compute_risk_and_sampled_risk(
         cv: np.ndarray,

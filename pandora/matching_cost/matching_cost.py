@@ -53,18 +53,21 @@ class AbstractMatchingCost:
     _band = None
     _step_col = None
     _method = None
+    _spline_order = None
 
     # Default configuration, do not change these values
     _WINDOW_SIZE = 5
     _SUBPIX = 1
     _BAND = None
     _STEP_COL = 1
+    _SPLINE_ORDER = 1
 
     # Matching cost schema confi
     schema = {
-        "subpix": And(int, lambda input: input > 0 and ((input % 2) == 0) or input == 1),
+        "subpix": And(int, lambda sp: sp in [1, 2, 4]),
         "band": Or(str, lambda input: input is None),
         "step": And(int, lambda y: y >= 1),
+        "spline_order": And(int, lambda y: 1 <= y <= 5),
     }
 
     margins = HalfWindowMargins()
@@ -144,6 +147,10 @@ class AbstractMatchingCost:
         self._band = self.cfg["band"]
         self._step_col = int(self.cfg["step"])
         self._method = str(self.cfg["matching_cost_method"])
+        self._spline_order = int(self.cfg["spline_order"])
+
+        # Remove spline_order key because it is a pandora2d setting and a need
+        del self.cfg["spline_order"]
 
     def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict:
         """
@@ -168,6 +175,8 @@ class AbstractMatchingCost:
                 raise ValueError("Step parameter cannot be different from 1")
         if "step" not in cfg:
             cfg["step"] = self._STEP_COL  # type: ignore
+        if "spline_order" not in cfg:
+            cfg["spline_order"] = self._SPLINE_ORDER  # type: ignore
 
         return cfg
 
@@ -330,7 +339,7 @@ class AbstractMatchingCost:
         :rtype: xarray.Dataset
         """
         # Get col dimension
-        c_col = img["im"].coords["col"]
+        c_col = img["im"].coords["col"].values
 
         # Get the index of the columns that should be computed
         if cfg and "ROI" in cfg:
@@ -569,7 +578,7 @@ class AbstractMatchingCost:
 
             # Whatever the sub-pixel precision, only one sub-pixel mask is created,
             # since 0.5 shifted mask == 0.25 shifted mask
-            col_shift = np.arange(col[0] + 0.5, col[0] + nx_ - 1, step=1)  # type: np.ndarray
+            col_shift = np.arange(col.values[0] + 0.5, col.values[0] + nx_ - 1, step=1)  # type: np.ndarray
             dilatate_right_mask_shift = xr.DataArray(
                 dilatate_right_mask_shift, coords=[row, col_shift], dims=["row", "col"]
             )

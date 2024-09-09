@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.6.2a1 (September 2024)
+
+### Added
+- Using the numba cache. [#413]
+- Modification of check_conf to compare the disparity interval with the image size. [#411]
+- Addition of a spline order parameter to the shift_right_img method. [#420]
+- Add possibility to not use numba cache. [#421]
+
+### Changed
+- Update criteria documentation. [#410]
+- Changing the after callback to before in the state machine. [#407]
+- Updating the filtering.rst, a documentation file. [#414]
+- Remove numpy warning. [#408]
+
+### Fixed
+- Solving problems displaying images in notebooks. [#409]
+- Move the _indicator parameter to remove the sphinx warning. [#416]
+- Risk normalisation by external global interval. [#418]
+- Use of ‘max’ measurement type with ambiguity. [#404]
+
 ## 1.6.1 (June 2024)
 
 ### Changed

@@ -24,6 +24,8 @@ This module contains functions associated to the Cross Based Cost Aggregation (c
 """
 
 from typing import Dict, Union, Tuple, List
+import os
+from ast import literal_eval
 
 import numpy as np
 import xarray as xr
@@ -305,7 +307,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         return cross_left, cross_right
 
 
-@njit("f4[:, :](f4[:, :])", cache=True)
+@njit("f4[:, :](f4[:, :])", cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
 def cbca_step_1(cv: np.ndarray) -> np.ndarray:
     """
     Giving the matching cost for one disparity, build a horizontal integral image storing the cumulative row sum,
@@ -332,7 +334,10 @@ def cbca_step_1(cv: np.ndarray) -> np.ndarray:
     return step1
 
 
-@njit("(f4[:, :], i2[:, :, :], i2[:, :, :], i8[:], i8[:])", cache=True)
+@njit(
+    "(f4[:, :], i2[:, :, :], i2[:, :, :], i8[:], i8[:])",
+    cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")),
+)
 def cbca_step_2(
     step1: np.ndarray,
     cross_left: np.ndarray,
@@ -382,7 +387,7 @@ def cbca_step_2(
     return step2, sum_step2
 
 
-@njit("f4[:, :](f4[:, :])", cache=True)
+@njit("f4[:, :](f4[:, :])", cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
 def cbca_step_3(step2: np.ndarray) -> np.ndarray:
     """
     Giving the horizontal matching cost, build a vertical integral image for one disparity,
@@ -406,7 +411,10 @@ def cbca_step_3(step2: np.ndarray) -> np.ndarray:
     return step3
 
 
-@njit("(f4[:, :], f4[:, :], i2[:, :, :], i2[:, :, :], i8[:], i8[:])", cache=True)
+@njit(
+    "(f4[:, :], f4[:, :], i2[:, :, :], i2[:, :, :], i8[:], i8[:])",
+    cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")),
+)
 def cbca_step_4(
     step3: np.ndarray,
     sum2: np.ndarray,
@@ -463,7 +471,7 @@ def cbca_step_4(
     return step4, sum4
 
 
-@njit("i2[:, :, :](f4[:, :], i2, f4)", cache=True)
+@njit("i2[:, :, :](f4[:, :], i2, f4)", cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
 def cross_support(image: np.ndarray, len_arms: int, intensity: float) -> np.ndarray:
     """
     Compute the cross support for an image: find the 4 arms.

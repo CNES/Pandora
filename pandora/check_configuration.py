@@ -188,7 +188,6 @@ def check_images(user_cfg: Dict[str, dict]) -> None:
     :type user_cfg: dict
     :return: None
     """
-
     left_ = rasterio_open(user_cfg["left"]["img"])
     right_ = rasterio_open(user_cfg["right"]["img"])
 
@@ -217,6 +216,19 @@ def check_band_names(dataset: xr.Dataset) -> None:
         raise TypeError("Band value must be str")
 
 
+def check_disparity_ranges_are_inside_image(disparity: list[int], image: rasterio.io.DatasetReader):
+    """
+    Raise an error if disparity ranges are out off image.
+
+    :param disparity: range disparity
+    :type disparity: List
+    :param image: left image
+    :type image: rasterio.io.DatasetReader
+    """
+    if np.abs(disparity).min() > image.width:
+        raise ValueError("Disparity range out of image")
+
+
 def check_disparities_from_input(
     disparity: list[int] | str | None,
     img_left: str,
@@ -230,9 +242,16 @@ def check_disparities_from_input(
     :type img_left: str
     :return: None
     """
+
     # disparities are integers
-    if isinstance(disparity, list) and disparity[1] < disparity[0]:
-        raise ValueError("disp_max must be bigger than disp_min")
+    if isinstance(disparity, list):
+        if disparity[1] < disparity[0]:
+            raise ValueError("disp_max must be bigger than disp_min")
+        if img_left is not None:
+            # Load an image to compare the grid size
+            img_left_ = rasterio_open(img_left)
+            # check that disparity input are not off image
+            check_disparity_ranges_are_inside_image(disparity, img_left_)
 
     # disparities are grids
     if isinstance(disparity, str):
@@ -240,7 +259,6 @@ def check_disparities_from_input(
         img_left_ = rasterio_open(img_left)
 
         disparity_reader = rasterio_open(disparity)
-
         # check that disparity grids is a 2-channel grid
         if disparity_reader.count != 2:
             raise AttributeError("Disparity grids must be a 2-channel grid")
@@ -251,6 +269,11 @@ def check_disparities_from_input(
 
         if (disparity_reader.read(1) > disparity_reader.read(2)).any():
             raise ValueError("disp_max must be bigger than disp_min")
+
+        # check that disp_min and disp_max are not off image
+        check_disparity_ranges_are_inside_image(
+            [disparity_reader.read(1).min(), disparity_reader.read(2).max()], img_left_
+        )
 
 
 def check_disparities_from_dataset(disparity: xr.DataArray) -> None:

@@ -126,3 +126,9 @@ How can I disable numba parallelization?
 
 Some functions of Pandora are parallelized using the numba package. To prevent the use of this tool, it is possible to set
 an environment variable named **PANDORA_NUMBA_PARALLEL** to **false**.
+
+How can I disable numba cache?
+******************************
+
+Some Pandora functions have a cache of the numba package. This cache can improve execution speed. To do this, you can set
+an environment variable named **PANDORA_NUMBA_PAR** to **true**.

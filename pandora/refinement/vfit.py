@@ -24,6 +24,8 @@ This module contains functions associated to the vfit method used in the refinem
 """
 
 from typing import Dict, Tuple
+import os
+from ast import literal_eval
 
 import numpy as np
 from json_checker import Checker, And
@@ -72,7 +74,7 @@ class Vfit(refinement.AbstractRefinement):
         print("Vfit refinement method")
 
     @staticmethod
-    @njit()
+    @njit(cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
     def refinement_method(cost: np.ndarray, disp: float, measure: str) -> Tuple[float, float, int]:
         """
         Return the subpixel disparity and cost, by matching a symmetric V shape (linear interpolation)

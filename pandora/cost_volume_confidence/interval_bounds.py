@@ -52,8 +52,6 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
 
     # Method name
     _method = "interval_bounds"
-    # Indicator
-    _indicator = ""
 
     def __init__(self, **cfg: str) -> None:
         """
@@ -196,7 +194,7 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
     @njit(
         "UniTuple(f4[:, :], 2)(f4[:, :, :], f4[:], f4, f4)",
         parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
-        cache=True,
+        cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")),
     )
     def compute_interval_bounds(
         cv: np.ndarray,
