@@ -225,7 +225,6 @@ def check_disparity_ranges_are_inside_image(disparity: list[int], image: rasteri
     :param image: left image
     :type image: rasterio.io.DatasetReader
     """
-    print(f"{disparity=}")
     if np.abs(disparity).min() > image.width:
         raise ValueError("Disparity range out of image")
 
