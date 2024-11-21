@@ -259,7 +259,8 @@ class AbstractMatchingCost:
         :rtype: xarray.Dataset
         """
 
-    def get_coordinates(self, margin: int, img_coordinates: np.ndarray, step: int) -> np.ndarray:
+    @staticmethod
+    def get_coordinates(margin: int, img_coordinates: np.ndarray, step: int) -> np.ndarray:
         """
         In the case of a ROI, computes the right coordinates to be sure to process the first point of the ROI.
 
@@ -273,7 +274,7 @@ class AbstractMatchingCost:
         :rtype: np.ndarray
         """
 
-        index_compute_col = np.arange(img_coordinates[0], img_coordinates[-1] + 1, step)  # type: np.ndarray
+        index_compute = np.arange(img_coordinates[0], img_coordinates[-1] + 1, step)  # type: np.ndarray
 
         # Check if the first column of roi is inside the final CV (with the step)
         if margin % step != 0:
@@ -289,7 +290,7 @@ class AbstractMatchingCost:
                 # Our starting point would be at index left_margin = 2 --> starting point = 1st point of ROI
                 # We are directly on the first point to compute
 
-                index_compute_col = np.arange(img_coordinates[0] + margin, img_coordinates[-1] + 1, step)
+                index_compute = np.arange(img_coordinates[0] + margin, img_coordinates[-1] + 1, step)
             else:
                 # For example, given left_margin = 3 and step = 2
                 #
@@ -314,10 +315,10 @@ class AbstractMatchingCost:
                 # With a step of 3, the first point of ROI is calculated without cropping margins too much
 
                 # give the number of the first column to compute
-                start = step - (self.find_nearest_multiple_of_step(margin, step) - margin)
-                index_compute_col = np.arange(img_coordinates[0] + start, img_coordinates[-1] + 1, step)
+                start = step - (AbstractMatchingCost.find_nearest_multiple_of_step(margin, step) - margin)
+                index_compute = np.arange(img_coordinates[0] + start, img_coordinates[-1] + 1, step)
 
-        return index_compute_col
+        return index_compute
 
     def grid_estimation(
         self, img: xr.Dataset, cfg: Union[Dict[str, dict], None], disparity_grids: Tuple[np.ndarray, np.ndarray]
@@ -602,7 +603,8 @@ class AbstractMatchingCost:
         """
         return int(np.nanmin(disp_min)), int(np.nanmax(disp_max))
 
-    def find_nearest_multiple_of_step(self, value: int, step: int) -> int:
+    @staticmethod
+    def find_nearest_multiple_of_step(value: int, step: int) -> int:
         """
         In case value is not a multiple of step, find nearest greater value for which it is the case.
 
