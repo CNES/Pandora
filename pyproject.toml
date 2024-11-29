@@ -2,15 +2,81 @@
 requires = [
     "setuptools>=65.5",
     "wheel",
-    "setuptools_scm[toml]>=6.2"
+    "setuptools_scm[toml]>=6.2",
+    "meson-python",
+    "pybind11"
 ]
-# use build-backend legacy with setup.cfg, setup.py
-build-backend = "setuptools.build_meta"
+build-backend = "mesonpy"
 
 # enable setuptools_scm version
 [tool.setuptools_scm]
+
+[project]
+name = "pandora"
+dynamic = ["version"]
+authors = [{ name = "CNES" }]
+description = "Pandora is a stereo matching framework that helps emulate state of the art algorithms"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "numpy",
+    "xarray>=0.13.0",
+    "scipy",
+    "rasterio",
+    "json-checker",
+    "numba>=0.55.2;python_version>'3.7'",
+    "numba>=0.47.0;python_version<'3.8'",
+    "transitions",
+    "scikit-image>=0.19.0",
+    "importlib-metadata;python_version<'3.10'"
+]
+
+[project.optional-dependencies]
+dev = [
+    "sphinx",
+    "sphinx_rtd_theme",
+    "sphinx_autoapi",
+    "sphinx_tabs",
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "pylint",
+    "pre-commit",
+    "mypy",
+    "black",
+    "types-setuptools",
+    "build"
+]
+
+sgm = [
+    "pandora_plugin_libsgm>=1.5.1"
+]
+
+mccnn = [
+    "pandora_plugin_mccnn>=1.3.2"
+]
+
+docs = [
+    "sphinx",
+    "sphinx_rtd_theme",
+    "sphinx_autoapi",
+    "sphinx_tabs"
+]
+
+notebook = [
+    "jupyter-dash",
+    "plotly",
+    "bokeh>=3",
+    "matplotlib",
+    "graphviz",
+    "notebook",
+    "ipykernel"
+]
 
 [tool.black]
 # https://github.com/psf/black
 line-length = 120
 exclude = "(.eggs|.git|.mypy_cache|.nox|.tox|_build|build|dist|venv)"
+
+[project.scripts]
+pandora = "pandora.Pandora:main"
