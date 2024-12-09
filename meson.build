@@ -23,9 +23,10 @@ install_subdir(
   strip_directory: true,
 )
 
-py.extension_module(
-  'pandora_lib_c',
-  'pandora/matching_cost/lib_c.cpp',
-  install: true,
-  dependencies : [pybind11_dep, eigen_dep],
+subdir(
+  'pandora/aggregation/cpp'
+)
+
+subdir(
+  'pandora/cost_volume_confidence/cpp'
 )

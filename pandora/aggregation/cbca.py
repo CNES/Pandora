@@ -30,10 +30,10 @@ from ast import literal_eval
 import numpy as np
 import xarray as xr
 from json_checker import Checker, And
-from numba import njit
 
 from pandora.filter import AbstractFilter
 from pandora.img_tools import shift_right_img
+import pandora.aggregation_cpp as aggregation_cpp
 from . import aggregation
 
 
@@ -150,13 +150,13 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
             i_right = int((disparity_range[dsp] % 1) * cv.attrs["subpixel"])
 
             # Step 1 : horizontal integral image
-            step1 = cbca_step_1(cv_data[:, :, dsp])
+            step1 = aggregation_cpp.cbca_step_1(cv_data[:, :, dsp])
 
             range_col_right = range_col + disparity_range[dsp]
             valid_index = np.where((range_col_right >= 0) & (range_col_right < cross_right[i_right].shape[1]))
 
             # Step 2 : horizontal matching cost
-            step2, sum2 = cbca_step_2(
+            step2, sum2 = aggregation_cpp.cbca_step_2(
                 step1,
                 cross_left,
                 cross_right[i_right],
@@ -165,10 +165,10 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
             )
 
             # Step 3 : vertical integral image
-            step3 = cbca_step_3(step2)
+            step3 = aggregation_cpp.cbca_step_3(step2)
 
             # Step 4 : aggregate cost volume
-            step4, sum4 = cbca_step_4(
+            step4, sum4 = aggregation_cpp.cbca_step_4(
                 step3,
                 sum2,
                 cross_left,
@@ -246,13 +246,13 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         # Compute left cross support using numba to reduce running time
         if offset != 0:
             # Cross support to the size of the cost volume
-            cross_left = cross_support(
+            cross_left = aggregation_cpp.cross_support(
                 left_masked[offset:-offset, offset:-offset],
                 self._cbca_distance,
                 self._cbca_intensity,
             )
         else:
-            cross_left = cross_support(left_masked, self._cbca_distance, self._cbca_intensity)
+            cross_left = aggregation_cpp.cross_support(left_masked, self._cbca_distance, self._cbca_intensity)
 
         # Compute the right cross support. Apply a 3×3 median filter to the input image
         cross_right = []
@@ -294,243 +294,14 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
             # Compute right cross support using numba to reduce running time
             if offset != 0:
                 # Cross support to the size of the cost volume
-                cross_right.append(
-                    cross_support(
-                        right_masked[offset:-offset, offset:-offset],
-                        self._cbca_distance,
-                        self._cbca_intensity,
-                    )
+                curr_c_r = aggregation_cpp.cross_support(
+                    right_masked[offset:-offset, offset:-offset],
+                    self._cbca_distance,
+                    self._cbca_intensity,
                 )
             else:
-                cross_right.append(cross_support(right_masked, self._cbca_distance, self._cbca_intensity))
+                curr_c_r = aggregation_cpp.cross_support(right_masked, self._cbca_distance, self._cbca_intensity)
+
+            cross_right.append(curr_c_r)
 
         return cross_left, cross_right
-
-
-@njit("f4[:, :](f4[:, :])", cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
-def cbca_step_1(cv: np.ndarray) -> np.ndarray:
-    """
-    Giving the matching cost for one disparity, build a horizontal integral image storing the cumulative row sum,
-    S_h(row, col) = S_h(row-1, col) + cv(row, col)
-
-    :param cv: cost volume for the current disparity
-    :type cv: 2D np.array (row, col) dtype = np.float32
-    :return: the horizontal integral image, step 1
-    :rtype: 2D np.array (row, col + 1) dtype = np.float32
-    """
-    n_col_, n_row_ = cv.shape
-    # Allocate the intermediate cost volume S_h
-    # added a column to manage the case in the step 2 : row - left_arm_length -1 = -1
-    step1 = np.zeros((n_col_, n_row_ + 1), dtype=np.float32)
-
-    for col in range(n_col_):
-        for row in range(n_row_):
-            # Do not propagate nan
-            if not np.isnan(cv[col, row]):
-                step1[col, row] = step1[col, row - 1] + cv[col, row]
-            else:
-                step1[col, row] = step1[col, row - 1]
-
-    return step1
-
-
-@njit(
-    "(f4[:, :], i2[:, :, :], i2[:, :, :], i8[:], i8[:])",
-    cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")),
-)
-def cbca_step_2(
-    step1: np.ndarray,
-    cross_left: np.ndarray,
-    cross_right: np.ndarray,
-    range_col: np.ndarray,
-    range_col_right: np.ndarray,
-) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Giving the horizontal integral image, computed the horizontal matching cost for one disparity,
-    E_h(row, col) = S_h(row + right_arm_length, col) - S_h(row - left_arm_length -1, col)
-
-    :param step1: horizontal integral image, from the cbca_step1, with an extra column that contains 0
-    :type step1: 2D np.array (row, col + 1) dtype = np.float32
-    :param cross_left: cross support of the left image
-    :type cross_left: 3D np.array (row, col, [left, right, top, bot]) dtype=np.int16
-    :param cross_right: cross support of the right image
-    :type cross_right: 3D np.array (row, col, [left, right, tpo, bot]) dtype=np.int16
-    :param range_col: left column for the current disparity (i.e : np.arrange(nb columns), where the correspondent \
-    in the right image is reachable)
-    :type range_col: 1D np.array
-    :param range_col_right: right column for the current disparity (i.e : np.arrange(nb columns) - disparity, where \
-    column - disparity >= 0 and <= nb columns)
-    :type range_col_right: 1D np.array
-    :return: the horizontal matching cost for the current disparity, and the number of support pixels used for the \
-    step 2
-    :rtype: tuple (2D np.array (row, col) dtype = np.float32, 2D np.array (row, col) dtype = np.float32)
-    """
-    n_col_, n_row_ = step1.shape
-    # Allocate the intermediate cost volume E_h
-    # , remove the extra column from the step 1
-    step2 = np.zeros((n_col_, n_row_ - 1), dtype=np.float32)
-    sum_step2 = np.zeros((n_col_, n_row_ - 1), dtype=np.float32)
-
-    for col in range(step1.shape[0]):
-        for row in range(range_col.shape[0]):
-            right = min(
-                cross_left[col, range_col[row], 1],
-                cross_right[col, range_col_right[row], 1],
-            )
-            left = min(
-                cross_left[col, range_col[row], 0],
-                cross_right[col, range_col_right[row], 0],
-            )
-            step2[col, range_col[row]] = step1[col, range_col[row] + right] - step1[col, range_col[row] - left - 1]
-            sum_step2[col, range_col[row]] += right + left
-
-    return step2, sum_step2
-
-
-@njit("f4[:, :](f4[:, :])", cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
-def cbca_step_3(step2: np.ndarray) -> np.ndarray:
-    """
-    Giving the horizontal matching cost, build a vertical integral image for one disparity,
-    S_v = S_v(row, col - 1) + E_h(row, col)
-
-    :param step2: horizontal matching cost, from the cbca_step2
-    :type step2: 3D xarray.DataArray (row, col, disp)
-    :return: the vertical integral image for the current disparity
-    :rtype: 2D np.array (row + 1, col) dtype = np.float32
-    """
-    n_col_, n_row_ = step2.shape
-    # Allocate the intermediate cost volume S_v
-    # added a row to manage the case in the step 4 : col - up_arm_length -1 = -1
-    step3 = np.zeros((n_col_ + 1, n_row_), dtype=np.float32)
-    step3[0, :] = step2[0, :]
-
-    for col in range(1, n_col_):
-        for row in range(n_row_):
-            step3[col, row] = step3[col - 1, row] + step2[col, row]
-
-    return step3
-
-
-@njit(
-    "(f4[:, :], f4[:, :], i2[:, :, :], i2[:, :, :], i8[:], i8[:])",
-    cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")),
-)
-def cbca_step_4(
-    step3: np.ndarray,
-    sum2: np.ndarray,
-    cross_left: np.ndarray,
-    cross_right: np.ndarray,
-    range_col: np.ndarray,
-    range_col_right: np.ndarray,
-) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Giving the vertical integral image, build the fully aggregated matching cost for one disparity,
-    E = S_v(row, col + bottom_arm_length) - S_v(row, col - top_arm_length - 1)
-
-    :param step3: vertical integral image, from the cbca_step3, with an extra row that contains 0
-    :type step3: 2D np.array (row + 1, col) dtype = np.float32
-    :param sum2: the number of support pixels used for the step 2
-    :type sum2: 2D np.array (row, col) dtype = np.float32
-    :param cross_left: cross support of the left image
-    :type cross_left: 3D np.array (row, col, [left, right, top, bot]) dtype=np.int16
-    :param cross_right: cross support of the right image
-    :type cross_right: 3D np.array (row, col, [left, right, tpo, bot]) dtype=np.int16
-    :param range_col: left column for the current disparity (i.e : np.arrange(nb columns), where the correspondent \
-    in the right image is reachable)
-    :type range_col: 1D np.array
-    :param range_col_right: right column for the current disparity (i.e : np.arrange(nb columns) - disparity, where \
-    column - disparity >= 0 and <= nb columns)
-    :type range_col_right: 1D np.array
-    :return: the fully aggregated matching cost, and the total number of support pixels used for the aggregation
-    :rtype: tuple(2D np.array (row , col) dtype = np.float32, 2D np.array (row , col) dtype = np.float32)
-    """
-    n_col_, n_row_ = step3.shape
-    # Allocate the final cost volume E
-    # , remove the extra row from the step 3
-    step4 = np.zeros((n_col_ - 1, n_row_), dtype=np.float32)
-    sum4 = np.copy(sum2)
-    for col in range(step4.shape[0]):
-        for row in range(range_col.shape[0]):
-            top = min(
-                cross_left[col, range_col[row], 2],
-                cross_right[col, range_col_right[row], 2],
-            )
-            bot = min(
-                cross_left[col, range_col[row], 3],
-                cross_right[col, range_col_right[row], 3],
-            )
-
-            step4[col, range_col[row]] = step3[col + bot, range_col[row]] - step3[col - top - 1, range_col[row]]
-
-            sum4[col, range_col[row]] += top + bot
-            if top != 0:
-                sum4[col, range_col[row]] += np.sum(sum2[col - top : col, range_col[row]])
-            if bot != 0:
-                sum4[col, range_col[row]] += np.sum(sum2[col + 1 : col + bot + 1, range_col[row]])
-
-    return step4, sum4
-
-
-@njit("i2[:, :, :](f4[:, :], i2, f4)", cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
-def cross_support(image: np.ndarray, len_arms: int, intensity: float) -> np.ndarray:
-    """
-    Compute the cross support for an image: find the 4 arms.
-    Enforces a minimum support region of 3×3 if pixels are valid.
-    The cross support of invalid pixels (pixels that are np.inf) is 0 for the 4 arms.
-
-    :param image: image
-    :type image: 2D np.array (row , col) dtype = np.float32
-    :param len_arms: maximal length arms
-    :param len_arms: int16
-    :param intensity: maximal intensity
-    :param intensity: float 32
-    :return: a 3D np.array ( row, col, [left, right, top, bot] ), with the four arms lengths computes for each pixel
-    :rtype:  3D np.array ( row, col, [left, right, top, bot] ), dtype=np.int16
-    """
-    n_col_, n_row_ = image.shape
-    # By default, all cross supports are 0
-    cross = np.zeros((n_col_, n_row_, 4), dtype=np.int16)
-
-    for col in range(n_col_):
-        for row in range(n_row_):
-            # If the pixel is valid (np.isfinite = True) compute the cross support
-            # Else (np.isfinite = False) the pixel is not valid (no data or invalid) and the cross support value is 0
-            # for the 4 arms (default value of the variable cross).
-            if np.isfinite(image[col, row]):
-                left_len = 0
-                left = row
-                for left in range(row - 1, max(row - len_arms, -1), -1):
-                    if abs(image[col, row] - image[col, left]) >= intensity:
-                        break
-                    left_len += 1
-                # enforces a minimum support region of 3×3 if pixels are valid
-                cross[col, row, 0] = max(left_len, 1 * (row >= 1) * np.isfinite(image[col, left]))
-
-                right_len = 0
-                right = row
-                for right in range(row + 1, min(row + len_arms, n_row_)):
-                    if abs(image[col, row] - image[col, right]) >= intensity:
-                        break
-                    right_len += 1
-                # enforces a minimum support region of 3×3 if pixels are valid
-                cross[col, row, 1] = max(right_len, 1 * (row < n_row_ - 1) * np.isfinite(image[col, right]))
-
-                up_len = 0
-                up_col = col
-                for up_col in range(col - 1, max(col - len_arms, -1), -1):
-                    if abs(image[col, row] - image[up_col, row]) >= intensity:
-                        break
-                    up_len += 1
-                # enforces a minimum support region of 3×3 if pixels are valid
-                cross[col, row, 2] = max(up_len, 1 * (col >= 1) * np.isfinite(image[up_col, row]))
-
-                bot_len = 0
-                bot = col
-                for bot in range(col + 1, min(col + len_arms, n_col_)):
-                    if abs(image[col, row] - image[bot, row]) >= intensity:
-                        break
-                    bot_len += 1
-                # enforces a minimum support region of 3×3 if pixels are valid
-                cross[col, row, 3] = max(bot_len, 1 * (col < n_col_ - 1) * np.isfinite(image[bot, row]))
-
-    return cross

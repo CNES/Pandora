@@ -66,7 +66,7 @@ cpp_deps: ## retrieve cpp dependencies
 
 .PHONY: install
 install: venv cpp_deps## install pandora without plugins
-	@test -f ${PANDORA_VENV}/bin/pandora || . ${PANDORA_VENV}/bin/activate; ${PANDORA_VENV}/bin/pip install .[dev,docs,notebook]
+	@test -f ${PANDORA_VENV}/bin/pandora || . ${PANDORA_VENV}/bin/activate; ${PANDORA_VENV}/bin/pip install --no-build-isolation --editable .[dev,docs,notebook]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${PANDORA_VENV}/bin/pre-commit install
 	@echo "PANDORA installed in dev mode in virtualenv ${PANDORA_VENV}"
