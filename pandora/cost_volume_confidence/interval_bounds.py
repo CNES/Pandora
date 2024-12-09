@@ -30,11 +30,11 @@ from typing import Dict, Tuple, Union
 
 import numpy as np
 from json_checker import Checker, And
-from numba import njit, prange
 import xarray as xr
 
 from . import cost_volume_confidence
 from ..interval_tools import interval_regularization
+import pandora.cost_volume_confidence_cpp as cost_volume_confidence_cpp
 
 
 @cost_volume_confidence.AbstractCostVolumeConfidence.register_subclass("interval_bounds")
@@ -163,7 +163,7 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             # Computes interval bounds using numpy
-            interval_bound_inf, interval_bound_sup = self.compute_interval_bounds(
+            interval_bound_inf, interval_bound_sup = cost_volume_confidence_cpp.compute_interval_bounds(
                 cv["cost_volume"].data, cv["disp"].data.astype(np.float32), self._possibility_threshold, type_factor
             )
             if self._regularization:
@@ -191,11 +191,6 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
         return disp, cv
 
     @staticmethod
-    @njit(
-        "UniTuple(f4[:, :], 2)(f4[:, :, :], f4[:], f4, f4)",
-        parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
-        cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")),
-    )
     def compute_interval_bounds(
         cv: np.ndarray,
         disp_interval: np.ndarray,
@@ -216,58 +211,9 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
         :return: the infimum and supremum (not regularized) of the set containing the true disparity
         :rtype: Tuple(2D np.ndarray (row, col) dtype = float32, 2D np.ndarray (row, col) dtype = float32)
         """
-        # IDEA: instead of transforming the cost curve into a possibility, we can compute the cost
-        # threshold T to apply directly to the cost curve to obtain the same result
-        # This would be a bit more efficient but way less understandable when reading the code
-        # T = (1 - possibility_threshold)*(max_cost - min_cost) + min_cost + np.nanmin(cv[row, col, :])
-        # cv[row, col, : ] <= T is True when the disparity is possible
-
-        # Miniumum and maximum of all costs, useful to normalize the cost volume
-        min_cost = np.nanmin(cv)
-        max_cost = np.nanmax(cv)
-
-        n_row, n_col, n_disp = cv.shape
-
-        interval_inf = np.full((n_row, n_col), 0, dtype=np.float32)
-        interval_sup = np.full((n_row, n_col), 0, dtype=np.float32)
-
-        for row in prange(n_row):  # pylint: disable=not-an-iterable
-            for col in prange(n_col):  # pylint: disable=not-an-iterable
-                # Normalized cost
-                norm_cv = (cv[row, col, :] - min_cost) / (max_cost - min_cost)
-
-                # Possibility transformation
-
-                possibility = type_factor * norm_cv + 1 - np.nanmax(type_factor * norm_cv)
-
-                # Sorting may be slightly slower than Numpy’s implementation.
-                # Computing the interval bounds by applying a threshold to the possibility distribution
-                argsorted_poss = np.argsort(possibility)
-                sorted_poss = possibility[argsorted_poss]
-
-                mask = sorted_poss >= possibility_threshold
-
-                # "where=mask" is not supported for nanmin Numba implementation
-                if mask.sum() != 0:
-                    min_idx = np.nanmin(argsorted_poss[mask])
-                    max_idx = np.nanmax(argsorted_poss[mask])
-
-                    # If the interval bounds are the minima of the cost curve,
-                    # extending the interval (+/- 1) because of the disparity refinement
-                    if possibility[min_idx] == 1:
-                        min_idx = max(0, min_idx - 1)
-                    if possibility[max_idx] == 1:
-                        max_idx = min(n_disp - 1, max_idx + 1)
-
-                    min_disp = disp_interval[min_idx]
-                    max_disp = disp_interval[max_idx]
-
-                # If the cost curve is all NaN, put NaN for the moment
-                # This allows to not take them into account during regularization
-                else:
-                    min_disp, max_disp = np.nan, np.nan
-
-                interval_inf[row, col] = min_disp
-                interval_sup[row, col] = max_disp
-
-        return interval_inf, interval_sup
+        return cost_volume_confidence_cpp.compute_interval_bounds(
+            cv, 
+            disp_interval, 
+            possibility_threshold, 
+            type_factor
+        )
