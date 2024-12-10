@@ -7,7 +7,7 @@
 
 namespace py = pybind11;
 
-std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<float>> loop_refinement(
+std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_refinement(
     py::array_t<float> cv,
     py::array_t<float> disp,
     py::array_t<int64_t> mask,
@@ -22,7 +22,7 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<float>> loop_refi
     int64_t cst_pandora_msk_pixel_stopped_interpolation 
 );
 
-std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<float>> loop_approximate_refinement(
+std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_approximate_refinement(
     py::array_t<float> cv,
     py::array_t<float> disp,
     py::array_t<int64_t> mask,
