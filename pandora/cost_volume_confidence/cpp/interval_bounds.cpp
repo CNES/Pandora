@@ -70,14 +70,14 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
                 cv_val = r_cv(row, col, disp);
                 normalized_pix_costs[disp] = (cv_val - min_cost) / diff_cost;
                 if (!std::isnan(cv_val)) {
-                    max_pix_cost = std::max(max_pix_cost, normalized_pix_costs[disp]);
+                    max_pix_cost = std::max(max_pix_cost, type_factor*normalized_pix_costs[disp]);
                 }
             }
 
             // possibility
             for (int disp = 0; disp < n_disp; ++disp) {
                 if (!std::isnan(normalized_pix_costs[disp]))
-                    normalized_pix_costs[disp] = type_factor * normalized_pix_costs[disp] + 1 - type_factor * max_pix_cost;
+                    normalized_pix_costs[disp] = type_factor * normalized_pix_costs[disp] + 1.f - max_pix_cost;
             }
 
             argsort(normalized_pix_costs, n_disp, sorted_indices);

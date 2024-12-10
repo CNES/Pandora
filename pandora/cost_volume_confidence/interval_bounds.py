@@ -163,7 +163,7 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             # Computes interval bounds using numpy
-            interval_bound_inf, interval_bound_sup = cost_volume_confidence_cpp.compute_interval_bounds(
+            interval_bound_inf, interval_bound_sup = self.compute_interval_bounds(
                 cv["cost_volume"].data, cv["disp"].data.astype(np.float32), self._possibility_threshold, type_factor
             )
             if self._regularization:
