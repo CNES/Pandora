@@ -30,10 +30,10 @@ from typing import Tuple, Callable, Dict
 from ast import literal_eval
 import numpy as np
 import xarray as xr
-from numba import njit, prange
 
 import pandora.constants as cst
 from pandora.margins.descriptors import NullMargins
+import pandora.refinement_cpp as refinement_cpp
 
 
 class AbstractRefinement:
@@ -104,7 +104,7 @@ class AbstractRefinement:
                 itp_coeff,
                 disp["disparity_map"].data,
                 disp["validity_mask"].data,
-            ) = self.loop_refinement(
+            ) = refinement_cpp.loop_refinement(
                 cv["cost_volume"].data,
                 disp["disparity_map"].data,
                 disp["validity_mask"].data,
@@ -113,6 +113,8 @@ class AbstractRefinement:
                 subpixel,
                 measure,
                 self.refinement_method,
+                cst.PANDORA_MSK_PIXEL_INVALID,
+                cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
             )
 
         disp.attrs["refinement"] = self._refinement_method_name
@@ -160,7 +162,7 @@ class AbstractRefinement:
                 itp_coeff,
                 disp_right["disparity_map"].data,
                 disp_right["validity_mask"].data,
-            ) = self.loop_approximate_refinement(
+            ) = refinement_cpp.loop_approximate_refinement(
                 cv_left["cost_volume"].data,
                 disp_right["disparity_map"].data,
                 disp_right["validity_mask"].data,
@@ -169,6 +171,8 @@ class AbstractRefinement:
                 subpixel,
                 measure,
                 self.refinement_method,
+                cst.PANDORA_MSK_PIXEL_INVALID,
+                cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
             )
 
         disp_right.attrs["refinement"] = self._refinement_method_name
@@ -212,79 +216,7 @@ class AbstractRefinement:
         print("Subpixel method description")
 
     @staticmethod
-    @njit(
-        parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
-        cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")),
-    )
-    def loop_refinement(
-        cv: np.ndarray,
-        disp: np.ndarray,
-        mask: np.ndarray,
-        d_min: int,
-        d_max: int,
-        subpixel: int,
-        measure: str,
-        method: Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray, str], Tuple[int, int, int]],
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """
-         Apply for each pixels the refinement method
-
-        :param cv: cost volume to refine
-        :type cv: 3D numpy array (row, col, disp)
-        :param disp: disparity map
-        :type disp: 2D numpy array (row, col)
-        :param mask: validity mask
-        :type mask: 2D numpy array (row, col)
-        :param d_min: minimal disparity
-        :type d_min: int
-        :param d_max: maximal disparity
-        :type d_max: int
-        :param subpixel: subpixel precision used to create the cost volume
-        :type subpixel: int ( 1 | 2 | 4 )
-        :param measure: the measure used to create the cot volume
-        :param measure: string
-        :param method: the refinement method
-        :param method: function
-        :return: the refine coefficient, the refine disparity map, and the validity mask
-        :rtype: tuple(2D numpy array (row, col), 2D numpy array (row, col), 2D numpy array (row, col))
-        """
-        n_row, n_col, _ = cv.shape
-        itp_coeff = np.zeros((n_row, n_col), dtype=np.float64)
-
-        for row in prange(n_row):
-            for col in prange(n_col):
-                # No interpolation on invalid points
-                if (mask[row, col] & cst.PANDORA_MSK_PIXEL_INVALID) != 0:
-                    itp_coeff[row, col] = np.nan
-                else:
-                    # conversion to numpy indexing
-                    dsp = int((disp[row, col] - d_min) * subpixel)
-                    itp_coeff[row, col] = cv[row, col, dsp]
-                    if not np.isnan(cv[row, col, dsp]):
-                        if (disp[row, col] != d_min) and (disp[row, col] != d_max):
-                            sub_disp, sub_cost, valid = method(  # type: ignore
-                                [
-                                    cv[row, col, dsp - 1],
-                                    cv[row, col, dsp],
-                                    cv[row, col, dsp + 1],
-                                ],  # type: ignore
-                                disp[row, col],
-                                measure,  # type: ignore
-                            )
-
-                            disp[row, col] = disp[row, col] + (sub_disp / subpixel)
-                            itp_coeff[row, col] = sub_cost
-                            mask[row, col] += valid
-                        else:
-                            # If Information: calculations stopped at the pixel step, sub-pixel interpolation did
-                            # not succeed
-                            mask[row, col] += cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
-
-        return itp_coeff, disp, mask
-
-    @staticmethod
     @abstractmethod
-    @njit(cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
     def refinement_method(cost: np.ndarray, disp: float, measure: str) -> Tuple[float, float, int]:
         """
         Return the subpixel disparity and cost
@@ -299,85 +231,3 @@ class AbstractRefinement:
          ( Information: calculations stopped at the pixel step, sub-pixel interpolation did not succeed )
         :rtype: float, float, int
         """
-
-    @staticmethod
-    @njit(
-        parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
-        cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")),
-    )
-    def loop_approximate_refinement(
-        cv: np.ndarray,
-        disp: np.ndarray,
-        mask: np.ndarray,
-        d_min: int,
-        d_max: int,
-        subpixel: int,
-        measure: str,
-        method: Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray, str], Tuple[int, int, int]],
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """
-         Apply for each pixels the refinement method on the right disparity map which was created with the approximate
-          method : a diagonal search for the minimum on the left cost volume
-
-        :param cv: the left cost volume
-        :type cv: 3D numpy array (row, col, disp)
-        :param disp: right disparity map
-        :type disp: 2D numpy array (row, col)
-        :param mask: right validity mask
-        :type mask: 2D numpy array (row, col)
-        :param d_min: minimal disparity
-        :type d_min: int
-        :param d_max: maximal disparity
-        :type d_max: int
-        :param subpixel: subpixel precision used to create the cost volume
-        :type subpixel: int ( 1 | 2 | 4 )
-        :param measure: the type of measure used to create the cost volume
-        :type measure: string = min | max
-        :param method: the refinement method
-        :type method: function
-        :return: the refine coefficient, the refine disparity map, and the validity mask
-        :rtype: tuple(2D numpy array (row, col), 2D numpy array (row, col), 2D numpy array (row, col))
-        """
-        n_row, n_col, _ = cv.shape
-        itp_coeff = np.zeros((n_row, n_col), dtype=np.float64)
-
-        for row in prange(n_row):
-            for col in prange(n_col):
-                # No interpolation on invalid points
-                if (mask[row, col] & cst.PANDORA_MSK_PIXEL_INVALID) != 0:
-                    itp_coeff[row, col] = np.nan
-                else:
-                    # Conversion to numpy indexing
-                    dsp = int((-disp[row, col] - d_min) * subpixel)
-                    # Position of the best cost in the left cost volume is cv[r, diagonal, d]
-                    diagonal = int(col + disp[row, col])
-                    itp_coeff[row, col] = cv[row, diagonal, dsp]
-                    if not np.isnan(cv[row, diagonal, dsp]):
-                        if (
-                            (disp[row, col] != -d_min)
-                            and (disp[row, col] != -d_max)
-                            and (diagonal != 0)
-                            and (diagonal != (n_col - 1))
-                        ):
-                            # (1 * subpixel) because in fast mode, we can not have sub-pixel disparity for the right
-                            # image.
-                            # We therefore interpolate between pixel disparities
-                            sub_disp, cost, valid = method(  # type:ignore
-                                [
-                                    cv[row, diagonal - 1, dsp + (1 * subpixel)],
-                                    cv[row, diagonal, dsp],
-                                    cv[row, diagonal + 1, dsp - (1 * subpixel)],
-                                ],  # type: ignore
-                                disp[row, col],
-                                measure,  # type: ignore
-                            )
-
-                            disp[row, col] = disp[row, col] + (sub_disp / subpixel)
-                            itp_coeff[row, col] = cost
-                            mask[row, col] += valid
-                        else:
-                            # If Information: calculations stopped at the pixel step, sub-pixel interpolation did
-                            # not succeed
-                            mask[row, col] += cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
-
-        return itp_coeff, disp, mask

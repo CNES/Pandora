@@ -30,3 +30,7 @@ subdir(
 subdir(
   'pandora/cost_volume_confidence/cpp'
 )
+
+subdir(
+  'pandora/refinement/cpp'
+)

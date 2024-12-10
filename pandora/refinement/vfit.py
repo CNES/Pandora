@@ -29,10 +29,10 @@ from ast import literal_eval
 
 import numpy as np
 from json_checker import Checker, And
-from numba import njit
 
 import pandora.constants as cst
 from . import refinement
+import pandora.refinement_cpp as refinement_cpp
 
 
 @refinement.AbstractRefinement.register_subclass("vfit")
@@ -40,6 +40,8 @@ class Vfit(refinement.AbstractRefinement):
     """
     Vfit class allows to perform the subpixel cost refinement step
     """
+
+    refinement_method = refinement_cpp.vfit_refinement_method
 
     def __init__(self, **cfg: str) -> None:
         """
@@ -72,53 +74,3 @@ class Vfit(refinement.AbstractRefinement):
         :return: None
         """
         print("Vfit refinement method")
-
-    @staticmethod
-    @njit(cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
-    def refinement_method(cost: np.ndarray, disp: float, measure: str) -> Tuple[float, float, int]:
-        """
-        Return the subpixel disparity and cost, by matching a symmetric V shape (linear interpolation)
-
-        :param cost: cost of the values disp - 1, disp, disp + 1
-        :type cost: 1D numpy array : [cost[disp -1], cost[disp], cost[disp + 1]]
-        :param disp: the disparity
-        :type disp: float
-        :param measure: the type of measure used to create the cost volume
-        :param measure: string = min | max
-        :return: the disparity shift, the refined cost and the state of the pixel( Information: \
-        calculations stopped at the pixel step, sub-pixel interpolation did not succeed )
-        :rtype: float, float, int
-        """
-        if (np.isnan(cost[0])) or (np.isnan(cost[2])):
-            # Information: calculations stopped at the pixel step, sub-pixel interpolation did not succeed
-            return 0, cost[1], cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
-
-        inverse = 1
-        if measure == "max":
-            # Additive inverse : if a < b then -a > -b
-            inverse = -1
-
-        # Check if cost[disp] is the minimum cost (or maximum using similarity measure) before matching a symmetric V
-        # shape, if not, interpolation is not applied
-        if (inverse * cost[1] > inverse * cost[0]) or (inverse * cost[1] > inverse * cost[2]):
-            return 0, cost[1], cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
-
-        # The problem is to approximate sub_cost function with an affine function: y = a * x + origin
-        # Calculate the slope
-        a = cost[2] - cost[1]
-
-        # Compare the difference disparity between (cost[0]-cost[1]) and (cost[2]-cost[1]): the highest cost is used
-        if (inverse * cost[0]) > (inverse * cost[2]):
-            a = cost[0] - cost[1]
-
-        if abs(a) < 1.0e-15:
-            return 0, cost[1], 0
-
-        # Problem is resolved with tangents equality, due to the symmetric V shape of 3 points (cv0, cv2 and (x,y))
-        # sub_disp is dx
-        sub_disp = (cost[0] - cost[2]) / (2 * a)
-
-        # sub_cost is y
-        sub_cost = a * (sub_disp - 1) + cost[2]
-
-        return sub_disp, sub_cost, 0
