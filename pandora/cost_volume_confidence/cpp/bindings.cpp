@@ -24,12 +24,7 @@ PYBIND11_MODULE(cost_volume_confidence_cpp, m) {
         &compute_interval_bounds, 
         "Computes interval bounds on the disparity."
     );
-
-    m.def(
-        "compute_risk", 
-        &compute_risk, 
-        "Computes minimum and maximum risk."
-    );
+    
     m.def(
         "compute_risk_and_sampled_risk", 
         &compute_risk_and_sampled_risk, 

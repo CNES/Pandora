@@ -147,7 +147,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
             elif "global_disparity" in img_right.attrs:
                 sampled_ambiguity = self.normalize_with_extremum(sampled_ambiguity, img_right, self._nbr_etas)
 
-            risk_max, risk_min = cost_volume_confidence_cpp.compute_risk(
+            risk_max, risk_min = self.compute_risk(
                 cv["cost_volume"].data,
                 sampled_ambiguity,
                 self._etas,
@@ -188,7 +188,15 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         :return: the minimum and maximum risk
         :rtype: Tuple(2D np.ndarray (row, col) dtype = float32, 2D np.ndarray (row, col) dtype = float32)
         """
-        return cost_volume_confidence_cpp.compute_risk(cv, sampled_ambiguity, etas, nbr_etas, grids, disparity_range)
+        return cost_volume_confidence_cpp.compute_risk_and_sampled_risk(
+            cv,
+            sampled_ambiguity,
+            etas,
+            nbr_etas,
+            grids,
+            disparity_range,
+            False
+        )
 
     @staticmethod
     def compute_risk_and_sampled_risk(
@@ -224,5 +232,6 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
             etas,
             nbr_etas,
             grids,
-            disparity_range
+            disparity_range,
+            True
         )
