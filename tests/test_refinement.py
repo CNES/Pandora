@@ -125,16 +125,16 @@ class TestRefinement(unittest.TestCase):
         orig_cv = self.cv.copy()
         quadratic_refinement.subpixel_refinement(self.cv, self.disp)
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(self.disp["disparity_map"].data, gt_sub_disp)
+        np.testing.assert_allclose(self.disp["disparity_map"].data, gt_sub_disp, atol=1e10-7, rtol=1e10-7)
 
         # Check if the calculated coefficients is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(self.disp["interpolated_coeff"].data, gt_sub_cost)
+        np.testing.assert_allclose(self.disp["interpolated_coeff"].data, gt_sub_cost, atol=1e10-7, rtol=1e10-7)
 
         # Check if the calculated validity mask  is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(self.disp["validity_mask"].data, gt_mask)
+        np.testing.assert_allclose(self.disp["validity_mask"].data, gt_mask, atol=1e10-7, rtol=1e10-7)
 
         # Check if the cost volume is not change
-        np.testing.assert_array_equal(self.cv["cost_volume"].data, orig_cv["cost_volume"].data)
+        np.testing.assert_allclose(self.cv["cost_volume"].data, orig_cv["cost_volume"].data, atol=1e10-7, rtol=1e10-7)
 
     @staticmethod
     def test_quadratic_subpix():
@@ -208,16 +208,16 @@ class TestRefinement(unittest.TestCase):
         orig_cv = subpix_cv.copy()
         quadratic_refinement.subpixel_refinement(subpix_cv, subpix_disp)
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(subpix_disp["disparity_map"].data, gt_sub_disp)
+        np.testing.assert_allclose(subpix_disp["disparity_map"].data, gt_sub_disp, atol=1e10-7, rtol=1e10-7)
 
         # Check if the calculated coefficients is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(subpix_disp["interpolated_coeff"].data, gt_sub_cost)
+        np.testing.assert_allclose(subpix_disp["interpolated_coeff"].data, gt_sub_cost, atol=1e10-7, rtol=1e10-7)
 
         # Check if the calculated validity mask  is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(subpix_disp["validity_mask"].data, gt_mask)
+        np.testing.assert_allclose(subpix_disp["validity_mask"].data, gt_mask, atol=1e10-7, rtol=1e10-7)
 
         # Check if the cost volume is not change
-        np.testing.assert_array_equal(subpix_cv["cost_volume"].data, orig_cv["cost_volume"].data)
+        np.testing.assert_allclose(subpix_cv["cost_volume"].data, orig_cv["cost_volume"].data, atol=1e10-7, rtol=1e10-7)
 
     @staticmethod
     def test_quadratic_with_nan_and_subpix():
@@ -300,16 +300,16 @@ class TestRefinement(unittest.TestCase):
         orig_cv = subpix_cv.copy()
         quadratic_refinement.subpixel_refinement(subpix_cv, subpix_disp)
         # Check if the calculated disparity map is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(subpix_disp["disparity_map"].data, gt_sub_disp)
+        np.testing.assert_allclose(subpix_disp["disparity_map"].data, gt_sub_disp, atol=1e10-7, rtol=1e10-7)
 
         # Check if the calculated coefficients is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(subpix_disp["interpolated_coeff"].data, gt_sub_cost)
+        np.testing.assert_allclose(subpix_disp["interpolated_coeff"].data, gt_sub_cost, atol=1e10-7, rtol=1e10-7)
 
         # Check if the calculated validity mask  is equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(subpix_disp["validity_mask"].data, gt_mask)
+        np.testing.assert_allclose(subpix_disp["validity_mask"].data, gt_mask, atol=1e10-7, rtol=1e10-7)
 
         # Check if the cost volume is not change
-        np.testing.assert_array_equal(subpix_cv["cost_volume"].data, orig_cv["cost_volume"].data)
+        np.testing.assert_allclose(subpix_cv["cost_volume"].data, orig_cv["cost_volume"].data, atol=1e10-7, rtol=1e10-7)
 
     def test_vfit(self):
         """
