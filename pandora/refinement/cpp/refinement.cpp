@@ -134,9 +134,9 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_ap
                 py::array(
                     {3},
                     std::vector<float>{
-                        r_cv(row, diag, dsp-1),
+                        r_cv(row, diag-1, dsp+subpixel),
                         r_cv(row, diag, dsp),
-                        r_cv(row, diag, dsp+1)
+                        r_cv(row, diag+1, dsp-subpixel)
                     }.data()
                 ),
                 raw_dsp,
