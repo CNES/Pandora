@@ -23,17 +23,16 @@
 This module contains classes and functions associated to the subpixel refinement step.
 """
 
-import os
 import warnings
 from abc import ABCMeta, abstractmethod
-from typing import Tuple, Callable, Dict
-from ast import literal_eval
+from typing import Dict, Tuple
+
 import numpy as np
 import xarray as xr
 
 import pandora.constants as cst
+from pandora import refinement_cpp
 from pandora.margins.descriptors import NullMargins
-import pandora.refinement_cpp as refinement_cpp
 
 
 class AbstractRefinement:
@@ -114,7 +113,7 @@ class AbstractRefinement:
                 measure,
                 self.refinement_method,
                 cst.PANDORA_MSK_PIXEL_INVALID,
-                cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
+                cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
             )
 
         disp.attrs["refinement"] = self._refinement_method_name
@@ -172,7 +171,7 @@ class AbstractRefinement:
                 measure,
                 self.refinement_method,
                 cst.PANDORA_MSK_PIXEL_INVALID,
-                cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
+                cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
             )
 
         disp_right.attrs["refinement"] = self._refinement_method_name

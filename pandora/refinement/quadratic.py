@@ -23,17 +23,13 @@
 This module contains functions associated to the quadratic method used in the refinement step.
 """
 
-from typing import Dict, Tuple
-from ast import literal_eval
-import os
+from typing import Dict
 
-import numpy as np
-from json_checker import Checker, And
-from numba import njit
+from json_checker import And, Checker
 
-import pandora.constants as cst
+from pandora import refinement_cpp
+
 from . import refinement
-import pandora.refinement_cpp as refinement_cpp
 
 
 @refinement.AbstractRefinement.register_subclass("quadratic")
