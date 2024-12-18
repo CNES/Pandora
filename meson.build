@@ -24,6 +24,14 @@ install_subdir(
 )
 
 subdir(
+  'pandora/cpp'
+)
+
+subdir(
+  'pandora/validation/cpp'
+)
+
+subdir(
   'pandora/aggregation/cpp'
 )
 
