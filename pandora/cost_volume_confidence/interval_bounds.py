@@ -23,18 +23,16 @@
 This module contains functions for estimating interval bounds for the disparity
 """
 
-import os
 import warnings
-from ast import literal_eval
 from typing import Dict, Tuple, Union
 
 import numpy as np
-from json_checker import Checker, And
+from json_checker import And, Checker
 import xarray as xr
 
 from . import cost_volume_confidence
 from ..interval_tools import interval_regularization
-import pandora.cost_volume_confidence_cpp as cost_volume_confidence_cpp
+from pandora import cost_volume_confidence_cpp
 
 
 @cost_volume_confidence.AbstractCostVolumeConfidence.register_subclass("interval_bounds")
@@ -211,9 +209,4 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
         :return: the infimum and supremum (not regularized) of the set containing the true disparity
         :rtype: Tuple(2D np.ndarray (row, col) dtype = float32, 2D np.ndarray (row, col) dtype = float32)
         """
-        return cost_volume_confidence_cpp.compute_interval_bounds(
-            cv, 
-            disp_interval, 
-            possibility_threshold, 
-            type_factor
-        )
+        return cost_volume_confidence_cpp.compute_interval_bounds(cv, disp_interval, possibility_threshold, type_factor)

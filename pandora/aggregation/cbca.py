@@ -33,7 +33,7 @@ from json_checker import Checker, And
 
 from pandora.filter import AbstractFilter
 from pandora.img_tools import shift_right_img
-import pandora.aggregation_cpp as aggregation_cpp
+from pandora import aggregation_cpp
 from . import aggregation
 
 

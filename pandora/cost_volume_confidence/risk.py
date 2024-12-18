@@ -23,17 +23,17 @@
 This module contains functions for estimating the risk.
 """
 import logging
-import os
 import warnings
 from typing import Dict, Tuple, Union
-from ast import literal_eval
-import numpy as np
-from json_checker import Checker, And
-import xarray as xr
 
+import numpy as np
+import xarray as xr
+from json_checker import And, Checker
+
+from pandora import cost_volume_confidence_cpp
 
 from . import cost_volume_confidence
-import pandora.cost_volume_confidence_cpp as cost_volume_confidence_cpp
+
 
 @cost_volume_confidence.AbstractCostVolumeConfidence.register_subclass("risk")
 class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
@@ -189,13 +189,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         :rtype: Tuple(2D np.ndarray (row, col) dtype = float32, 2D np.ndarray (row, col) dtype = float32)
         """
         return cost_volume_confidence_cpp.compute_risk_and_sampled_risk(
-            cv,
-            sampled_ambiguity,
-            etas,
-            nbr_etas,
-            grids,
-            disparity_range,
-            False
+            cv, sampled_ambiguity, etas, nbr_etas, grids, disparity_range, False
         )
 
     @staticmethod
@@ -227,11 +221,5 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
                      3D np.ndarray (row, col) dtype = float32, 3D np.ndarray (row, col) dtype = float32)
         """
         return cost_volume_confidence_cpp.compute_risk_and_sampled_risk(
-            cv,
-            sampled_ambiguity,
-            etas,
-            nbr_etas,
-            grids,
-            disparity_range,
-            True
+            cv, sampled_ambiguity, etas, nbr_etas, grids, disparity_range, True
         )
