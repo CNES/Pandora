@@ -26,19 +26,16 @@ This module contains functions associated to raster images.
 from __future__ import annotations
 
 import warnings
-from typing import List, Union, Tuple, cast, Dict
-from ast import literal_eval
-import os
+from typing import Dict, List, Tuple, Union, cast
 
 import numpy as np
 import rasterio
-from rasterio.windows import Window
 import xarray as xr
+from rasterio.windows import Window
 from scipy.ndimage import zoom
 from skimage.transform.pyramids import pyramid_gaussian
-from numba import njit
 
-import pandora.constants as cst
+from pandora import img_tools_cpp
 
 
 def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.DatasetReader:
@@ -538,45 +535,7 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
     return img, msk
 
 
-@njit(cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
-def interpolate_nodata_sgm(img: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Interpolation of the input image to resolve invalid (nodata) pixels.
-    Interpolate invalid pixels by finding the nearest correct pixels in 8 different directions
-    and use the median of their disparities.
-
-    HIRSCHMULLER, Heiko. Stereo processing by semiglobal matching and mutual information.
-    IEEE Transactions on pattern analysis and machine intelligence, 2007, vol. 30, no 2, p. 328-341.
-
-    :param img: input image
-    :type img: 2D np.ndarray (row, col)
-    :param valid: validity mask
-    :type valid: 2D np.ndarray (row, col)
-    :return: the interpolate input image, with the validity mask update :
-
-        - If out & PANDORA_MSK_PIXEL_FILLED_NODATA != 0 : Invalid pixel : filled nodata pixel
-    :rtype: tuple(2D np.array (row, col), 2D np.array (row, col))
-    """
-    # Output disparity map and validity mask
-    out_img = np.copy(img)
-    out_val = np.copy(valid)
-
-    # 8 directions : [row, y]
-    dirs = np.array([[0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0], [1, 1]])
-
-    ncol, nrow = img.shape
-    for col in range(ncol):
-        for row in range(nrow):
-            # Mismatched
-            if valid[col, row] & cst.PANDORA_MSK_PIXEL_INVALID != 0:
-                valid_neighbors = find_valid_neighbors(dirs, img, valid, row, col)
-
-                # Median of the 8 pixels
-                out_img[col, row] = np.nanmedian(valid_neighbors)
-                # Update the validity mask : Information : filled nodata pixel
-                out_val[col, row] = cst.PANDORA_MSK_PIXEL_FILLED_NODATA
-
-    return out_img, out_val
+interpolate_nodata_sgm = img_tools_cpp.interpolate_nodata_sgm
 
 
 def masks_pyramid(msk: np.ndarray, scale_factor: int, num_scales: int) -> List[np.ndarray]:
@@ -827,46 +786,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.
     return r_mean / float(win_size * win_size)
 
 
-@njit(cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
-def find_valid_neighbors(dirs: np.ndarray, disp: np.ndarray, valid: np.ndarray, row: int, col: int):
-    """
-    Find valid neighbors along directions
-
-    :param dirs: directions
-    :type dirs: 2D np.ndarray (row, col)
-    :param disp: disparity map
-    :type disp: 2D np.ndarray (row, col)
-    :param valid: validity mask
-    :type valid: 2D np.ndarray (row, col)
-    :param row: row current value
-    :type row: int
-    :param col: col current value
-    :type col: int
-    :return: valid neighbors
-    :rtype: 2D np.ndarray
-    """
-    ncol, nrow = disp.shape
-    # Maximum path length
-    max_path_length = max(nrow, ncol)
-    # For each direction
-    valid_neighbors = np.zeros(8, dtype=np.float32)
-    for direction in range(8):
-        # Find the first valid pixel in the current path
-        tmp_row = row
-        tmp_col = col
-        for i in range(max_path_length):  # pylint: disable= unused-variable
-            tmp_row += dirs[direction][0]
-            tmp_col += dirs[direction][1]
-
-            # Edge of the image reached: there is no valid pixel in the current path
-            if (tmp_col < 0) | (tmp_col >= ncol) | (tmp_row < 0) | (tmp_row >= nrow):
-                valid_neighbors[direction] = np.nan
-                break
-            # First valid pixel
-            if (valid[tmp_col, tmp_row] & cst.PANDORA_MSK_PIXEL_INVALID) == 0:
-                valid_neighbors[direction] = disp[tmp_col, tmp_row]
-                break
-    return valid_neighbors
+find_valid_neighbors = img_tools_cpp.find_valid_neighbors
 
 
 def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np.float64:
