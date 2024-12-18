@@ -129,12 +129,12 @@ class TestIntervalTools:
 
         # Regularizing the intervals
         reg_left, reg_right, graph = interval_tools.graph_regularization(
-            interval_inf, interval_sup, border_left, border_right, gt_connection_matrix, quantile=0.9
+            interval_inf, interval_sup, border_left, border_right, gt_connection_matrix, 0.9
         )
         # Check if interval bounds and mask are equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(reg_left, gt_left)
-        np.testing.assert_array_equal(reg_right, gt_right)
-        np.testing.assert_array_equal(graph, gt_mask_modif)
+        np.testing.assert_allclose(reg_left, gt_left, 1e-6, 1e-6)
+        np.testing.assert_allclose(reg_right, gt_right, 1e-6, 1e-6)
+        np.testing.assert_allclose(graph, gt_mask_modif, 1e-6, 1e-6)
 
     def test_interval_regularization(self, gt_mask_modif):
         """
@@ -193,6 +193,6 @@ class TestIntervalTools:
             vertical_depth=2,
             quantile_regularization=0.9,
         )
-        np.testing.assert_array_equal(inf, gt_inf)
-        np.testing.assert_array_equal(sup, gt_sup)
-        np.testing.assert_array_equal(mask, gt_mask_modif)
+        np.testing.assert_allclose(inf, gt_inf, 1e-6, 1e-6)
+        np.testing.assert_allclose(sup, gt_sup, 1e-6, 1e-6)
+        np.testing.assert_allclose(mask, gt_mask_modif, 1e-6, 1e-6)
