@@ -24,18 +24,14 @@ This module contains classes and functions associated to the interpolation of th
 """
 
 import logging
-import math
 from abc import ABCMeta, abstractmethod
-from typing import Tuple, Dict
-import os
-from ast import literal_eval
+from typing import Dict
 
 import numpy as np
 import xarray as xr
-from numba import njit
 
 import pandora.constants as cst
-from pandora.img_tools import find_valid_neighbors
+from pandora import validation_cpp
 from pandora.criteria import mask_border
 
 
@@ -244,144 +240,26 @@ class McCnnInterpolation(AbstractInterpolation):
             left["validity_mask"] = mask_border(left)
 
     @staticmethod
-    @njit(cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
-    def interpolate_occlusion_mc_cnn(disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Interpolation of the left disparity map to resolve occlusion conflicts.
-        Interpolate occlusion by moving left until
-        we find a position labeled correct.
+    def interpolate_occlusion_mc_cnn(disp: np.ndarray, valid: np.ndarray):
 
-        Žbontar, J., & LeCun, Y. (2016). Stereo matching by training a convolutional neural network to compare image
-        patches. The journal of machine learning research, 17(1), 2287-2318.
-
-        :param disp: disparity map
-        :type disp: 2D np.array (row, col)
-        :param valid: validity mask
-        :type valid: 2D np.array (row, col)
-        :return: the interpolate left disparity map, with the validity mask update :
-
-            - If out & MSK_PIXEL_FILLED_OCCLUSION != 0 : Invalid pixel : filled occlusion
-        :rtype: tuple(2D np.array (row, col), 2D np.array (row, col))
-        """
-        # Output disparity map and validity mask
-        out_disp = np.copy(disp)
-        out_val = np.copy(valid)
-
-        ncol, nrow = disp.shape
-        for col in range(ncol):
-            for row in range(nrow):
-                # Occlusion
-                if (valid[col, row] & cst.PANDORA_MSK_PIXEL_OCCLUSION) != 0:
-                    # interpolate occlusion by moving left until we find a position labeled correct
-
-                    #  valid pixels mask
-                    msk = (valid[col, 0 : row + 1] & cst.PANDORA_MSK_PIXEL_INVALID) == 0
-                    # Find the first valid pixel
-                    msk = msk[::-1]
-                    arg_valid = np.argmax(msk)
-
-                    # If occlusions are still present :  interpolate occlusion by moving right until we find a position
-                    # labeled correct
-                    if arg_valid == 0:
-                        # valid pixels mask
-                        msk = (valid[col, row:] & cst.PANDORA_MSK_PIXEL_INVALID) == 0
-                        # Find the first valid pixel
-                        arg_valid = np.argmax(msk)
-
-                        # Update the validity mask Information : filled occlusion
-                        out_val[col, row] -= cst.PANDORA_MSK_PIXEL_OCCLUSION * msk[arg_valid]
-                        out_val[col, row] += cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION * msk[arg_valid]
-                        out_disp[col, row] = disp[col, row + arg_valid]
-                    else:
-                        # Update the validity mask : Information : filled occlusion
-                        out_val[col, row] -= cst.PANDORA_MSK_PIXEL_OCCLUSION * msk[arg_valid]
-                        out_val[col, row] += cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION * msk[arg_valid]
-                        out_disp[col, row] = disp[col, row - arg_valid]
-
-        return out_disp, out_val
-
-    @staticmethod
-    @njit(cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
-    def interpolate_mismatch_mc_cnn(disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Interpolation of the left disparity map to resolve mismatch conflicts.
-        Interpolate mismatch by finding the nearest
-        correct pixels in 16 different directions and use the median of their disparities.
-
-        Žbontar, J., & LeCun, Y. (2016). Stereo matching by training a convolutional neural network to compare image
-        patches. The journal of machine learning research, 17(1), 2287-2318.
-
-        :param disp: disparity map
-        :type disp: 2D np.array (row, col)
-        :param valid: validity mask
-        :type valid: 2D np.array (row, col)
-        :return: the interpolate left disparity map, with the validity mask update :
-
-            - If out & MSK_PIXEL_FILLED_MISMATCH != 0 : Invalid pixel : filled mismatch
-        :rtype: tuple(2D np.array (row, col), 2D np.array (row, col))
-        """
-        # Output disparity map and validity mask
-        out_disp = np.copy(disp)
-        out_val = np.copy(valid)
-
-        ncol, nrow = disp.shape
-
-        # 16 directions : [row, col]
-        dirs = np.array(
-            [
-                [0.0, 1.0],
-                [-0.5, 1.0],
-                [-1.0, 1.0],
-                [-1.0, 0.5],
-                [-1.0, 0.0],
-                [-1.0, -0.5],
-                [-1.0, -1.0],
-                [-0.5, -1.0],
-                [0.0, -1.0],
-                [0.5, -1.0],
-                [1.0, -1.0],
-                [1.0, -0.5],
-                [1.0, 0.0],
-                [1.0, 0.5],
-                [1.0, 1.0],
-                [0.5, 1.0],
-            ]
+        return validation_cpp.interpolate_occlusion_mc_cnn(
+            disp,
+            valid,
+            cst.PANDORA_MSK_PIXEL_OCCLUSION,
+            cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
+            cst.PANDORA_MSK_PIXEL_INVALID,
         )
 
-        # Maximum path length
-        max_path_length = max(nrow, ncol)
+    @staticmethod
+    def interpolate_mismatch_mc_cnn(disp: np.ndarray, valid: np.ndarray):
 
-        for col in range(ncol):
-            for row in range(nrow):
-                # Mismatch
-                if (valid[col, row] & cst.PANDORA_MSK_PIXEL_MISMATCH) != 0:
-                    interp_mismatched = np.zeros(16, dtype=np.float32)
-                    # For each directions
-                    for direction in range(16):
-                        # Find the first valid pixel in the current path
-                        for i in range(1, max_path_length):
-                            tmp_row = row + int(dirs[direction][0] * i)
-                            tmp_col = col + int(dirs[direction][1] * i)
-                            tmp_row = math.floor(tmp_row)
-                            tmp_col = math.floor(tmp_col)
-
-                            # Edge of the image reached: there is no valid pixel in the current path
-                            if (tmp_col < 0) | (tmp_col >= ncol) | (tmp_row < 0) | (tmp_row >= nrow):
-                                interp_mismatched[direction] = np.nan
-                                break
-
-                            # First valid pixel
-                            if (valid[tmp_col, tmp_row] & cst.PANDORA_MSK_PIXEL_INVALID) == 0:
-                                interp_mismatched[direction] = disp[tmp_col, tmp_row]
-                                break
-
-                    # Median of the 16 pixels
-                    out_disp[col, row] = np.nanmedian(interp_mismatched)
-                    # Update the validity mask : Information : filled mismatch
-                    out_val[col, row] -= cst.PANDORA_MSK_PIXEL_MISMATCH
-                    out_val[col, row] += cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH
-
-        return out_disp, out_val
+        return validation_cpp.interpolate_mismatch_mc_cnn(
+            disp,
+            valid,
+            cst.PANDORA_MSK_PIXEL_MISMATCH,
+            cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH,
+            cst.PANDORA_MSK_PIXEL_INVALID,
+        )
 
 
 @AbstractInterpolation.register_subclass("sgm")
@@ -466,104 +344,24 @@ class SgmInterpolation(AbstractInterpolation):
         left.attrs["interpolated_disparity"] = "sgm"
 
     @staticmethod
-    @njit(cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
-    def interpolate_occlusion_sgm(disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Interpolation of the left disparity map to resolve occlusion conflicts.
-        Interpolate occlusion by moving by selecting
-        the right lowest value along paths from 8 directions.
+    def interpolate_occlusion_sgm(disp: np.ndarray, valid: np.ndarray):
 
-        HIRSCHMULLER, Heiko. Stereo processing by semiglobal matching and mutual information.
-        IEEE Transactions on pattern analysis and machine intelligence, 2007, vol. 30, no 2, p. 328-341.
-
-        :param disp: disparity map
-        :type disp: 2D np.array (row, col)
-        :param valid: validity mask
-        :type valid: 2D np.array (row, col)
-        :return: the interpolate left disparity map, with the validity mask update :
-
-            - If out & MSK_PIXEL_FILLED_OCCLUSION != 0 : Invalid pixel : filled occlusion
-        :rtype: : tuple(2D np.array (row, col), 2D np.array (row, col))
-        """
-        # Output disparity map and validity mask
-        out_disp = np.copy(disp)
-        out_val = np.copy(valid)
-
-        # 8 directions : [row, col]
-        dirs = np.array([[0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0], [1, 1]])
-
-        ncol, nrow = disp.shape
-        for col in range(ncol):
-            for row in range(nrow):
-                # Occlusion
-                if (valid[col, row] & cst.PANDORA_MSK_PIXEL_OCCLUSION) != 0:
-                    valid_neighbors = find_valid_neighbors(dirs, disp, valid, row, col)
-
-                    # Returns the indices that would sort the absolute array
-                    # The absolute value is used to search for the right value closest to 0
-                    valid_neighbors_argsort = np.argsort(np.abs(valid_neighbors))
-
-                    # right lowest value
-                    out_disp[col, row] = valid_neighbors[valid_neighbors_argsort[1]]
-
-                    # Update the validity mask : Information : filled occlusion
-                    out_val[col, row] -= cst.PANDORA_MSK_PIXEL_OCCLUSION
-                    out_val[col, row] += cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION
-        return out_disp, out_val
+        return validation_cpp.interpolate_occlusion_sgm(
+            disp,
+            valid,
+            cst.PANDORA_MSK_PIXEL_OCCLUSION,
+            cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
+            cst.PANDORA_MSK_PIXEL_INVALID,
+        )
 
     @staticmethod
-    @njit(cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
-    def interpolate_mismatch_sgm(disp: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Interpolation of the left disparity map to resolve mismatch conflicts. Interpolate mismatch by finding the
-        nearest correct pixels in 8 different directions and use the median of their disparities.
-        Mismatched pixel areas that are direct neighbors of occluded pixels are treated as occlusions.
+    def interpolate_mismatch_sgm(disp: np.ndarray, valid: np.ndarray):
 
-        HIRSCHMULLER, Heiko. Stereo processing by semiglobal matching and mutual information.
-        IEEE Transactions on pattern analysis and machine intelligence, 2007, vol. 30, no 2, p. 328-341.
-
-        :param disp: disparity map
-        :type disp: 2D np.array (row, col)
-        :param valid: validity mask
-        :type valid: 2D np.array (row, col)
-        :return: the interpolate left disparity map, with the validity mask update :
-
-            - If out & MSK_PIXEL_FILLED_MISMATCH != 0 : Invalid pixel : filled mismatch
-        :rtype: tuple(2D np.array (row, col), 2D np.array (row, col))
-        """
-        # Output disparity map and validity mask
-        out_disp = np.copy(disp)
-        out_val = np.copy(valid)
-
-        # 8 directions : [row, col]
-        dirs = np.array([[0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0], [1, 1]])
-
-        ncol, nrow = disp.shape
-        for col in range(ncol):
-            for row in range(nrow):
-                # Mismatched
-                if valid[col, row] & cst.PANDORA_MSK_PIXEL_MISMATCH != 0:
-                    # Mismatched pixel areas that are direct neighbors of occluded pixels are treated as occlusions
-                    if (
-                        np.sum(
-                            valid[
-                                max(0, col - 1) : min(ncol - 1, col + 1) + 1,
-                                max(0, row - 1) : min(nrow - 1, row + 1) + 1,
-                            ]
-                            & cst.PANDORA_MSK_PIXEL_OCCLUSION
-                        )
-                        != 0
-                    ):
-                        out_val[col, row] -= cst.PANDORA_MSK_PIXEL_MISMATCH
-                        out_val[col, row] += cst.PANDORA_MSK_PIXEL_OCCLUSION
-
-                    else:
-                        valid_neighbors = find_valid_neighbors(dirs, disp, valid, row, col)
-
-                        # Median of the 8 pixels
-                        out_disp[col, row] = np.nanmedian(valid_neighbors)
-                        # Update the validity mask : Information : filled mismatch
-                        out_val[col, row] -= cst.PANDORA_MSK_PIXEL_MISMATCH
-                        out_val[col, row] += cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH
-
-        return out_disp, out_val
+        return validation_cpp.interpolate_mismatch_sgm(
+            disp,
+            valid,
+            cst.PANDORA_MSK_PIXEL_MISMATCH,
+            cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH,
+            cst.PANDORA_MSK_PIXEL_OCCLUSION,
+            cst.PANDORA_MSK_PIXEL_INVALID,
+        )
