@@ -566,7 +566,6 @@ def read_multiscale_params(left_img: xr.Dataset, right_img: xr.Dataset, cfg: Dic
 
     if "multiscale" in cfg["pipeline"]:
         # Multiscale processing in conf
-        print(cfg)
         multiscale_ = multiscale.AbstractMultiscale(
             left_img, right_img, **cfg["pipeline"]["multiscale"]
         )  # type: ignore
