@@ -442,6 +442,19 @@ def get_metadata(
         .pipe(add_segm, segm, window=None)
     )
 
+def get_pyramids(data, num_scales, scale_factor, channel_axis):
+    return list(
+        pyramid_gaussian(
+            data,
+            max_layer=num_scales - 1,
+            downscale=scale_factor,
+            sigma=1.2,
+            order=1,
+            mode="reflect",
+            cval=0,
+            channel_axis=channel_axis,
+        )
+    )
 
 def prepare_pyramid(
     img_left: xr.Dataset, img_right: xr.Dataset, num_scales: int, scale_factor: int
@@ -469,37 +482,48 @@ def prepare_pyramid(
     if len(img_left_fill.shape) == 3:
         channel_axis = 0
     # Create image pyramids
-    images_left = list(
-        pyramid_gaussian(
-            img_left_fill,
-            max_layer=num_scales - 1,
-            downscale=scale_factor,
-            sigma=1.2,
-            order=1,
-            mode="reflect",
-            cval=0,
-            channel_axis=channel_axis,
-        )
+    images_left = get_pyramids(img_left_fill, num_scales, scale_factor, channel_axis)
+    images_right = get_pyramids(img_right_fill, num_scales, scale_factor, channel_axis)
+    disparities_left_min = get_pyramids(
+        # convert to float for the zoom
+        img_left["disparity"].data[0].astype(np.float32),
+        num_scales, scale_factor, channel_axis
     )
-    images_right = list(
-        pyramid_gaussian(
-            img_right_fill,
-            max_layer=num_scales - 1,
-            downscale=scale_factor,
-            sigma=1.2,
-            order=1,
-            mode="reflect",
-            cval=0,
-            channel_axis=channel_axis,
-        )
+    disparities_left_max = get_pyramids(
+        # convert to float for the zoom
+        img_left["disparity"].data[1].astype(np.float32),
+        num_scales, scale_factor, channel_axis
     )
+    compute_right_disps = "disparity" in list(img_right.keys())
+    disparities_right_min = None
+    disparities_right_max = None
+    if compute_right_disps:
+        disparities_right_min = get_pyramids(
+            img_right["disparity"].data[0].astype(np.float32),
+            num_scales, scale_factor, channel_axis
+        )
+        disparities_right_max = get_pyramids(
+            img_right["disparity"].data[1].astype(np.float32),
+            num_scales, scale_factor, channel_axis
+        )
+        
     # Create mask pyramids
     masks_left = masks_pyramid(msk_left_fill, scale_factor, num_scales)
     masks_right = masks_pyramid(msk_right_fill, scale_factor, num_scales)
 
     # Create dataset pyramids
-    pyramid_left = convert_pyramid_to_dataset(img_left, images_left, masks_left)
-    pyramid_right = convert_pyramid_to_dataset(img_right, images_right, masks_right)
+    pyramid_left = convert_pyramid_to_dataset(
+        img_left,
+        images_left,
+        masks_left,
+        [disparities_left_min, disparities_left_max]
+    )
+    pyramid_right = convert_pyramid_to_dataset(
+        img_right,
+        images_right,
+        masks_right,
+        [disparities_right_min, disparities_right_max] if compute_right_disps else None
+    )
 
     # The pyramid is intended to be from coarse to original size, so we inverse its order.
     return pyramid_left[::-1], pyramid_right[::-1]
@@ -562,7 +586,7 @@ def masks_pyramid(msk: np.ndarray, scale_factor: int, num_scales: int) -> List[n
 
 
 def convert_pyramid_to_dataset(
-    img_orig: xr.Dataset, images: List[np.ndarray], masks: List[np.ndarray]
+    img_orig: xr.Dataset, images: List[np.ndarray], masks: List[np.ndarray], disps=None
 ) -> List[xr.Dataset]:
     """
     Return a List with the datasets at the different scales
@@ -595,6 +619,18 @@ def convert_pyramid_to_dataset(
                 np.full((image.shape[0], image.shape[1]), masks[index].astype(np.int16)),
                 dims=["row", "col"],
             )
+            # add the disparity if provided
+            if disps is not None:
+
+                dataset.coords["band_disp"] = ["min", "max"]
+                dataset["disparity"] = xr.DataArray(
+                    np.array([
+                        disps[0][index].astype(np.int64),
+                        disps[1][index].astype(np.int64)
+                    ]),
+                    dims=["band_disp", "row", "col"],
+                )
+                
         else:
             dataset = xr.Dataset(
                 {"im": (["band_im", "row", "col"], image.astype(np.float32))},
@@ -609,6 +645,17 @@ def convert_pyramid_to_dataset(
                 np.full((image.shape[1], image.shape[2]), masks[index].astype(np.int16)),
                 dims=["row", "col"],
             )
+            # add the disparity if provided
+            if disps is not None:
+
+                dataset.coords["band_disp"] = ["min", "max"]
+                dataset["disparity"] = xr.DataArray(
+                    np.array([
+                        disps[0][index].astype(np.int64),
+                        disps[1][index].astype(np.int64)
+                    ]),
+                    dims=["band_disp", "row", "col"],
+                )
         # Add image conf to the image dataset
         # - attributes are linked to each others
         dataset.attrs = img_orig.attrs
