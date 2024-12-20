@@ -487,12 +487,12 @@ def prepare_pyramid(
     disparities_left_min = get_pyramids(
         # convert to float for the zoom
         img_left["disparity"].data[0].astype(np.float32),
-        num_scales, scale_factor, channel_axis
+        num_scales, scale_factor, channel_axis=None
     )
     disparities_left_max = get_pyramids(
         # convert to float for the zoom
         img_left["disparity"].data[1].astype(np.float32),
-        num_scales, scale_factor, channel_axis
+        num_scales, scale_factor, channel_axis=None
     )
     compute_right_disps = "disparity" in list(img_right.keys())
     disparities_right_min = None
@@ -500,11 +500,11 @@ def prepare_pyramid(
     if compute_right_disps:
         disparities_right_min = get_pyramids(
             img_right["disparity"].data[0].astype(np.float32),
-            num_scales, scale_factor, channel_axis
+            num_scales, scale_factor, channel_axis=None
         )
         disparities_right_max = get_pyramids(
             img_right["disparity"].data[1].astype(np.float32),
-            num_scales, scale_factor, channel_axis
+            num_scales, scale_factor, channel_axis=None
         )
         
     # Create mask pyramids
@@ -635,7 +635,7 @@ def convert_pyramid_to_dataset(
             dataset = xr.Dataset(
                 {"im": (["band_im", "row", "col"], image.astype(np.float32))},
                 coords={
-                    "band_im": list(img_orig.band.data),
+                    "band_im": img_orig.coords["band_im"].data,
                     "row": np.arange(image.shape[1]),
                     "col": np.arange(image.shape[2]),
                 },
