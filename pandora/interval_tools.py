@@ -33,6 +33,7 @@ create_connected_graph = interval_tools_cpp.create_connected_graph
 
 graph_regularization = interval_tools_cpp.graph_regularization
 
+
 def interval_regularization(
     interval_inf: np.ndarray,
     interval_sup: np.ndarray,

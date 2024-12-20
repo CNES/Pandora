@@ -306,4 +306,5 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
 
         return cross_left, cross_right
 
+
 cross_support = aggregation_cpp.cross_support
