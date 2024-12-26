@@ -1,9 +1,9 @@
 
 py.extension_module(
   'aggregation_cpp',
-  ['bindings.cpp', 'aggregation.cpp'],
+  ['src/bindings.cpp', 'src/aggregation.cpp'],
   include_directories: ['includes'],
-  subdir: 'pandora',
+  subdir: 'pandora/aggregation/cpp',
   install: true,
   dependencies : [pybind11_dep, eigen_dep],
 )

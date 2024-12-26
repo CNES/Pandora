@@ -27,7 +27,7 @@ import numpy as np
 import xarray as xr
 from json_checker import And, Checker
 
-from pandora import cost_volume_confidence_cpp
+from .cpp import cost_volume_confidence_cpp  # type: ignore[attr-defined] # pylint:disable=import-error
 from . import cost_volume_confidence
 
 

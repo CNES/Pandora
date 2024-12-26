@@ -31,7 +31,7 @@ import numpy as np
 import xarray as xr
 
 import pandora.constants as cst
-from pandora import refinement_cpp
+from .cpp import refinement_cpp  # type: ignore[attr-defined] # pylint:disable=import-error
 from pandora.margins.descriptors import NullMargins
 
 

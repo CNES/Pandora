@@ -1,9 +1,9 @@
 
 py.extension_module(
   'refinement_cpp',
-  ['bindings.cpp', 'refinement.cpp', 'vfit.cpp', 'quadratic.cpp'],
+  ['src/bindings.cpp', 'src/refinement.cpp', 'src/vfit.cpp', 'src/quadratic.cpp'],
   include_directories: ['includes'],
-  subdir: 'pandora',
+  subdir: 'pandora/refinement/cpp',
   install: true,
   dependencies : [pybind11_dep, eigen_dep],
 )

@@ -1,5 +1,5 @@
 #include <pybind11/pybind11.h>
-#include "includes/interpolated_disparity.hpp"
+#include "interpolated_disparity.hpp"
 
 namespace py = pybind11;
 

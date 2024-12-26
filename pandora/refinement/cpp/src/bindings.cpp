@@ -1,7 +1,7 @@
 #include <pybind11/pybind11.h>
-#include "includes/refinement.hpp"
-#include "includes/vfit.hpp"
-#include "includes/quadratic.hpp"
+#include "refinement.hpp"
+#include "vfit.hpp"
+#include "quadratic.hpp"
 
 namespace py = pybind11;
 

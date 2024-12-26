@@ -1,4 +1,4 @@
-#include "includes/interval_bounds.hpp"
+#include "interval_bounds.hpp"
 #include <algorithm>
 #include <numeric>
 #include <cmath>

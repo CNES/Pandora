@@ -1,9 +1,9 @@
 
 py.extension_module(
   'cost_volume_confidence_cpp',
-  ['bindings.cpp', 'ambiguity.cpp', 'interval_bounds.cpp', 'risk.cpp'],
+  ['src/bindings.cpp', 'src/ambiguity.cpp', 'src/interval_bounds.cpp', 'src/risk.cpp'],
   include_directories: ['includes'],
-  subdir: 'pandora',
+  subdir: 'pandora/cost_volume_confidence/cpp',
   install: true,
   dependencies : [pybind11_dep, eigen_dep],
 )

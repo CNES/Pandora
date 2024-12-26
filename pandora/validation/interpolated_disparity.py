@@ -31,7 +31,7 @@ import numpy as np
 import xarray as xr
 
 import pandora.constants as cst
-from pandora import validation_cpp
+from .cpp import validation_cpp  # type: ignore[attr-defined] # pylint:disable=import-error
 from pandora.criteria import mask_border
 
 

@@ -35,7 +35,7 @@ from rasterio.windows import Window
 from scipy.ndimage import zoom
 from skimage.transform.pyramids import pyramid_gaussian
 
-from pandora import img_tools_cpp
+from .cpp import img_tools_cpp  # type: ignore[attr-defined] # pylint:disable=import-error
 
 
 def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.DatasetReader:

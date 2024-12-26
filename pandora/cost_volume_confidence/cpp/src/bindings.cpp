@@ -1,7 +1,7 @@
 #include <pybind11/pybind11.h>
-#include "includes/risk.hpp"
-#include "includes/interval_bounds.hpp"
-#include "includes/ambiguity.hpp"
+#include "risk.hpp"
+#include "interval_bounds.hpp"
+#include "ambiguity.hpp"
 
 namespace py = pybind11;
 

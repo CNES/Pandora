@@ -32,7 +32,7 @@ import xarray as xr
 
 from . import cost_volume_confidence
 from ..interval_tools import interval_regularization
-from pandora import cost_volume_confidence_cpp
+from .cpp import cost_volume_confidence_cpp  # type: ignore[attr-defined] # pylint:disable=import-error
 
 
 @cost_volume_confidence.AbstractCostVolumeConfidence.register_subclass("interval_bounds")

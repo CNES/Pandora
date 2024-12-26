@@ -1,4 +1,4 @@
-#include "includes/ambiguity.hpp"
+#include "ambiguity.hpp"
 #include <algorithm>
 #include <numeric>
 #include <cmath>

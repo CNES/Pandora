@@ -27,7 +27,7 @@ from typing import Dict
 
 from json_checker import And, Checker
 
-from pandora import refinement_cpp
+from .cpp import refinement_cpp  # type: ignore[attr-defined] # pylint:disable=import-error
 
 from . import refinement
 

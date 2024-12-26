@@ -30,7 +30,7 @@ import numpy as np
 import xarray as xr
 from json_checker import And, Checker
 
-from pandora import cost_volume_confidence_cpp
+from .cpp import cost_volume_confidence_cpp  # type: ignore[attr-defined] # pylint:disable=import-error
 
 from . import cost_volume_confidence
 
@@ -134,7 +134,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
 
-            _, sampled_ambiguity = cost_volume_confidence_cpp.compute_ambiguity_and_sampled_ambiguity(  # type: ignore
+            _, sampled_ambiguity = cost_volume_confidence_cpp.compute_ambiguity_and_sampled_ambiguity(
                 cv["cost_volume"].data, self._etas, self._nbr_etas, grids, disparity_range
             )
 

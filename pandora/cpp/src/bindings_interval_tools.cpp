@@ -1,5 +1,5 @@
 #include <pybind11/pybind11.h>
-#include "includes/interval_tools.hpp"
+#include "interval_tools.hpp"
 
 namespace py = pybind11;
 

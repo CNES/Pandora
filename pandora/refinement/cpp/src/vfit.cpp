@@ -1,4 +1,4 @@
-#include "includes/quadratic.hpp"
+#include "vfit.hpp"
 #include <algorithm>
 #include <numeric>
 #include <cmath>
@@ -6,7 +6,7 @@
 
 namespace py = pybind11;
 
-std::tuple<float, float, int> quadratic_refinement_method(
+std::tuple<float, float, int> vfit_refinement_method(
     py::array_t<float> cost, float disp, std::string measure, int cst_pandora_msk_pixel_stopped_interpolation
 ) {
     auto r_cost = cost.unchecked<1>();
@@ -30,12 +30,15 @@ std::tuple<float, float, int> quadratic_refinement_method(
         return {0.f, c1, cst_pandora_msk_pixel_stopped_interpolation};
     }
 
-    float alpha = (c0 - 2.f * c1 + c2) / 2.f;
-    float beta = (c2 - c0) / 2.f;
+    float a = ic0 > ic2 ? c0 - c1 : c2 - c1;
 
-    float sub_disp = std::min(1.f, std::max(-1.f, -beta / (2.f * alpha)));
+    if ( std::abs(a) < 1.0e-15 ) {
+        return {0.f, c1, 0};
+    }
 
-    float sub_cost = (alpha * sub_disp*sub_disp) + (beta * sub_disp) + c1;
+    float sub_disp = (c0 - c2) / (2 * a);
+
+    float sub_cost = a * (sub_disp - 1) + c2;
 
     return {sub_disp, sub_cost, 0};
 }

@@ -33,7 +33,7 @@ from json_checker import Checker, And
 
 from pandora.filter import AbstractFilter
 from pandora.img_tools import shift_right_img
-from pandora import aggregation_cpp
+from .cpp import aggregation_cpp  # type: ignore[attr-defined] # pylint:disable=import-error
 from . import aggregation
 
 
