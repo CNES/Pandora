@@ -27,7 +27,7 @@ from typing import Tuple
 
 import numpy as np
 
-from .cpp import interval_tools_cpp  # type: ignore[attr-defined] # pylint:disable=import-error
+from .cpp import interval_tools_cpp  # pylint:disable=import-error
 
 create_connected_graph = interval_tools_cpp.create_connected_graph
 

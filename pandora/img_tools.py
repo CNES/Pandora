@@ -35,7 +35,8 @@ from rasterio.windows import Window
 from scipy.ndimage import zoom
 from skimage.transform.pyramids import pyramid_gaussian
 
-from .cpp import img_tools_cpp  # type: ignore[attr-defined] # pylint:disable=import-error
+import pandora.constants as cst
+from .cpp import img_tools_cpp  # pylint:disable=import-error
 
 
 def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.DatasetReader:
@@ -541,7 +542,12 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
     """
     if "msk" in dataset:
         if len(dataset["im"].data.shape) == 2:
-            img, msk = interpolate_nodata_sgm(dataset["im"].data, dataset["msk"].data)
+            img, msk = interpolate_nodata_sgm(
+                dataset["im"].data,
+                dataset["msk"].data,
+                cst.PANDORA_MSK_PIXEL_INVALID,
+                cst.PANDORA_MSK_PIXEL_FILLED_NODATA,
+            )
         else:
             img = dataset["im"].data
             msk = dataset["msk"].data
@@ -549,7 +555,10 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
             # We call the function for each band because of numba
             for band in range(nband):
                 img[band, :, :], msk[:, :] = interpolate_nodata_sgm(
-                    dataset["im"].data[band, :, :], dataset["msk"].data[:, :]
+                    dataset["im"].data[band, :, :],
+                    dataset["msk"].data[:, :],
+                    cst.PANDORA_MSK_PIXEL_INVALID,
+                    cst.PANDORA_MSK_PIXEL_FILLED_NODATA,
                 )
     else:
         msk = np.full(

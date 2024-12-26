@@ -24,11 +24,13 @@ This module contains functions associated to the quadratic method used in the re
 """
 
 from typing import Dict
+import numpy as np
 
 from json_checker import And, Checker
 
-from .cpp import refinement_cpp  # type: ignore[attr-defined] # pylint:disable=import-error
+import pandora.constants as cst
 
+from .cpp import refinement_cpp  # pylint:disable=import-error
 from . import refinement
 
 
@@ -38,7 +40,11 @@ class Quadratic(refinement.AbstractRefinement):
     Quadratic class allows to perform the subpixel cost refinement step
     """
 
-    refinement_method = refinement_cpp.quadratic_refinement_method
+    @staticmethod
+    def refinement_method(cost: np.ndarray, disp: float, measure: str) -> tuple[float, float, int]:
+        return refinement_cpp.quadratic_refinement_method(
+            cost, disp, measure, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
+        )
 
     def __init__(self, **cfg: str) -> None:
         """

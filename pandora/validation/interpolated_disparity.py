@@ -31,8 +31,9 @@ import numpy as np
 import xarray as xr
 
 import pandora.constants as cst
-from .cpp import validation_cpp  # type: ignore[attr-defined] # pylint:disable=import-error
 from pandora.criteria import mask_border
+
+from .cpp import validation_cpp  # pylint:disable=import-error
 
 
 class AbstractInterpolation:

@@ -24,8 +24,6 @@ This module contains functions associated to the Cross Based Cost Aggregation (c
 """
 
 from typing import Dict, Union, Tuple, List
-import os
-from ast import literal_eval
 
 import numpy as np
 import xarray as xr
@@ -33,7 +31,7 @@ from json_checker import Checker, And
 
 from pandora.filter import AbstractFilter
 from pandora.img_tools import shift_right_img
-from .cpp import aggregation_cpp  # type: ignore[attr-defined] # pylint:disable=import-error
+from .cpp import aggregation_cpp  # pylint:disable=import-error
 from . import aggregation
 
 
