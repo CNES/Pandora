@@ -16,7 +16,7 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_re
     int subpixel,
     std::string measure,
     std::function<
-        std::tuple<float, float, int>(py::array_t<float>, float, std::string, int)
+        std::tuple<float, float, int>(py::array_t<float>, float, std::string)
     > &method,
     int64_t cst_pandora_msk_pixel_invalid, 
     int64_t cst_pandora_msk_pixel_stopped_interpolation 
@@ -31,7 +31,7 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_ap
     int subpixel,
     std::string measure,
     std::function<
-        std::tuple<float, float, int>(py::array_t<float>, float, std::string, int)
+        std::tuple<float, float, int>(py::array_t<float>, float, std::string)
     > &method,
     int64_t cst_pandora_msk_pixel_invalid, 
     int64_t cst_pandora_msk_pixel_stopped_interpolation 

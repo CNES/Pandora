@@ -16,7 +16,7 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_re
     int subpixel,
     std::string measure,
     std::function<
-        std::tuple<float, float, int>(py::array_t<float>, float, std::string, int)
+        std::tuple<float, float, int>(py::array_t<float>, float, std::string)
     > &method,
     int64_t cst_pandora_msk_pixel_invalid, 
     int64_t cst_pandora_msk_pixel_stopped_interpolation 
@@ -66,8 +66,7 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_re
                     }.data()
                 ),
                 raw_dsp,
-                measure,
-                cst_pandora_msk_pixel_stopped_interpolation
+                measure
             );
             rw_disp(row, col) = raw_dsp + sub_disp / (float)subpixel;
             rw_itp_coeff(row, col) = sub_cost;
@@ -89,7 +88,7 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_ap
     int subpixel,
     std::string measure,
     std::function<
-        std::tuple<float, float, int>(py::array_t<float>, float, std::string, int)
+        std::tuple<float, float, int>(py::array_t<float>, float, std::string)
     > &method,
     int64_t cst_pandora_msk_pixel_invalid, 
     int64_t cst_pandora_msk_pixel_stopped_interpolation 
@@ -140,8 +139,7 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_ap
                     }.data()
                 ),
                 raw_dsp,
-                measure,
-                cst_pandora_msk_pixel_stopped_interpolation
+                measure
             );
             rw_disp(row, col) = raw_dsp + sub_disp / (float)subpixel;
             rw_itp_coeff(row, col) = sub_cost;
