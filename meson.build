@@ -41,3 +41,7 @@ subdir(
 subdir(
   'pandora/refinement/cpp'
 )
+
+subdir(
+  'pandora/matching_cost/cpp'
+)
