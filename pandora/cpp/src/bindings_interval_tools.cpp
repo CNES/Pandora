@@ -9,12 +9,12 @@ PYBIND11_MODULE(interval_tools_cpp, m) {
     m.def(
         "create_connected_graph", 
         &create_connected_graph, 
-        "Create a boolean connection matrix from segment coordinates"
+        ""
     );
     m.def(
         "graph_regularization", 
         &graph_regularization, 
-        "Regularize the intervals based on quantiles and a given connection graph."
+        ""
     );
 
 }

@@ -9,23 +9,23 @@ PYBIND11_MODULE(validation_cpp, m) {
     m.def(
         "interpolate_occlusion_sgm", 
         &interpolate_occlusion_sgm, 
-        "Calculate the horizontal integral image."
+        ""
     );
     m.def(
         "interpolate_mismatch_sgm", 
         &interpolate_mismatch_sgm, 
-        "Calculate the horizontal integral image."
+        ""
     );
     
     m.def(
         "interpolate_occlusion_mc_cnn", 
         &interpolate_occlusion_mc_cnn, 
-        "Calculate the horizontal integral image."
+        ""
     );
     m.def(
         "interpolate_mismatch_mc_cnn", 
         &interpolate_mismatch_mc_cnn, 
-        "Calculate the horizontal integral image."
+        ""
     );
 
 }
