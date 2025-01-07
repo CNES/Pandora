@@ -61,11 +61,8 @@ from pandora.margins import GlobalMargins
 
 from pandora.criteria import validity_mask
 
-# This silences numba's TBB threading layer warning
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore")
-    from pandora import validation
-    from pandora import cost_volume_confidence
+from pandora import validation
+from pandora import cost_volume_confidence
 from .img_tools import prepare_pyramid
 
 

@@ -241,7 +241,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         left_masked = filter_.median_filter(left_masked)  # type: ignore
         # Convert nan to inf to be able to use the comparison operators < and > in cross_support function
         np.nan_to_num(left_masked, copy=False, nan=np.inf)
-        # Compute left cross support using numba to reduce running time
+        # Compute left cross support using C++ to reduce running time
         if offset != 0:
             # Cross support to the size of the cost volume
             cross_left = aggregation_cpp.cross_support(
@@ -289,7 +289,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
             right_masked = filter_.median_filter(right_masked)  # type: ignore
             # Convert nan to inf to be able to use the comparison operators < and > in cross_support function
             np.nan_to_num(right_masked, copy=False, nan=np.inf)
-            # Compute right cross support using numba to reduce running time
+            # Compute right cross support using C++ to reduce running time
             if offset != 0:
                 # Cross support to the size of the cost volume
                 curr_c_r = aggregation_cpp.cross_support(

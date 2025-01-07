@@ -22,6 +22,7 @@ def find_valid_neighbors(dirs, disp, valid, row, col, msk_pixel_invalid):
     :rtype: 2D np.ndarray
     """
     ...
+
 def interpolate_nodata_sgm(
     img: np.ndarray, valid: np.ndarray, msk_pixel_invalid: int, msk_pixel_filled_nodata: int
 ) -> Tuple[np.ndarray, np.ndarray]:

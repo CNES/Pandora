@@ -86,4 +86,3 @@ def cross_support(image, len_arms, intensity):
     :rtype:  3D np.array ( row, col, [left, right, top, bot] ), dtype=np.int16
     """
     ...
-

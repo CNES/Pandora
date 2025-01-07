@@ -1,5 +1,5 @@
 # pylint: skip-file
-def interpolate_occlusion_sgm(disp, valid, msk_pixel_occlusion, msk_pixel_filled_occlusion, msk_pixel_invalid): 
+def interpolate_occlusion_sgm(disp, valid, msk_pixel_occlusion, msk_pixel_filled_occlusion, msk_pixel_invalid):
     """
     Interpolation of the left disparity map to resolve occlusion conflicts.
     Interpolate occlusion by moving by selecting

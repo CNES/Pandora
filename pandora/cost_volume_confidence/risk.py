@@ -130,31 +130,26 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         )
         # Get disparity intervals parameters
         disparity_range = cv["disp"].data.astype(np.float32)
-        # This silences numba's TBB threading layer warning
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore")
 
-            _, sampled_ambiguity = cost_volume_confidence_cpp.compute_ambiguity_and_sampled_ambiguity(
-                cv["cost_volume"].data, self._etas, self._nbr_etas, grids, disparity_range
-            )
+        _, sampled_ambiguity = cost_volume_confidence_cpp.compute_ambiguity_and_sampled_ambiguity(
+            cv["cost_volume"].data, self._etas, self._nbr_etas, grids, disparity_range
+        )
 
-            if "global_disparity" in img_left.attrs:
-                sampled_ambiguity = self.normalize_with_extremum(sampled_ambiguity, img_left, self._nbr_etas)
-                logging.info(
-                    "You are using normalization by \n a specific case with the instantiation of global_disparity"
-                )
-            # in case of cross correlation
-            elif "global_disparity" in img_right.attrs:
-                sampled_ambiguity = self.normalize_with_extremum(sampled_ambiguity, img_right, self._nbr_etas)
+        if "global_disparity" in img_left.attrs:
+            sampled_ambiguity = self.normalize_with_extremum(sampled_ambiguity, img_left, self._nbr_etas)
+            logging.info("You are using normalization by \n a specific case with the instantiation of global_disparity")
+        # in case of cross correlation
+        elif "global_disparity" in img_right.attrs:
+            sampled_ambiguity = self.normalize_with_extremum(sampled_ambiguity, img_right, self._nbr_etas)
 
-            risk_max, risk_min = self.compute_risk(
-                cv["cost_volume"].data,
-                sampled_ambiguity,
-                self._etas,
-                self._nbr_etas,
-                grids,
-                disparity_range,
-            )
+        risk_max, risk_min = self.compute_risk(
+            cv["cost_volume"].data,
+            sampled_ambiguity,
+            self._etas,
+            self._nbr_etas,
+            grids,
+            disparity_range,
+        )
 
         disp, cv = self.allocate_confidence_map(self._indicator_max, risk_max, disp, cv)
         disp, cv = self.allocate_confidence_map(self._indicator_min, risk_min, disp, cv)

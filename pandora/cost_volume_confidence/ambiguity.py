@@ -135,13 +135,9 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
 
         type_measure_min = cv.attrs["type_measure"] == "min"
 
-        # This silences numba's TBB threading layer warning
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore")
-            # Computes ambiguity using numba in parallel for memory and computation time optimization
-            ambiguity = cost_volume_confidence_cpp.compute_ambiguity(
-                cv["cost_volume"].data, self._etas, self._nbr_etas, grids, disparity_range, type_measure_min
-            )
+        ambiguity = cost_volume_confidence_cpp.compute_ambiguity(
+            cv["cost_volume"].data, self._etas, self._nbr_etas, grids, disparity_range, type_measure_min
+        )
 
         # If activated, ambiguity normalization with percentile
         if self._normalization:

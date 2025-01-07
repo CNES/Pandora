@@ -27,11 +27,6 @@ Copyright (C) 2016 Jason R Coombs <jaraco@jaraco.com>
 Website: https://setuptools.readthedocs.io/
 License: MIT.
 
-Numba: NumPy aware dynamic Python compiler using LLVM
-Copyright (c) 2012, Anaconda, Inc.
-Website: https://numba.pydata.org/
-License: BSD 2 Clause.
-
 Xarray: N-D labeled arrays and datasets in Python
 Copyright 2014-2019, xarray Developers
 Website: http://xarray.pydata.org

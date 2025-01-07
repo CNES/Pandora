@@ -96,26 +96,22 @@ class AbstractRefinement:
         subpixel = cv.attrs["subpixel"]
         measure = cv.attrs["type_measure"]
 
-        # This silences numba's TBB threading layer warning
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore")
-            # Conversion to numpy array ( .data ), because Numba does not support Xarray
-            (
-                itp_coeff,
-                disp["disparity_map"].data,
-                disp["validity_mask"].data,
-            ) = refinement_cpp.loop_refinement(
-                cv["cost_volume"].data,
-                disp["disparity_map"].data,
-                disp["validity_mask"].data,
-                d_min,
-                d_max,
-                subpixel,
-                measure,
-                self.refinement_method,
-                cst.PANDORA_MSK_PIXEL_INVALID,
-                cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-            )
+        (
+            itp_coeff,
+            disp["disparity_map"].data,
+            disp["validity_mask"].data,
+        ) = refinement_cpp.loop_refinement(
+            cv["cost_volume"].data,
+            disp["disparity_map"].data,
+            disp["validity_mask"].data,
+            d_min,
+            d_max,
+            subpixel,
+            measure,
+            self.refinement_method,
+            cst.PANDORA_MSK_PIXEL_INVALID,
+            cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+        )
 
         disp.attrs["refinement"] = self._refinement_method_name
         disp["interpolated_coeff"] = xr.DataArray(
@@ -154,26 +150,22 @@ class AbstractRefinement:
         subpixel = cv_left.attrs["subpixel"]
         measure = cv_left.attrs["type_measure"]
 
-        # This silences numba's TBB threading layer warning
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore")
-            # Conversion to numpy array ( .data ), because Numba does not support Xarray
-            (
-                itp_coeff,
-                disp_right["disparity_map"].data,
-                disp_right["validity_mask"].data,
-            ) = refinement_cpp.loop_approximate_refinement(
-                cv_left["cost_volume"].data,
-                disp_right["disparity_map"].data,
-                disp_right["validity_mask"].data,
-                d_min,
-                d_max,
-                subpixel,
-                measure,
-                self.refinement_method,
-                cst.PANDORA_MSK_PIXEL_INVALID,
-                cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-            )
+        (
+            itp_coeff,
+            disp_right["disparity_map"].data,
+            disp_right["validity_mask"].data,
+        ) = refinement_cpp.loop_approximate_refinement(
+            cv_left["cost_volume"].data,
+            disp_right["disparity_map"].data,
+            disp_right["validity_mask"].data,
+            d_min,
+            d_max,
+            subpixel,
+            measure,
+            self.refinement_method,
+            cst.PANDORA_MSK_PIXEL_INVALID,
+            cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+        )
 
         disp_right.attrs["refinement"] = self._refinement_method_name
         disp_right["interpolated_coeff"] = xr.DataArray(

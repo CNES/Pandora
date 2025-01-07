@@ -157,31 +157,28 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
         else:
             type_factor = 1.0
 
-        # This silences numba's TBB threading layer warning
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore")
-            # Computes interval bounds using numpy
-            interval_bound_inf, interval_bound_sup = self.compute_interval_bounds(
-                cv["cost_volume"].data, cv["disp"].data.astype(np.float32), self._possibility_threshold, type_factor
+        # Computes interval bounds using numpy
+        interval_bound_inf, interval_bound_sup = self.compute_interval_bounds(
+            cv["cost_volume"].data, cv["disp"].data.astype(np.float32), self._possibility_threshold, type_factor
+        )
+        if self._regularization:
+            indicator = (
+                "confidence_from_ambiguity"
+                if (self._ambiguity_indicator == "")
+                else "confidence_from_ambiguity." + self._ambiguity_indicator
             )
-            if self._regularization:
-                indicator = (
-                    "confidence_from_ambiguity"
-                    if (self._ambiguity_indicator == "")
-                    else "confidence_from_ambiguity." + self._ambiguity_indicator
-                )
-                interval_bound_inf, interval_bound_sup, _ = interval_regularization(
-                    interval_bound_inf,
-                    interval_bound_sup,
-                    cv.confidence_measure.sel({"indicator": indicator}).data,
-                    self._ambiguity_threshold,
-                    self._ambiguity_kernel_size,
-                    self._vertical_depth,
-                    self._quantile_regularization,
-                )
-            # For empty cost volume, the interval gets its max length
-            # interval_bound_inf[np.isnan(interval_bound_inf)] = cv["disp"].data.astype(np.float32)[0]
-            # interval_bound_sup[np.isnan(interval_bound_sup)] = cv["disp"].data.astype(np.float32)[-1]
+            interval_bound_inf, interval_bound_sup, _ = interval_regularization(
+                interval_bound_inf,
+                interval_bound_sup,
+                cv.confidence_measure.sel({"indicator": indicator}).data,
+                self._ambiguity_threshold,
+                self._ambiguity_kernel_size,
+                self._vertical_depth,
+                self._quantile_regularization,
+            )
+        # For empty cost volume, the interval gets its max length
+        # interval_bound_inf[np.isnan(interval_bound_inf)] = cv["disp"].data.astype(np.float32)[0]
+        # interval_bound_sup[np.isnan(interval_bound_sup)] = cv["disp"].data.astype(np.float32)[-1]
 
         disp, cv = self.allocate_confidence_map(self._indicator_inf, interval_bound_inf, disp, cv)
         disp, cv = self.allocate_confidence_map(self._indicator_sup, interval_bound_sup, disp, cv)

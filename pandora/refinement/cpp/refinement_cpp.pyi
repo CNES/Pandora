@@ -100,6 +100,7 @@ def loop_approximate_refinement(
     :rtype: tuple(2D numpy array (row, col), 2D numpy array (row, col), 2D numpy array (row, col))
     """
     ...
+
 def vfit_refinement_method(
     cost, disp, measure, cst_pandora_msk_pixel_stopped_interpolation
 ) -> tuple[float, float, int]:

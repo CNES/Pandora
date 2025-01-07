@@ -4,8 +4,6 @@ xarray>=0.13.0
 scipy
 rasterio
 json-checker
-numba>=0.55.2;python_version>'3.7'
-numba>=0.47.0;python_version<'3.8'
 transitions
 scikit-image>=0.19.0
 jupyter-dash

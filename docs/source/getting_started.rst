@@ -64,7 +64,7 @@ Credits
 
 Pandora uses `transitions <https://github.com/pytransitions/transitions>`_ to manage the pipelines one can create.
 Images I/O are provided by `rasterio <https://github.com/mapbox/rasterio>`_ and we use `xarray <https://github.com/pydata/xarray>`_
-to handle 3D Cost Volumes with few `numba <https://github.com/numba/numba>`_ optimisations.
+to handle 3D Cost Volumes.
 
 Our data test sample is based on the 2003 Middleburry dataset [Scharstein2003]_.
 

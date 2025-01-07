@@ -552,7 +552,7 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
             img = dataset["im"].data
             msk = dataset["msk"].data
             nband = dataset["im"].data.shape[0]
-            # We call the function for each band because of numba
+
             for band in range(nband):
                 img[band, :, :], msk[:, :] = interpolate_nodata_sgm(
                     dataset["im"].data[band, :, :],
