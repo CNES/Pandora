@@ -5,5 +5,5 @@ py.extension_module(
   include_directories: ['includes'],
   subdir: 'pandora/cost_volume_confidence/cpp',
   install: true,
-  dependencies : [pybind11_dep, eigen_dep],
+  dependencies : [pybind11_dep],
 )

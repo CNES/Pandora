@@ -5,7 +5,7 @@ py.extension_module(
   include_directories: ['includes'],
   subdir: 'pandora/cpp',
   install: true,
-  dependencies : [pybind11_dep, eigen_dep],
+  dependencies : [pybind11_dep],
 )
 
 py.extension_module(
@@ -14,5 +14,5 @@ py.extension_module(
   include_directories: ['includes'],
   subdir: 'pandora/cpp',
   install: true,
-  dependencies : [pybind11_dep, eigen_dep],
+  dependencies : [pybind11_dep],
 )

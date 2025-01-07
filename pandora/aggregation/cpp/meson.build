@@ -5,5 +5,5 @@ py.extension_module(
   include_directories: ['includes'],
   subdir: 'pandora/aggregation/cpp',
   install: true,
-  dependencies : [pybind11_dep, eigen_dep],
+  dependencies : [pybind11_dep],
 )
