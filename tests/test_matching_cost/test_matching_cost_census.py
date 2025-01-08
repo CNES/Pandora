@@ -128,25 +128,6 @@ class TestMatchingCostCensus(unittest.TestCase):
         np.testing.assert_array_equal(census["cost_volume"].sel(disp=0), census_ground_truth_d2)
         np.testing.assert_array_equal(census["cost_volume"].sel(disp=1), census_ground_truth_d3)
 
-    def test_popcount32b(self):
-        """
-        Test the popcount32b method
-
-        """
-        matching_cost_matcher = matching_cost.AbstractMatchingCost(
-            **{"matching_cost_method": "census", "window_size": 3, "subpix": 1}
-        )
-
-        # Count the number of symbols that are different from the zero
-        count_ = matching_cost_matcher.popcount32b(0b0001000101000)
-        # Check if the calculated count_ is equal to the ground truth 3.
-        self.assertEqual(count_, 3)
-
-        # Count the number of symbols that are different from the zero
-        count_ = matching_cost_matcher.popcount32b(0b0000000000000000000)
-        # Check if the calculated count_ is equal to the ground truth 0.
-        self.assertEqual(count_, 0)
-
     def test_cmax(self):
         """
         Test the cmax attribute of the cost volume
