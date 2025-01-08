@@ -23,16 +23,16 @@
 This module contains functions associated to census method used in the cost volume measure step.
 """
 
-from typing import Dict, Union, Tuple, List
+from typing import Dict, Union
 
 import numpy as np
 import xarray as xr
 from json_checker import Checker, And
 
-from .cpp import matching_cost_cpp
-
-from pandora.img_tools import shift_right_img, census_transform
+from pandora.img_tools import shift_right_img
 from pandora.matching_cost import matching_cost
+
+from .cpp import matching_cost_cpp  # pylint:disable=import-error
 
 
 @matching_cost.AbstractMatchingCost.register_subclass("census")
@@ -63,12 +63,11 @@ class Census(matching_cost.AbstractMatchingCost):
 
         schema = self.schema
         schema["matching_cost_method"] = And(str, lambda input: "census")
-        schema["window_size"] = And(int, lambda input: input in (3, 5))
+        schema["window_size"] = And(int, lambda input: input > 1 and input % 2 == 1)
 
         checker = Checker(schema)
         checker.validate(cfg)
         return cfg
-
 
     def compute_cost_volume(
         self,
@@ -120,7 +119,7 @@ class Census(matching_cost.AbstractMatchingCost):
         if self._band is None:
             img_left_np = img_left["im"].data
         else:
-            band_index_right = list(img_right.band_im.data).index(band)
+            band_index_right = list(img_right.band_im.data).index(self._band)
             img_left_np = img_right["im"].data[band_index_right, :, :]
 
         cv = matching_cost_cpp.compute_matching_costs(
@@ -129,7 +128,7 @@ class Census(matching_cost.AbstractMatchingCost):
             cost_volume["cost_volume"].data,
             cost_volume["disp"].data,
             self._window_size,
-            self._window_size
+            self._window_size,
         )
 
         index_col = cost_volume.attrs["col_to_compute"]
