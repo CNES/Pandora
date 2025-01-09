@@ -32,6 +32,14 @@ For stereo reconstruction we invite you to install pandora **and** the required 
     pip install pandora[sgm]
     pip install pandora[mccnn]
 
+.. note::
+
+    To install Pandora in editable mode (with ``pip install -e``), the extra argument ``--no-build-isolation`` must also be added in order for Python to be able to find the C++ compiled libairies that are part of Pandora :
+
+    .. code-block:: bash
+
+        pip install -e --no-build-isolation pandora
+        
 
 First step
 ##########
