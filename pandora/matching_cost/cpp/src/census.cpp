@@ -98,30 +98,31 @@ py::array_t<float> compute_matching_costs(
         census_imgs_right.push_back( census_transform(img, census_width, census_height) );
     }
 
-    int id_right = 0;
-    char* right_img = census_imgs_right[id_right];
+    int subpix = census_imgs_right.size();
+    char* right_img;
     
     for (int col = c_half_h; col < n_cols-c_half_h; col++) {
         for (int row = c_half_w; row < n_rows-c_half_w; row++) {
             
             int left_pos = col*nb_chars*n_rows + row*nb_chars;
-            for (int disp = 0; disp < n_disp; disp++) {
+            for (int disp = 0; disp < n_disp; disp+=subpix) {
                 
-                int right_x = (row+disp+min_disp);
+                int right_x = (row+disp/subpix+min_disp); // pixel
                 if (right_x < c_half_w || right_x >= n_rows-c_half_w) continue;
-
                 int right_pos = col*nb_chars*n_rows + right_x*nb_chars;
-                int weight = 0;
-                for (int chr = 0; chr < nb_chars; chr++) {
-                    char xr = right_img[right_pos+chr] ^ census_img_left[left_pos+chr];
-                    weight += std::bitset<8>(xr).count();
-                }
 
-                rw_cv(col, row, disp) = weight;
-                
-                id_right++;
-                id_right %= census_imgs_right.size();
-                right_img = census_imgs_right[id_right];
+                for (int id_right = 0; (id_right < subpix) && (disp + id_right < n_disp); id_right++) {
+                    
+                    right_img = census_imgs_right[id_right];
+
+                    int weight = 0;
+                    for (int chr = 0; chr < nb_chars; chr++) {
+                        char xr = right_img[right_pos+chr] ^ census_img_left[left_pos+chr];
+                        weight += std::bitset<8>(xr).count();
+                    }
+
+                    rw_cv(col, row, disp+id_right) = weight;
+                }
 
             }
         }

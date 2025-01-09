@@ -116,6 +116,9 @@ class Census(matching_cost.AbstractMatchingCost):
             }
         )
 
+        disparity_range = cost_volume.coords["disp"].data
+        cv = np.full((img_left["im"].shape[0], img_left["im"].shape[1], len(disparity_range)), np.nan, dtype=np.float32)
+
         if self._band is None:
             img_left_np = img_left["im"].data
         else:
@@ -125,7 +128,7 @@ class Census(matching_cost.AbstractMatchingCost):
         cv = matching_cost_cpp.compute_matching_costs(
             img_left_np.astype(np.float32),
             [img["im"].data.astype(np.float32) for img in imgs_right],
-            cost_volume["cost_volume"].data,
+            cv,
             cost_volume["disp"].data,
             self._window_size,
             self._window_size,
