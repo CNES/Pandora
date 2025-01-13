@@ -36,7 +36,7 @@ from scipy.ndimage import zoom
 from skimage.transform.pyramids import pyramid_gaussian
 
 import pandora.constants as cst
-from .cpp import img_tools_cpp  # pylint:disable=import-error
+from .cpp import img_tools_cpp
 
 
 def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.DatasetReader:
@@ -99,7 +99,7 @@ def get_window(roi: Dict, width: int, height: int) -> Window:
 
 
 def add_disparity(
-    dataset: xr.Dataset, disparity: Union[tuple[int, int], list[int], str, None], window: Window
+    dataset: xr.Dataset, disparity: Union[Tuple[int, int], list[int], str, None], window: Window
 ) -> xr.Dataset:
     """
     Add disparity to dataset
@@ -109,7 +109,7 @@ def add_disparity(
     :param dataset: xarray dataset without classification
     :type dataset: xr.Dataset
     :param disparity: disparity, or path to the disparity grid
-    :type disparity: tuple[int, int] or list[int] or str or None
+    :type disparity: Tuple[int, int] or list[int] or str or None
 
     :param window : Windowed reading with rasterio
     :type window: Window
@@ -138,7 +138,7 @@ def add_disparity(
 def add_disparity_grid(
     dataset: xr.Dataset,
     disparity_grid: Union[xr.DataArray, None] = None,
-    disparity_source: Union[tuple[int, int], list[int], str, None] = "xr.Dataset",
+    disparity_source: Union[Tuple[int, int], list[int], str, None] = "xr.Dataset",
 ) -> xr.Dataset:
     """
     Add a disparity grid to dataset.
@@ -151,7 +151,7 @@ def add_disparity_grid(
     :type disparity_grid: xr.DataArray or None
     :param disparity_source: source of the disparity:
                              either a path to a file or `xr.Dataset` if the dataset was directly provided.
-    :type disparity_source: Union[tuple[int, int], list[int], str, None]
+    :type disparity_source: Union[Tuple[int, int], list[int], str, None]
     :return: dataset : updated dataset
     :rtype: xr.Dataset
     """
@@ -444,7 +444,7 @@ def get_metadata(
     )
 
 
-def get_pyramids(data, num_scales, scale_factor, channel_axis):
+def get_pyramids(data, num_scales, scale_factor, channel_axis=None):
     return list(
         pyramid_gaussian(
             data,
@@ -492,24 +492,22 @@ def prepare_pyramid(
         img_left["disparity"].data[0].astype(np.float32),
         num_scales,
         scale_factor,
-        channel_axis=None,
     )
     disparities_left_max = get_pyramids(
         # convert to float for the zoom
         img_left["disparity"].data[1].astype(np.float32),
         num_scales,
         scale_factor,
-        channel_axis=None,
     )
     compute_right_disps = "disparity" in list(img_right.keys())
     disparities_right_min = None
     disparities_right_max = None
     if compute_right_disps:
         disparities_right_min = get_pyramids(
-            img_right["disparity"].data[0].astype(np.float32), num_scales, scale_factor, channel_axis=None
+            img_right["disparity"].data[0].astype(np.float32), num_scales, scale_factor
         )
         disparities_right_max = get_pyramids(
-            img_right["disparity"].data[1].astype(np.float32), num_scales, scale_factor, channel_axis=None
+            img_right["disparity"].data[1].astype(np.float32), num_scales, scale_factor
         )
 
     # Create mask pyramids
@@ -910,16 +908,16 @@ def compute_std_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.n
     return np.sqrt(var)
 
 
-def read_disp(disparity: tuple[int, int] | list[int] | str) -> tuple[int, int] | tuple[np.ndarray, np.ndarray]:
+def read_disp(disparity: Tuple[int, int] | list[int] | str) -> Tuple[int, int] | Tuple[np.ndarray, np.ndarray]:
     """
     Read the disparity :
         - if cfg_disp is the path of a disparity grid, read and return the grids (type tuple of numpy arrays)
         - else return the value of cfg_disp
 
     :param disparity: disparity, or path to the disparity grid
-    :type disparity: tuple[int, int] or list[int] or str
+    :type disparity: Tuple[int, int] or list[int] or str
     :return: the disparity
-    :rtype: tuple[int, int] | tuple[np.ndarray, np.ndarray]
+    :rtype: Tuple[int, int] | Tuple[np.ndarray, np.ndarray]
     """
     if disparity is None:
         raise ValueError("disparity should not be None")

@@ -148,8 +148,8 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_sgm(
 
     auto r_disp = disp.unchecked<2>();
     auto r_valid = valid.unchecked<2>();
-    int n_col = r_disp.shape(0);
-    int n_row = r_disp.shape(1);
+    size_t n_col = r_disp.shape(0);
+    size_t n_row = r_disp.shape(1);
 
     py::array_t<float> out_disp = py::array_t<float>({n_col, n_row});
     py::array_t<int> out_valid = py::array_t<int>({n_col, n_row});
@@ -163,8 +163,8 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_sgm(
             if (r_valid(col, row) & msk_pixel_mismatch) {
 
                 bool found = false;
-                for (int i = std::max(0, col-1); i < std::min(n_col - 1, col + 1) + 1; ++i) {
-                    for (int j = std::max(0, row-1); j < std::min(n_row - 1, row + 1) + 1; ++j) {
+                for (int i = std::max(0, col-1); i < std::min(static_cast<int>(n_col) - 1, col + 1) + 1; ++i) {
+                    for (int j = std::max(0, row-1); j < std::min(static_cast<int>(n_row) - 1, row + 1) + 1; ++j) {
                         if ((r_valid(i, j) & msk_pixel_occlusion) != 0) {
                             found = true;
                             break;
@@ -264,13 +264,13 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_mc_cnn(
 
     auto r_disp = disp.unchecked<2>();
     auto r_valid = valid.unchecked<2>();
-    int n_col = r_disp.shape(0);
-    int n_row = r_disp.shape(1);
+    size_t n_row = r_disp.shape(0);
+    size_t n_col = r_disp.shape(1);
 
-    size_t max_path_length = (size_t)std::max(n_col, n_row);
+    size_t max_path_length = (size_t)std::max(n_row, n_col);
 
-    py::array_t<float> out_disp = py::array_t<float>({n_col, n_row});
-    py::array_t<int> out_valid = py::array_t<int>({n_col, n_row});
+    py::array_t<float> out_disp = py::array_t<float>({n_row, n_col});
+    py::array_t<int> out_valid = py::array_t<int>({n_row, n_col});
     auto rw_out_disp = out_disp.mutable_unchecked<2>();
     auto rw_out_valid = out_valid.mutable_unchecked<2>();
 
@@ -294,37 +294,37 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_mc_cnn(
     };
 
     std::array<float, 16> interp_mismatched;
-    for (int col = 0; col < n_col; ++col) {
-        for (int row = 0; row < n_row; ++row) {
+    for (int row = 0; row < n_row; ++row) {
+        for (int col = 0; col < n_col; ++col) {
 
-            if (r_valid(col, row) & msk_pixel_mismatch) {
+            if (r_valid(row, col) & msk_pixel_mismatch) {
 
-                int tmp_row;
                 int tmp_col;
+                int tmp_row;
                 for (size_t dir = 0; dir < 16; ++dir) {
                     interp_mismatched[dir] = 0.f;
                     for (size_t i = 0; i < max_path_length; ++i) {
-                        tmp_row = std::floor( row + (int)(dirs[2*dir] * i) );
-                        tmp_col = std::floor( col + (int)(dirs[2*dir+1] * i) );
+                        tmp_col = std::floor( col + (int)(dirs[2*dir] * i) );
+                        tmp_row = std::floor( row + (int)(dirs[2*dir+1] * i) );
 
-                        if (tmp_col < 0 || tmp_col >= n_col || tmp_row < 0 || tmp_row >= n_row) {
+                        if (tmp_row < 0 || tmp_row >= static_cast<int>(n_row) || tmp_col < 0 || tmp_col >= static_cast<int>(n_col)) {
                             interp_mismatched[dir] = std::numeric_limits<float>::quiet_NaN();
                             break;
                         }
 
-                        if ((r_valid(tmp_col, tmp_row) & msk_pixel_invalid) == 0) {
-                            interp_mismatched[dir] = r_disp(tmp_col, tmp_row);
+                        if ((r_valid(tmp_row, tmp_col) & msk_pixel_invalid) == 0) {
+                            interp_mismatched[dir] = r_disp(tmp_row, tmp_col);
                             break;
                         }
                     }
                 }
 
-                rw_out_disp(col, row) = compute_median(interp_mismatched);
-                rw_out_valid(col, row) = r_valid(col, row) + msk_pixel_filled_mismatch - msk_pixel_mismatch;
+                rw_out_disp(row, col) = compute_median(interp_mismatched);
+                rw_out_valid(row, col) = r_valid(row, col) + msk_pixel_filled_mismatch - msk_pixel_mismatch;
                 
             } else {
-                rw_out_disp(col, row) = r_disp(col, row);
-                rw_out_valid(col, row) = r_valid(col, row);
+                rw_out_disp(row, col) = r_disp(row, col);
+                rw_out_valid(row, col) = r_valid(row, col);
             }
 
         }

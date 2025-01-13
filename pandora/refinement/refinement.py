@@ -23,7 +23,6 @@
 This module contains classes and functions associated to the subpixel refinement step.
 """
 
-import warnings
 from abc import ABCMeta, abstractmethod
 from typing import Dict, Tuple
 
@@ -33,7 +32,7 @@ import xarray as xr
 import pandora.constants as cst
 from pandora.margins.descriptors import NullMargins
 
-from .cpp import refinement_cpp  # pylint:disable=import-error
+from .cpp import refinement_cpp
 
 
 class AbstractRefinement:

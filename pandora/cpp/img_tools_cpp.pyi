@@ -6,7 +6,8 @@ def find_valid_neighbors(dirs, disp, valid, row, col, msk_pixel_invalid):
     """
     Find valid neighbors along directions
 
-    :param dirs: directions
+    :param dirs: directions in which the valid neighbors will be searched, around the (row, col) pixel. \
+    Ex: [[0,1],[1,0],[0,-1],[-1,0]] to search in the axis-aligned cross centered on the pixel.
     :type dirs: 2D np.ndarray (row, col)
     :param disp: disparity map
     :type disp: 2D np.ndarray (row, col)

@@ -1,30 +1,11 @@
 #include "ambiguity.hpp"
+#include "cost_volume_confidence_tools.hpp"
 #include <algorithm>
 #include <numeric>
 #include <cmath>
 #include <iostream>
 
 namespace py = pybind11;
-
-inline size_t searchsorted(const py::array_t<float>& array, float value) {
-
-    auto arr = array.unchecked<1>();
-
-    size_t left = 0;
-    size_t right = arr.shape(0)-1;
-    size_t mid;
-
-    while (left < right) {
-        mid = left + (right - left) / 2;
-    
-        if (arr(mid) < value) {
-            left = mid + 1;
-        } else {
-            right = mid;
-        }
-    }
-    return left;
-}
 
 py::array_t<float> compute_ambiguity(
     py::array_t<float> cv,
@@ -39,9 +20,9 @@ py::array_t<float> compute_ambiguity(
     auto r_grids = grids.unchecked<3>();
     auto r_etas = etas.unchecked<1>();
 
-    int n_row = cv.shape(0);
-    int n_col = cv.shape(1);
-    int n_disp = cv.shape(2);
+    size_t n_row = cv.shape(0);
+    size_t n_col = cv.shape(1);
+    size_t n_disp = cv.shape(2);
 
     py::array_t<float> ambiguity = py::array_t<float>({n_row, n_col});
     auto rw_amb = ambiguity.mutable_unchecked<2>();
@@ -171,12 +152,12 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_ambiguity_and_sampled
     auto r_grids = grids.unchecked<3>();
     auto r_etas = etas.unchecked<1>();
 
-    int n_row = cv.shape(0);
-    int n_col = cv.shape(1);
-    int n_disp = cv.shape(2);
+    size_t n_row = cv.shape(0);
+    size_t n_col = cv.shape(1);
+    size_t n_disp = cv.shape(2);
 
     py::array_t<float> ambiguity = py::array_t<float>({n_row, n_col});
-    py::array_t<float> sampled_ambiguity = py::array_t<float>({n_row, n_col, nbr_etas});
+    py::array_t<float> sampled_ambiguity = py::array_t<float>({n_row, n_col, static_cast<size_t>(nbr_etas)});
     auto rw_amb = ambiguity.mutable_unchecked<2>();
     auto rw_samp_amb = sampled_ambiguity.mutable_unchecked<3>();
 
@@ -239,18 +220,14 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_ambiguity_and_sampled
             idx_disp_max = searchsorted(disparity_range, r_grids(1, row, col)) + 1;
 
             // fill normalized cv for this pixel (+-inf when encountering NaNs)
-            int nb_minfs = 0;
-            int nb_pinfs = 0;
             for (int disp = 0; disp < n_disp; ++disp) {
                 cv_val = r_cv(row, col, disp);
                 if (std::isnan(cv_val)) {
                     if (disp >= idx_disp_min && disp < idx_disp_max) {
                         normalized_pix_costs[disp] = -std::numeric_limits<float>::infinity();
-                        nb_minfs++;
                     }
                     else {
                         normalized_pix_costs[disp] = std::numeric_limits<float>::infinity();
-                        nb_pinfs++;
                     } 
                     continue;
                 }

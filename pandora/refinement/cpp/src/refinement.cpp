@@ -40,7 +40,7 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_re
             }
 
             float raw_dsp = rw_disp(row, col);
-            int dsp = (int)( (raw_dsp - d_min) * subpixel );
+            int dsp = static_cast<int>( (raw_dsp - d_min) * subpixel );
             float dsp_cost = r_cv(row, col, dsp);
             if (std::isnan(dsp_cost)) {
                 rw_itp_coeff(row, col) = dsp_cost;
@@ -68,7 +68,7 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_re
                 raw_dsp,
                 measure
             );
-            rw_disp(row, col) = raw_dsp + sub_disp / (float)subpixel;
+            rw_disp(row, col) = raw_dsp + sub_disp / static_cast<float>(subpixel);
             rw_itp_coeff(row, col) = sub_cost;
             rw_mask(row, col) += valid;
         }
@@ -112,8 +112,8 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_ap
             }
 
             float raw_dsp = rw_disp(row, col);
-            int dsp = (int)( (-raw_dsp - d_min) * subpixel );
-            int diag = (int)(col + raw_dsp);
+            int dsp = static_cast<int>( (-raw_dsp - d_min) * subpixel );
+            int diag = static_cast<int>(col + raw_dsp);
             float diag_cost = r_cv(row, diag, dsp);
             if (std::isnan(diag_cost)) {
                 rw_itp_coeff(row, col) = diag_cost;
@@ -141,7 +141,7 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_ap
                 raw_dsp,
                 measure
             );
-            rw_disp(row, col) = raw_dsp + sub_disp / (float)subpixel;
+            rw_disp(row, col) = raw_dsp + sub_disp / static_cast<float>(subpixel);
             rw_itp_coeff(row, col) = sub_cost;
             rw_mask(row, col) += valid;
         }

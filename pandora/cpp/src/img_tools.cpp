@@ -17,30 +17,30 @@ py::array_t<float> find_valid_neighbors(
     auto r_disp = disp.unchecked<2>();
     auto r_valid = valid.unchecked<2>();
     auto r_dirs = dirs.unchecked<2>();
-    size_t n_col = r_disp.shape(0);
-    size_t n_row = r_disp.shape(1);
+    size_t n_row = r_disp.shape(0);
+    size_t n_col = r_disp.shape(1);
     size_t n_dirs = r_dirs.shape(0);
 
-    size_t max_path_length = std::max(n_row, n_col);
+    size_t max_path_length = std::max(n_col, n_row);
 
     py::array_t<float> out = py::array_t<float>({n_dirs});
     auto rw_out = out.mutable_unchecked<1>();
 
     for (size_t dir = 0; dir < n_dirs; ++dir) {
-        size_t tmp_col = col;
         size_t tmp_row = row;
+        size_t tmp_col = col;
 
         for (size_t i = 0; i < max_path_length; ++i) {
-            tmp_col += r_dirs(dir, 1);
-            tmp_row += r_dirs(dir, 0);
+            tmp_row += r_dirs(dir, 1);
+            tmp_col += r_dirs(dir, 0);
 
-            if ( tmp_col < 0 || tmp_col >= n_col || tmp_row < 0 || tmp_row >= n_row ) {
+            if ( tmp_row < 0 || tmp_row >= n_row || tmp_col < 0 || tmp_col >= n_col ) {
                 rw_out(dir) = std::numeric_limits<float>::quiet_NaN();                
                 break;
             }
 
-            if ((r_valid(tmp_col, tmp_row) & msk_pixel_invalid) == 0) {
-                rw_out(dir) = r_disp(tmp_col, tmp_row);            
+            if ((r_valid(tmp_row, tmp_col) & msk_pixel_invalid) == 0) {
+                rw_out(dir) = r_disp(tmp_row, tmp_col);            
                 break;
             }
         }
@@ -103,18 +103,18 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_nodata_sgm(
     py::array_t<float> valid_neighbors;
     for (size_t row = 0; row < n_row; ++row) {
         for (size_t col = 0; col < n_col; ++col) {
-            if (r_valid(col, row) & msk_pixel_invalid) {
+            if (r_valid(row, col) & msk_pixel_invalid) {
                 valid_neighbors = find_valid_neighbors(dirs, img, valid, row, col, msk_pixel_invalid);
                 auto r_valid_neighbors = valid_neighbors.unchecked<1>();
                 
                 float median = compute_median(r_valid_neighbors);
 
-                rw_out_img(col, row) = median;
-                rw_out_valid(col, row) = msk_pixel_filled_nodata;
+                rw_out_img(row, col) = median;
+                rw_out_valid(row, col) = msk_pixel_filled_nodata;
 
             } else {
-                rw_out_img(col, row) = r_img(col, row);
-                rw_out_valid(col, row) = r_valid(col, row);
+                rw_out_img(row, col) = r_img(row, col);
+                rw_out_valid(row, col) = r_valid(row, col);
             }
         }
     }

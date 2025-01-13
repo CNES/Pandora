@@ -30,7 +30,7 @@ from json_checker import And, Checker
 
 import pandora.constants as cst
 
-from .cpp import refinement_cpp  # pylint:disable=import-error
+from .cpp import refinement_cpp
 from . import refinement
 
 

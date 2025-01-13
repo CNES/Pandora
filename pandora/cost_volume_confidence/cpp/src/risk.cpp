@@ -1,30 +1,11 @@
 #include "risk.hpp"
+#include "cost_volume_confidence_tools.hpp"
 #include <algorithm>
 #include <numeric>
 #include <cmath>
 #include <iostream>
 
 namespace py = pybind11;
-
-inline size_t searchsorted(const py::array_t<float>& array, float value) {
-
-    auto arr = array.unchecked<1>();
-
-    size_t left = 0;
-    size_t right = arr.shape(0)-1;
-    size_t mid;
-
-    while (left < right) {
-        mid = left + (right - left) / 2;
-    
-        if (arr(mid) < value) {
-            left = mid + 1;
-        } else {
-            right = mid;
-        }
-    }
-    return left;
-}
 
 py::list compute_risk_and_sampled_risk(
     py::array_t<float> cv,

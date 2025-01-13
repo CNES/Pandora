@@ -20,14 +20,13 @@
 This module contains functions for estimating confidence from ambiguity.
 """
 import logging
-import warnings
 from typing import Dict, Tuple, Union
 
 import numpy as np
 import xarray as xr
 from json_checker import And, Checker
 
-from .cpp import cost_volume_confidence_cpp  # pylint:disable=import-error
+from .cpp import cost_volume_confidence_cpp
 from . import cost_volume_confidence
 
 

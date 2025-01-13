@@ -1,4 +1,6 @@
 # pylint: skip-file
+from typing import Tuple
+
 def quadratic_refinement_method(cost, disp, measure, cst_pandora_msk_pixel_stopped_interpolation):
     """
     Return the subpixel disparity and cost, by fitting a quadratic curve
@@ -103,7 +105,7 @@ def loop_approximate_refinement(
 
 def vfit_refinement_method(
     cost, disp, measure, cst_pandora_msk_pixel_stopped_interpolation
-) -> tuple[float, float, int]:
+) -> Tuple[float, float, int]:
     """
     Return the subpixel disparity and cost, by matching a symmetric V shape (linear interpolation)
 

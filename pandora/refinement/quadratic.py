@@ -23,14 +23,14 @@
 This module contains functions associated to the quadratic method used in the refinement step.
 """
 
-from typing import Dict
+from typing import Dict, Tuple
 import numpy as np
 
 from json_checker import And, Checker
 
 import pandora.constants as cst
 
-from .cpp import refinement_cpp  # pylint:disable=import-error
+from .cpp import refinement_cpp
 from . import refinement
 
 
@@ -41,7 +41,7 @@ class Quadratic(refinement.AbstractRefinement):
     """
 
     @staticmethod
-    def refinement_method(cost: np.ndarray, disp: float, measure: str) -> tuple[float, float, int]:
+    def refinement_method(cost: np.ndarray, disp: float, measure: str) -> Tuple[float, float, int]:
         return refinement_cpp.quadratic_refinement_method(
             cost, disp, measure, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
         )

@@ -31,7 +31,7 @@ sdist/
 
 # Pytest
 .pytest_cache/
-pytest-report.xwhl
+pytest-report.xml
 nosetests.xml
 
 # Python coverage output
