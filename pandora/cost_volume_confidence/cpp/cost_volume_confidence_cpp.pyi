@@ -37,7 +37,7 @@ def compute_ambiguity_and_sampled_ambiguity(cv, etas, nbr_etas, grids, disparity
     :return: the normalized ambiguity and sampled ambiguity
     :rtype: Tuple(2D np.ndarray (row, col) dtype = float32, 3D np.ndarray (row, col) dtype = float32)
     """
-    ...
+    return None, None
 
 def compute_interval_bounds(cv, disp_interval, possibility_threshold, type_factor):
     """
@@ -54,7 +54,7 @@ def compute_interval_bounds(cv, disp_interval, possibility_threshold, type_facto
     :return: the infimum and supremum (not regularized) of the set containing the true disparity
     :rtype: Tuple(2D np.ndarray (row, col) dtype = float32, 2D np.ndarray (row, col) dtype = float32)
     """
-    ...
+    return None, None
 
 def compute_risk_and_sampled_risk(cv, sampled_ambiguity, etas, nbr_etas, grids, disparity_range, sample_risk):
     """
@@ -78,4 +78,4 @@ def compute_risk_and_sampled_risk(cv, sampled_ambiguity, etas, nbr_etas, grids, 
     :rtype: Tuple(2D np.ndarray (row, col) dtype = float32, 2D np.ndarray (row, col) dtype = float32, \
     3D np.ndarray (row, col) dtype = float32, 3D np.ndarray (row, col) dtype = float32)
     """
-    ...
+    return None, None

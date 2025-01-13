@@ -43,4 +43,4 @@ def graph_regularization(
     :return: The regularized inf and sup of the disparity, and a boolean mask indicating regularization
     :rtype: Tuple[np.ndarray, np.ndarray, np.ndarray]
     """
-    ...
+    return None, None, None

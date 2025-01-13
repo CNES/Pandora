@@ -32,7 +32,7 @@ def cbca_step_2(step1, cross_left, cross_right, range_col, range_col_right):
     step 2
     :rtype: tuple (2D np.array (row, col) dtype = np.float32, 2D np.array (row, col) dtype = np.float32)
     """
-    ...
+    return None, None
 
 def cbca_step_3(step2):
     """
@@ -68,7 +68,7 @@ def cbca_step_4(step3, sum2, cross_left, cross_right, range_col, range_col_right
     :return: the fully aggregated matching cost, and the total number of support pixels used for the aggregation
     :rtype: tuple(2D np.array (row , col) dtype = np.float32, 2D np.array (row , col) dtype = np.float32)
     """
-    ...
+    return None, None
 
 def cross_support(image, len_arms, intensity):
     """

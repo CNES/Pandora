@@ -48,4 +48,4 @@ def interpolate_nodata_sgm(
         - If out & PANDORA_MSK_PIXEL_FILLED_NODATA != 0 : Invalid pixel : filled nodata pixel
     :rtype: tuple(2D np.array (row, col), 2D np.array (row, col))
     """
-    ...
+    return None, None

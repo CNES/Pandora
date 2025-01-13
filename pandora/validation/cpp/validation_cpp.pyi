@@ -23,7 +23,7 @@ def interpolate_occlusion_sgm(disp, valid, msk_pixel_occlusion, msk_pixel_filled
         - If out & MSK_PIXEL_FILLED_OCCLUSION != 0 : Invalid pixel : filled occlusion
     :rtype: : tuple(2D np.array (row, col), 2D np.array (row, col))
     """
-    ...
+    return None, None
 
 def interpolate_mismatch_sgm(
     disp, valid, msk_pixel_mismatch, msk_pixel_filled_mismatch, msk_pixel_occlusion, msk_pixel_invalid
@@ -51,7 +51,7 @@ def interpolate_mismatch_sgm(
         - If out & MSK_PIXEL_FILLED_MISMATCH != 0 : Invalid pixel : filled mismatch
     :rtype: tuple(2D np.array (row, col), 2D np.array (row, col))
     """
-    ...
+    return None, None
 
 def interpolate_occlusion_mc_cnn(disp, valid, msk_pixel_occlusion, msk_pixel_filled_occlusion, msk_pixel_invalid):
     """
@@ -77,7 +77,7 @@ def interpolate_occlusion_mc_cnn(disp, valid, msk_pixel_occlusion, msk_pixel_fil
         - If out & MSK_PIXEL_FILLED_OCCLUSION != 0 : Invalid pixel : filled occlusion
     :rtype: tuple(2D np.array (row, col), 2D np.array (row, col))
     """
-    ...
+    return None, None
 
 def interpolate_mismatch_mc_cnn(disp, valid, msk_pixel_mismatch, msk_pixel_filled_mismatch, msk_pixel_invalid):
     """
@@ -103,4 +103,4 @@ def interpolate_mismatch_mc_cnn(disp, valid, msk_pixel_mismatch, msk_pixel_fille
         - If out & MSK_PIXEL_FILLED_MISMATCH != 0 : Invalid pixel : filled mismatch
     :rtype: tuple(2D np.array (row, col), 2D np.array (row, col))
     """
-    ...
+    return None, None

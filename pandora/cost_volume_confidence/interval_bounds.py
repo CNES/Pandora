@@ -23,7 +23,6 @@
 This module contains functions for estimating interval bounds for the disparity
 """
 
-import warnings
 from typing import Dict, Tuple, Union
 
 import numpy as np
