@@ -63,7 +63,8 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_re
 );
 
 /**
- * @brief Applies the refinement method on the right disparity map created with the approximate method.
+ * @brief Applies the refinement method on the right disparity map created with the approximate
+ * method.
  *
  * The approximate method performs a diagonal search for the minimum on the left cost volume.
  *
@@ -81,7 +82,8 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_re
  * @return A tuple containing the refine coefficient, refined disparity map, and updated 
  * validity mask.
  */
-std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_approximate_refinement(
+std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> 
+loop_approximate_refinement(
     py::array_t<float> cv,
     py::array_t<float> disp,
     py::array_t<int64_t> mask,

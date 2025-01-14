@@ -64,7 +64,8 @@ py::array_t<float> find_valid_neighbors(
  * @return tuple of interpolated input image and updated validity mask
  */
 std::tuple<py::array_t<float>, py::array_t<int>> interpolate_nodata_sgm(
-    py::array_t<float> img, py::array_t<int> valid, int msk_pixel_invalid, int msk_pixel_filled_nodata
+    py::array_t<float> img, py::array_t<int> valid,
+    int msk_pixel_invalid, int msk_pixel_filled_nodata
 );
 
 #endif  // IMG_TOOLS_HPP

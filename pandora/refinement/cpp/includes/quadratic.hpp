@@ -40,7 +40,8 @@ namespace py = pybind11;
  * @return A tuple containing the disparity shift, refined cost, and pixel state.
  */
 std::tuple<float, float, int> quadratic_refinement_method(
-    py::array_t<float> cost, float disp, std::string measure, int cst_pandora_msk_pixel_stopped_interpolation
+    py::array_t<float> cost, float disp, std::string measure,
+    int cst_pandora_msk_pixel_stopped_interpolation
 );
 
 #endif  // QUADRATIC_HPP

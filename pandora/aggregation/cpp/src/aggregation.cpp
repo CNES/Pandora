@@ -166,8 +166,9 @@ std::tuple<py::array_t<float>, py::array_t<float>> cbca_step_4(
                 r_cross_right(row, right_range_row, 3)
             );
 
-            int step_row = (int)(row) - top - 1;
-            if (step_row < 0) step_row = n_row+step_row;
+            int step_row = static_cast<int>(row) - top - 1;
+            if (step_row < 0) 
+                step_row += n_row;
 
             rw_step4(row, left_range_row) = r_step3(row + bot, left_range_row) 
                                           - r_step3(step_row, left_range_row);
@@ -224,7 +225,8 @@ py::array_t<int16_t> cross_support(py::array_t<float> image, int16_t len_arms, f
 
             int16_t left_len = 0;
             for (int left = col - 1; left > std::max(static_cast<int>(col - len_arms), -1); --left){
-                if (std::fabs(current_pixel - rw_image(row, left)) >= intensity) break;
+                if (std::fabs(current_pixel - rw_image(row, left)) >= intensity)
+                    break;
                 left_len++;
             }
             left_len = std::max(
@@ -238,7 +240,8 @@ py::array_t<int16_t> cross_support(py::array_t<float> image, int16_t len_arms, f
                 right < std::min(static_cast<int>(col + len_arms), static_cast<int>(n_col));
                 ++right
             ) {
-                if (std::fabs(current_pixel - rw_image(row, right)) >= intensity) break;
+                if (std::fabs(current_pixel - rw_image(row, right)) >= intensity)
+                    break;
                 right_len++;
             }
             right_len = std::max(
@@ -248,7 +251,8 @@ py::array_t<int16_t> cross_support(py::array_t<float> image, int16_t len_arms, f
 
             int16_t up_len = 0;
             for (int up = row - 1; up > std::max(static_cast<int>(row - len_arms), -1); --up) {
-                if (std::fabs(current_pixel - rw_image(up, col)) >= intensity) break;
+                if (std::fabs(current_pixel - rw_image(up, col)) >= intensity)
+                    break;
                 up_len++;
             }
             up_len = std::max(
@@ -262,7 +266,8 @@ py::array_t<int16_t> cross_support(py::array_t<float> image, int16_t len_arms, f
                 bot < std::min(static_cast<int>(row + len_arms), static_cast<int>(n_row));
                 ++bot
             ) {
-                if (std::fabs(current_pixel - rw_image(bot, col)) >= intensity) break;
+                if (std::fabs(current_pixel - rw_image(bot, col)) >= intensity) 
+                    break;
                 bot_len++;
             }
             bot_len = std::max(

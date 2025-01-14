@@ -7,7 +7,8 @@
 namespace py = pybind11;
 
 std::tuple<float, float, int> vfit_refinement_method(
-    py::array_t<float> cost, float disp, std::string measure, int cst_pandora_msk_pixel_stopped_interpolation
+    py::array_t<float> cost, float disp, std::string measure,
+    int cst_pandora_msk_pixel_stopped_interpolation
 ) {
     auto r_cost = cost.unchecked<1>();
     float c0 = r_cost(0);

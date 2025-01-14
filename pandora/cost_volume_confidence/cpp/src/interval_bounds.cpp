@@ -13,8 +13,10 @@ void argsort(float* arr, size_t len, int* indices) {
     }
 
     std::sort(indices, &(indices[len]), [&](size_t i, size_t j) {
-        if (std::isnan(arr[i])) return false;
-        if (std::isnan(arr[j])) return true;
+        if (std::isnan(arr[i]))
+            return false;
+        if (std::isnan(arr[j]))
+            return true;
         return arr[i] < arr[j];
     });
 
@@ -105,8 +107,10 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
             }
 
 
-            if (min_valid_idx > 0 && (int)norm_pix_costs[min_valid_idx]==1) --min_valid_idx;
-            if (max_valid_idx < n_disp-1 && (int)norm_pix_costs[max_valid_idx]==1) ++max_valid_idx;
+            if (min_valid_idx > 0 && (int)norm_pix_costs[min_valid_idx]==1)
+                --min_valid_idx;
+            if (max_valid_idx < n_disp-1 && (int)norm_pix_costs[max_valid_idx]==1)
+                ++max_valid_idx;
 
             rw_interval_inf(row, col) = r_disp_interval(min_valid_idx);
             rw_interval_sup(row, col) = r_disp_interval(max_valid_idx);

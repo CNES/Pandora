@@ -445,6 +445,20 @@ def get_metadata(
 
 
 def get_pyramids(data, num_scales, scale_factor, channel_axis=None):
+    """
+    Returns the pyramid of images, of height num_scales and width factor scale_factor
+
+    :param data: image
+    :type data: 2D or 3D np.ndarray
+    :param num_scales: number of scaled images
+    :type num_scales: int
+    :param scale_factor: ratio in width/height between two consecutives images of the pyramid
+    :type scale_factor: float
+    :type channel_axis: if specified, axis to use as the channel in the 3D data
+    :type channel_axis: int
+    :return: the list of images in the pyramid, large to small
+    :rtype: list(np.ndarray)
+    """
     return list(
         pyramid_gaussian(
             data,

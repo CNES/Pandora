@@ -81,27 +81,17 @@ py::list compute_risk_and_sampled_risk(
 
     float diff_cost = max_cost - min_cost;
 
-    size_t idx_disp_min;
-    size_t idx_disp_max;
-
-    float normalized_extremum;
     float* normalized_pix_costs = new float[n_disp];
-    float cv_val;
-    float sum_for_min;
-    float sum_for_max;
-    float eta_min_disp;
-    float eta_max_disp;
-    float min_disp;
-    float max_disp;
     for (int row = 0; row < n_row; ++row) {
         for (int col = 0; col < n_col; ++col) {
 
-            normalized_extremum = (rw_min_img(row, col) - min_cost) / diff_cost;
+            float normalized_extremum = (rw_min_img(row, col) - min_cost) / diff_cost;
 
             if (std::isnan(normalized_extremum)) {
                 rw_risk_min(row, col) = std::numeric_limits<float>::quiet_NaN();
                 rw_risk_max(row, col) = std::numeric_limits<float>::quiet_NaN();
-                if (!sample_risk) continue;
+                if (!sample_risk) 
+                    continue;
                 
                 for (size_t eta = 0; eta < nbr_etas; ++eta) {
                     rw_samp_risk_min->operator()(
@@ -114,12 +104,12 @@ py::list compute_risk_and_sampled_risk(
                 continue;
             }
 
-            idx_disp_min = searchsorted(disparity_range, r_grids(0, row, col));
-            idx_disp_max = searchsorted(disparity_range, r_grids(1, row, col)) + 1;
+            size_t idx_disp_min = searchsorted(disparity_range, r_grids(0, row, col));
+            size_t idx_disp_max = searchsorted(disparity_range, r_grids(1, row, col)) + 1;
 
             // fill normalized cv for this pixel (+-inf when encountering NaNs)
             for (int disp = 0; disp < n_disp; ++disp) {
-                cv_val = r_cv(row, col, disp);
+                float cv_val = r_cv(row, col, disp);
                 if (std::isnan(cv_val)) {
                     if (disp >= idx_disp_min && disp < idx_disp_max) {
                         normalized_pix_costs[disp] = -std::numeric_limits<float>::infinity();
@@ -132,19 +122,20 @@ py::list compute_risk_and_sampled_risk(
                 normalized_pix_costs[disp] = (cv_val - min_cost) / diff_cost;
             }
 
-            sum_for_min = 0;
-            sum_for_max = 0;
+            float sum_for_min = 0;
+            float sum_for_max = 0;
             for (int eta = 0; eta < nbr_etas; ++eta) {
-                min_disp = std::numeric_limits<float>::infinity();
-                max_disp = -std::numeric_limits<float>::infinity();
+                float min_disp = std::numeric_limits<float>::infinity();
+                float max_disp = -std::numeric_limits<float>::infinity();
                 for (int disp = 0; disp < n_disp; ++disp) {
-                    if (normalized_pix_costs[disp] > (normalized_extremum + r_etas(eta))) continue;
+                    if (normalized_pix_costs[disp] > (normalized_extremum + r_etas(eta)))
+                        continue;
 
                     min_disp = std::min(min_disp, (float)disp);
                     max_disp = std::max(max_disp, (float)disp);
                 }
-                eta_max_disp = max_disp - min_disp;
-                eta_min_disp = 1 + eta_max_disp - r_samp_amb(row, col, eta);
+                float eta_max_disp = max_disp - min_disp;
+                float eta_min_disp = 1 + eta_max_disp - r_samp_amb(row, col, eta);
                 sum_for_min += eta_min_disp;
                 sum_for_max += eta_max_disp;
                 if (sample_risk) {
