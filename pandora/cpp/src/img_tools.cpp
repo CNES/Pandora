@@ -74,7 +74,10 @@ float compute_median(pybind11::detail::unchecked_reference<float, 1> buf) {
 }
 
 std::tuple<py::array_t<float>, py::array_t<int>> interpolate_nodata_sgm(
-    py::array_t<float> img, py::array_t<int> valid, int msk_pixel_invalid, int msk_pixel_filled_nodata
+    py::array_t<float> img,
+    py::array_t<int> valid,
+    int msk_pixel_invalid,
+    int msk_pixel_filled_nodata
 ) {
     auto r_img = img.unchecked<2>();
     auto r_valid = valid.unchecked<2>();
@@ -104,7 +107,9 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_nodata_sgm(
     for (size_t row = 0; row < n_row; ++row) {
         for (size_t col = 0; col < n_col; ++col) {
             if (r_valid(row, col) & msk_pixel_invalid) {
-                valid_neighbors = find_valid_neighbors(dirs, img, valid, row, col, msk_pixel_invalid);
+                valid_neighbors = find_valid_neighbors(
+                    dirs, img, valid, row, col, msk_pixel_invalid
+                );
                 auto r_valid_neighbors = valid_neighbors.unchecked<1>();
                 
                 float median = compute_median(r_valid_neighbors);

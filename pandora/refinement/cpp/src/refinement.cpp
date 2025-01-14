@@ -79,7 +79,8 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_re
 }
 
 
-std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_approximate_refinement(
+std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>>
+loop_approximate_refinement(
     py::array_t<float> cv,
     py::array_t<float> disp,
     py::array_t<int64_t> mask,

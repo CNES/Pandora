@@ -70,7 +70,7 @@ py::array_t<float> compute_ambiguity(
     size_t idx_disp_min;
     size_t idx_disp_max;
 
-    float normalized_extremum;
+    float norm_extremum;
     float* normalized_pix_costs = new float[n_disp];
     float cv_val;
     float amb_sum = 0;
@@ -79,12 +79,12 @@ py::array_t<float> compute_ambiguity(
         for (int col = 0; col < n_col; ++col) {
 
             if (type_measure_min) {
-                normalized_extremum = (rw_min_img(row, col) - extremum_cost) / diff_cost;
+                norm_extremum = (rw_min_img(row, col) - extremum_cost) / diff_cost;
             } else {
-                normalized_extremum = (rw_max_img(row, col) - extremum_cost) / diff_cost;
+                norm_extremum = (rw_max_img(row, col) - extremum_cost) / diff_cost;
             }
 
-            if (std::isnan(normalized_extremum)) {
+            if (std::isnan(norm_extremum)) {
                 rw_amb(row, col) = nbr_etas * n_disp;
                 continue;
             }
@@ -115,14 +115,14 @@ py::array_t<float> compute_ambiguity(
             if (type_measure_min) {
                 for (int eta = 0; eta < nbr_etas; ++eta) {
                     for (int disp = 0; disp < n_disp; ++disp) {
-                        amb_status = normalized_pix_costs[disp] <= (normalized_extremum + r_etas(eta));
+                        amb_status = normalized_pix_costs[disp] <= (norm_extremum + r_etas(eta));
                         amb_sum += amb_status ? 1.f : 0.f;
                     }
                 }
             } else {
                 for (int eta = 0; eta < nbr_etas; ++eta) {
                     for (int disp = 0; disp < n_disp; ++disp) {
-                        amb_status = normalized_pix_costs[disp] >= (normalized_extremum - r_etas(eta));
+                        amb_status = normalized_pix_costs[disp] >= (norm_extremum - r_etas(eta));
                         amb_sum += amb_status ? 1.f : 0.f;
                     }
                 }
@@ -157,7 +157,11 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_ambiguity_and_sampled
     size_t n_disp = cv.shape(2);
 
     py::array_t<float> ambiguity = py::array_t<float>({n_row, n_col});
-    py::array_t<float> sampled_ambiguity = py::array_t<float>({n_row, n_col, static_cast<size_t>(nbr_etas)});
+    py::array_t<float> sampled_ambiguity = py::array_t<float>({
+        n_row,
+        n_col,
+        static_cast<size_t>(nbr_etas)
+    });
     auto rw_amb = ambiguity.mutable_unchecked<2>();
     auto rw_samp_amb = sampled_ambiguity.mutable_unchecked<3>();
 

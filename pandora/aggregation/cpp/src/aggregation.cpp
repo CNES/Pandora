@@ -202,7 +202,10 @@ py::array_t<int16_t> cross_support(py::array_t<float> image, int16_t len_arms, f
     py::array_t<int16_t> cross(py::array::ShapeContainer({n_row, n_col, 4}));
     auto rw_cross = cross.mutable_unchecked<3>();
 
-    auto set_cross_value = [&](size_t row, size_t col, int16_t left, int16_t right, int16_t up, int16_t bot) {
+    auto set_cross_value = [&](
+        size_t row, size_t col,
+        int16_t left, int16_t right, int16_t up, int16_t bot
+    ) {
         rw_cross(row, col, 0) = left;
         rw_cross(row, col, 1) = right;
         rw_cross(row, col, 2) = up;
@@ -220,34 +223,52 @@ py::array_t<int16_t> cross_support(py::array_t<float> image, int16_t len_arms, f
             }
 
             int16_t left_len = 0;
-            for (int left = col - 1; left > std::max(static_cast<int>(col - len_arms), -1); --left) {
-                if (std::fabs(current_pixel - rw_image(row, left)) >= intensity) {
-                    break;
-                }
+            for (int left = col - 1; left > std::max(static_cast<int>(col - len_arms), -1); --left){
+                if (std::fabs(current_pixel - rw_image(row, left)) >= intensity) break;
                 left_len++;
             }
-            left_len = std::max(left_len, static_cast<int16_t>(1 * (col >= 1 && std::isfinite(rw_image(row, col - 1)))));
+            left_len = std::max(
+                left_len, 
+                static_cast<int16_t>(col >= 1 && std::isfinite(rw_image(row, col - 1)))
+            );
 
             int16_t right_len = 0;
-            for (int right = col + 1; right < std::min(static_cast<int>(col + len_arms), static_cast<int>(n_col)); ++right) {
+            for (
+                int right = col + 1;
+                right < std::min(static_cast<int>(col + len_arms), static_cast<int>(n_col));
+                ++right
+            ) {
                 if (std::fabs(current_pixel - rw_image(row, right)) >= intensity) break;
                 right_len++;
             }
-            right_len = std::max(right_len, static_cast<int16_t>(1 * (col < n_col - 1 && std::isfinite(rw_image(row, col + 1)))));
+            right_len = std::max(
+                right_len,
+                static_cast<int16_t>(col < n_col - 1 && std::isfinite(rw_image(row, col + 1)))
+            );
 
             int16_t up_len = 0;
             for (int up = row - 1; up > std::max(static_cast<int>(row - len_arms), -1); --up) {
                 if (std::fabs(current_pixel - rw_image(up, col)) >= intensity) break;
                 up_len++;
             }
-            up_len = std::max(up_len, static_cast<int16_t>(1 * (row >= 1 && std::isfinite(rw_image(row - 1, col)))));
+            up_len = std::max(
+                up_len, 
+                static_cast<int16_t>(row >= 1 && std::isfinite(rw_image(row - 1, col)))
+            );
 
             int16_t bot_len = 0;
-            for (int bot = row + 1; bot < std::min(static_cast<int>(row + len_arms), static_cast<int>(n_row)); ++bot) {
+            for (
+                int bot = row + 1;
+                bot < std::min(static_cast<int>(row + len_arms), static_cast<int>(n_row));
+                ++bot
+            ) {
                 if (std::fabs(current_pixel - rw_image(bot, col)) >= intensity) break;
                 bot_len++;
             }
-            bot_len = std::max(bot_len, static_cast<int16_t>(1 * (row < n_row - 1 && std::isfinite(rw_image(row + 1, col)))));
+            bot_len = std::max(
+                bot_len,
+                static_cast<int16_t>(row < n_row - 1 && std::isfinite(rw_image(row + 1, col)))
+            );
 
             set_cross_value(row, col, left_len, right_len, up_len, bot_len);
 

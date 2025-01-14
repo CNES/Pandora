@@ -55,7 +55,8 @@ py::array_t<bool> create_connected_graph(
     for (size_t i = 0; i < n_segments; i++) {
         
         // construct list_lines
-        for (size_t l = 0; l < n_segments; l++) list_lines[l] = connection_graph[pos_to_id(i, l, n_segments)];
+        for (size_t l = 0; l < n_segments; l++)
+            list_lines[l] = connection_graph[pos_to_id(i, l, n_segments)];
 
         for (size_t _d = 1; _d < depth; _d++) {
             
@@ -67,7 +68,9 @@ py::array_t<bool> create_connected_graph(
                 if (list_lines[l]) {
                     for (size_t y = 0; y < n_segments; y++) {
                         if (!any_new_points[y])
-                        any_new_points[y] = any_new_points[y] || connection_graph[pos_to_id(l, y, n_segments)];
+                        any_new_points[y] = any_new_points[y] || connection_graph[
+                            pos_to_id(l, y, n_segments)
+                        ];
                     }
                 }
             }
@@ -179,11 +182,15 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<bool>> graph_regu
             // linear interpolation
             size_t idx_floor_inf = static_cast<size_t>(p * nb_inf);
             float t = p * nb_inf - idx_floor_inf;
-            inf_quantile = idx_floor_inf >= nb_inf ? agg_inf[idx_floor_inf] : agg_inf[idx_floor_inf] * (1.f - t) + agg_inf[idx_floor_inf + 1] * t;
+            inf_quantile = idx_floor_inf >= nb_inf ?
+                agg_inf[idx_floor_inf] :
+                agg_inf[idx_floor_inf] * (1.f - t) + agg_inf[idx_floor_inf + 1] * t;
 
             size_t idx_floor_sup = static_cast<size_t>(quantile * nb_sup);
             t = quantile * nb_sup - idx_floor_sup;
-            sup_quantile = idx_floor_sup >= nb_sup ? agg_sup[idx_floor_sup] : agg_sup[idx_floor_sup] * (1.f - t) + agg_sup[idx_floor_sup + 1] * t;
+            sup_quantile = idx_floor_sup >= nb_sup ?
+                agg_sup[idx_floor_sup] :
+                agg_sup[idx_floor_sup] * (1.f - t) + agg_sup[idx_floor_sup + 1] * t;
 
         } else {
             inf_quantile = std::numeric_limits<float>::quiet_NaN();

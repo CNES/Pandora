@@ -101,7 +101,9 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_occlusion_sgm(
         for (size_t row = 0; row < n_row; ++row) {
             rw_out_valid(col, row) = r_valid(col, row);
             if (r_valid(col, row) & msk_pixel_occlusion) {
-                valid_neighbors = find_valid_neighbors(r_disp, r_valid, row, col, msk_pixel_invalid);
+                valid_neighbors = find_valid_neighbors(
+                    r_disp, r_valid, row, col, msk_pixel_invalid
+                );
                 
                 rw_out_disp(col, row) = get_second_min_val_abs(valid_neighbors);
                 rw_out_valid(col, row) += msk_pixel_filled_occlusion - msk_pixel_occlusion;
@@ -143,7 +145,8 @@ T compute_median(std::array<T, N> buf) {
 
 std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_sgm(
     py::array_t<float> disp, py::array_t<int> valid, 
-    int msk_pixel_mismatch, int msk_pixel_filled_mismatch, int msk_pixel_occlusion, int msk_pixel_invalid
+    int msk_pixel_mismatch, int msk_pixel_filled_mismatch,
+    int msk_pixel_occlusion, int msk_pixel_invalid
 ) {
 
     auto r_disp = disp.unchecked<2>();
@@ -163,8 +166,16 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_sgm(
             if (r_valid(col, row) & msk_pixel_mismatch) {
 
                 bool found = false;
-                for (int i = std::max(0, col-1); i < std::min(static_cast<int>(n_col) - 1, col + 1) + 1; ++i) {
-                    for (int j = std::max(0, row-1); j < std::min(static_cast<int>(n_row) - 1, row + 1) + 1; ++j) {
+                for (
+                    int i = std::max(0, col-1); 
+                    i < std::min(static_cast<int>(n_col) - 1, col + 1) + 1;
+                    ++i
+                ) {
+                    for (
+                        int j = std::max(0, row-1);
+                        j < std::min(static_cast<int>(n_row) - 1, row + 1) + 1;
+                        ++j
+                    ) {
                         if ((r_valid(i, j) & msk_pixel_occlusion) != 0) {
                             found = true;
                             break;
@@ -174,15 +185,21 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_sgm(
 
                 if (found) {
                     rw_out_disp(col, row) = r_disp(col, row);
-                    rw_out_valid(col, row) = r_valid(col, row) - msk_pixel_mismatch + msk_pixel_occlusion;
+                    rw_out_valid(col, row) = r_valid(col, row) 
+                                            - msk_pixel_mismatch 
+                                            + msk_pixel_occlusion;
                     continue;
                 }
 
-                valid_neighbors = find_valid_neighbors(r_disp, r_valid, row, col, msk_pixel_invalid);
+                valid_neighbors = find_valid_neighbors(
+                    r_disp, r_valid, row, col, msk_pixel_invalid
+                );
                 float median = compute_median(valid_neighbors);
 
                 rw_out_disp(col, row) = median;
-                rw_out_valid(col, row) = r_valid(col, row) + msk_pixel_filled_mismatch - msk_pixel_mismatch;
+                rw_out_valid(col, row) = r_valid(col, row) 
+                                        + msk_pixel_filled_mismatch 
+                                        - msk_pixel_mismatch;
             } else {
                 rw_out_disp(col, row) = r_disp(col, row);
                 rw_out_valid(col, row) = r_valid(col, row);
@@ -307,7 +324,11 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_mc_cnn(
                         tmp_col = std::floor( col + (int)(dirs[2*dir] * i) );
                         tmp_row = std::floor( row + (int)(dirs[2*dir+1] * i) );
 
-                        if (tmp_row < 0 || tmp_row >= static_cast<int>(n_row) || tmp_col < 0 || tmp_col >= static_cast<int>(n_col)) {
+                        if (
+                            tmp_row < 0 || 
+                            tmp_row >= static_cast<int>(n_row) || 
+                            tmp_col < 0 || 
+                            tmp_col >= static_cast<int>(n_col)) {
                             interp_mismatched[dir] = std::numeric_limits<float>::quiet_NaN();
                             break;
                         }
@@ -320,7 +341,9 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_mc_cnn(
                 }
 
                 rw_out_disp(row, col) = compute_median(interp_mismatched);
-                rw_out_valid(row, col) = r_valid(row, col) + msk_pixel_filled_mismatch - msk_pixel_mismatch;
+                rw_out_valid(row, col) = r_valid(row, col) 
+                                        + msk_pixel_filled_mismatch 
+                                        - msk_pixel_mismatch;
                 
             } else {
                 rw_out_disp(row, col) = r_disp(row, col);

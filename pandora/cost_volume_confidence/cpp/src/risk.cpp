@@ -41,8 +41,12 @@ py::list compute_risk_and_sampled_risk(
     if (sample_risk) {
         samp_risk_min = py::array_t<float>({n_row, n_col, nbr_etas});
         samp_risk_max = py::array_t<float>({n_row, n_col, nbr_etas});
-        rw_samp_risk_min = std::make_unique<py::detail::unchecked_mutable_reference<float, 3>>(samp_risk_min.mutable_unchecked<3>());
-        rw_samp_risk_max = std::make_unique<py::detail::unchecked_mutable_reference<float, 3>>(samp_risk_max.mutable_unchecked<3>());
+        rw_samp_risk_min = std::make_unique<py::detail::unchecked_mutable_reference<float, 3>>(
+            samp_risk_min.mutable_unchecked<3>()
+        );
+        rw_samp_risk_max = std::make_unique<py::detail::unchecked_mutable_reference<float, 3>>(
+            samp_risk_max.mutable_unchecked<3>()
+        );
     }
 
     py::array_t<float> min_img = py::array_t<float>({n_row, n_col});
@@ -100,8 +104,12 @@ py::list compute_risk_and_sampled_risk(
                 if (!sample_risk) continue;
                 
                 for (size_t eta = 0; eta < nbr_etas; ++eta) {
-                    rw_samp_risk_min->operator()(row, col, eta) = std::numeric_limits<float>::quiet_NaN();
-                    rw_samp_risk_max->operator()(row, col, eta) = std::numeric_limits<float>::quiet_NaN();
+                    rw_samp_risk_min->operator()(
+                        row, col, eta
+                    ) = std::numeric_limits<float>::quiet_NaN();
+                    rw_samp_risk_max->operator()(
+                        row, col, eta
+                    ) = std::numeric_limits<float>::quiet_NaN();
                 }
                 continue;
             }
