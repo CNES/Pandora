@@ -40,8 +40,10 @@ py::array_t<bool> create_connected_graph(
         int row_i = r_left(i, 0);
         for (size_t k = i+1; k < n_segments; k++) {
             int left_k0 = r_left(k, 0);
-            if (left_k0 == row_i) continue;
-            if (left_k0 > row_i + 1) break;
+            if (left_k0 == row_i) 
+                continue;
+            if (left_k0 > row_i + 1)
+                break;
 
             if (r_left(k, 1) <= r_right(i, 1) && r_right(k, 1) >= r_left(i, 1)) {
                 connection_graph[pos_to_id(i, k, n_segments)] = true;
@@ -163,8 +165,10 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<bool>> graph_regu
             for (int k = 0; k <= (col_end - col_start); k++) {
                 float v_inf = r_interval_inf(row, col_start + k);
                 float v_sup = r_interval_sup(row, col_start + k);
-                if (!std::isnan(v_inf)) agg_inf.push_back(v_inf);
-                if (!std::isnan(v_sup)) agg_sup.push_back(v_sup);
+                if (!std::isnan(v_inf))
+                    agg_inf.push_back(v_inf);
+                if (!std::isnan(v_sup))
+                    agg_sup.push_back(v_sup);
             }
         }
 
