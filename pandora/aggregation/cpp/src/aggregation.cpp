@@ -296,3 +296,38 @@ py::array_t<int16_t> cross_support(py::array_t<float> image, int16_t len_arms, f
 
     return cross;
 }
+
+std::tuple<py::array_t<float>, py::array_t<float>> cbca(
+    py::array_t<float> input,
+    py::array_t<int16_t> cross_left,
+    py::array_t<int16_t> cross_right,
+    py::array_t<int64_t> range_row,
+    py::array_t<int64_t> range_row_right
+) {
+
+    // Step 1 : horizontal integral image
+    auto step1 = cbca_step_1(input);
+
+    // Step 2 : horizontal matching cost
+    auto [step2, sum2] = cbca_step_2(
+        step1,
+        cross_left,
+        cross_right,
+        range_row,
+        range_row_right
+    );
+
+    // Step 3 : vertical integral image
+    auto step3 = cbca_step_3(step2);
+
+    // Step 4 : aggregate cost volume
+    return cbca_step_4(
+        step3,
+        sum2,
+        cross_left,
+        cross_right,
+        range_row,
+        range_row_right
+    );
+
+}

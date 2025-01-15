@@ -41,8 +41,8 @@ py::list compute_risk_and_sampled_risk(
 
     if (sample_risk) {
         // Initialize min and max sampled risks
-        samp_risk_min = py::array_t<float>({n_row, n_col, nbr_etas});
-        samp_risk_max = py::array_t<float>({n_row, n_col, nbr_etas});
+        samp_risk_min = py::array_t<float>({n_row, n_col, static_cast<size_t>(nbr_etas)});
+        samp_risk_max = py::array_t<float>({n_row, n_col, static_cast<size_t>(nbr_etas)});
         rw_samp_risk_min = std::make_unique<py::detail::unchecked_mutable_reference<float, 3>>(
             samp_risk_min.mutable_unchecked<3>()
         );

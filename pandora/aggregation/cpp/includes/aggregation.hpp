@@ -30,67 +30,26 @@ This module contains functions associated to the Aggregation algorithms in cpp.
 namespace py = pybind11;
 
 /**
- * @brief Given the matching cost for one disparity, build a horizontal integral image storing
- * the cumulative row sum, S_h(row, col) = S_h(row-1, col) + cv(row, col)
+ * @brief Build the fully aggregated matching cost for one
+ * disparity, E = S_v(row, col + bottom_arm_length) - S_v(row, col - top_arm_length - 1)
  *
  * @param input cost volume for the current disparity
- * @return the horizontal integral image, step 1
- */
-py::array_t<float> cbca_step_1(py::array_t<float> input);
-
-/**
- * @brief Given the horizontal integral image, computed the horizontal matching cost for one 
- * disparity, E_h(row, col) = S_h(row + right_arm_length, col) - S_h(row - left_arm_length -1, col)
- *
  * @param step1 horizontal integral image from the cbca_step1, with an extra column that contains 0
  * @param cross_left cross support of the left image
  * @param cross_right cross support of the right image
- * @param range_col left column for the current disparity (i.e : np.arrange(nb columns), where the
+ * @param range_row left column for the current disparity (i.e : np.arrange(nb columns), where the
  * correspondent in the right image is reachable)
- * @param range_col_right: right column for the current disparity 
- * (i.e : np.arrange(nb columns) - disparity, where column - disparity >= 0 and <= nb columns)
- * @return the horizontal matching cost for the current disparity, and the number of support pixels 
- * used for the step 2
- */
-std::tuple<py::array_t<float>, py::array_t<float>> cbca_step_2(
-    py::array_t<float> step1,
-    py::array_t<int16_t> cross_left,
-    py::array_t<int16_t> cross_right,
-    py::array_t<int64_t> range_col,
-    py::array_t<int64_t> range_col_right
-);
-
-/**
- * @brief Given the horizontal matching cost, build a vertical integral image for one disparity,
- * S_v = S_v(row, col - 1) + E_h(row, col)
- *
- * @param step2 horizontal matching cost, from the cbca_step2
- * @return the vertical integral image for the current disparity
- */
-py::array_t<float> cbca_step_3(py::array_t<float> step2);
-
-/**
- * @brief Given the vertical integral image, build the fully aggregated matching cost for one
- * disparity, E = S_v(row, col + bottom_arm_length) - S_v(row, col - top_arm_length - 1)
- *
- * @param step3 vertical integral image, from the cbca_step3, with an extra row that contains 0
- * @param sum2 the number of support pixels used for the step 2
- * @param cross_left cross support of the left image
- * @param cross_right cross support of the right image
- * @param range_col left column for the current disparity (i.e : np.arrange(nb columns), where the
- * correspondent in the right image is reachable)
- * @param range_col_right right column for the current disparity 
+ * @param range_row_right: right column for the current disparity 
  * (i.e : np.arrange(nb columns) - disparity, where column - disparity >= 0 and <= nb columns)
  * @return the fully aggregated matching cost, and the total number of support pixels used for the
  * aggregation
  */
-std::tuple<py::array_t<float>, py::array_t<float>> cbca_step_4(
-    py::array_t<float> step3,
-    py::array_t<float> sum2,
+std::tuple<py::array_t<float>, py::array_t<float>> cbca(
+    py::array_t<float> input,
     py::array_t<int16_t> cross_left,
     py::array_t<int16_t> cross_right,
-    py::array_t<int64_t> range_col,
-    py::array_t<int64_t> range_col_right
+    py::array_t<int64_t> range_row,
+    py::array_t<int64_t> range_row_right
 );
 
 /**

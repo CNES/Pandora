@@ -147,28 +147,11 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         for dsp in range(nb_disp):
             i_right = int((disparity_range[dsp] % 1) * cv.attrs["subpixel"])
 
-            # Step 1 : horizontal integral image
-            step1 = aggregation_cpp.cbca_step_1(cv_data[:, :, dsp])
-
             range_col_right = range_col + disparity_range[dsp]
             valid_index = np.where((range_col_right >= 0) & (range_col_right < cross_right[i_right].shape[1]))
 
-            # Step 2 : horizontal matching cost
-            step2, sum2 = aggregation_cpp.cbca_step_2(
-                step1,
-                cross_left,
-                cross_right[i_right],
-                range_col[valid_index],
-                range_col_right[valid_index].astype(int),
-            )
-
-            # Step 3 : vertical integral image
-            step3 = aggregation_cpp.cbca_step_3(step2)
-
-            # Step 4 : aggregate cost volume
-            step4, sum4 = aggregation_cpp.cbca_step_4(
-                step3,
-                sum2,
+            step4, sum4 = aggregation_cpp.cbca(
+                cv_data[:, :, dsp],
                 cross_left,
                 cross_right[i_right],
                 range_col[valid_index],
