@@ -21,12 +21,15 @@ py::array_t<float> find_valid_neighbors(
     size_t n_col = r_disp.shape(1);
     size_t n_dirs = r_dirs.shape(0);
 
+    // Maximum path length
     size_t max_path_length = std::max(n_col, n_row);
 
     py::array_t<float> out = py::array_t<float>({n_dirs});
     auto rw_out = out.mutable_unchecked<1>();
 
     for (size_t dir = 0; dir < n_dirs; ++dir) {
+
+        // Find the first valid pixel in the current path
         size_t tmp_row = row;
         size_t tmp_col = col;
 
@@ -34,11 +37,13 @@ py::array_t<float> find_valid_neighbors(
             tmp_row += r_dirs(dir, 1);
             tmp_col += r_dirs(dir, 0);
 
+            // Edge of the image reached: there is no valid pixel in the current path
             if ( tmp_row < 0 || tmp_row >= n_row || tmp_col < 0 || tmp_col >= n_col ) {
                 rw_out(dir) = std::numeric_limits<float>::quiet_NaN();                
                 break;
             }
 
+            // First valid pixel
             if ((r_valid(tmp_row, tmp_col) & msk_pixel_invalid) == 0) {
                 rw_out(dir) = r_disp(tmp_row, tmp_col);            
                 break;
@@ -84,6 +89,7 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_nodata_sgm(
     size_t n_row = r_img.shape(0);
     size_t n_col = r_img.shape(1);
 
+    // 8 directions : [row, y]
     py::array_t<float> dirs = py::array(
         {8, 2},
         std::vector<float>{
@@ -98,6 +104,7 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_nodata_sgm(
         }.data()
     );
 
+    // Output disparity map and validity mask
     py::array_t<float> out_img = py::array_t<float>({n_row, n_col});
     py::array_t<int> out_valid = py::array_t<int>({n_row, n_col});
     auto rw_out_img = out_img.mutable_unchecked<2>();
@@ -112,8 +119,10 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_nodata_sgm(
                 );
                 auto r_valid_neighbors = valid_neighbors.unchecked<1>();
                 
+                // Median of the 8 pixels
                 float median = compute_median(r_valid_neighbors);
 
+                // Update the validity mask : Information : filled nodata pixel
                 rw_out_img(row, col) = median;
                 rw_out_valid(row, col) = msk_pixel_filled_nodata;
 

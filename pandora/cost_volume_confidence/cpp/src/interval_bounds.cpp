@@ -28,6 +28,12 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
     float possibility_threshold,
     float type_factor
 ) {
+    // IDEA: instead of transforming the cost curve into a possibility, we can compute the cost
+    // threshold T to apply directly to the cost curve to obtain the same result
+    // This would be a bit more efficient but way less understandable when reading the code
+    // T = (1 - possibility_threshold)*(max_cost - min_cost) + min_cost + np.nanmin(cv[row, col, :])
+    // cv[row, col, : ] <= T is True when the disparity is possible
+
     auto r_cv = cv.unchecked<3>();
     auto r_disp_interval = disp_interval.unchecked<1>();
 
@@ -35,6 +41,7 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
     size_t n_col = r_cv.shape(1);
     size_t n_disp = r_cv.shape(2);
 
+    // Minimum and maximum of all costs, useful to normalize the cost volume
     float min_cost = std::numeric_limits<float>::infinity();
     float max_cost = -std::numeric_limits<float>::infinity();
     float cv_val;
@@ -66,8 +73,9 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
     for (size_t row = 0; row < n_row; ++row) {
         for (size_t col = 0; col < n_col; ++col) {
 
-            // norm_cv
             max_pix_cost = -std::numeric_limits<float>::infinity();
+            
+            // Normalized cost volume
             for (int disp = 0; disp < n_disp; ++disp) {
                 cv_val = r_cv(row, col, disp);
                 norm_pix_costs[disp] = (cv_val - min_cost) / diff_cost;
@@ -76,12 +84,13 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
                 }
             }
 
-            // possibility
+            // possibility transformation
             for (int disp = 0; disp < n_disp; ++disp) {
                 if (!std::isnan(norm_pix_costs[disp]))
                     norm_pix_costs[disp] = type_factor * norm_pix_costs[disp] + 1.f - max_pix_cost;
             }
 
+            // Computing the interval bounds by applying a threshold to the possibility distribution
             argsort(norm_pix_costs, n_disp, sorted_indices);
 
             found = false;
@@ -91,6 +100,9 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
                     break;
                 }
             }
+
+            // If the cost curve is all NaN, put NaN for the moment
+            // This allows to not take them into account during regularization
             if (!found) {
                 rw_interval_inf(row, col) = std::numeric_limits<float>::quiet_NaN();
                 rw_interval_sup(row, col) = std::numeric_limits<float>::quiet_NaN();
@@ -106,7 +118,8 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
                 }
             }
 
-
+            // If the interval bounds are the minima of the cost curve,
+            // extending the interval (+/- 1) because of the disparity refinement
             if (min_valid_idx > 0 && static_cast<int>(norm_pix_costs[min_valid_idx])==1)
                 --min_valid_idx;
             if (max_valid_idx < n_disp-1 && static_cast<int>(norm_pix_costs[max_valid_idx])==1)

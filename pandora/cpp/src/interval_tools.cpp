@@ -14,6 +14,8 @@ inline size_t pos_to_id(size_t x, size_t y, size_t width) {
 py::array_t<bool> create_connected_graph(
     py::array_t<int> border_left, py::array_t<int> border_right, int depth
 ) {
+    // border_left and border_right are already sorted by argwhere
+    // we only need to create a connection graph by looking at neighboors from below
 
     auto r_left = border_left.unchecked<2>();
     auto r_right = border_right.unchecked<2>();
@@ -151,6 +153,7 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<bool>> graph_regu
             n_pixels.push_back(n_pixels.back() + length);
         }
 
+        // Contains the lengths of the segments
         size_t total_pixels = n_pixels.back();
         std::vector<float> agg_inf;
         std::vector<float> agg_sup;

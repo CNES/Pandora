@@ -13,6 +13,8 @@ py::array_t<float> cbca_step_1(py::array_t<float> input) {
     size_t n_row = r_input.shape(0);
     size_t n_col = r_input.shape(1);
 
+    // Allocate the intermediate cost volume S_h
+    // added a column to manage the case in the step 2 : col - left_arm_length -1 = -1
     py::array_t<float> output({n_row, n_col + 1});
     auto rw_output = output.mutable_unchecked<2>();
 
@@ -32,6 +34,7 @@ py::array_t<float> cbca_step_1(py::array_t<float> input) {
             
             float curr_val = r_input(row, col);
     
+            // Do not propagate nan
             if (!std::isnan(curr_val)) {
                 buff_prev_val = buff_prev_val + curr_val;
             } // python implementation's else is useless with the buffer
@@ -60,6 +63,7 @@ std::tuple<py::array_t<float>, py::array_t<float>> cbca_step_2(
     size_t n_row = r_step1.shape(0);
     size_t n_col = r_step1.shape(1) - 1;
 
+    // Allocate the intermediate cost volume E_h, remove the extra column from the step 1
     py::array_t<float> step2({n_row, n_col});
     py::array_t<float> sum_step2({n_row, n_col});
     auto rw_step2 = step2.mutable_unchecked<2>();
@@ -104,6 +108,8 @@ py::array_t<float> cbca_step_3(py::array_t<float> step2) {
     size_t n_row = r_step2.shape(0);
     size_t n_col = r_step2.shape(1);
 
+    // Allocate the intermediate cost volume S_v
+    // added a row to manage the case in the step 4 : row - up_arm_length -1 = -1
     py::array_t<float> step3({n_row + 1, n_col});
     auto rw_step3 = step3.mutable_unchecked<2>();
 
@@ -140,6 +146,7 @@ std::tuple<py::array_t<float>, py::array_t<float>> cbca_step_4(
     size_t n_col = r_step3.shape(1);
     size_t n_range_row = range_row.shape(0);
 
+    // Allocate the final cost volume E, remove the extra row from the step 3
     py::array_t<float> step4({n_row - 1, n_col});
     py::array_t<float> sum4({n_row - 1, n_col});
     auto rw_step4 = step4.mutable_unchecked<2>();
@@ -218,6 +225,9 @@ py::array_t<int16_t> cross_support(py::array_t<float> image, int16_t len_arms, f
 
             float current_pixel = rw_image(row, col);
 
+            // If the pixel is valid (np.isfinite = True) compute the cross support
+            // Else (np.isfinite = False) the pixel is not valid (no data or invalid) and 
+            // the cross support value is 0 for the 4 arms (default value of the variable cross).
             if (! std::isfinite(current_pixel)) {
                 set_cross_value(row, col, 0, 0, 0, 0);
                 continue;
@@ -229,6 +239,7 @@ py::array_t<int16_t> cross_support(py::array_t<float> image, int16_t len_arms, f
                     break;
                 left_len++;
             }
+            // enforces a minimum support region of 3×3 if pixels are valid
             left_len = std::max(
                 left_len, 
                 static_cast<int16_t>(col >= 1 && std::isfinite(rw_image(row, col - 1)))
@@ -244,6 +255,7 @@ py::array_t<int16_t> cross_support(py::array_t<float> image, int16_t len_arms, f
                     break;
                 right_len++;
             }
+            // enforces a minimum support region of 3×3 if pixels are valid
             right_len = std::max(
                 right_len,
                 static_cast<int16_t>(col < n_col - 1 && std::isfinite(rw_image(row, col + 1)))
@@ -255,6 +267,7 @@ py::array_t<int16_t> cross_support(py::array_t<float> image, int16_t len_arms, f
                     break;
                 up_len++;
             }
+            // enforces a minimum support region of 3×3 if pixels are valid
             up_len = std::max(
                 up_len, 
                 static_cast<int16_t>(row >= 1 && std::isfinite(rw_image(row - 1, col)))
@@ -270,6 +283,7 @@ py::array_t<int16_t> cross_support(py::array_t<float> image, int16_t len_arms, f
                     break;
                 bot_len++;
             }
+            // enforces a minimum support region of 3×3 if pixels are valid
             bot_len = std::max(
                 bot_len,
                 static_cast<int16_t>(row < n_row - 1 && std::isfinite(rw_image(row + 1, col)))

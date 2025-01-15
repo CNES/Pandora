@@ -34,6 +34,7 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_re
     for (size_t row = 0; row < n_row; ++row) {
         for (size_t col = 0; col < n_col; ++col) {
             
+            // No interpolation on invalid points
             if ((cst_pandora_msk_pixel_invalid & rw_mask(row, col)) != 0) {
                 rw_itp_coeff(row, col) = std::numeric_limits<float>::quiet_NaN();
                 continue;
@@ -47,6 +48,8 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_re
                 continue;
             }
 
+            // If Information: calculations stopped at the pixel step, sub-pixel interpolation did
+            // not succeed
             if (raw_dsp == d_min || raw_dsp == d_max) {
                 rw_itp_coeff(row, col) = dsp_cost;
                 rw_mask(row, col) += cst_pandora_msk_pixel_stopped_interpolation;
@@ -107,6 +110,7 @@ loop_approximate_refinement(
     for (size_t row = 0; row < n_row; ++row) {
         for (size_t col = 0; col < n_col; ++col) {
             
+            // No interpolation on invalid points
             if ((rw_mask(row, col) & cst_pandora_msk_pixel_invalid) != 0) {
                 rw_itp_coeff(row, col) = std::numeric_limits<float>::quiet_NaN();
                 continue;
@@ -115,18 +119,24 @@ loop_approximate_refinement(
             float raw_dsp = rw_disp(row, col);
             int dsp = static_cast<int>( (-raw_dsp - d_min) * subpixel );
             int diag = static_cast<int>(col + raw_dsp);
+            // Position of the best cost in the left cost volume is cv[r, diagonal, d]
             float diag_cost = r_cv(row, diag, dsp);
             if (std::isnan(diag_cost)) {
                 rw_itp_coeff(row, col) = diag_cost;
                 continue;
             }
 
+            // If Information: calculations stopped at the pixel step, sub-pixel interpolation did
+            // not succeed
             if (raw_dsp == d_min || raw_dsp == d_max || diag == 0 || diag == n_col-1) {
                 rw_itp_coeff(row, col) = diag_cost;
                 rw_mask(row, col) += cst_pandora_msk_pixel_stopped_interpolation;
                 continue;
             }
 
+            // (1*subpixel) because in fast mode, we can not have sub-pixel disparity for the right
+            // image.
+            // We therefore interpolate between pixel disparities
             float sub_disp;
             float sub_cost;
             int valid;

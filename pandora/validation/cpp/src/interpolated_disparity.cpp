@@ -91,6 +91,7 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_occlusion_sgm(
     size_t n_col = r_disp.shape(0);
     size_t n_row = r_disp.shape(1);
 
+    // Output disparity map and validity mask
     py::array_t<int> out_valid = py::array_t<int>({n_col, n_row});
     py::array_t<float> out_disp = py::array_t<float>({n_col, n_row});
     auto rw_out_valid = out_valid.mutable_unchecked<2>();
@@ -100,12 +101,15 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_occlusion_sgm(
     for (size_t col = 0; col < n_col; ++col) {
         for (size_t row = 0; row < n_row; ++row) {
             rw_out_valid(col, row) = r_valid(col, row);
+            // Occlusion
             if (r_valid(col, row) & msk_pixel_occlusion) {
                 valid_neighbors = find_valid_neighbors(
                     r_disp, r_valid, row, col, msk_pixel_invalid
                 );
                 
+                // search for the right value closest to 0
                 rw_out_disp(col, row) = get_second_min_val_abs(valid_neighbors);
+                // Update the validity mask : Information : filled occlusion
                 rw_out_valid(col, row) += msk_pixel_filled_occlusion - msk_pixel_occlusion;
             } else {
                 rw_out_disp(col, row) = r_disp(col, row);
@@ -154,6 +158,7 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_sgm(
     size_t n_col = r_disp.shape(0);
     size_t n_row = r_disp.shape(1);
 
+    // Output disparity map and validity mask
     py::array_t<float> out_disp = py::array_t<float>({n_col, n_row});
     py::array_t<int> out_valid = py::array_t<int>({n_col, n_row});
     auto rw_out_disp = out_disp.mutable_unchecked<2>();
@@ -163,8 +168,11 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_sgm(
     for (int col = 0; col < n_col; ++col) {
         for (int row = 0; row < n_row; ++row) {
 
+            // Mismatched
             if (r_valid(col, row) & msk_pixel_mismatch) {
 
+                // Mismatched pixel areas that are direct neighbors
+                // of occluded pixels are treated as occlusions
                 bool found = false;
                 for (
                     int i = std::max(0, col-1); 
@@ -194,9 +202,10 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_sgm(
                 valid_neighbors = find_valid_neighbors(
                     r_disp, r_valid, row, col, msk_pixel_invalid
                 );
-                float median = compute_median(valid_neighbors);
 
-                rw_out_disp(col, row) = median;
+                // Median of the 8 pixels
+                rw_out_disp(col, row) = compute_median(valid_neighbors);
+                // Update the validity mask : Information : filled mismatch
                 rw_out_valid(col, row) = r_valid(col, row) 
                                         + msk_pixel_filled_mismatch 
                                         - msk_pixel_mismatch;
@@ -222,6 +231,7 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_occlusion_mc_cnn(
     size_t n_col = r_disp.shape(0);
     size_t n_row = r_disp.shape(1);
 
+    // Output disparity map and validity mask
     py::array_t<int> out_valid = py::array_t<int>({n_col, n_row});
     py::array_t<float> out_disp = py::array_t<float>({n_col, n_row});
     auto rw_out_disp = out_disp.mutable_unchecked<2>();
@@ -231,6 +241,7 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_occlusion_mc_cnn(
     for (size_t col = 0; col < n_col; ++col) {
         for (size_t row = 0; row < n_row; ++row) {
 
+            // Occlusion
             if (r_valid(col, row) & msk_pixel_occlusion) {
                 
                 // find first valid pixel to the left
@@ -243,6 +254,7 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_occlusion_mc_cnn(
                     }
                 }
                 if (msk != row) {
+                    // Update the validity mask : Information : filled occlusion
                     msk_valid = (r_valid(col, msk) & msk_pixel_invalid) == 0;
                     rw_out_disp(col, row) = r_disp(col, msk);
                     rw_out_valid(col, row) = r_valid(col, row) 
@@ -251,6 +263,8 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_occlusion_mc_cnn(
                     continue;
                 }
 
+                // If occlusions are still present :  interpolate occlusion by moving right
+                // until we find a position labeled correct
                 for (size_t i = row; i < n_row; i++) {
                     if ( (r_valid(col, i) & msk_pixel_invalid) == 0 ) {
                         msk = i;
@@ -284,13 +298,16 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_mc_cnn(
     size_t n_row = r_disp.shape(0);
     size_t n_col = r_disp.shape(1);
 
+    // Maximum path length
     size_t max_path_length = static_cast<size_t>(std::max(n_row, n_col));
 
+    // Output disparity map and validity mask
     py::array_t<float> out_disp = py::array_t<float>({n_row, n_col});
     py::array_t<int> out_valid = py::array_t<int>({n_row, n_col});
     auto rw_out_disp = out_disp.mutable_unchecked<2>();
     auto rw_out_valid = out_valid.mutable_unchecked<2>();
 
+    // 16 directions : [row, col]
     float dirs[] = {
         0.0, 1.0,
         -0.5, 1.0,
@@ -314,16 +331,21 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_mc_cnn(
     for (int row = 0; row < n_row; ++row) {
         for (int col = 0; col < n_col; ++col) {
 
+            // Mismatch
             if (r_valid(row, col) & msk_pixel_mismatch) {
 
                 int tmp_col;
                 int tmp_row;
+                // For each directions
                 for (size_t dir = 0; dir < 16; ++dir) {
+
+                    // Find the first valid pixel in the current path
                     interp_mismatched[dir] = 0.f;
                     for (size_t i = 0; i < max_path_length; ++i) {
                         tmp_col = std::floor( col + static_cast<int>(dirs[2*dir] * i) );
                         tmp_row = std::floor( row + static_cast<int>(dirs[2*dir+1] * i) );
 
+                        // Edge of the image reached: there is no valid pixel in the current path
                         if (
                             tmp_row < 0 || 
                             tmp_row >= static_cast<int>(n_row) || 
@@ -333,6 +355,7 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_mc_cnn(
                             break;
                         }
 
+                        // First valid pixel
                         if ((r_valid(tmp_row, tmp_col) & msk_pixel_invalid) == 0) {
                             interp_mismatched[dir] = r_disp(tmp_row, tmp_col);
                             break;
@@ -340,7 +363,9 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_mc_cnn(
                     }
                 }
 
+                // Median of the 16 pixels
                 rw_out_disp(row, col) = compute_median(interp_mismatched);
+                // Update the validity mask : Information : filled mismatch
                 rw_out_valid(row, col) = r_valid(row, col) 
                                         + msk_pixel_filled_mismatch 
                                         - msk_pixel_mismatch;

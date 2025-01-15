@@ -27,6 +27,7 @@ py::list compute_ambiguity_and_sampled_ambiguity(
     size_t n_col = cv.shape(1);
     size_t n_disp = cv.shape(2);
 
+    // integral of ambiguity
     py::array_t<float> ambiguity = py::array_t<float>({n_row, n_col});
     auto rw_amb = ambiguity.mutable_unchecked<2>();
     to_return.append(ambiguity);
@@ -50,7 +51,7 @@ py::list compute_ambiguity_and_sampled_ambiguity(
     auto rw_min_img = min_img.mutable_unchecked<2>();
     auto rw_max_img = max_img.mutable_unchecked<2>();
 
-    // min and max cost for normalization
+    // Minimum and maximum of all costs, useful to normalize the cost volume
     float min_cost = std::numeric_limits<float>::infinity();
     float max_cost = -std::numeric_limits<float>::infinity();
     for (int i = 0; i < n_row; ++i) {
@@ -85,6 +86,7 @@ py::list compute_ambiguity_and_sampled_ambiguity(
     size_t idx_disp_max;
 
     float norm_extremum;
+    // Normalized cost volume for one point
     float* normalized_pix_costs = new float[n_disp];
     float cv_val;
     float amb_sum = 0;
@@ -92,9 +94,11 @@ py::list compute_ambiguity_and_sampled_ambiguity(
     for (int row = 0; row < n_row; ++row) {
         for (int col = 0; col < n_col; ++col) {
 
-                norm_extremum = type_measure_min*(rw_min_img(row, col) - extremum_cost) / diff_cost 
+            // Normalized extremum cost for one point
+            norm_extremum = type_measure_min*(rw_min_img(row, col) - extremum_cost) / diff_cost 
                             + !type_measure_min*(rw_max_img(row, col) - extremum_cost) / diff_cost;
 
+            // If all costs are at nan, set the maximum value of the ambiguity for this point
             if (std::isnan(norm_extremum)) {
                 rw_amb(row, col) = nbr_etas * n_disp;
                 if (sample_ambiguity)
@@ -112,6 +116,8 @@ py::list compute_ambiguity_and_sampled_ambiguity(
             for (int disp = 0; disp < n_disp; ++disp) {
                 cv_val = r_cv(row, col, disp);
                 if (std::isnan(cv_val)) {
+                    // Mask nan to -inf/inf to increase/decrease the value of the ambiguity 
+                    // if a point contains nan costs
                     if (disp >= idx_disp_min && disp < idx_disp_max) {
                         normalized_pix_costs[disp] = -std::numeric_limits<float>::infinity();
                         nb_minfs++;
@@ -125,6 +131,7 @@ py::list compute_ambiguity_and_sampled_ambiguity(
                 normalized_pix_costs[disp] = (cv_val - extremum_cost) / diff_cost;
             }
 
+            // fill sampled ambiguity, compute integral
             amb_sum = 0;
             if (type_measure_min) {
                 for (int eta = 0; eta < nbr_etas; ++eta) {
@@ -146,6 +153,7 @@ py::list compute_ambiguity_and_sampled_ambiguity(
                 }
             }
 
+            // fill integral ambiguity
             rw_amb(row, col) = amb_sum;
 
         }
