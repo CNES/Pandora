@@ -86,15 +86,15 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_occlusion_sgm(
     int msk_pixel_occlusion, int msk_pixel_filled_occlusion, int msk_pixel_invalid
 ) {
 
-    auto r_disp = disp.unchecked<2>();
     auto r_valid = valid.unchecked<2>();
+    auto r_disp = disp.unchecked<2>();
     size_t n_col = r_disp.shape(0);
     size_t n_row = r_disp.shape(1);
 
-    py::array_t<float> out_disp = py::array_t<float>({n_col, n_row});
     py::array_t<int> out_valid = py::array_t<int>({n_col, n_row});
-    auto rw_out_disp = out_disp.mutable_unchecked<2>();
+    py::array_t<float> out_disp = py::array_t<float>({n_col, n_row});
     auto rw_out_valid = out_valid.mutable_unchecked<2>();
+    auto rw_out_disp = out_disp.mutable_unchecked<2>();
 
     std::array<float, 8> valid_neighbors;
     for (size_t col = 0; col < n_col; ++col) {
@@ -149,8 +149,8 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_sgm(
     int msk_pixel_occlusion, int msk_pixel_invalid
 ) {
 
-    auto r_disp = disp.unchecked<2>();
     auto r_valid = valid.unchecked<2>();
+    auto r_disp = disp.unchecked<2>();
     size_t n_col = r_disp.shape(0);
     size_t n_row = r_disp.shape(1);
 
@@ -222,8 +222,8 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_occlusion_mc_cnn(
     size_t n_col = r_disp.shape(0);
     size_t n_row = r_disp.shape(1);
 
-    py::array_t<float> out_disp = py::array_t<float>({n_col, n_row});
     py::array_t<int> out_valid = py::array_t<int>({n_col, n_row});
+    py::array_t<float> out_disp = py::array_t<float>({n_col, n_row});
     auto rw_out_disp = out_disp.mutable_unchecked<2>();
     auto rw_out_valid = out_valid.mutable_unchecked<2>();
 

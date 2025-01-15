@@ -21,12 +21,12 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_re
     int64_t cst_pandora_msk_pixel_invalid, 
     int64_t cst_pandora_msk_pixel_stopped_interpolation 
 ) {
-    auto r_cv = cv.unchecked<3>();
-    auto rw_mask = mask.mutable_unchecked<2>();
     auto rw_disp = disp.mutable_unchecked<2>();
+    auto rw_mask = mask.mutable_unchecked<2>();
+    auto r_cv = cv.unchecked<3>();
+    size_t n_disp = r_cv.shape(2);
     size_t n_row = r_cv.shape(0);
     size_t n_col = r_cv.shape(1);
-    size_t n_disp = r_cv.shape(2);
 
     py::array_t<float> itp_coeff = py::array_t<float>({n_row, n_col});
     auto rw_itp_coeff = itp_coeff.mutable_unchecked<2>();
@@ -34,7 +34,7 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_re
     for (size_t row = 0; row < n_row; ++row) {
         for (size_t col = 0; col < n_col; ++col) {
             
-            if ((rw_mask(row, col) & cst_pandora_msk_pixel_invalid) != 0) {
+            if ((cst_pandora_msk_pixel_invalid & rw_mask(row, col)) != 0) {
                 rw_itp_coeff(row, col) = std::numeric_limits<float>::quiet_NaN();
                 continue;
             }
