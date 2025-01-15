@@ -131,8 +131,8 @@ py::list compute_risk_and_sampled_risk(
                     if (normalized_pix_costs[disp] > (normalized_extremum + r_etas(eta)))
                         continue;
 
-                    min_disp = std::min(min_disp, (float)disp);
-                    max_disp = std::max(max_disp, (float)disp);
+                    min_disp = std::min(min_disp, static_cast<float>(disp));
+                    max_disp = std::max(max_disp, static_cast<float>(disp));
                 }
                 float eta_max_disp = max_disp - min_disp;
                 float eta_min_disp = 1 + eta_max_disp - r_samp_amb(row, col, eta);

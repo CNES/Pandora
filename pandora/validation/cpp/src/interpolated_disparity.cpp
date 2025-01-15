@@ -284,7 +284,7 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_mc_cnn(
     size_t n_row = r_disp.shape(0);
     size_t n_col = r_disp.shape(1);
 
-    size_t max_path_length = (size_t)std::max(n_row, n_col);
+    size_t max_path_length = static_cast<size_t>(std::max(n_row, n_col));
 
     py::array_t<float> out_disp = py::array_t<float>({n_row, n_col});
     py::array_t<int> out_valid = py::array_t<int>({n_row, n_col});
@@ -321,8 +321,8 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_mc_cnn(
                 for (size_t dir = 0; dir < 16; ++dir) {
                     interp_mismatched[dir] = 0.f;
                     for (size_t i = 0; i < max_path_length; ++i) {
-                        tmp_col = std::floor( col + (int)(dirs[2*dir] * i) );
-                        tmp_row = std::floor( row + (int)(dirs[2*dir+1] * i) );
+                        tmp_col = std::floor( col + static_cast<int>(dirs[2*dir] * i) );
+                        tmp_row = std::floor( row + static_cast<int>(dirs[2*dir+1] * i) );
 
                         if (
                             tmp_row < 0 || 
