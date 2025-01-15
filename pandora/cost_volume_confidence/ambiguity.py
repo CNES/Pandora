@@ -134,9 +134,9 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
 
         type_measure_min = cv.attrs["type_measure"] == "min"
 
-        ambiguity = cost_volume_confidence_cpp.compute_ambiguity(
-            cv["cost_volume"].data, self._etas, self._nbr_etas, grids, disparity_range, type_measure_min
-        )
+        ambiguity = cost_volume_confidence_cpp.compute_ambiguity_and_sampled_ambiguity(
+            cv["cost_volume"].data, self._etas, self._nbr_etas, grids, disparity_range, type_measure_min, False
+        )[0]
 
         # If activated, ambiguity normalization with percentile
         if self._normalization:
@@ -204,9 +204,9 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         :rtype: 2D np.ndarray (row, col) dtype = float32
         """
 
-        return cost_volume_confidence_cpp.compute_ambiguity(
-            cv, etas, nbr_etas, grids, disparity_range, type_measure_min
-        )
+        return cost_volume_confidence_cpp.compute_ambiguity_and_sampled_ambiguity(
+            cv, etas, nbr_etas, grids, disparity_range, type_measure_min, False
+        )[0]
 
     @staticmethod
     def compute_ambiguity_and_sampled_ambiguity(
@@ -233,5 +233,5 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         :rtype: Tuple(2D np.ndarray (row, col) dtype = float32, 3D np.ndarray (row, col) dtype = float32)
         """
         return cost_volume_confidence_cpp.compute_ambiguity_and_sampled_ambiguity(
-            cv, etas, nbr_etas, grids, disparity_range
+            cv, etas, nbr_etas, grids, disparity_range, True, True
         )

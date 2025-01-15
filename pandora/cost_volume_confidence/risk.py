@@ -131,7 +131,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         disparity_range = cv["disp"].data.astype(np.float32)
 
         _, sampled_ambiguity = cost_volume_confidence_cpp.compute_ambiguity_and_sampled_ambiguity(
-            cv["cost_volume"].data, self._etas, self._nbr_etas, grids, disparity_range
+            cv["cost_volume"].data, self._etas, self._nbr_etas, grids, disparity_range, True, True
         )
 
         if "global_disparity" in img_left.attrs:

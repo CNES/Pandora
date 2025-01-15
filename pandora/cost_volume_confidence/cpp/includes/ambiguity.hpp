@@ -30,41 +30,25 @@ This module contains functions associated to the Ambiguity algorithms in cpp.
 namespace py = pybind11;
 
 /**
- * @brief Computes ambiguity.
+ * @brief Computes ambiguity and sampled ambiguity if needed,
+ * useful for evaluating ambiguity in notebooks.
  *
  * @param cv cost volume
  * @param etas range between eta_min and eta_max with step eta_step
  * @param nbr_etas number of etas
  * @param grids array containing min and max disparity grids
  * @param disparity_range array containing disparity range
- * @param type_measure_min True for min and False for max
- * @return the normalized ambiguity
+ * @param sample_ambiguity whether to return the sampled ambiguity along with the ambiguity
+ * @return the normalized ambiguity and sampled ambiguity
  */
-py::array_t<float> compute_ambiguity(
+py::list compute_ambiguity_and_sampled_ambiguity(
     py::array_t<float> cv,
     py::array_t<float> etas,
     int nbr_etas,
     py::array_t<int> grids,
     py::array_t<float> disparity_range,
-    bool type_measure_min
-);
-
-/**
- * @brief Computes ambiguity and sampled ambiguity, useful for evaluating ambiguity in notebooks.
- *
- * @param cv cost volume
- * @param etas range between eta_min and eta_max with step eta_step
- * @param nbr_etas number of etas
- * @param grids array containing min and max disparity grids
- * @param disparity_range array containing disparity range
- * @return the normalized ambiguity and sampled ambiguity
- */
-std::tuple<py::array_t<float>, py::array_t<float>> compute_ambiguity_and_sampled_ambiguity(
-    py::array_t<float> cv,
-    py::array_t<float> etas,
-    int nbr_etas,
-    py::array_t<int> grids,
-    py::array_t<float> disparity_range
+    bool type_measure_min,
+    bool sample_ambiguity
 );
 
 #endif  // AMBIGUITY_HPP

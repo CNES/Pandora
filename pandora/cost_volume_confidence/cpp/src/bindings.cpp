@@ -9,11 +9,6 @@ PYBIND11_MODULE(cost_volume_confidence_cpp, m) {
     m.doc() = "Cost volume confidence functions implemented in C++ with Pybind11";
     
     m.def(
-        "compute_ambiguity", 
-        &compute_ambiguity, 
-        ""
-    );
-    m.def(
         "compute_ambiguity_and_sampled_ambiguity", 
         &compute_ambiguity_and_sampled_ambiguity, 
         ""
