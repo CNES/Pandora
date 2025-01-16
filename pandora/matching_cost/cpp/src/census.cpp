@@ -3,9 +3,7 @@
 #include <climits> // For CHAR_BIT
 #include <numeric>
 #include <cmath>
-#include <iostream>
 #include <bitset>
-#include <bit>
 
 #define CENSUS_TYPE char
 #define CENSUS_SINGLE_BIT (CENSUS_TYPE(1) << sizeof(CENSUS_TYPE)*CHAR_BIT - 1)
