@@ -12,11 +12,7 @@
 
 namespace py = pybind11;
 
-CENSUS_TYPE* census_transform(py::array_t<float> img, int census_width, int census_height) {
-
-    auto r_img = img.unchecked<2>();
-    size_t n_rows = r_img.shape(0);
-    size_t n_cols = r_img.shape(1);
+std::tuple<int, int, int, int, int> get_census_info(int census_width, int census_height) {
 
     int c_half_w = census_width / 2;
     int c_half_h = census_height / 2;
@@ -24,6 +20,20 @@ CENSUS_TYPE* census_transform(py::array_t<float> img, int census_width, int cens
     int nb_useful_bits = census_width * census_height;
     int bits_per_elem = sizeof(CENSUS_TYPE) * CHAR_BIT;
     int nb_chars = nb_useful_bits / bits_per_elem + nb_useful_bits % bits_per_elem;
+
+    return {c_half_w, c_half_h, nb_useful_bits, bits_per_elem, nb_chars};
+
+}
+
+CENSUS_TYPE* census_transform(py::array_t<float> img, int census_width, int census_height) {
+
+    auto r_img = img.unchecked<2>();
+    size_t n_rows = r_img.shape(0);
+    size_t n_cols = r_img.shape(1);
+
+    auto [c_half_w, c_half_h, nb_useful_bits, bits_per_elem, nb_chars] = get_census_info(
+        census_width, census_height
+    );
 
     CENSUS_TYPE* out = new CENSUS_TYPE[n_cols*n_rows*nb_chars];
     for (int i = 0; i < n_cols*n_rows*nb_chars; ++i) out[i] = 0;
@@ -83,12 +93,9 @@ py::array_t<float> compute_matching_costs(
     size_t n_cols = rw_cv.shape(1);
     size_t n_disp = rw_cv.shape(2);
 
-    int c_half_w = census_width / 2;
-    int c_half_h = census_height / 2;
-
-    int nb_useful_bits = census_width * census_height;
-    int bits_per_elem = sizeof(CENSUS_TYPE) * CHAR_BIT;
-    int nb_chars = nb_useful_bits / bits_per_elem + nb_useful_bits % bits_per_elem;
+    auto [c_half_w, c_half_h, nb_useful_bits, bits_per_elem, nb_chars] = get_census_info(
+        census_width, census_height
+    );
 
     CENSUS_TYPE* census_img_left = census_transform(img_left, census_width, census_height);
 
