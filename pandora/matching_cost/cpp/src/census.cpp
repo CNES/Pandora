@@ -113,10 +113,11 @@ py::array_t<float> compute_matching_costs(
             for (int disp = 0; disp < n_disp; disp+=subpix) {
                 
                 int right_x = (col+disp/subpix+min_disp); // pixel
-                if (right_x < c_half_w || right_x >= n_cols-c_half_w) continue;
+                if (right_x < c_half_w || right_x >= n_cols-c_half_w)
+                    continue;
                 int right_pos = row*nb_chars*n_cols + right_x*nb_chars;
 
-                for (int id_right = 0; (id_right < subpix) && (disp + id_right < n_disp); id_right++) {
+                for (int id_right = 0; (id_right < subpix) && (disp+id_right < n_disp); id_right++){
                     
                     right_img = census_imgs_right[id_right];
 
