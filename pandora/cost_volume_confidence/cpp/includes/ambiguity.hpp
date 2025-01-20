@@ -38,6 +38,7 @@ namespace py = pybind11;
  * @param nbr_etas number of etas
  * @param grids array containing min and max disparity grids
  * @param disparity_range array containing disparity range
+ * @param type_measure_min true for min and false for max
  * @param sample_ambiguity whether to return the sampled ambiguity along with the ambiguity
  * @return the normalized ambiguity and sampled ambiguity
  */

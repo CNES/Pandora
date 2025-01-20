@@ -1,3 +1,21 @@
+# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+#
+# This file is part of PANDORA
+#
+#     https://github.com/CNES/Pandora
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 # pylint: skip-file
 def interpolate_occlusion_sgm(disp, valid, msk_pixel_occlusion, msk_pixel_filled_occlusion, msk_pixel_invalid):
     """
@@ -40,6 +58,8 @@ def interpolate_mismatch_sgm(
     :type disp: 2D np.array (row, col)
     :param valid: validity mask
     :type valid: 2D np.array (row, col)
+    :param msk_pixel_mismatch: value for the PANDORA_MSK_PIXEL_MISMATCH constant in pandora.constants
+    :param msk_pixel_mismatch: int
     :param msk_pixel_filled_mismatch: value for the PANDORA_MSK_PIXEL_FILLED_MISMATCH constant in pandora.constants
     :param msk_pixel_filled_mismatch: int
     :param msk_pixel_occlusion: value for the PANDORA_MSK_PIXEL_OCCLUSION constant in pandora.constants

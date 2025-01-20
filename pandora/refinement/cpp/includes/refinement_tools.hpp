@@ -34,9 +34,8 @@ namespace py = pybind11;
  * @brief Validate costs and return early if necessary
  *
  * @param cost Array of costs for disp - 1, disp, disp + 1
- * @param cst_pandora_msk_pixel_stopped_interpolation Value for the 
- * PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION constant.
- * @return A tuple containing: whether the costs are valid, c1, mask
+ * @param measure The measure used to create the cost volume.
+ * @return A tuple containing: whether the costs are valid, c0, c1, c2, ic0, ic1, ic2
  */
 std::tuple<bool, float, float, float, float, float, float> validate_costs_and_get_variables(
     pybind11::array_t<float>& cost,
