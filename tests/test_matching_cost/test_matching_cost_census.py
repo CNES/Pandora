@@ -403,6 +403,279 @@ class TestMatchingCostCensus(unittest.TestCase):
         with pytest.raises(AttributeError, match="Right dataset is monoband: r band cannot be selected"):
             _ = matching_cost_.compute_cost_volume(left, right, grid)
 
+    @staticmethod
+    def test_census_window_sizes():
+        """
+        Test the census method with bigger window sizes
+
+        """
+
+        def test_census(left_data, right_data, ref_out, window_size):
+
+            left = xr.Dataset(
+                {"im": (["row", "col"], left_data)},
+                coords={"row": np.arange(left_data.shape[0]), "col": np.arange(left_data.shape[1])},
+            )
+            left.attrs["crs"] = None
+            left.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+            left.pipe(add_disparity, disparity=[0, 0], window=None)
+
+            right = xr.Dataset(
+                {"im": (["row", "col"], right_data)},
+                coords={"row": np.arange(right_data.shape[0]), "col": np.arange(right_data.shape[1])},
+            )
+            right.attrs["crs"] = None
+            right.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+
+            # Computes the census transform for the images
+            matching_cost_matcher = matching_cost.AbstractMatchingCost(
+                **{"matching_cost_method": "census", "window_size": window_size, "subpix": 1}
+            )
+
+            grid = matching_cost_matcher.allocate_cost_volume(
+                left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
+            )
+
+            # Compute validity mask
+            grid = validity_mask(left, right, grid)
+
+            census = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
+            matching_cost_matcher.cv_masked(
+                left,
+                right,
+                census,
+                left["disparity"].sel(band_disp="min"),
+                left["disparity"].sel(band_disp="max"),
+            )
+
+            # Check if the calculated census cost is equal to the ground truth (same shape and all elements equals)
+            np.testing.assert_array_equal(census["cost_volume"].sel(disp=0), ref_out)
+
+        n = np.nan
+
+        # Test for window size 3
+        test_census(
+            np.array(([2, 0, 2], [0, 1, 0], [2, 0, 2]), dtype=np.float64),
+            np.array(([0, 2, 0], [2, 1, 2], [0, 2, 0]), dtype=np.float64),
+            np.array(([n, n, n], [n, 8, n], [n, n, n])),
+            3,
+        )
+        # Test a cost of 0
+        test_census(
+            np.array(([2, 0, 2], [0, 1, 0], [2, 0, 2]), dtype=np.float64),
+            np.array(([2, 0, 2], [0, 1, 0], [2, 0, 2]), dtype=np.float64),
+            np.array(([n, n, n], [n, 0, n], [n, n, n])),
+            3,
+        )
+
+        # Test for window size 5
+        test_census(
+            np.array(
+                ([0, 2, 2, 0, 2], [2, 0, 2, 0, 2], [2, 0, 1, 2, 0], [0, 2, 0, 0, 0], [0, 2, 2, 2, 0]), dtype=np.float64
+            ),
+            np.array(
+                ([0, 2, 2, 2, 2], [0, 0, 0, 0, 2], [2, 0, 1, 2, 0], [0, 2, 2, 0, 2], [0, 0, 2, 2, 0]), dtype=np.float64
+            ),
+            np.array(([n, n, n, n, n], [n, n, n, n, n], [n, n, 6, n, n], [n, n, n, n, n], [n, n, n, n, n])),
+            5,
+        )
+
+        # Test for window size 7
+        test_census(
+            np.array(
+                (
+                    [2, 2, 0, 2, 2, 0, 0],
+                    [0, 2, 2, 2, 0, 2, 0],
+                    [2, 0, 2, 0, 2, 2, 2],
+                    [2, 2, 0, 1, 2, 0, 2],
+                    [2, 0, 2, 2, 0, 2, 2],
+                    [0, 2, 0, 2, 2, 0, 2],
+                    [2, 0, 2, 0, 0, 2, 2],
+                ),
+                dtype=np.float64,
+            ),
+            np.array(
+                (
+                    [0, 2, 2, 0, 2, 2, 0],
+                    [0, 2, 2, 2, 0, 2, 0],
+                    [0, 2, 2, 2, 0, 0, 0],
+                    [2, 2, 0, 1, 2, 0, 2],
+                    [2, 0, 2, 2, 0, 0, 0],
+                    [0, 2, 2, 0, 0, 2, 0],
+                    [2, 2, 0, 2, 0, 2, 0],
+                ),
+                dtype=np.float64,
+            ),
+            np.array(
+                (
+                    [n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n],
+                    [n, n, n, 21, n, n, n],
+                    [n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n],
+                )
+            ),
+            7,
+        )
+
+        # Test for window size 9
+        test_census(
+            np.array(
+                (
+                    [2, 2, 0, 2, 2, 0, 0, 2, 2],
+                    [0, 2, 2, 2, 0, 0, 0, 0, 0],
+                    [2, 0, 2, 0, 2, 2, 2, 0, 2],
+                    [2, 2, 0, 2, 2, 0, 2, 2, 2],
+                    [2, 0, 2, 2, 1, 2, 2, 0, 2],
+                    [0, 2, 0, 2, 2, 0, 2, 2, 0],
+                    [2, 0, 2, 0, 0, 2, 2, 0, 2],
+                    [2, 2, 2, 2, 0, 0, 2, 0, 2],
+                    [0, 2, 2, 0, 2, 2, 2, 2, 0],
+                ),
+                dtype=np.float64,
+            ),
+            np.array(
+                (
+                    [2, 0, 0, 2, 2, 2, 0, 0, 2],
+                    [2, 0, 0, 0, 2, 2, 2, 2, 2],
+                    [2, 2, 2, 0, 2, 0, 2, 2, 2],
+                    [2, 0, 0, 2, 2, 2, 2, 0, 2],
+                    [2, 2, 2, 2, 1, 0, 2, 2, 2],
+                    [0, 0, 0, 2, 2, 2, 2, 0, 0],
+                    [2, 2, 2, 0, 0, 0, 2, 2, 2],
+                    [2, 0, 2, 2, 0, 2, 2, 2, 2],
+                    [0, 0, 2, 0, 2, 0, 2, 0, 0],
+                ),
+                dtype=np.float64,
+            ),
+            np.array(
+                (
+                    [n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, 33, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n],
+                )
+            ),
+            9,
+        )
+
+        # Test for window size 11
+        test_census(
+            np.array(
+                (
+                    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+                    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+                    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+                    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+                    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+                    [2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2],
+                    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+                    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+                    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+                    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+                    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+                ),
+                dtype=np.float64,
+            ),
+            np.array(
+                (
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                ),
+                dtype=np.float64,
+            ),
+            np.array(
+                (
+                    [n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, 120, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n],
+                )
+            ),
+            11,
+        )
+
+        # Test for window size 13
+        test_census(
+            np.array(
+                (
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                ),
+                dtype=np.float64,
+            ),
+            np.array(
+                (
+                    [2, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 0],
+                    [0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 1, 0, 0, 2, 0, 0, 0],
+                    [0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 2],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
+                    [0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 2],
+                    [0, 0, 0, 0, 2, 0, 0, 2, 0, 2, 2, 2, 2],
+                    [0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 2],
+                    [2, 0, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 0],
+                ),
+                dtype=np.float64,
+            ),
+            np.array(
+                (
+                    [n, n, n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, 49, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n, n, n],
+                    [n, n, n, n, n, n, n, n, n, n, n, n, n],
+                )
+            ),
+            13,
+        )
+
 
 if __name__ == "__main__":
     common.setup_logging()
