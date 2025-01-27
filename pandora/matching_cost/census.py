@@ -63,7 +63,7 @@ class Census(matching_cost.AbstractMatchingCost):
 
         schema = self.schema
         schema["matching_cost_method"] = And(str, lambda input: "census")
-        schema["window_size"] = And(int, lambda input: input > 1 and input % 2 == 1)
+        schema["window_size"] = And(int, lambda input: input in (3, 5, 7, 9, 11, 13))
 
         checker = Checker(schema)
         checker.validate(cfg)
