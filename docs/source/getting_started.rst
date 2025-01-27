@@ -34,11 +34,14 @@ For stereo reconstruction we invite you to install pandora **and** the required 
 
 .. note::
 
-    To install Pandora in editable mode (with ``pip install -e``), the extra argument ``--no-build-isolation`` must also be added in order for Python to be able to find the C++ compiled libairies that are part of Pandora :
+    To install Pandora in editable mode (with ``pip install -e``), the extra argument ``--no-build-isolation`` must also be added in order for Python to be able to find the C++ compiled libairies that are part of Pandora. Additional dependencies are needed as well.
 
     .. code-block:: bash
 
-        pip install -e --no-build-isolation pandora
+        pip install meson-python meson ninja # dependencies
+        pip install --no-build-isolation --editable pandora
+
+    More details on editable builds with meson are available in the `official meson-python documentation <https://mesonbuild.com/meson-python/how-to-guides/editable-installs.html>`_.
         
 
 First step
