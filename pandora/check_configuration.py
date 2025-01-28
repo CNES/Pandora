@@ -552,7 +552,7 @@ def concat_conf(cfg_list: List[Dict[str, dict]]) -> Dict[str, dict]:
     return cfg
 
 
-def read_multiscale_params(cfg: Dict[str, dict]) -> Tuple[int, int]:
+def read_multiscale_params(left_img: xr.Dataset, right_img: xr.Dataset, cfg: Dict[str, dict]) -> Tuple[int, int]:
     """
     Returns the multiscale parameters
 
@@ -564,9 +564,11 @@ def read_multiscale_params(cfg: Dict[str, dict]) -> Tuple[int, int]:
     :rtype: tuple(int, int )
     """
 
-    if "multiscale" in cfg:
+    if "multiscale" in cfg["pipeline"]:
         # Multiscale processing in conf
-        multiscale_ = multiscale.AbstractMultiscale(**cfg["multiscale"])  # type: ignore
+        multiscale_ = multiscale.AbstractMultiscale(
+            left_img, right_img, **cfg["pipeline"]["multiscale"]
+        )  # type: ignore
 
         num_scales = multiscale_.cfg["num_scales"]
         scale_factor = multiscale_.cfg["scale_factor"]

@@ -16,6 +16,7 @@ develop-eggs/
 wheels/
 .installed.cfg
 *.egg
+subprojects/
 
 # Setuptools build and distribution directories
 /dist/

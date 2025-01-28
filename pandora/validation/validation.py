@@ -28,13 +28,11 @@ from typing import Dict, Union
 
 import numpy as np
 import xarray as xr
-from json_checker import Checker, And, Or, OptionalKey
+from json_checker import And, Checker, OptionalKey, Or
 
 import pandora.constants as cst
 from pandora import common
-from pandora.cost_volume_confidence.cost_volume_confidence import (
-    AbstractCostVolumeConfidence,
-)
+from pandora.cost_volume_confidence.cost_volume_confidence import AbstractCostVolumeConfidence
 from pandora.criteria import mask_border
 from pandora.disparity import extract_disparity_range_from_disparity_map
 

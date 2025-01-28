@@ -23,118 +23,15 @@
 This module contains functions associated to confidence intervals.
 """
 
-import os
-from ast import literal_eval
 from typing import Tuple
 
 import numpy as np
-from numba import njit, prange
 
+from .cpp import interval_tools_cpp
 
-@njit(
-    "b1[:,:](i8[:,:], i8[:,:], i8)",
-    parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
-    cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")),
-)
-def create_connected_graph(border_left: np.ndarray, border_right: np.ndarray, depth: int) -> np.ndarray:
-    """
-    Create a boolean connection matrix from segment coordinates
+create_connected_graph = interval_tools_cpp.create_connected_graph
 
-    :param border_left: array containing the coordinates of segments left border
-    :type border_left: (n, 2) np.ndarray where n is the number of segments
-    :param border_right: array containing the coordinates of segments right border
-    :type border_right: (n, 2) np.ndarray where n is the number of segments
-    :param depth: the depth for regularization. It corresponds to the number of rows
-        to explore below and above.
-    :return: A symmetric boolean matrix of shape (n, n). 1 indicating that the segment are connected
-    :rtype: np.ndarray of shape (n, n)
-    """
-    # border_left and border_right are already sorted by argwhere
-    # we only need to create a connection graph by looking at neighboors from below
-    n_segments = len(border_left)
-
-    if depth == 0:
-        aggregated_graph = np.eye(n_segments, dtype=np.bool_)
-    else:
-        connection_graph = np.full((n_segments, n_segments), False, dtype=np.bool_)
-        for i in prange(n_segments):  # pylint: disable=not-an-iterable
-            row_i = border_left[i, 0]
-            for k in range(i + 1, n_segments):
-                if border_left[k, 0] == row_i:
-                    continue
-                if border_left[k, 0] > row_i + 1:
-                    break
-                if (border_left[k, 1] <= border_right[i, 1]) & (border_right[k, 1] >= border_left[i, 1]):
-                    connection_graph[i, k] = connection_graph[k, i] = True
-
-        aggregated_graph = np.full((n_segments, n_segments), False, dtype=np.bool_)
-        for i in prange(connection_graph.shape[0]):  # pylint: disable=not-an-iterable
-            list_lines = connection_graph[i, :].copy()
-            for _ in range(1, depth):
-                new_points = connection_graph[list_lines, :].copy()
-                for j in prange(connection_graph.shape[0]):  # pylint: disable=not-an-iterable
-                    list_lines[j] = np.bitwise_or(new_points[:, j].any(), list_lines[j])
-            aggregated_graph[i, :] = list_lines.copy()
-            aggregated_graph[i, i] = 1
-    return aggregated_graph
-
-
-@njit(
-    "Tuple([f4[:,:],f4[:,:],b1[:,:]])(f4[:,:],f4[:,:],i8[:,:],i8[:,:],b1[:,:],f8)",
-    parallel=literal_eval(os.environ.get("PANDORA_NUMBA_PARALLEL", "True")),
-    cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")),
-)
-def graph_regularization(
-    interval_inf: np.ndarray,
-    interval_sup: np.ndarray,
-    border_left: np.ndarray,
-    border_right: np.ndarray,
-    connection_graph: np.ndarray,
-    quantile: float,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Regularize the intervals based on quantiles and a given connection graph.
-
-    :param interval_inf: The lower estimation of the disparity to regularize
-    :type interval_inf: (row, col) np.ndarray
-    :param interval_sup: The upper estimation of the disparity to regularize
-    :type interval_sup: (row, col) np.ndarray
-    :param border_left: array containing the coordinates of segments left border
-    :type border_left: (n, 2) np.ndarray where n is the number of segments
-    :param border_right: array containing the coordinates of segments right border
-    :type border_right: (n, 2) np.ndarray where n is the number of segments
-    :param connection graph: A matrix indicating if the segments (n in total) are connected
-    :type connection graph: (n, n) boolean symmetric np.ndarray
-    :param quantile: Which quantile to select for the regularized value
-    :type quantile: float. 0 <= quantile <= 1
-    :return: The regularized inf and sup of the disparity, and a boolean mask indicating regularization
-    :rtype: Tuple[np.ndarray, np.ndarray, np.ndarray]
-    """
-    interval_inf_reg = interval_inf.copy()
-    interval_sup_reg = interval_sup.copy()
-    mask_regularization = np.full(interval_inf.shape, False, dtype=np.bool_)
-
-    for i in prange(connection_graph.shape[0]):  # pylint: disable=not-an-iterable
-        left_i, right_i = border_left[connection_graph[i, :]], border_right[connection_graph[i, :]]
-
-        # Contains the lengths of the segments
-        n_pixels = np.hstack((np.array([0]), (right_i[:, 1] - left_i[:, 1] + 1).cumsum()))
-        agg_inf = np.full(n_pixels[-1], 0, dtype=np.float32)
-        agg_sup = np.full(n_pixels[-1], 0, dtype=np.float32)
-
-        for j in range(len(n_pixels) - 1):
-            agg_inf[n_pixels[j] : n_pixels[j + 1]] = interval_inf[left_i[j, 0], left_i[j, 1] : right_i[j, 1] + 1]
-            agg_sup[n_pixels[j] : n_pixels[j + 1]] = interval_sup[left_i[j, 0], left_i[j, 1] : right_i[j, 1] + 1]
-
-        interval_inf_reg[border_left[i, 0], border_left[i, 1] : border_right[i, 1] + 1] = np.nanquantile(
-            agg_inf, 1 - quantile
-        )
-        interval_sup_reg[border_left[i, 0], border_left[i, 1] : border_right[i, 1] + 1] = np.nanquantile(
-            agg_sup, quantile
-        )
-        mask_regularization[border_left[i, 0], border_left[i, 1] : border_right[i, 1] + 1] = True
-
-    return interval_inf_reg, interval_sup_reg, mask_regularization
+graph_regularization = interval_tools_cpp.graph_regularization
 
 
 def interval_regularization(

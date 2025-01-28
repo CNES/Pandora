@@ -97,7 +97,7 @@ def run(
     """
 
     # Retrieve the multiscale parameter from the conf. If no multiscale was defined, num_scales=0 and scale_factor=1
-    num_scales, scale_factor = read_multiscale_params(cfg)
+    num_scales, scale_factor = read_multiscale_params(img_left, img_right, cfg)
 
     # Prepare the machine before running, including the image pyramid creation
     pandora_machine.run_prepare(cfg, img_left, img_right, scale_factor, num_scales)

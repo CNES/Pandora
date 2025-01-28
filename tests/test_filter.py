@@ -786,10 +786,16 @@ class TestMedianForIntervalsFilter:
         filter_median.filter_disparity(disp_dataset)
 
         # Check if the calculated intervals are equal to the ground truth (same shape and all elements equals)
-        np.testing.assert_array_equal(
-            disp_dataset["confidence_measure"].sel({"indicator": "confidence_from_interval_bounds_inf"}).data, gt_inf
+        np.testing.assert_allclose(
+            disp_dataset["confidence_measure"].sel({"indicator": "confidence_from_interval_bounds_inf"}).data,
+            gt_inf,
+            1e-7,
+            1e-7,
         )
-        np.testing.assert_array_equal(
-            disp_dataset["confidence_measure"].sel({"indicator": "confidence_from_interval_bounds_sup"}).data, gt_sup
+        np.testing.assert_allclose(
+            disp_dataset["confidence_measure"].sel({"indicator": "confidence_from_interval_bounds_sup"}).data,
+            gt_sup,
+            1e-7,
+            1e-7,
         )
-        np.testing.assert_array_equal(disp_dataset["validity_mask"].data, validity_mask_gt)
+        np.testing.assert_allclose(disp_dataset["validity_mask"].data, validity_mask_gt, 1e-7, 1e-7)

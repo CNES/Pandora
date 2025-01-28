@@ -61,7 +61,7 @@ class TestMultiScale(unittest.TestCase):
         multiscale_ = multiscale.AbstractMultiscale(
             self.img_with_disp,  # left img
             self.img_with_disp,  # right img
-            **{"multiscale_method": "fixed_zoom_pyramid", "num_scales": 2, "scale_factor": 2, "marge": 0}
+            **{"multiscale_method": "fixed_zoom_pyramid", "num_scales": 2, "scale_factor": 2, "marge": 0},
         )
 
         # Modify num_scales and scale_factor to properly test the function without zooming
@@ -161,7 +161,7 @@ class TestMultiScale(unittest.TestCase):
         multiscale_ = multiscale.AbstractMultiscale(
             self.img_with_disp,  # left img
             self.img_with_disp,  # right img
-            **{"multiscale_method": "fixed_zoom_pyramid", "num_scales": 2, "scale_factor": 2, "marge": 0}
+            **{"multiscale_method": "fixed_zoom_pyramid", "num_scales": 2, "scale_factor": 2, "marge": 0},
         )
 
         # Modify num_scales and scale_factor to properly test the function without zooming
@@ -245,7 +245,7 @@ class TestMultiScale(unittest.TestCase):
             _ = multiscale.AbstractMultiscale(
                 self.img_with_grid_disp,  # left img
                 self.img_with_grid_disp,  # right img
-                **{"multiscale_method": "fixed_zoom_pyramid", "num_scales": 2, "scale_factor": 2, "marge": 0}
+                **{"multiscale_method": "fixed_zoom_pyramid", "num_scales": 2, "scale_factor": 2, "marge": 0},
             )
 
         # String for disp_min/disp_max for left img
@@ -253,7 +253,7 @@ class TestMultiScale(unittest.TestCase):
             _ = multiscale.AbstractMultiscale(
                 self.img_with_grid_disp,
                 self.img_with_none_disp,
-                **{"multiscale_method": "fixed_zoom_pyramid", "num_scales": 2, "scale_factor": 2, "marge": 0}
+                **{"multiscale_method": "fixed_zoom_pyramid", "num_scales": 2, "scale_factor": 2, "marge": 0},
             )
 
 

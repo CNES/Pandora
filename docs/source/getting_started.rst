@@ -32,6 +32,17 @@ For stereo reconstruction we invite you to install pandora **and** the required 
     pip install pandora[sgm]
     pip install pandora[mccnn]
 
+.. note::
+
+    To install Pandora in editable mode (with ``pip install -e``), the extra argument ``--no-build-isolation`` must also be added in order for Python to be able to find the C++ compiled libairies that are part of Pandora. Additional dependencies are needed as well.
+
+    .. code-block:: bash
+
+        pip install meson-python meson ninja # dependencies
+        pip install --no-build-isolation --editable pandora
+
+    More details on editable builds with meson are available in the `official meson-python documentation <https://mesonbuild.com/meson-python/how-to-guides/editable-installs.html>`_.
+        
 
 First step
 ##########
@@ -64,7 +75,7 @@ Credits
 
 Pandora uses `transitions <https://github.com/pytransitions/transitions>`_ to manage the pipelines one can create.
 Images I/O are provided by `rasterio <https://github.com/mapbox/rasterio>`_ and we use `xarray <https://github.com/pydata/xarray>`_
-to handle 3D Cost Volumes with few `numba <https://github.com/numba/numba>`_ optimisations.
+to handle 3D Cost Volumes.
 
 Our data test sample is based on the 2003 Middleburry dataset [Scharstein2003]_.
 

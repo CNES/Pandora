@@ -26,7 +26,6 @@ jobs:
 
     - name: Test with pytest
       run: |
-        export NUMBA_DISABLE_JIT="1"
         pytest -m "not notebook_tests" --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
 
     - name: Upload coverage to Codecov

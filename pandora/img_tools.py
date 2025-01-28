@@ -26,19 +26,17 @@ This module contains functions associated to raster images.
 from __future__ import annotations
 
 import warnings
-from typing import List, Union, Tuple, cast, Dict
-from ast import literal_eval
-import os
+from typing import Dict, List, Tuple, Union, cast
 
 import numpy as np
 import rasterio
-from rasterio.windows import Window
 import xarray as xr
+from rasterio.windows import Window
 from scipy.ndimage import zoom
 from skimage.transform.pyramids import pyramid_gaussian
-from numba import njit
 
 import pandora.constants as cst
+from .cpp import img_tools_cpp
 
 
 def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.DatasetReader:
@@ -101,7 +99,7 @@ def get_window(roi: Dict, width: int, height: int) -> Window:
 
 
 def add_disparity(
-    dataset: xr.Dataset, disparity: Union[tuple[int, int], list[int], str, None], window: Window
+    dataset: xr.Dataset, disparity: Union[Tuple[int, int], list[int], str, None], window: Window
 ) -> xr.Dataset:
     """
     Add disparity to dataset
@@ -111,7 +109,7 @@ def add_disparity(
     :param dataset: xarray dataset without classification
     :type dataset: xr.Dataset
     :param disparity: disparity, or path to the disparity grid
-    :type disparity: tuple[int, int] or list[int] or str or None
+    :type disparity: Tuple[int, int] or list[int] or str or None
 
     :param window : Windowed reading with rasterio
     :type window: Window
@@ -140,7 +138,7 @@ def add_disparity(
 def add_disparity_grid(
     dataset: xr.Dataset,
     disparity_grid: Union[xr.DataArray, None] = None,
-    disparity_source: Union[tuple[int, int], list[int], str, None] = "xr.Dataset",
+    disparity_source: Union[Tuple[int, int], list[int], str, None] = "xr.Dataset",
 ) -> xr.Dataset:
     """
     Add a disparity grid to dataset.
@@ -153,7 +151,7 @@ def add_disparity_grid(
     :type disparity_grid: xr.DataArray or None
     :param disparity_source: source of the disparity:
                              either a path to a file or `xr.Dataset` if the dataset was directly provided.
-    :type disparity_source: Union[tuple[int, int], list[int], str, None]
+    :type disparity_source: Union[Tuple[int, int], list[int], str, None]
     :return: dataset : updated dataset
     :rtype: xr.Dataset
     """
@@ -446,6 +444,35 @@ def get_metadata(
     )
 
 
+def get_pyramids(data, num_scales, scale_factor, channel_axis=None):
+    """
+    Returns the pyramid of images, of height num_scales and width factor scale_factor
+
+    :param data: image
+    :type data: 2D or 3D np.ndarray
+    :param num_scales: number of scaled images
+    :type num_scales: int
+    :param scale_factor: ratio in width/height between two consecutives images of the pyramid
+    :type scale_factor: float
+    :type channel_axis: if specified, axis to use as the channel in the 3D data
+    :type channel_axis: int
+    :return: the list of images in the pyramid, large to small
+    :rtype: list(np.ndarray)
+    """
+    return list(
+        pyramid_gaussian(
+            data,
+            max_layer=num_scales - 1,
+            downscale=scale_factor,
+            sigma=1.2,
+            order=1,
+            mode="reflect",
+            cval=0,
+            channel_axis=channel_axis,
+        )
+    )
+
+
 def prepare_pyramid(
     img_left: xr.Dataset, img_right: xr.Dataset, num_scales: int, scale_factor: int
 ) -> Tuple[List[xr.Dataset], List[xr.Dataset]]:
@@ -472,37 +499,45 @@ def prepare_pyramid(
     if len(img_left_fill.shape) == 3:
         channel_axis = 0
     # Create image pyramids
-    images_left = list(
-        pyramid_gaussian(
-            img_left_fill,
-            max_layer=num_scales - 1,
-            downscale=scale_factor,
-            sigma=1.2,
-            order=1,
-            mode="reflect",
-            cval=0,
-            channel_axis=channel_axis,
-        )
+    images_left = get_pyramids(img_left_fill, num_scales, scale_factor, channel_axis)
+    images_right = get_pyramids(img_right_fill, num_scales, scale_factor, channel_axis)
+    disparities_left_min = get_pyramids(
+        # convert to float for the zoom
+        img_left["disparity"].data[0].astype(np.float32),
+        num_scales,
+        scale_factor,
     )
-    images_right = list(
-        pyramid_gaussian(
-            img_right_fill,
-            max_layer=num_scales - 1,
-            downscale=scale_factor,
-            sigma=1.2,
-            order=1,
-            mode="reflect",
-            cval=0,
-            channel_axis=channel_axis,
-        )
+    disparities_left_max = get_pyramids(
+        # convert to float for the zoom
+        img_left["disparity"].data[1].astype(np.float32),
+        num_scales,
+        scale_factor,
     )
+    compute_right_disps = "disparity" in list(img_right.keys())
+    disparities_right_min = None
+    disparities_right_max = None
+    if compute_right_disps:
+        disparities_right_min = get_pyramids(
+            img_right["disparity"].data[0].astype(np.float32), num_scales, scale_factor
+        )
+        disparities_right_max = get_pyramids(
+            img_right["disparity"].data[1].astype(np.float32), num_scales, scale_factor
+        )
+
     # Create mask pyramids
     masks_left = masks_pyramid(msk_left_fill, scale_factor, num_scales)
     masks_right = masks_pyramid(msk_right_fill, scale_factor, num_scales)
 
     # Create dataset pyramids
-    pyramid_left = convert_pyramid_to_dataset(img_left, images_left, masks_left)
-    pyramid_right = convert_pyramid_to_dataset(img_right, images_right, masks_right)
+    pyramid_left = convert_pyramid_to_dataset(
+        img_left, images_left, masks_left, [disparities_left_min, disparities_left_max]
+    )
+    pyramid_right = convert_pyramid_to_dataset(
+        img_right,
+        images_right,
+        masks_right,
+        [disparities_right_min, disparities_right_max] if compute_right_disps else None,
+    )
 
     # The pyramid is intended to be from coarse to original size, so we inverse its order.
     return pyramid_left[::-1], pyramid_right[::-1]
@@ -519,15 +554,23 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
     """
     if "msk" in dataset:
         if len(dataset["im"].data.shape) == 2:
-            img, msk = interpolate_nodata_sgm(dataset["im"].data, dataset["msk"].data)
+            img, msk = interpolate_nodata_sgm(
+                dataset["im"].data,
+                dataset["msk"].data,
+                cst.PANDORA_MSK_PIXEL_INVALID,
+                cst.PANDORA_MSK_PIXEL_FILLED_NODATA,
+            )
         else:
             img = dataset["im"].data
             msk = dataset["msk"].data
             nband = dataset["im"].data.shape[0]
-            # We call the function for each band because of numba
+
             for band in range(nband):
                 img[band, :, :], msk[:, :] = interpolate_nodata_sgm(
-                    dataset["im"].data[band, :, :], dataset["msk"].data[:, :]
+                    dataset["im"].data[band, :, :],
+                    dataset["msk"].data[:, :],
+                    cst.PANDORA_MSK_PIXEL_INVALID,
+                    cst.PANDORA_MSK_PIXEL_FILLED_NODATA,
                 )
     else:
         msk = np.full(
@@ -538,45 +581,7 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
     return img, msk
 
 
-@njit(cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
-def interpolate_nodata_sgm(img: np.ndarray, valid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Interpolation of the input image to resolve invalid (nodata) pixels.
-    Interpolate invalid pixels by finding the nearest correct pixels in 8 different directions
-    and use the median of their disparities.
-
-    HIRSCHMULLER, Heiko. Stereo processing by semiglobal matching and mutual information.
-    IEEE Transactions on pattern analysis and machine intelligence, 2007, vol. 30, no 2, p. 328-341.
-
-    :param img: input image
-    :type img: 2D np.ndarray (row, col)
-    :param valid: validity mask
-    :type valid: 2D np.ndarray (row, col)
-    :return: the interpolate input image, with the validity mask update :
-
-        - If out & PANDORA_MSK_PIXEL_FILLED_NODATA != 0 : Invalid pixel : filled nodata pixel
-    :rtype: tuple(2D np.array (row, col), 2D np.array (row, col))
-    """
-    # Output disparity map and validity mask
-    out_img = np.copy(img)
-    out_val = np.copy(valid)
-
-    # 8 directions : [row, y]
-    dirs = np.array([[0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0], [1, 1]])
-
-    ncol, nrow = img.shape
-    for col in range(ncol):
-        for row in range(nrow):
-            # Mismatched
-            if valid[col, row] & cst.PANDORA_MSK_PIXEL_INVALID != 0:
-                valid_neighbors = find_valid_neighbors(dirs, img, valid, row, col)
-
-                # Median of the 8 pixels
-                out_img[col, row] = np.nanmedian(valid_neighbors)
-                # Update the validity mask : Information : filled nodata pixel
-                out_val[col, row] = cst.PANDORA_MSK_PIXEL_FILLED_NODATA
-
-    return out_img, out_val
+interpolate_nodata_sgm = img_tools_cpp.interpolate_nodata_sgm
 
 
 def masks_pyramid(msk: np.ndarray, scale_factor: int, num_scales: int) -> List[np.ndarray]:
@@ -603,7 +608,7 @@ def masks_pyramid(msk: np.ndarray, scale_factor: int, num_scales: int) -> List[n
 
 
 def convert_pyramid_to_dataset(
-    img_orig: xr.Dataset, images: List[np.ndarray], masks: List[np.ndarray]
+    img_orig: xr.Dataset, images: List[np.ndarray], masks: List[np.ndarray], disps=None
 ) -> List[xr.Dataset]:
     """
     Return a List with the datasets at the different scales
@@ -636,11 +641,20 @@ def convert_pyramid_to_dataset(
                 np.full((image.shape[0], image.shape[1]), masks[index].astype(np.int16)),
                 dims=["row", "col"],
             )
+            # add the disparity if provided
+            if disps is not None:
+
+                dataset.coords["band_disp"] = ["min", "max"]
+                dataset["disparity"] = xr.DataArray(
+                    np.array([disps[0][index].astype(np.int64), disps[1][index].astype(np.int64)]),
+                    dims=["band_disp", "row", "col"],
+                )
+
         else:
             dataset = xr.Dataset(
                 {"im": (["band_im", "row", "col"], image.astype(np.float32))},
                 coords={
-                    "band_im": list(img_orig.band.data),
+                    "band_im": img_orig.coords["band_im"].data,
                     "row": np.arange(image.shape[1]),
                     "col": np.arange(image.shape[2]),
                 },
@@ -650,6 +664,14 @@ def convert_pyramid_to_dataset(
                 np.full((image.shape[1], image.shape[2]), masks[index].astype(np.int16)),
                 dims=["row", "col"],
             )
+            # add the disparity if provided
+            if disps is not None:
+
+                dataset.coords["band_disp"] = ["min", "max"]
+                dataset["disparity"] = xr.DataArray(
+                    np.array([disps[0][index].astype(np.int64), disps[1][index].astype(np.int64)]),
+                    dims=["band_disp", "row", "col"],
+                )
         # Add image conf to the image dataset
         # - attributes are linked to each others
         dataset.attrs = img_orig.attrs
@@ -827,46 +849,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.
     return r_mean / float(win_size * win_size)
 
 
-@njit(cache=literal_eval(os.environ.get("PANDORA_NUMBA_CACHE", "True")))
-def find_valid_neighbors(dirs: np.ndarray, disp: np.ndarray, valid: np.ndarray, row: int, col: int):
-    """
-    Find valid neighbors along directions
-
-    :param dirs: directions
-    :type dirs: 2D np.ndarray (row, col)
-    :param disp: disparity map
-    :type disp: 2D np.ndarray (row, col)
-    :param valid: validity mask
-    :type valid: 2D np.ndarray (row, col)
-    :param row: row current value
-    :type row: int
-    :param col: col current value
-    :type col: int
-    :return: valid neighbors
-    :rtype: 2D np.ndarray
-    """
-    ncol, nrow = disp.shape
-    # Maximum path length
-    max_path_length = max(nrow, ncol)
-    # For each direction
-    valid_neighbors = np.zeros(8, dtype=np.float32)
-    for direction in range(8):
-        # Find the first valid pixel in the current path
-        tmp_row = row
-        tmp_col = col
-        for i in range(max_path_length):  # pylint: disable= unused-variable
-            tmp_row += dirs[direction][0]
-            tmp_col += dirs[direction][1]
-
-            # Edge of the image reached: there is no valid pixel in the current path
-            if (tmp_col < 0) | (tmp_col >= ncol) | (tmp_row < 0) | (tmp_row >= nrow):
-                valid_neighbors[direction] = np.nan
-                break
-            # First valid pixel
-            if (valid[tmp_col, tmp_row] & cst.PANDORA_MSK_PIXEL_INVALID) == 0:
-                valid_neighbors[direction] = disp[tmp_col, tmp_row]
-                break
-    return valid_neighbors
+find_valid_neighbors = img_tools_cpp.find_valid_neighbors
 
 
 def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np.float64:
@@ -939,16 +922,16 @@ def compute_std_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.n
     return np.sqrt(var)
 
 
-def read_disp(disparity: tuple[int, int] | list[int] | str) -> tuple[int, int] | tuple[np.ndarray, np.ndarray]:
+def read_disp(disparity: Tuple[int, int] | list[int] | str) -> Tuple[int, int] | Tuple[np.ndarray, np.ndarray]:
     """
     Read the disparity :
         - if cfg_disp is the path of a disparity grid, read and return the grids (type tuple of numpy arrays)
         - else return the value of cfg_disp
 
     :param disparity: disparity, or path to the disparity grid
-    :type disparity: tuple[int, int] or list[int] or str
+    :type disparity: Tuple[int, int] or list[int] or str
     :return: the disparity
-    :rtype: tuple[int, int] | tuple[np.ndarray, np.ndarray]
+    :rtype: Tuple[int, int] | Tuple[np.ndarray, np.ndarray]
     """
     if disparity is None:
         raise ValueError("disparity should not be None")
