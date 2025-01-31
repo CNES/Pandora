@@ -83,6 +83,11 @@ py::list compute_risk_and_sampled_risk(
     auto rw_risk_min = risk_min.mutable_unchecked<2>();
     auto rw_risk_max = risk_max.mutable_unchecked<2>();
 
+    py::array_t<float> risk_min_disp = py::array_t<float>({n_row, n_col});
+    py::array_t<float> risk_max_disp = py::array_t<float>({n_row, n_col});
+    auto rw_risk_min_disp = risk_min_disp.mutable_unchecked<2>();
+    auto rw_risk_max_disp = risk_max_disp.mutable_unchecked<2>();
+
     py::array_t<float> samp_risk_min;
     py::array_t<float> samp_risk_max;
     std::unique_ptr<py::detail::unchecked_mutable_reference<float, 3>> rw_samp_risk_min;
@@ -118,9 +123,12 @@ py::list compute_risk_and_sampled_risk(
             if (std::isnan(normalized_extremum)) {
                 rw_risk_min(row, col) = std::numeric_limits<float>::quiet_NaN();
                 rw_risk_max(row, col) = std::numeric_limits<float>::quiet_NaN();
-                if (!sample_risk) 
+
+                rw_risk_min_disp(row, col) = std::numeric_limits<float>::quiet_NaN();
+                rw_risk_max_disp(row, col) = std::numeric_limits<float>::quiet_NaN();
+                if (!sample_risk)
                     continue;
-                
+
                 for (size_t eta = 0; eta < nbr_etas; ++eta) {
                     rw_samp_risk_min->operator()(
                         row, col, eta
@@ -144,7 +152,7 @@ py::list compute_risk_and_sampled_risk(
                     }
                     else {
                         normalized_pix_costs[disp] = std::numeric_limits<float>::infinity();
-                    } 
+                    }
                     continue;
                 }
                 normalized_pix_costs[disp] = (cv_val - min_cost) / diff_cost;
@@ -152,6 +160,8 @@ py::list compute_risk_and_sampled_risk(
 
             float sum_for_min = 0;
             float sum_for_max = 0;
+            float sum_for_min_disp = 0;
+            float sum_for_max_disp = 0;
             for (int eta = 0; eta < nbr_etas; ++eta) {
                 // Obtain min and max disparities for each sample
                 float min_disp = std::numeric_limits<float>::infinity();
@@ -167,6 +177,11 @@ py::list compute_risk_and_sampled_risk(
                 float eta_max_disp = max_disp - min_disp;
                 // add sampled min risk to sum. risk min is defined as ( (1+risk(p,k)) - amb(p,k) )
                 float eta_min_disp = 1 + eta_max_disp - r_samp_amb(row, col, eta);
+
+                // add sampled min and max disp to sum
+                sum_for_max_disp += max_disp;
+                sum_for_min_disp += min_disp;
+
                 sum_for_min += eta_min_disp;
                 sum_for_max += eta_max_disp;
                 if (sample_risk) {
@@ -180,6 +195,9 @@ py::list compute_risk_and_sampled_risk(
             rw_risk_min(row, col) = sum_for_min / nbr_etas;
             rw_risk_max(row, col) = sum_for_max / nbr_etas;
 
+            rw_risk_max_disp(row, col) = sum_for_max_disp / nbr_etas;
+            rw_risk_min_disp(row, col) = sum_for_min_disp /nbr_etas;
+
         }
     }
 
@@ -187,6 +205,8 @@ py::list compute_risk_and_sampled_risk(
 
     to_return.append( risk_max );
     to_return.append( risk_min );
+    to_return.append( risk_max_disp );
+    to_return.append( risk_min_disp );
     if (sample_risk) {
         to_return.append( samp_risk_max );
         to_return.append( samp_risk_min );

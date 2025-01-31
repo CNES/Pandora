@@ -159,7 +159,8 @@ class AbstractCostVolumeConfidence:
         """
 
         # Add common prefix to confidence measure name
-        name_confidence_measure = "confidence_from_" + name_confidence_measure
+        if "disp_min" not in name_confidence_measure and "disp_max" not in name_confidence_measure:
+            name_confidence_measure = "confidence_from_" + name_confidence_measure
 
         if cv is not None:
             # cost volume already contains a confidence map, it must be updated
