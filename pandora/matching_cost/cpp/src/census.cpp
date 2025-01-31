@@ -1,3 +1,22 @@
+/* Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+ *
+ * This file is part of PANDORA
+ *
+ *     https://github.com/CNES/Pandora
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "census.hpp"
 #include <algorithm>
 #include <climits> // For CHAR_BIT
@@ -75,7 +94,7 @@ CENSUS_TYPE* census_transform(py::array_t<float> img, int census_width, int cens
 
 py::array_t<float> compute_matching_costs(
     py::array_t<float> img_left,
-    py::list imgs_right,
+    py::list imgs_right_shift,
     py::array_t<float> cv,
     py::array_t<float> disps,
     size_t census_width,
@@ -97,13 +116,13 @@ py::array_t<float> compute_matching_costs(
 
     CENSUS_TYPE* census_img_left = census_transform(img_left, census_width, census_height);
 
-    std::vector<CENSUS_TYPE*> census_imgs_right = std::vector<CENSUS_TYPE*>(); 
-    for (py::handle handle_img : imgs_right) {
+    std::vector<CENSUS_TYPE*> census_imgs_right_shift = std::vector<CENSUS_TYPE*>(); 
+    for (py::handle handle_img : imgs_right_shift) {
         py::array_t<float> img = py::cast<py::array>(handle_img);
-        census_imgs_right.push_back( census_transform(img, census_width, census_height) );
+        census_imgs_right_shift.push_back( census_transform(img, census_width, census_height) );
     }
 
-    int subpix = census_imgs_right.size();
+    int subpix = census_imgs_right_shift.size();
     CENSUS_TYPE* right_img;
     
     for (int row = c_half_h; row < n_rows-c_half_h; row++) {
@@ -119,7 +138,7 @@ py::array_t<float> compute_matching_costs(
 
                 for (int id_right = 0; (id_right < subpix) && (disp+id_right < n_disp); id_right++){
                     
-                    right_img = census_imgs_right[id_right];
+                    right_img = census_imgs_right_shift[id_right];
 
                     int weight = 0;
                     for (int chr = 0; chr < nb_chars; chr++) {
@@ -135,7 +154,7 @@ py::array_t<float> compute_matching_costs(
     }
 
     delete[] census_img_left;
-    for (CENSUS_TYPE* img : census_imgs_right) {
+    for (CENSUS_TYPE* img : census_imgs_right_shift) {
         delete[] img;
     }
 

@@ -105,7 +105,7 @@ class Census(matching_cost.AbstractMatchingCost):
         self.check_band_input_mc(img_left, img_right)
 
         # Contains the shifted right images
-        imgs_right = shift_right_img(img_right, self._subpix, self._band, self._spline_order)
+        imgs_right_shift = shift_right_img(img_right, self._subpix, self._band, self._spline_order)
 
         # Maximal cost of the cost volume with census measure
         cmax = int(self._window_size**2)
@@ -127,7 +127,7 @@ class Census(matching_cost.AbstractMatchingCost):
 
         cv = matching_cost_cpp.compute_matching_costs(
             img_left_np.astype(np.float32),
-            [img["im"].data.astype(np.float32) for img in imgs_right],
+            [img["im"].data.astype(np.float32) for img in imgs_right_shift],
             cv,
             cost_volume["disp"].data,
             self._window_size,
