@@ -83,10 +83,10 @@ py::list compute_risk_and_sampled_risk(
     auto rw_risk_min = risk_min.mutable_unchecked<2>();
     auto rw_risk_max = risk_max.mutable_unchecked<2>();
 
-    py::array_t<float> risk_min_disp = py::array_t<float>({n_row, n_col});
-    py::array_t<float> risk_max_disp = py::array_t<float>({n_row, n_col});
-    auto rw_risk_min_disp = risk_min_disp.mutable_unchecked<2>();
-    auto rw_risk_max_disp = risk_max_disp.mutable_unchecked<2>();
+    py::array_t<float> risk_disp_inf = py::array_t<float>({n_row, n_col});
+    py::array_t<float> risk_disp_sup = py::array_t<float>({n_row, n_col});
+    auto rw_risk_disp_inf = risk_disp_inf.mutable_unchecked<2>();
+    auto rw_risk_disp_sup = risk_disp_sup.mutable_unchecked<2>();
 
     py::array_t<float> samp_risk_min;
     py::array_t<float> samp_risk_max;
@@ -124,8 +124,8 @@ py::list compute_risk_and_sampled_risk(
                 rw_risk_min(row, col) = std::numeric_limits<float>::quiet_NaN();
                 rw_risk_max(row, col) = std::numeric_limits<float>::quiet_NaN();
 
-                rw_risk_min_disp(row, col) = std::numeric_limits<float>::quiet_NaN();
-                rw_risk_max_disp(row, col) = std::numeric_limits<float>::quiet_NaN();
+                rw_risk_disp_inf(row, col) = std::numeric_limits<float>::quiet_NaN();
+                rw_risk_disp_sup(row, col) = std::numeric_limits<float>::quiet_NaN();
                 if (!sample_risk)
                     continue;
 
@@ -160,8 +160,8 @@ py::list compute_risk_and_sampled_risk(
 
             float sum_for_min = 0;
             float sum_for_max = 0;
-            float sum_for_min_disp = 0;
-            float sum_for_max_disp = 0;
+            float sum_for_disp_inf = 0;
+            float sum_for_disp_sup = 0;
             for (int eta = 0; eta < nbr_etas; ++eta) {
                 // Obtain min and max disparities for each sample
                 float min_disp = std::numeric_limits<float>::infinity();
@@ -179,8 +179,8 @@ py::list compute_risk_and_sampled_risk(
                 float eta_min_disp = 1 + eta_max_disp - r_samp_amb(row, col, eta);
 
                 // add sampled min and max disp to sum
-                sum_for_max_disp += max_disp;
-                sum_for_min_disp += min_disp;
+                sum_for_disp_sup += max_disp;
+                sum_for_disp_inf += min_disp;
 
                 sum_for_min += eta_min_disp;
                 sum_for_max += eta_max_disp;
@@ -195,8 +195,8 @@ py::list compute_risk_and_sampled_risk(
             rw_risk_min(row, col) = sum_for_min / nbr_etas;
             rw_risk_max(row, col) = sum_for_max / nbr_etas;
 
-            rw_risk_max_disp(row, col) = sum_for_max_disp / nbr_etas;
-            rw_risk_min_disp(row, col) = sum_for_min_disp /nbr_etas;
+            rw_risk_disp_sup(row, col) = sum_for_disp_sup / nbr_etas;
+            rw_risk_disp_inf(row, col) = sum_for_disp_inf /nbr_etas;
 
         }
     }
@@ -205,8 +205,8 @@ py::list compute_risk_and_sampled_risk(
 
     to_return.append( risk_max );
     to_return.append( risk_min );
-    to_return.append( risk_max_disp );
-    to_return.append( risk_min_disp );
+    to_return.append( risk_disp_sup );
+    to_return.append( risk_disp_inf );
     if (sample_risk) {
         to_return.append( samp_risk_max );
         to_return.append( samp_risk_min );

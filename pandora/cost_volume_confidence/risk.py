@@ -50,8 +50,8 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
     _method_max = "risk_max"
     _method_min = "risk_min"
 
-    _method_disp_min = "disp_min_from_risk"
-    _method_disp_max = "disp_max_from_risk"
+    _method_disp_inf = "disp_inf_from_risk"
+    _method_disp_sup = "disp_sup_from_risk"
 
     def __init__(self, **cfg: str) -> None:
         """
@@ -67,8 +67,8 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         self._eta_max = float(self.cfg["eta_max"])
         self._indicator_max = self._method_max + str(self.cfg["indicator"])
         self._indicator_min = self._method_min + str(self.cfg["indicator"])
-        self._indicator_disp_max = self._method_disp_max + str(self.cfg["indicator"])
-        self._indicator_disp_min = self._method_disp_min + str(self.cfg["indicator"])
+        self._indicator_disp_sup = self._method_disp_sup + str(self.cfg["indicator"])
+        self._indicator_disp_inf = self._method_disp_inf + str(self.cfg["indicator"])
         self._etas = np.arange(self._eta_min, self._eta_max, self._eta_step)
         self._nbr_etas = self._etas.shape[0]
 
@@ -146,7 +146,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         elif "global_disparity" in img_right.attrs:
             sampled_ambiguity = self.normalize_with_extremum(sampled_ambiguity, img_right, self._nbr_etas)
 
-        risk_max, risk_min, disp_max, disp_min = self.compute_risk(
+        risk_max, risk_min, disp_sup, disp_inf = self.compute_risk(
             cv["cost_volume"].data,
             sampled_ambiguity,
             self._etas,
@@ -157,8 +157,8 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
 
         disp, cv = self.allocate_confidence_map(self._indicator_max, risk_max, disp, cv)
         disp, cv = self.allocate_confidence_map(self._indicator_min, risk_min, disp, cv)
-        disp, cv = self.allocate_confidence_map(self._indicator_disp_max, disp_max, disp, cv)
-        disp, cv = self.allocate_confidence_map(self._indicator_disp_min, disp_min, disp, cv)
+        disp, cv = self.allocate_confidence_map(self._indicator_disp_sup, disp_sup, disp, cv)
+        disp, cv = self.allocate_confidence_map(self._indicator_disp_inf, disp_inf, disp, cv)
 
         return disp, cv
 
