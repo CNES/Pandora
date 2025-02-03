@@ -83,4 +83,4 @@ def compute_risk_and_sampled_risk(cv, sampled_ambiguity, etas, nbr_etas, grids, 
     2D np.ndarray (row, col) dtype = float32, 2D np.ndarray (row, col) dtype = float32, \
     3D np.ndarray (row, col) dtype = float32, 3D np.ndarray (row, col) dtype = float32)
     """
-    return None, None
+    return None, None, None, None
