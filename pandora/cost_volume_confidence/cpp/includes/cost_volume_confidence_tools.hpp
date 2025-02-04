@@ -38,5 +38,13 @@ namespace py = pybind11;
  * @return the index where value should be inserted
  */
 size_t searchsorted(const py::array_t<float>& array, float value);
-
+std::tuple<float, float,
+           pybind11::detail::unchecked_mutable_reference<float, 2>,
+           pybind11::detail::unchecked_mutable_reference<float, 2>>
+min_max_cost(
+    py::detail::unchecked_reference<float, 3> r_cv,
+    int n_row,
+    int n_col,
+    int n_disp
+);
 #endif  // COST_VOLUME_CONFIDENCE_TOOLS_HPP
