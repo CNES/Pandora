@@ -61,6 +61,8 @@ CENSUS_TYPE* census_transform(py::array_t<float> img, int census_width, int cens
             // x,y -> all valid centers
             float val = r_img(x, y);
             int out_pos = x*nb_chars*n_cols + y*nb_chars;
+
+            // (chr, bit) = (n, m) => set the nth CENSUS_TYPE's mth bit
             int bit = 0;
             int chr = 0;
 
@@ -70,7 +72,7 @@ CENSUS_TYPE* census_transform(py::array_t<float> img, int census_width, int cens
                     
                     // for the pixel (x,y), if the corresponding window pixel has a greater value,
                     // set the window pixel's bit to 1
-                    if (r_img(wx, wy) > val) {
+                    if (r_img(wx, wy) > val) { // census test
                         // CENSUS_SINGLE_BIT represents a CENSUS_TYPE with its highest bit set to 1
                         out[out_pos + chr] += CENSUS_SINGLE_BIT >> bit;
                     }
@@ -114,6 +116,7 @@ py::array_t<float> compute_matching_costs(
         census_width, census_height
     );
 
+    // get the census filtered images
     CENSUS_TYPE* census_img_left = census_transform(img_left, census_width, census_height);
 
     std::vector<CENSUS_TYPE*> census_imgs_right_shift = std::vector<CENSUS_TYPE*>(); 
@@ -125,6 +128,7 @@ py::array_t<float> compute_matching_costs(
     int subpix = census_imgs_right_shift.size();
     CENSUS_TYPE* right_img;
     
+    // compute the census cost for each (row,col,disp)
     for (int row = c_half_h; row < n_rows-c_half_h; row++) {
         for (int col = c_half_w; col < n_cols-c_half_w; col++) {
             
@@ -142,7 +146,9 @@ py::array_t<float> compute_matching_costs(
 
                     int weight = 0;
                     for (int chr = 0; chr < nb_chars; chr++) {
+                        // xor
                         CENSUS_TYPE xr = right_img[right_pos+chr] ^ census_img_left[left_pos+chr];
+                        // popcount
                         weight += std::bitset<sizeof(CENSUS_TYPE)*CHAR_BIT>(xr).count();
                     }
 
