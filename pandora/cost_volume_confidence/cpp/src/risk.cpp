@@ -26,36 +26,6 @@
 
 namespace py = pybind11;
 
-
-std::tuple<float, float> min_max_cost(auto& rw_min_img, const auto& r_cv, int n_row, int n_col, int n_disp){
-    float min_cost = std::numeric_limits<float>::infinity();
-    float max_cost = -std::numeric_limits<float>::infinity();
-    float pix_min_cost;
-    float val;
-    bool insert_nan;
-    for (int i = 0; i < n_row; ++i) {
-        for (int j = 0; j < n_col; ++j) {
-            pix_min_cost = std::numeric_limits<float>::infinity();
-            insert_nan = true;
-            for (int k = 0; k < n_disp; ++k) {
-                val = r_cv(i,j,k);
-                if ( !std::isnan(val) ) {
-                    insert_nan = false;
-                    pix_min_cost = std::min(pix_min_cost, val);
-                    max_cost = std::max(max_cost, val);
-                }
-            }
-            if (insert_nan) {
-                rw_min_img(i, j) = std::numeric_limits<float>::quiet_NaN();
-                continue;
-            }
-            rw_min_img(i, j) = pix_min_cost;
-            min_cost = std::min(min_cost, pix_min_cost);
-        }
-    }
-    return std::make_tuple(min_cost, max_cost);
-}
-
 py::list compute_risk_and_sampled_risk(
     py::array_t<float> cv,
     py::array_t<float> sampled_ambiguity,
@@ -105,10 +75,7 @@ py::list compute_risk_and_sampled_risk(
         );
     }
 
-    py::array_t<float> min_img = py::array_t<float>({n_row, n_col});
-    auto rw_min_img = min_img.mutable_unchecked<2>();
-
-    auto [min_cost, max_cost] = min_max_cost(rw_min_img, r_cv, n_row, n_col, n_disp);
+    auto [min_cost, max_cost, rw_min_img, _] = min_max_cost(r_cv, n_row, n_col, n_disp);
 
     float diff_cost = max_cost - min_cost;
 
