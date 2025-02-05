@@ -29,12 +29,28 @@ import pytest
 import numpy as np
 import xarray as xr
 from rasterio import Affine
+import json_checker
 
 from pandora import matching_cost
 from pandora.img_tools import add_disparity
 from pandora.criteria import validity_mask
 
 from tests import common
+
+
+class TestCensusWindowSize:
+
+    @pytest.mark.parametrize("window_size", [3, 5, 7, 9, 11, 13])
+    def test_nominal_window_size(self, window_size):
+        result = matching_cost.AbstractMatchingCost(**{"matching_cost_method": "census", "window_size": window_size})
+
+        assert result.cfg["window_size"] == window_size
+
+    @pytest.mark.parametrize("window_size", [-5, -1, 0, 1, 2, 4, 6, 8, 14, 15])
+    def test_fails_with_invalid_window_size(self, window_size):
+        with pytest.raises(json_checker.core.exceptions.DictCheckerError) as err:
+            matching_cost.AbstractMatchingCost(**{"matching_cost_method": "census", "window_size": window_size})
+        assert "window_size" in err.value.args[0]
 
 
 class TestMatchingCostCensus(unittest.TestCase):
