@@ -43,9 +43,9 @@ std::tuple<float, float,
            pybind11::detail::unchecked_mutable_reference<float, 2>>
 min_max_cost(
     py::detail::unchecked_reference<float, 3> r_cv,
-    int n_row,
-    int n_col,
-    int n_disp
+    size_t n_row,
+    size_t n_col,
+    size_t n_disp
 ){
     py::array_t<float> min_img = py::array_t<float>({n_row, n_col});
     py::array_t<float> max_img = py::array_t<float>({n_row, n_col});
@@ -58,12 +58,12 @@ min_max_cost(
     float pix_max_cost;
     float val;
     bool insert_nan;
-    for (int i = 0; i < n_row; ++i) {
-        for (int j = 0; j < n_col; ++j) {
+    for (size_t i = 0; i < n_row; ++i) {
+        for (size_t j = 0; j < n_col; ++j) {
             pix_min_cost = std::numeric_limits<float>::infinity();
             pix_max_cost = -std::numeric_limits<float>::infinity();
             insert_nan = true;
-            for (int k = 0; k < n_disp; ++k) {
+            for (size_t k = 0; k < n_disp; ++k) {
                 val = r_cv(i,j,k);
                 if ( !std::isnan(val) ) {
                     insert_nan = false;

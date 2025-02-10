@@ -43,8 +43,8 @@ std::tuple<float, float,
            pybind11::detail::unchecked_mutable_reference<float, 2>>
 min_max_cost(
     py::detail::unchecked_reference<float, 3> r_cv,
-    int n_row,
-    int n_col,
-    int n_disp
+    size_t n_row,
+    size_t n_col,
+    size_t n_disp
 );
 #endif  // COST_VOLUME_CONFIDENCE_TOOLS_HPP

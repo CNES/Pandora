@@ -23,7 +23,6 @@
 #include <numeric>
 #include <cmath>
 #include <tuple>
-#include <iostream>
 
 namespace py = pybind11;
 
@@ -81,8 +80,8 @@ py::list compute_risk_and_sampled_risk(
     float diff_cost = max_cost - min_cost;
 
     float* normalized_pix_costs = new float[n_disp];
-    for (int row = 0; row < n_row; ++row) {
-        for (int col = 0; col < n_col; ++col) {
+    for (size_t row = 0; row < n_row; ++row) {
+        for (size_t col = 0; col < n_col; ++col) {
 
             // Normalized extremum cost for one point
             float normalized_extremum = (rw_min_img(row, col) - min_cost) / diff_cost;
@@ -112,7 +111,7 @@ py::list compute_risk_and_sampled_risk(
             size_t idx_disp_max = searchsorted(disparity_range, r_grids(1, row, col)) + 1;
 
             // fill normalized cv for this pixel (mask with +-inf when encountering NaNs)
-            for (int disp = 0; disp < n_disp; ++disp) {
+            for (size_t disp = 0; disp < n_disp; ++disp) {
                 float cv_val = r_cv(row, col, disp);
                 if (std::isnan(cv_val)) {
                     if (disp >= idx_disp_min && disp < idx_disp_max) {
@@ -130,11 +129,11 @@ py::list compute_risk_and_sampled_risk(
             float sum_for_max = 0;
             float sum_for_disp_inf = 0;
             float sum_for_disp_sup = 0;
-            for (int eta = 0; eta < nbr_etas; ++eta) {
+            for (size_t eta = 0; eta < nbr_etas; ++eta) {
                 // Obtain min and max disparities for each sample
                 float min_disp_idx = std::numeric_limits<float>::infinity();
                 float max_disp_idx = -std::numeric_limits<float>::infinity();
-                for (int disp = 0; disp < n_disp; ++disp) {
+                for (size_t disp = 0; disp < n_disp; ++disp) {
                     if (normalized_pix_costs[disp] > (normalized_extremum + r_etas(eta)))
                         continue;
 
@@ -147,15 +146,13 @@ py::list compute_risk_and_sampled_risk(
 
                 float min_disp = std::numeric_limits<float>::infinity();
                 float max_disp = -std::numeric_limits<float>::infinity();
-
                 py::buffer_info buf_info = disparity_range.request();
                 float* data_ptr = static_cast<float*>(buf_info.ptr);
 
                 min_disp = data_ptr[min_index];
                 max_disp = data_ptr[max_index];
-
                 // add sampled max risk to sum
-                float eta_max_disp = max_disp - min_disp;
+                float eta_max_disp = max_disp_idx - min_disp_idx;
                 // add sampled min risk to sum. risk min is defined as ( (1+risk(p,k)) - amb(p,k) )
                 float eta_min_disp = 1 + eta_max_disp - r_samp_amb(row, col, eta);
 
@@ -192,9 +189,5 @@ py::list compute_risk_and_sampled_risk(
         to_return.append( samp_risk_max );
         to_return.append( samp_risk_min );
     }
-    return to_return;    
+    return to_return;
 }
-
-
-
-
