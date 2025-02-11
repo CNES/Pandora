@@ -48,7 +48,7 @@ Configuration and parameters
 
     **Name**,**Description**,**Type**,**Default value**,**Available value**,**Required**
     *matching_cost_method*,Similarity measure,string,,ssd sad census zncc  or mc_cnn if plugin_mccnn is installed,Yes
-    *window_size*,Window size for similarity measure,int,5,Must be >0 and For "census" : {3 5},No
+    *window_size*,Window size for similarity measure,int,5,Must be >0 and For "census" : {3 5 7 9 11 13},No
     *subpix*,Cost volume upsampling factor,int,1, {1 2 4},No
     *band*, Band value on which to calculate the correlation, str, None, band in left and right image's metadata,No
     *step*, Computing step for `pandora2d <https://pandora2d.readthedocs.io/en/latest/>`_, int, 1, 1, No
