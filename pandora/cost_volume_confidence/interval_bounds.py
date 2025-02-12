@@ -196,7 +196,7 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
         return disp, cv
 
     @staticmethod
-    def compute_interval_bounds(  # pylint:disable=too-many-positional-arguments
+    def compute_interval_bounds(
         cv: np.ndarray,
         disp_interval: np.ndarray,
         possibility_threshold: float,

@@ -101,7 +101,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         """
         print("Ambiguity confidence method")
 
-    def confidence_prediction(  # pylint:disable=too-many-positional-arguments
+    def confidence_prediction(
         self,
         disp: xr.Dataset,
         img_left: xr.Dataset = None,

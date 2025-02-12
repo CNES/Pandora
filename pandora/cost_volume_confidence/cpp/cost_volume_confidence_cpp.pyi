@@ -18,9 +18,7 @@
 
 # pylint: skip-file
 
-def compute_ambiguity_and_sampled_ambiguity(
-    cv, etas, nbr_etas, grids, disparity_range, sample_ambiguity
-):
+def compute_ambiguity_and_sampled_ambiguity(cv, etas, nbr_etas, grids, disparity_range, sample_ambiguity):
     """
     Return the ambiguity and sampled ambiguity, useful for evaluating ambiguity in notebooks
 

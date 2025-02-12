@@ -162,7 +162,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         return disp, cv
 
     @staticmethod
-    def compute_risk(  # pylint:disable=too-many-positional-arguments
+    def compute_risk(
         cv: np.ndarray,
         sampled_ambiguity: np.ndarray,
         etas: np.ndarray,
