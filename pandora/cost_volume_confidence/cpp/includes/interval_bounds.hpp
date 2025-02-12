@@ -46,7 +46,7 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
     py::array_t<float> disp_interval,
     float possibility_threshold,
     float type_factor,
-    py::array_t<int64_t> grids,
+    py::array_t<int> grids,
     py::array_t<float> disparity_range
 
 );
