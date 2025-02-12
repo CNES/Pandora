@@ -211,3 +211,8 @@ clean-docker: ## clean docker image
 	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
 	@echo "Clean Docker image cnes/pandora dev"
 	@docker image rm cnes/pandora:dev
+
+.PHONY: test-unit-cpp
+test-unit-cpp: install ## run unit cpp tests only for dev
+	@echo "Run unit cpp tests"
+	. ${PANDORA_VENV}/bin/activate; meson test -C build/$(shell ls build)/ -v
