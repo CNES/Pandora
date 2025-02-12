@@ -37,13 +37,18 @@ namespace py = pybind11;
  * @param possibility_threshold possibility threshold used for interval computation
  * @param type_factor either 1 or -1; used to adapt the possibility computation to max or
  * min measures
+ * @param grids array containing min and max disparity grids
+ * @param disparity_range array containing disparity range
  * @return the infimum and supremum (not regularized) of the set containing the true disparity
  */
 std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
     py::array_t<float> cv,
     py::array_t<float> disp_interval,
     float possibility_threshold,
-    float type_factor
+    float type_factor,
+    py::array_t<int64_t> grids,
+    py::array_t<float> disparity_range
+
 );
 
 #endif  // INTERVAL_BOUNDS_HPP

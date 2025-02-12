@@ -22,7 +22,6 @@
 """
 This module contains functions for estimating the risk.
 """
-import logging
 from typing import Dict, Tuple, Union
 
 import numpy as np
@@ -129,6 +128,10 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         :rtype: Tuple(xarray.Dataset, xarray.Dataset)
         """
 
+        type_measure_max = cv.attrs["type_measure"] == "max"
+        if type_measure_max:
+            cv["cost_volume"].data *= -1
+
         grids = np.array(
             [img_left["disparity"].sel(band_disp="min"), img_left["disparity"].sel(band_disp="max")], dtype=np.int64
         )
@@ -136,15 +139,8 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         disparity_range = cv["disp"].data.astype(np.float32)
 
         _, sampled_ambiguity = cost_volume_confidence_cpp.compute_ambiguity_and_sampled_ambiguity(
-            cv["cost_volume"].data, self._etas, self._nbr_etas, grids, disparity_range, True, True
+            cv["cost_volume"].data, self._etas, self._nbr_etas, grids, disparity_range, True
         )
-
-        if "global_disparity" in img_left.attrs:
-            sampled_ambiguity = self.normalize_with_extremum(sampled_ambiguity, img_left, self._nbr_etas)
-            logging.info("You are using normalization by \n a specific case with the instantiation of global_disparity")
-        # in case of cross correlation
-        elif "global_disparity" in img_right.attrs:
-            sampled_ambiguity = self.normalize_with_extremum(sampled_ambiguity, img_right, self._nbr_etas)
 
         risk_max, risk_min, disp_sup, disp_inf = self.compute_risk(
             cv["cost_volume"].data,
@@ -160,10 +156,13 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         disp, cv = self.allocate_confidence_map(self._indicator_disp_sup, disp_sup, disp, cv)
         disp, cv = self.allocate_confidence_map(self._indicator_disp_inf, disp_inf, disp, cv)
 
+        if type_measure_max:
+            cv["cost_volume"].data *= -1
+
         return disp, cv
 
     @staticmethod
-    def compute_risk(
+    def compute_risk(  # pylint:disable=too-many-positional-arguments
         cv: np.ndarray,
         sampled_ambiguity: np.ndarray,
         etas: np.ndarray,
@@ -173,6 +172,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Computes minimum and maximum risk.
+        Cost Volume must correspond to min similarity measure.
 
         :param cv: cost volume
         :type cv: 3D np.ndarray (row, col, disp)
@@ -205,6 +205,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Computes minimum and maximum risk and sampled_risk.
+        Cost Volume must correspond to min similarity measure.
 
         :param cv: cost volume
         :type cv: 3D np.ndarray (row, col, disp)
