@@ -31,7 +31,7 @@ py::list compute_risk_and_sampled_risk(
     py::array_t<float> sampled_ambiguity,
     py::array_t<double> etas,
     int nbr_etas,
-    py::array_t<int64_t> grids,
+    py::array_t<int> grids,
     py::array_t<float> disparity_range,
     bool sample_risk
 ) {
@@ -136,6 +136,11 @@ py::list compute_risk_and_sampled_risk(
                 for (size_t disp = 0; disp < n_disp; ++disp) {
                     if (normalized_pix_costs[disp] > (normalized_extremum + r_etas(eta)))
                         continue;
+                    // case normalized_pix_costs[disp] < normalized_extremum is not computed:
+                    // every case is > normalized_extremum, only - inf is not dealt with
+                    // -inf is for nan disparities in disparity range, that should be considered to increase risk
+                    // this is equivalent to put the > normalized_extremum condition, with nan put to normalized_extremum
+                    // but gain condition check
 
                     min_disp_idx = std::min(min_disp_idx, static_cast<float>(disp));
                     max_disp_idx = std::max(max_disp_idx, static_cast<float>(disp));

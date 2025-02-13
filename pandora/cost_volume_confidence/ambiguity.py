@@ -126,16 +126,18 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
                 - confidence_measure 3D xarray.DataArray (row, col, indicator)
         """
 
+        type_measure_max = cv.attrs["type_measure"] == "max"
+        if type_measure_max:
+            cv["cost_volume"].data *= -1
+
         grids = np.array(
             [img_left["disparity"].sel(band_disp="min"), img_left["disparity"].sel(band_disp="max")], dtype=np.int64
         )
         # Get disparity intervals parameters
         disparity_range = cv["disp"].data.astype(np.float32)
 
-        type_measure_min = cv.attrs["type_measure"] == "min"
-
         ambiguity = cost_volume_confidence_cpp.compute_ambiguity_and_sampled_ambiguity(
-            cv["cost_volume"].data, self._etas, self._nbr_etas, grids, disparity_range, type_measure_min, False
+            cv["cost_volume"].data, self._etas, self._nbr_etas, grids, disparity_range, False
         )[0]
 
         # If activated, ambiguity normalization with percentile
@@ -157,11 +159,15 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
 
         disp, cv = self.allocate_confidence_map(self._indicator, ambiguity, disp, cv)
 
+        if type_measure_max:
+            cv["cost_volume"].data *= -1
+
         return disp, cv
 
     def normalize_with_percentile(self, ambiguity: np.ndarray) -> np.ndarray:
         """
-        Normalize ambiguity with percentile
+        Normalize ambiguity with percentile .
+        Cost Volume must correspond to min similarity measure
 
         :param ambiguity: ambiguity
         :type ambiguity: 2D np.ndarray (row, col) dtype = float32
@@ -183,7 +189,6 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         nbr_etas: int,
         grids: np.ndarray,
         disparity_range: np.ndarray,
-        type_measure_min: bool,
     ) -> np.ndarray:
         """
         Computes ambiguity.
@@ -198,14 +203,12 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         :type grids: 2D np.ndarray (min, max)
         :param disparity_range: array containing disparity range
         :type disparity_range: np.ndarray
-        :param type_measure_min: True for min and False for max
-        :type type_measure_min: bool
         :return: the normalized ambiguity
         :rtype: 2D np.ndarray (row, col) dtype = float32
         """
 
         return cost_volume_confidence_cpp.compute_ambiguity_and_sampled_ambiguity(
-            cv, etas, nbr_etas, grids, disparity_range, type_measure_min, False
+            cv, etas, nbr_etas, grids, disparity_range, False
         )[0]
 
     @staticmethod
@@ -233,5 +236,5 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         :rtype: Tuple(2D np.ndarray (row, col) dtype = float32, 3D np.ndarray (row, col) dtype = float32)
         """
         return cost_volume_confidence_cpp.compute_ambiguity_and_sampled_ambiguity(
-            cv, etas, nbr_etas, grids, disparity_range, True, True
+            cv, etas, nbr_etas, grids, disparity_range, True
         )

@@ -18,9 +18,7 @@
 
 # pylint: skip-file
 
-def compute_ambiguity_and_sampled_ambiguity(
-    cv, etas, nbr_etas, grids, disparity_range, type_measure_min, sample_ambiguity
-):
+def compute_ambiguity_and_sampled_ambiguity(cv, etas, nbr_etas, grids, disparity_range, sample_ambiguity):
     """
     Return the ambiguity and sampled ambiguity, useful for evaluating ambiguity in notebooks
 
@@ -34,8 +32,6 @@ def compute_ambiguity_and_sampled_ambiguity(
     :type grids: 2D np.ndarray (min, max)
     :param disparity_range: array containing disparity range
     :type disparity_range: np.ndarray
-    :param type_measure_min: True for min and False for max
-    :type type_measure_min: bool
     :param sample_ambiguity: whether to return the sampled ambiguity along with the ambiguity
     :type sample_ambiguity: bool
     :return: the normalized ambiguity and sampled ambiguity
@@ -43,7 +39,7 @@ def compute_ambiguity_and_sampled_ambiguity(
     """
     return None, None
 
-def compute_interval_bounds(cv, disp_interval, possibility_threshold, type_factor):
+def compute_interval_bounds(cv, disp_interval, possibility_threshold, type_factor, grids, disparity_range):
     """
     Computes interval bounds on the disparity.
 
@@ -55,6 +51,11 @@ def compute_interval_bounds(cv, disp_interval, possibility_threshold, type_facto
     :type possibility_threshold: float
     :param type_factor: Either 1 or -1. Used to adapt the possibility computation to max or min measures
     :type type_factor: float
+    :param grids: array containing min and max disparity grids
+    :type grids: 2D np.ndarray (min, max)
+    :param disparity_range: array containing disparity range
+    :type disparity_range: np.ndarray
+
     :return: the infimum and supremum (not regularized) of the set containing the true disparity
     :rtype: Tuple(2D np.ndarray (row, col) dtype = float32, 2D np.ndarray (row, col) dtype = float32)
     """

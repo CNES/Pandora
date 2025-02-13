@@ -31,7 +31,6 @@ py::list compute_ambiguity_and_sampled_ambiguity(
     int nbr_etas,
     py::array_t<int> grids,
     py::array_t<float> disparity_range,
-    bool type_measure_min,
     bool sample_ambiguity
 ) {
 
@@ -64,9 +63,8 @@ py::list compute_ambiguity_and_sampled_ambiguity(
         to_return.append(samp_amb);
     }
 
-    auto [min_cost, max_cost, rw_min_img, rw_max_img] = min_max_cost(r_cv, n_row, n_col, n_disp);
+    auto [min_cost, max_cost, rw_min_img, _] = min_max_cost(r_cv, n_row, n_col, n_disp);
 
-    float extremum_cost = type_measure_min ? min_cost : max_cost;
     float diff_cost = max_cost - min_cost;
 
     size_t idx_disp_min;
@@ -82,8 +80,7 @@ py::list compute_ambiguity_and_sampled_ambiguity(
         for (size_t col = 0; col < n_col; ++col) {
 
             // Normalized extremum cost for one point
-            norm_extremum = type_measure_min*(rw_min_img(row, col) - extremum_cost) / diff_cost
-                            + !type_measure_min*(rw_max_img(row, col) - extremum_cost) / diff_cost;
+            norm_extremum = (rw_min_img(row, col) - min_cost) / diff_cost;
 
             // If all costs are at nan, set the maximum value of the ambiguity for this point
             if (std::isnan(norm_extremum)) {
@@ -115,30 +112,22 @@ py::list compute_ambiguity_and_sampled_ambiguity(
                     }
                     continue;
                 }
-                normalized_pix_costs[disp] = (cv_val - extremum_cost) / diff_cost;
+                normalized_pix_costs[disp] = (cv_val - min_cost) / diff_cost;
             }
 
             // fill sampled ambiguity, compute integral
             amb_sum = 0;
-            if (type_measure_min) {
-                for (size_t eta = 0; eta < nbr_etas; ++eta) {
-                    float amb_eta_sum = 0;
-                    for (size_t disp = 0; disp < n_disp; ++disp) {
-                        amb_status = normalized_pix_costs[disp] <= (norm_extremum + r_etas(eta));
-                        amb_eta_sum += amb_status ? 1.f : 0.f;
-                    }
-                    amb_sum += amb_eta_sum;
-                    if (sample_ambiguity)
-                        rw_samp_amb->operator()(row, col, eta) = amb_eta_sum;
+            for (int eta = 0; eta < nbr_etas; ++eta) {
+                float amb_eta_sum = 0;
+                for (int disp = 0; disp < n_disp; ++disp) {
+                    amb_status = normalized_pix_costs[disp] <= (norm_extremum + r_etas(eta));
+                    amb_eta_sum += amb_status ? 1.f : 0.f;
                 }
-            } else {
-                for (size_t eta = 0; eta < nbr_etas; ++eta) {
-                    for (size_t disp = 0; disp < n_disp; ++disp) {
-                        amb_status = normalized_pix_costs[disp] >= (norm_extremum - r_etas(eta));
-                        amb_sum += amb_status ? 1.f : 0.f;
-                    }
-                }
+                amb_sum += amb_eta_sum;
+                if (sample_ambiguity)
+                    rw_samp_amb->operator()(row, col, eta) = amb_eta_sum;
             }
+
 
             // fill integral ambiguity
             rw_amb(row, col) = amb_sum;

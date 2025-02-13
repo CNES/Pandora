@@ -154,7 +154,7 @@ def test_compute_ambiguity_with_variable_disparity(
     etas = np.arange(0.0, 0.2, 0.1)
     nbr_etas = etas.shape[0]
 
-    amb = ambiguity_.compute_ambiguity(cv_, etas, nbr_etas, grids, disparity_range, type_measure_min=True)
+    amb = ambiguity_.compute_ambiguity(cv_, etas, nbr_etas, grids, disparity_range)
 
     # Ambiguity integral
     gt_amb_int = np.array([[6.0, 4.0, 4.0, 4.0], [4.0, 4.0, 4.0, 6.0], [4.0, 4.0, 2.0, 4.0], [4.0, 4.0, 4.0, 4.0]])
@@ -251,9 +251,7 @@ def test_perfect_case_min(
         **{"confidence_method": "ambiguity", "eta_max": 0.2, "eta_step": 0.1}
     )
 
-    amb = ambiguity_.compute_ambiguity(
-        cv_, ambiguity_._etas, ambiguity_._nbr_etas, grids, disparity_range, type_measure_min=True
-    )
+    amb = ambiguity_.compute_ambiguity(cv_, ambiguity_._etas, ambiguity_._nbr_etas, grids, disparity_range)
 
     ambiguity = ambiguity_.normalize_with_percentile(amb)
 
@@ -277,13 +275,14 @@ def test_perfect_case_max(
     cv_[1, 1, :] = np.full(3, -30)
     cv_[1, 1, ind_max] = value_max
 
+    # cv_ is win max measure, we need to revert it
+    cv_ *= -1
+
     ambiguity_ = confidence.AbstractCostVolumeConfidence(
         **{"confidence_method": "ambiguity", "eta_max": 0.2, "eta_step": 0.1}
     )
 
-    amb = ambiguity_.compute_ambiguity(
-        cv_, ambiguity_._etas, ambiguity_._nbr_etas, grids, disparity_range, type_measure_min=False
-    )
+    amb = ambiguity_.compute_ambiguity(cv_, ambiguity_._etas, ambiguity_._nbr_etas, grids, disparity_range)
 
     ambiguity = ambiguity_.normalize_with_percentile(amb)
 

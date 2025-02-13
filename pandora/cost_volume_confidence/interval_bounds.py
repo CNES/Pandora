@@ -156,9 +156,20 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
         else:
             type_factor = 1.0
 
+        grids = np.array(
+            [img_left["disparity"].sel(band_disp="min"), img_left["disparity"].sel(band_disp="max")], dtype=np.int64
+        )
+        # Get disparity intervals parameters
+        disparity_range = cv["disp"].data.astype(np.float32)
+
         # Computes interval bounds using numpy
         interval_bound_inf, interval_bound_sup = self.compute_interval_bounds(
-            cv["cost_volume"].data, cv["disp"].data.astype(np.float32), self._possibility_threshold, type_factor
+            cv["cost_volume"].data,
+            cv["disp"].data.astype(np.float32),
+            self._possibility_threshold,
+            type_factor,
+            grids,
+            disparity_range,
         )
         if self._regularization:
             indicator = (
@@ -190,6 +201,8 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
         disp_interval: np.ndarray,
         possibility_threshold: float,
         type_factor: float,
+        grids: np.ndarray,
+        disparity_range: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Computes interval bounds on the disparity.
@@ -202,7 +215,14 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
         :type possibility_threshold: float
         :param type_factor: Either 1 or -1. Used to adapt the possibility computation to max or min measures
         :type type_factor: float
+        :param grids: array containing min and max disparity grids
+        :type grids: 2D np.ndarray (min, max)
+        :param disparity_range: array containing disparity range
+        :type disparity_range: np.ndarray
+
         :return: the infimum and supremum (not regularized) of the set containing the true disparity
         :rtype: Tuple(2D np.ndarray (row, col) dtype = float32, 2D np.ndarray (row, col) dtype = float32)
         """
-        return cost_volume_confidence_cpp.compute_interval_bounds(cv, disp_interval, possibility_threshold, type_factor)
+        return cost_volume_confidence_cpp.compute_interval_bounds(
+            cv, disp_interval, possibility_threshold, type_factor, grids, disparity_range
+        )

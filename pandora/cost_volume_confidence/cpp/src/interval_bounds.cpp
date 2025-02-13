@@ -18,33 +18,21 @@
  */
 
 #include "interval_bounds.hpp"
+#include "cost_volume_confidence_tools.hpp"
 #include <algorithm>
 #include <numeric>
 #include <cmath>
 
 namespace py = pybind11;
 
-void argsort(float* arr, size_t len, int* indices) {
-
-    for (size_t i = 0; i < len; ++i) {
-        indices[i] = i;
-    }
-
-    std::sort(indices, &(indices[len]), [&](size_t i, size_t j) {
-        if (std::isnan(arr[i]))
-            return false;
-        if (std::isnan(arr[j]))
-            return true;
-        return arr[i] < arr[j];
-    });
-
-}
-
 std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
     py::array_t<float> cv,
     py::array_t<float> disp_interval,
     float possibility_threshold,
-    float type_factor
+    float type_factor,
+    py::array_t<int> grids,
+    py::array_t<float> disparity_range
+
 ) {
     // IDEA: instead of transforming the cost curve into a possibility, we can compute the cost
     // threshold T to apply directly to the cost curve to obtain the same result
@@ -54,6 +42,7 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
 
     auto r_cv = cv.unchecked<3>();
     auto r_disp_interval = disp_interval.unchecked<1>();
+    auto r_grids = grids.unchecked<3>();
 
     size_t n_row = r_cv.shape(0);
     size_t n_col = r_cv.shape(1);
@@ -83,7 +72,6 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
     auto rw_interval_sup = interval_sup.mutable_unchecked<2>();
 
     float* norm_pix_costs = new float[n_disp];
-    int* sorted_indices = new int[n_disp];
     float max_pix_cost;
     int min_valid_idx = -1;
     int max_valid_idx = -1;
@@ -91,10 +79,21 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
     for (size_t row = 0; row < n_row; ++row) {
         for (size_t col = 0; col < n_col; ++col) {
 
+            // Use local disp min and disp max
+            size_t idx_disp_min = searchsorted(disparity_range, r_grids(0, row, col));
+            size_t idx_disp_max = searchsorted(disparity_range, r_grids(1, row, col)) + 1;
+
+            if (idx_disp_min < 0 || idx_disp_max > n_disp){
+                rw_interval_inf(row, col) = std::numeric_limits<float>::quiet_NaN();
+                rw_interval_sup(row, col) = std::numeric_limits<float>::quiet_NaN();
+                continue;
+            }
+
+
             max_pix_cost = -std::numeric_limits<float>::infinity();
             
             // Normalized cost volume
-            for (int disp = 0; disp < n_disp; ++disp) {
+            for (int disp = idx_disp_min; disp < idx_disp_max; ++disp) {
                 cv_val = r_cv(row, col, disp);
                 norm_pix_costs[disp] = (cv_val - min_cost) / diff_cost;
                 if (!std::isnan(cv_val)) {
@@ -102,17 +101,22 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
                 }
             }
 
+            if (std::isinf(max_pix_cost)){
+                rw_interval_inf(row, col) = std::numeric_limits<float>::quiet_NaN();
+                rw_interval_sup(row, col) = std::numeric_limits<float>::quiet_NaN();
+                continue;
+            }
+
             // possibility transformation
-            for (int disp = 0; disp < n_disp; ++disp) {
+            for (int disp = idx_disp_min; disp < idx_disp_max; ++disp) {
                 if (!std::isnan(norm_pix_costs[disp]))
                     norm_pix_costs[disp] = type_factor * norm_pix_costs[disp] + 1.f - max_pix_cost;
             }
 
             // Computing the interval bounds by applying a threshold to the possibility distribution
-            argsort(norm_pix_costs, n_disp, sorted_indices);
 
             found = false;
-            for (int disp = 0; disp < n_disp; ++disp) {
+            for (int disp = idx_disp_min; disp < idx_disp_max; ++disp) {
                 if (norm_pix_costs[disp] >= possibility_threshold) {
                     found = true;
                     break;
@@ -129,10 +133,10 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
 
             min_valid_idx = std::numeric_limits<float>::infinity();
             max_valid_idx = -std::numeric_limits<float>::infinity();
-            for (int disp = 0; disp < n_disp; ++disp) {
-                if (norm_pix_costs[sorted_indices[disp]] >= possibility_threshold) {
-                    min_valid_idx = std::min(min_valid_idx, sorted_indices[disp]);
-                    max_valid_idx = std::max(max_valid_idx, sorted_indices[disp]);
+            for (int disp = idx_disp_min; disp < idx_disp_max; ++disp) {
+                if (norm_pix_costs[disp] >= possibility_threshold) {
+                    min_valid_idx = std::min(min_valid_idx, disp);
+                    max_valid_idx = std::max(max_valid_idx, disp);
                 }
             }
 
@@ -149,7 +153,6 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
     }
 
     delete[] norm_pix_costs;
-    delete[] sorted_indices;
 
     return std::make_tuple(interval_inf, interval_sup);
 
