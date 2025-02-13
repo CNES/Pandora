@@ -43,7 +43,8 @@ dev = [
     "mypy",
     "black",
     "types-setuptools",
-    "build"
+    "build",
+    "cibuildwheel==2.22.0"
 ]
 
 sgm = [
@@ -78,3 +79,7 @@ exclude = "(.eggs|.git|.mypy_cache|.nox|.tox|_build|build|dist|venv)"
 
 [project.scripts]
 pandora = "pandora.Pandora:main"
+
+[tool.cibuildwheel]
+skip = ["pp*", "*-win32", "cp36-*", "cp37-*", "cp38-*"]
+
