@@ -116,18 +116,25 @@ class Census(matching_cost.AbstractMatchingCost):
             }
         )
 
-        disparity_range = cost_volume.coords["disp"].data
-        cv = np.full((img_left["im"].shape[0], img_left["im"].shape[1], len(disparity_range)), np.nan, dtype=np.float32)
-
         if self._band is None:
             img_left_np = img_left["im"].data
+            imgs_right_shift_np = [img["im"].data for img in imgs_right_shift]
         else:
-            band_index_right = list(img_right.band_im.data).index(self._band)
-            img_left_np = img_right["im"].data[band_index_right, :, :]
+            band_index = list(img_left.band_im.data).index(self._band)
+            img_left_np = img_left["im"].data[band_index, :, :]
+            imgs_right_shift_np = []
+            for img in imgs_right_shift:
+                if "band_im" in img:
+                    imgs_right_shift_np.append(img["im"].data[band_index, :, :])
+                else:
+                    imgs_right_shift_np.append(img["im"].data)
+
+        disparity_range = cost_volume.coords["disp"].data
+        cv = np.full((img_left_np.shape[0], img_left_np.shape[1], len(disparity_range)), np.nan, dtype=np.float32)
 
         cv = matching_cost_cpp.compute_matching_costs(
             img_left_np.astype(np.float32),
-            [img["im"].data.astype(np.float32) for img in imgs_right_shift],
+            [img.astype(np.float32) for img in imgs_right_shift_np],
             cv,
             cost_volume["disp"].data,
             self._window_size,
