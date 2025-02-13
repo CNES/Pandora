@@ -38,8 +38,8 @@ def test_compute_risk():
     cv_ = np.array(
         [
             [
-                [39, 28, 28, 34.5],
-                [49, 34, 41.5, 34],
+                [39, 28.03, 28, 34.5],
+                [49, 34, 41.5, 34.1],
                 [np.nan, np.nan, np.nan, np.nan],
             ]
         ],
@@ -59,15 +59,15 @@ def test_compute_risk():
     _ = [
         [
             (39 - min_cost) / (max_cost - min_cost),
-            (28.01 - min_cost) / (max_cost - min_cost),
+            (28.03 - min_cost) / (max_cost - min_cost),
             (28 - min_cost) / (max_cost - min_cost),
             (34.5 - min_cost) / (max_cost - min_cost),
         ],
         [
             (49 - min_cost) / (max_cost - min_cost),
+            (34 - min_cost) / (max_cost - min_cost),
             (41.5 - min_cost) / (max_cost - min_cost),
             (34.1 - min_cost) / (max_cost - min_cost),
-            (34 - min_cost) / (max_cost - min_cost),
         ],
         [np.nan, np.nan, np.nan, np.nan],
     ]
@@ -75,47 +75,88 @@ def test_compute_risk():
     # invalidate similarity values outside [min;min+eta[
     # masked_normalized_cv
     _ = [
-        [np.nan, (28.01 - min_cost) / (max_cost - min_cost), (28 - min_cost) / (max_cost - min_cost), np.nan],
-        [np.nan, (28.01 - min_cost) / (max_cost - min_cost), (28 - min_cost) / (max_cost - min_cost), np.nan],
-        [np.nan, (34.1 - min_cost) / (max_cost - min_cost), np.nan, (34 - min_cost) / (max_cost - min_cost)],
-        [np.nan, (34.1 - min_cost) / (max_cost - min_cost), np.nan, (34 - min_cost) / (max_cost - min_cost)],
+        [np.nan, np.nan, (28 - min_cost) / (max_cost - min_cost), np.nan],
+        [np.nan, (28.03 - min_cost) / (max_cost - min_cost), (28 - min_cost) / (max_cost - min_cost), np.nan],
+        [np.nan, (34 - min_cost) / (max_cost - min_cost), np.nan, np.nan],
+        [np.nan, (34 - min_cost) / (max_cost - min_cost), np.nan, (34.1 - min_cost) / (max_cost - min_cost)],
         [np.nan, np.nan, np.nan, np.nan],
     ]
 
     # disparities
     _ = [
+        [np.nan, np.nan, 2, np.nan],
         [np.nan, 1, 2, np.nan],
-        [np.nan, 1, 2, np.nan],
-        [np.nan, 1, np.nan, 3],
+        [np.nan, 1, np.nan, np.nan],
         [np.nan, 1, np.nan, 3],
         [np.nan, np.nan, np.nan, np.nan],
         [np.nan, np.nan, np.nan, np.nan],
     ]
-    # Risk mas is defined as risk(p,k) = mean(max(di) - min(di)) for di in [cmin(p);cmin(p)+kŋ[
-    gt_risk_max = np.array([[((2 - 1) + (2 - 1)) / 2, ((3 - 1) + (3 - 1)) / 2, np.nan]])
-    # Risk min is defined as mean( (1+risk(p,k)) - amb(p,k) )
-    gt_risk_min = np.array(
+
+    disparity_range = np.array([-1, 0, 1, 2], dtype="float32")
+
+    # Risk max is defined as risk_max = mean(risk(p,k)) = mean(max(di) - min(di)) for di in [cmin(p);cmin(p)+kŋ[
+    gt_risk_max = np.array(
         [
             [
-                (((1 + 1) - sampled_ambiguity[0][0][0]) + ((1 + 1) - sampled_ambiguity[0][0][1])) / 2,
-                (((1 + 2) - sampled_ambiguity[0][1][0]) + ((1 + 2) - sampled_ambiguity[0][1][1])) / 2,
+                (disparity_range[2] - disparity_range[2] + disparity_range[2] - disparity_range[1]) / 2,
+                (disparity_range[1] - disparity_range[1] + disparity_range[3] - disparity_range[1]) / 2,
                 np.nan,
             ]
         ]
     )
 
+    # Risk min is defined as mean( (1+risk(p,k)) - amb(p,k) )
+    gt_risk_min = np.array(
+        [
+            [
+                (
+                    1
+                    + disparity_range[2]
+                    - disparity_range[2]
+                    - sampled_ambiguity[0][0][0]
+                    + 1
+                    + disparity_range[2]
+                    - disparity_range[1]
+                    - sampled_ambiguity[0][0][0]
+                )
+                / 2,
+                (
+                    1
+                    + disparity_range[1]
+                    - disparity_range[1]
+                    - sampled_ambiguity[0][1][0]
+                    + 1
+                    + disparity_range[3]
+                    - disparity_range[1]
+                    - sampled_ambiguity[0][1][1]
+                )
+                / 2,
+                np.nan,
+            ]
+        ]
+    )
+
+    gt_disp_inf = np.array([[0.5, 0.0, np.nan]])
+    gt_disp_sup = np.array([[1.0, 1.0, np.nan]])
+
     grids = np.array([-1 * np.ones((3, 4)), np.ones((3, 4))], dtype="int64")
-    disparity_range = np.array([-1, 0, 1], dtype="float32")
 
     etas = np.arange(0.0, 0.5, 0.3)
     nbr_etas = etas.shape[0]
 
     # Compute risk
-    risk_max, risk_min = risk_.compute_risk(cv_, sampled_ambiguity, etas, nbr_etas, grids, disparity_range)
+    risk_max, risk_min, disp_sup, disp_inf = risk_.compute_risk(
+        cv_, sampled_ambiguity, etas, nbr_etas, grids, disparity_range
+    )
 
     # Check if the calculated risks are equal to the ground truth (same shape and all elements equals)
     np.testing.assert_allclose(gt_risk_max, risk_max, rtol=1e-06)
     np.testing.assert_allclose(gt_risk_min, risk_min, rtol=1e-06)
+    np.testing.assert_allclose(gt_disp_sup, disp_sup, rtol=1e-06)
+    np.testing.assert_allclose(gt_disp_inf, disp_inf, rtol=1e-06)
+
+    # test if risk_max == disp_sup - disp_inf
+    np.testing.assert_allclose(risk_max, disp_sup - disp_inf, rtol=1e-06)
 
 
 def test_compute_risk_with_subpix(create_images):
@@ -178,12 +219,14 @@ def test_compute_risk_with_subpix(create_images):
     # Compute risk
     risk_ = confidence.AbstractCostVolumeConfidence(**{"confidence_method": "risk", "eta_max": 0.7, "eta_step": 0.01})
 
-    risk_max, risk_min = risk_.compute_risk(cv, sampled_ambiguity, etas, nbr_etas, grids, disparity_range)
+    risk_max, risk_min, disp_sup, disp_inf = risk_.compute_risk(
+        cv, sampled_ambiguity, etas, nbr_etas, grids, disparity_range
+    )
 
     gt_risk_max = np.array(
         [
             [4.0, 3.3714285, 2.9285715, 4.0],
-            [1.657143, 3.8428571, 2.3, 4.0],
+            [1.6571429, 3.8428571, 2.3, 4.0],
             [1.1857142, 1.5142857, 3.7142856, 3.5142858],
             [4.0, 3.2857144, 3.7428572, 3.942857],
         ],
@@ -199,8 +242,29 @@ def test_compute_risk_with_subpix(create_images):
         dtype=np.float32,
     )
 
+    gt_disp_inf = np.array(
+        [
+            [-1.0, -0.87857145, -0.98214287, -1.0],
+            [-0.45714286, -0.9607143, -0.85714287, -1.0],
+            [-0.5, -0.62857145, -0.9285714, -0.87857145],
+            [-1.0, -0.91071427, -0.9785714, -0.98571426],
+        ],
+        dtype=np.float32,
+    )
+
+    gt_disp_sup = np.array(
+        [
+            [0.0, -0.03571429, -0.25, 0.0],
+            [-0.04285714, 0.0, -0.28214285, 0.0],
+            [-0.20357142, -0.25, 0.0, 0.0],
+            [0.0, -0.08928572, -0.04285714, 0.0],
+        ],
+        dtype=np.float32,
+    )
     np.testing.assert_allclose(gt_risk_max, risk_max, rtol=1e-06)
     np.testing.assert_allclose(gt_risk_min, risk_min, rtol=1e-06)
+    np.testing.assert_allclose(gt_disp_sup, disp_sup, rtol=1e-06)
+    np.testing.assert_allclose(gt_disp_inf, disp_inf, rtol=1e-06)
 
 
 def test_compute_risk_with_variable_disparity(
@@ -232,16 +296,26 @@ def test_compute_risk_with_variable_disparity(
     gt_risk_min = np.array(
         [[0.0, 0.5, 0.5, 0.0], [1.0, 0.0, 0.5, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.5, 0.5, 0.0]], dtype=np.float32
     )
+    gt_disp_sup = np.array(
+        [[1.0, 0.5, 0.5, 0.0], [1.0, 0.0, 1.0, 1.0], [1.0, 1.0, 0.0, 0.0], [0.0, 0.5, 0.5, 0.0]], dtype=np.float32
+    )
+
+    gt_disp_inf = np.array(
+        [[-1.0, -1.0, -1.0, -1.0], [-1.0, -1.0, -0.5, -1.0], [0.0, 0.0, 0.0, -1.0], [-1.0, -1.0, -1.0, -1.0]],
+        dtype=np.float32,
+    )
 
     etas = np.arange(0.0, 0.5, 0.3)
     nbr_etas = etas.shape[0]
 
     # Compute risk
-    risk_max, risk_min = risk_.compute_risk(cv_, amb_sampl, etas, nbr_etas, grids, disparity_range)
+    risk_max, risk_min, disp_sup, disp_inf = risk_.compute_risk(cv_, amb_sampl, etas, nbr_etas, grids, disparity_range)
 
     # Check if the calculated risks are equal to the ground truth (same shape and all elements equals)
     np.testing.assert_allclose(gt_risk_max, risk_max, rtol=1e-06)
     np.testing.assert_allclose(gt_risk_min, risk_min, rtol=1e-06)
+    np.testing.assert_allclose(gt_disp_sup, disp_sup, rtol=1e-06)
+    np.testing.assert_allclose(gt_disp_inf, disp_inf, rtol=1e-06)
 
 
 def test_compute_risk_and_sampled_risk():
@@ -253,8 +327,8 @@ def test_compute_risk_and_sampled_risk():
     cv_ = np.array(
         [
             [
-                [39, 28, 28, 34.5],
-                [49, 34, 41.5, 34],
+                [39, 28.03, 28, 34.5],
+                [49, 34, 41.5, 34.1],
                 [np.nan, np.nan, np.nan, np.nan],
             ]
         ],
@@ -274,15 +348,15 @@ def test_compute_risk_and_sampled_risk():
     _ = [
         [
             (39 - min_cost) / (max_cost - min_cost),
-            (28.01 - min_cost) / (max_cost - min_cost),
+            (28.03 - min_cost) / (max_cost - min_cost),
             (28 - min_cost) / (max_cost - min_cost),
             (34.5 - min_cost) / (max_cost - min_cost),
         ],
         [
             (49 - min_cost) / (max_cost - min_cost),
+            (34 - min_cost) / (max_cost - min_cost),
             (41.5 - min_cost) / (max_cost - min_cost),
             (34.1 - min_cost) / (max_cost - min_cost),
-            (34 - min_cost) / (max_cost - min_cost),
         ],
         [np.nan, np.nan, np.nan, np.nan],
     ]
@@ -290,60 +364,111 @@ def test_compute_risk_and_sampled_risk():
     # invalidate similarity values outside [min;min+eta[
     # masked_normalized_cv
     _ = [
-        [np.nan, (28.01 - min_cost) / (max_cost - min_cost), (28 - min_cost) / (max_cost - min_cost), np.nan],
-        [np.nan, (28.01 - min_cost) / (max_cost - min_cost), (28 - min_cost) / (max_cost - min_cost), np.nan],
-        [np.nan, (34.1 - min_cost) / (max_cost - min_cost), np.nan, (34 - min_cost) / (max_cost - min_cost)],
-        [np.nan, (34.1 - min_cost) / (max_cost - min_cost), np.nan, (34 - min_cost) / (max_cost - min_cost)],
+        [np.nan, np.nan, (28 - min_cost) / (max_cost - min_cost), np.nan],
+        [np.nan, (28.03 - min_cost) / (max_cost - min_cost), (28 - min_cost) / (max_cost - min_cost), np.nan],
+        [np.nan, (34 - min_cost) / (max_cost - min_cost), np.nan, np.nan],
+        [np.nan, (34 - min_cost) / (max_cost - min_cost), np.nan, (34.1 - min_cost) / (max_cost - min_cost)],
         [np.nan, np.nan, np.nan, np.nan],
     ]
 
     # disparities
     _ = [
+        [np.nan, np.nan, 2, np.nan],
         [np.nan, 1, 2, np.nan],
-        [np.nan, 1, 2, np.nan],
-        [np.nan, 1, np.nan, 3],
+        [np.nan, 1, np.nan, np.nan],
         [np.nan, 1, np.nan, 3],
         [np.nan, np.nan, np.nan, np.nan],
         [np.nan, np.nan, np.nan, np.nan],
     ]
+
+    disparity_range = np.array([-1, 0, 1, 2], dtype="float32")
+
     # Risk max is defined as risk(p,k) = mean(max(di) - min(di)) for di in [cmin(p);cmin(p)+kŋ[
-    gt_risk_max = np.array([[((2 - 1) + (2 - 1)) / 2, ((3 - 1) + (3 - 1)) / 2, np.nan]])
-    # Risk min is defined as mean( (1+risk(p,k)) - amb(p,k) )
-    gt_risk_min = np.array(
+    # Risk max is defined as risk_max = mean(risk(p,k)) = mean(max(di) - min(di)) for di in [cmin(p);cmin(p)+kŋ[
+    gt_risk_max = np.array(
         [
             [
-                (((1 + 1) - sampled_ambiguity[0][0][0]) + ((1 + 1) - sampled_ambiguity[0][0][1])) / 2,
-                (((1 + 2) - sampled_ambiguity[0][1][0]) + ((1 + 2) - sampled_ambiguity[0][1][1])) / 2,
+                (disparity_range[2] - disparity_range[2] + disparity_range[2] - disparity_range[1]) / 2,
+                (disparity_range[1] - disparity_range[1] + disparity_range[3] - disparity_range[1]) / 2,
                 np.nan,
             ]
         ]
     )
 
-    gt_sampled_risk_max = np.array([[[(2 - 1), (2 - 1)], [(3 - 1), (3 - 1)], [np.nan, np.nan]]])
+    # Risk min is defined as mean( (1+risk(p,k)) - amb(p,k) )
+    gt_risk_min = np.array(
+        [
+            [
+                (
+                    1
+                    + disparity_range[2]
+                    - disparity_range[2]
+                    - sampled_ambiguity[0][0][0]
+                    + 1
+                    + disparity_range[2]
+                    - disparity_range[1]
+                    - sampled_ambiguity[0][0][0]
+                )
+                / 2,
+                (
+                    1
+                    + disparity_range[1]
+                    - disparity_range[1]
+                    - sampled_ambiguity[0][1][0]
+                    + 1
+                    + disparity_range[3]
+                    - disparity_range[1]
+                    - sampled_ambiguity[0][1][1]
+                )
+                / 2,
+                np.nan,
+            ]
+        ]
+    )
+
+    gt_sampled_risk_max = np.array(
+        [
+            [
+                [disparity_range[2] - disparity_range[2], disparity_range[2] - disparity_range[1]],
+                [disparity_range[1] - disparity_range[1], disparity_range[3] - disparity_range[1]],
+                [np.nan, np.nan],
+            ]
+        ]
+    )
     gt_sampled_risk_min = np.array(
         [
             [
-                [(1 + 1) - sampled_ambiguity[0][0][0], (1 + 1) - sampled_ambiguity[0][0][1]],
-                [(1 + 2) - sampled_ambiguity[0][1][0], (1 + 2) - sampled_ambiguity[0][1][1]],
+                [
+                    1 + disparity_range[2] - disparity_range[2] - sampled_ambiguity[0][0][0],
+                    1 + disparity_range[2] - disparity_range[1] - sampled_ambiguity[0][0][0],
+                ],
+                [
+                    1 + disparity_range[1] - disparity_range[1] - sampled_ambiguity[0][1][0],
+                    1 + disparity_range[3] - disparity_range[1] - sampled_ambiguity[0][1][1],
+                ],
                 [np.nan, np.nan],
             ]
         ]
     )
 
+    gt_disp_inf = np.array([[0.5, 0.0, np.nan]])
+    gt_disp_sup = np.array([[1.0, 1.0, np.nan]])
+
     grids = np.array([-1 * np.ones((3, 4)), np.ones((3, 4))], dtype="int64")
-    disparity_range = np.array([-1, 0, 1], dtype="float32")
 
     etas = np.arange(0.0, 0.5, 0.3)
     nbr_etas = etas.shape[0]
 
     # Compute risk
-    risk_max, risk_min, sampled_risk_max, sampled_risk_min = risk_.compute_risk_and_sampled_risk(
+    risk_max, risk_min, disp_sup, disp_inf, sampled_risk_max, sampled_risk_min = risk_.compute_risk_and_sampled_risk(
         cv_, sampled_ambiguity, etas, nbr_etas, grids, disparity_range
     )
 
     # Check if the calculated risks are equal to the ground truth (same shape and all elements equals)
     np.testing.assert_allclose(gt_risk_max, risk_max, rtol=1e-06)
     np.testing.assert_allclose(gt_risk_min, risk_min, rtol=1e-06)
+    np.testing.assert_allclose(gt_disp_sup, disp_sup, rtol=1e-06)
+    np.testing.assert_allclose(gt_disp_inf, disp_inf, rtol=1e-06)
     # Check if the calculated sampled risks are equal to the ground truth (same shape and all elements equals)
     np.testing.assert_allclose(gt_sampled_risk_max, sampled_risk_max, rtol=1e-06)
     np.testing.assert_allclose(gt_sampled_risk_min, sampled_risk_min, rtol=1e-06)
@@ -376,7 +501,7 @@ def test_compute_risk_and_sampled_risk_with_variable_disparity(
     nbr_etas = etas.shape[0]
 
     # Compute risk
-    risk_max, risk_min, sampled_risk_max, sampled_risk_min = risk_.compute_risk_and_sampled_risk(
+    risk_max, risk_min, disp_sup, disp_inf, sampled_risk_max, sampled_risk_min = risk_.compute_risk_and_sampled_risk(
         cv_, amb_sampl, etas, nbr_etas, grids, disparity_range
     )
 
@@ -387,6 +512,11 @@ def test_compute_risk_and_sampled_risk_with_variable_disparity(
     gt_risk_min = np.array(
         [[0.0, 0.5, 0.5, 0.0], [1.0, 0.0, 0.5, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.5, 0.5, 0.0]], dtype=np.float32
     )
+
+    gt_disp_inf = np.array(
+        [[-1.0, -1.0, -1.0, -1.0], [-1.0, -1.0, -0.5, -1.0], [0.0, 0.0, 0.0, -1.0], [-1.0, -1.0, -1.0, -1.0]]
+    )
+    gt_disp_sup = np.array([[1.0, 0.5, 0.5, 0.0], [1.0, 0.0, 1.0, 1.0], [1.0, 1.0, 0.0, 0.0], [0.0, 0.5, 0.5, 0.0]])
 
     gt_sampled_risk_max = np.array(
         [
@@ -410,6 +540,8 @@ def test_compute_risk_and_sampled_risk_with_variable_disparity(
     # Check if the calculated risks are equal to the ground truth (same shape and all elements equals)
     np.testing.assert_allclose(gt_risk_max, risk_max, rtol=1e-06)
     np.testing.assert_allclose(gt_risk_min, risk_min, rtol=1e-06)
+    np.testing.assert_allclose(gt_disp_sup, disp_sup, rtol=1e-06)
+    np.testing.assert_allclose(gt_disp_inf, disp_inf, rtol=1e-06)
     # Check if the calculated sampled risks are equal to the ground truth (same shape and all elements equals)
     np.testing.assert_allclose(gt_sampled_risk_max, sampled_risk_max, rtol=1e-06)
     np.testing.assert_allclose(gt_sampled_risk_min, sampled_risk_min, rtol=1e-06)

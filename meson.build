@@ -15,6 +15,9 @@ meson.add_dist_script('version.sh', 'set-dist', meson.project_version())
 py = import('python').find_installation(pure: false)
 
 pybind11_dep = dependency('pybind11')
+doctest_dep = dependency('doctest')
+python_dep = dependency('python3-embed')
+
 
 install_subdir(
   'pandora',
@@ -44,4 +47,8 @@ subdir(
 
 subdir(
   'pandora/matching_cost/cpp'
+)
+
+subdir(
+  'tests/test_cpp/'
 )

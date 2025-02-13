@@ -50,6 +50,9 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
     _method_max = "risk_max"
     _method_min = "risk_min"
 
+    _method_disp_inf = "disp_inf_from_risk"
+    _method_disp_sup = "disp_sup_from_risk"
+
     def __init__(self, **cfg: str) -> None:
         """
         :param cfg: optional configuration, {'confidence_method': 'risk', 'eta_min': float, 'eta_max': float,
@@ -64,6 +67,8 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         self._eta_max = float(self.cfg["eta_max"])
         self._indicator_max = self._method_max + str(self.cfg["indicator"])
         self._indicator_min = self._method_min + str(self.cfg["indicator"])
+        self._indicator_disp_sup = self._method_disp_sup + str(self.cfg["indicator"])
+        self._indicator_disp_inf = self._method_disp_inf + str(self.cfg["indicator"])
         self._etas = np.arange(self._eta_min, self._eta_max, self._eta_step)
         self._nbr_etas = self._etas.shape[0]
 
@@ -141,7 +146,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         elif "global_disparity" in img_right.attrs:
             sampled_ambiguity = self.normalize_with_extremum(sampled_ambiguity, img_right, self._nbr_etas)
 
-        risk_max, risk_min = self.compute_risk(
+        risk_max, risk_min, disp_sup, disp_inf = self.compute_risk(
             cv["cost_volume"].data,
             sampled_ambiguity,
             self._etas,
@@ -152,6 +157,8 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
 
         disp, cv = self.allocate_confidence_map(self._indicator_max, risk_max, disp, cv)
         disp, cv = self.allocate_confidence_map(self._indicator_min, risk_min, disp, cv)
+        disp, cv = self.allocate_confidence_map(self._indicator_disp_sup, disp_sup, disp, cv)
+        disp, cv = self.allocate_confidence_map(self._indicator_disp_inf, disp_inf, disp, cv)
 
         return disp, cv
 
@@ -163,7 +170,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         nbr_etas: int,
         grids: np.ndarray,
         disparity_range: np.ndarray,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Computes minimum and maximum risk.
 
@@ -180,7 +187,8 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         :param disparity_range: array containing disparity range
         :type disparity_range: np.ndarray
         :return: the minimum and maximum risk
-        :rtype: Tuple(2D np.ndarray (row, col) dtype = float32, 2D np.ndarray (row, col) dtype = float32)
+        :rtype: Tuple(2D np.ndarray (row, col) dtype = float32, 2D np.ndarray (row, col) dtype = float32\
+        2D np.ndarray (row, col) dtype = float32, 2D np.ndarray (row, col) dtype = float32)
         """
         return cost_volume_confidence_cpp.compute_risk_and_sampled_risk(
             cv, sampled_ambiguity, etas, nbr_etas, grids, disparity_range, False
@@ -194,7 +202,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         nbr_etas: int,
         grids: np.ndarray,
         disparity_range: np.ndarray,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Computes minimum and maximum risk and sampled_risk.
 
@@ -212,6 +220,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         :type disparity_range: np.ndarray
         :return: the risk
         :rtype: Tuple(2D np.ndarray (row, col) dtype = float32, 2D np.ndarray (row, col) dtype = float32,
+                     2D np.ndarray (row, col) dtype = float32, 2D np.ndarray (row, col) dtype = float32,
                      3D np.ndarray (row, col) dtype = float32, 3D np.ndarray (row, col) dtype = float32)
         """
         return cost_volume_confidence_cpp.compute_risk_and_sampled_risk(

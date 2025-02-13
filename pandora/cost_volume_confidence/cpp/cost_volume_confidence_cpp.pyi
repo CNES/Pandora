@@ -78,8 +78,9 @@ def compute_risk_and_sampled_risk(cv, sampled_ambiguity, etas, nbr_etas, grids, 
     :type disparity_range: np.ndarray
     :param sample_risk: whether or not to compute and return the sampled risk
     :type sample_risk: bool
-    :return: the risk and sampled risk if asked
+    :return: the risk, the disp min and max and sampled risk if asked
     :rtype: Tuple(2D np.ndarray (row, col) dtype = float32, 2D np.ndarray (row, col) dtype = float32, \
+    2D np.ndarray (row, col) dtype = float32, 2D np.ndarray (row, col) dtype = float32, \
     3D np.ndarray (row, col) dtype = float32, 3D np.ndarray (row, col) dtype = float32)
     """
-    return None, None
+    return None, None, None, None
