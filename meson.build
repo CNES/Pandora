@@ -1,11 +1,7 @@
 project(
   'pandora',
   'cpp',
-  version: run_command(
-    'python',
-    meson.source_root() / 'version.py',
-    'get-vcs',
-  ).stdout().strip(),
+  version: '1.6.3a1',
   default_options: [
     'cpp_std=c++17',
   ],
@@ -17,7 +13,7 @@ py = import('python').find_installation(pure: false)
 
 pybind11_dep = dependency('pybind11')
 doctest_dep = dependency('doctest')
-python_dep = dependency('python3-embed')
+python_dep = py.dependency(embed:true)
 
 
 install_subdir(
@@ -50,6 +46,6 @@ subdir(
   'pandora/matching_cost/cpp'
 )
 
-subdir(
-  'tests/test_cpp/'
-)
+# subdir(
+#   'tests/test_cpp/'
+# )

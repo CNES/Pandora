@@ -16,7 +16,10 @@ develop-eggs/
 wheels/
 .installed.cfg
 *.egg
-subprojects/
+
+# Exclude everything in subprojects but wrap files
+subprojects/*
+!subprojects/*.wrap
 
 # Setuptools build and distribution directories
 /dist/
