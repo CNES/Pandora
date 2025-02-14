@@ -6,7 +6,7 @@ repos:
       entry: black
       language: system
       files: \.py$
-      stages: [commit]
+      stages: [pre-commit]
       types: [python]
 
     - id: pylint
@@ -15,19 +15,19 @@ repos:
       language: system
       files: \.py$
       types: [python]
-      stages: [commit]
+      stages: [pre-commit]
 
     - id: mypy
       name: mypy
       entry: mypy
       language: system
       files: \.py$
-      stages: [ commit ]
+      stages: [ pre-commit ]
 
     - id: jupyter-nb-clear-output
       name: jupyter-nb-clear-output
       files: \.ipynb$
-      stages: [commit]
+      stages: [pre-commit]
       language: system
       entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace
 
@@ -37,4 +37,4 @@ repos:
       language: system
       files: ^(docs/.*|pandora/.*)$
       pass_filenames: False
-      stages: [push]
+      stages: [pre-push]
