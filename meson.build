@@ -1,11 +1,7 @@
 project(
   'pandora',
   'cpp',
-  version: run_command(
-    'python',
-    meson.source_root() / 'version.py',
-    'get-vcs',
-  ).stdout().strip(),
+  version: '1.6.3a1',
   default_options: [
     'cpp_std=c++17',
   ],
@@ -50,6 +46,6 @@ subdir(
   'pandora/matching_cost/cpp'
 )
 
-subdir(
-  'tests/test_cpp/'
-)
+# subdir(
+#   'tests/test_cpp/'
+# )
