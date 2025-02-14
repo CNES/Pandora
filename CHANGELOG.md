@@ -1,5 +1,18 @@
 # Changelog
 
+
+## 1.6.3a1 (February 2025)
+
+### Added
+
+### Changed
+- Numba function refactored to C++ functions.
+- Census refactored to c++.
+- Lower and upper bounds from risk added.
+
+### Fixed
+- Confidence measure robust to zncc matching cost measure.
+
 ## 1.6.2 (September 2024)
 
 ## 1.6.2a1 (September 2024)
