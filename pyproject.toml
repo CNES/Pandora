@@ -48,7 +48,7 @@ dev = [
 ]
 
 sgm = [
-    "pandora_plugin_libsgm>=1.5.1"
+    "pandora_plugin_libsgm==1.5.4a1"
 ]
 
 mccnn = [
