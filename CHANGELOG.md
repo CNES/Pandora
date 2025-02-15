@@ -1,35 +1,45 @@
 # Changelog
 
-
 ## 1.6.3a1 (February 2025)
 
 ### Added
 
+- Multi wheel cibuildwheel in github CI for release
+- get disp min and disp max in datasets
+
 ### Changed
+
 - Numba function refactored to C++ functions.
 - Census refactored to c++.
 - Lower and upper bounds from risk added.
+- Clean and simplify README
 
 ### Fixed
+
 - Confidence measure robust to zncc matching cost measure.
+- properly manage multiband inputs in census
+
 
 ## 1.6.2 (September 2024)
 
 ## 1.6.2a1 (September 2024)
 
 ### Added
+
 - Using the numba cache. [#413]
 - Modification of check_conf to compare the disparity interval with the image size. [#411]
 - Addition of a spline order parameter to the shift_right_img method. [#420]
 - Add possibility to not use numba cache. [#421]
 
 ### Changed
+
 - Update criteria documentation. [#410]
 - Changing the after callback to before in the state machine. [#407]
 - Updating the filtering.rst, a documentation file. [#414]
 - Remove numpy warning. [#408]
 
 ### Fixed
+
 - Solving problems displaying images in notebooks. [#409]
 - Move the _indicator parameter to remove the sphinx warning. [#416]
 - Risk normalisation by external global interval. [#418]
@@ -38,33 +48,38 @@
 ## 1.6.1 (June 2024)
 
 ### Changed
+
 - Fix numpy version.
 
 ## 1.6.1a2 (June 2024)
 
 ### Fixed
+
 - Fixed calculation of ambiguity and risk with variable disparity. [#400]
 
 ### Changed
+
 - Ambiguity normalisation by external global interval. [#402]
 
 ## 1.6.1a1 (June 2024)
 
 ### Added
+
 - Add criteria documentation in Exploring the Field section. [#380]
 - Add a new method to add disparity grid in xarray dataset. [#389]
 - Add get method to margins. [#394]
 - Add interval_indicator on filetring documentation.
 
-
 ### Fixed
+
 - Fix link to notebooks in the documentation. [#310]
 - Update cv_masked to be used with a column step. [#391]
 - Fix step in get_coordinates method.
 - Fix disparities bigger than images shape. [#396]
 - Update notebooks after evolution of pandora run_prepare method. [#395]
 
-### Changed 
+### Changed
+
 - Uniformisation tests for cv_masked method. [#372]
 - Extract col_to_compute from grid_estimation method. [#393]
 - Update pandora after evolution of use_confidence in libsgm plugin. [#397]
@@ -72,6 +87,7 @@
 ## 1.6.0 (January 2024)
 
 ### Added
+
 - Using new check_datasets function and modification to the check_band_names API. [#338]
 - Added margin calculation for the treatment chain with ROI image. [#341]
 - Addition of a method that estimates the grid to be calculated. [#342]
@@ -80,6 +96,7 @@
 - Added an additional check not to use sgm with a step other than 1. [#378]
 
 ### Fixed
+
 - Fix memory_consumption_estimation method with disparity grids. [#367]
 - Fix step in matching cost zncc method.
 - Fix disparity_source word.
@@ -91,6 +108,7 @@
 - Correction of mistakes in the documentation. [#381]
 
 ### Changed
+
 - Update user configuration file with new keys : "left" & "right". [#314]
 - Updating information in the various xarrays. [#368]
 - Parametrization of numba parallelization.
@@ -101,18 +119,18 @@
 - Update of the minimal version for python. [#377]
 - Update of the minimal version for python for CI github. [#365]
 
-
 ## 1.6.0a1 (November 2023)
 
 ### Added
+
 - Addition of a step for matching_cost (only usable with Pandora2d). [#337]
 - Adding roi in create_dataset_from_inputs. [#346]
 - Adding disparity in dataset image. [#331]
 - Check inter dataset. [#334]
 - Adding check_datasets function. [#335]
 
-
 ### Fixed
+
 - Rationalisation of the allocate_costvolume function. [#320]
 - Remove right_disp_map. [#324]
 - Fix step use. [#353]
@@ -121,8 +139,8 @@
 - Update check_disparities. [#363]
 - Correction of notebooks. [#362]
 
-
 ### Changed
+
 - Change dmin_dmax name function to get_min_max_from_grid. [#347]
 - New disparity storage in the dataset containing the disparity map. [#339]
 - Moving some "pipeline" checks to abstract classes. [#313]
@@ -131,23 +149,24 @@
 - Move get_metadata function in img_tools file. [#328]
 - Update and move check_dataset function. [#333]
 
-
 ## 1.5.0 (April 2023)
 
-### Added 
+### Added
+
 - Documentation plugin_arnn [#261]
 - Multiband input image classification. [#256]
 
 ### Fixed
- - Deletion of the pip install codecov of githubAction CI [#305].
+
+- Deletion of the pip install codecov of githubAction CI [#305].
 
 ### Changed
-- Reformatting check conf [#299]
 
+- Reformatting check conf [#299]
 
 ## 1.4.0 (March 2023)
 
-### Added 
+### Added
 
 - Check that both segmentations/classifications are present if 3SGM and validation are intended. [#259]
 - Multiband images compatibility. [#251]
@@ -162,14 +181,14 @@
 
 ## 1.3.0 (January 2023)
 
-### Added 
+### Added
 
 - Add indicator to distinguish different cost volume confidence maps. [#243]
 - Add Makefile. [#248]
-- Add confidence method naming according to the selected confidence method. [#268] 
+- Add confidence method naming according to the selected confidence method. [#268]
 - Add compatibility to plugin_libsgm's 3SGM method. [#255]
 
-### Changed 
+### Changed
 
 - Remove dependance to ipyvolume. [#250]
 - Adapt confidence method naming to snake case style. [#278]
@@ -220,7 +239,7 @@
 
 ### Added
 
-- Binder for Pandora's notebooks. [#215] 
+- Binder for Pandora's notebooks. [#215]
 - Version handling with setuptools_scm. [#212]
 - Set dataset's transform to None if it is the identity matrix. [#211]
 - Handling of np.inf values on input images. [#210]
@@ -238,8 +257,8 @@
 
 ### Added
 
-- Implementation of the ambiguity confidence measure. [#162] 
-- Implementation of the  bilateral filter to suppress OpenCV dependency. [#148] 
+- Implementation of the ambiguity confidence measure. [#162]
+- Implementation of the  bilateral filter to suppress OpenCV dependency. [#148]
 - Checker to check if an image dataset is valid. [#196]
 - Creation of Jupyter notebooks for Pandora.[#153]
 
@@ -261,7 +280,7 @@
 
 ## 0.5.0 (January 2021)
 
-### Added 
+### Added
 
 - Implementation of multi scale processing for the disparity map computation. [#80]
 - A `./data_sample/` directory with images and configuration files for user's first steps with Pandora [#168]
@@ -278,7 +297,6 @@
 ### Fixed
 
 - Confidence measure that computes the distance LR / RL in cross checking method. [#155]
-
 
 ## 0.4.0 (November 2020)
 
