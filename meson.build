@@ -1,13 +1,17 @@
 project(
   'pandora',
   'cpp',
-  version: '1.6.3a1',
+  version: run_command(
+    'version.sh',
+    'get-vcs',
+  ).stdout().strip(),
   default_options: [
     'cpp_std=c++17',
   ],
 )
 
-meson.add_dist_script('python', meson.source_root() / 'version.py', 'set-dist', meson.project_version())
+meson.add_dist_script( meson.source_root() / 'version.sh', 'set-dist', meson.project_version())
+
 
 py = import('python').find_installation(pure: false)
 
@@ -46,6 +50,6 @@ subdir(
   'pandora/matching_cost/cpp'
 )
 
-# subdir(
+#subdir(
 #   'tests/test_cpp/'
-# )
+#)
