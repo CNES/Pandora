@@ -8,6 +8,7 @@ project(
   default_options: [
     'cpp_std=c++17',
   ],
+  meson_version: '>=1.1'
 )
 
 meson.add_dist_script( meson.source_root() / 'version.sh', 'set-dist', meson.project_version())
@@ -16,8 +17,8 @@ meson.add_dist_script( meson.source_root() / 'version.sh', 'set-dist', meson.pro
 py = import('python').find_installation(pure: false)
 
 pybind11_dep = dependency('pybind11')
-doctest_dep = dependency('doctest')
-python_dep = py.dependency(embed:true)
+doctest_dep = dependency('doctest', required: get_option('build_cpp_tests'))
+python_dep = py.dependency(embed:true, required: get_option('build_cpp_tests'))
 
 
 install_subdir(
@@ -50,6 +51,8 @@ subdir(
   'pandora/matching_cost/cpp'
 )
 
-#subdir(
-#   'tests/test_cpp/'
-#)
+if get_option('build_cpp_tests').enabled()
+  subdir(
+    'tests/test_cpp/'
+  )
+endif

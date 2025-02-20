@@ -1,0 +1,6 @@
+option(
+    'build_cpp_tests',
+    type: 'feature',
+    value: 'disabled',
+    description: 'If enabled, configure tests and their dependencies.',
+)
