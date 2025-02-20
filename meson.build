@@ -4,6 +4,7 @@ project(
   version: run_command(
     'version.sh',
     'get-vcs',
+    check: true,
   ).stdout().strip(),
   default_options: [
     'cpp_std=c++17',
@@ -11,7 +12,7 @@ project(
   meson_version: '>=1.1'
 )
 
-meson.add_dist_script( meson.source_root() / 'version.sh', 'set-dist', meson.project_version())
+meson.add_dist_script( meson.project_source_root() / 'version.sh', 'set-dist', meson.project_version())
 
 
 py = import('python').find_installation(pure: false)
