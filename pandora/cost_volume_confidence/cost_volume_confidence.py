@@ -113,7 +113,9 @@ class AbstractCostVolumeConfidence:
         """
 
     @staticmethod
-    def normalize_with_extremum(confidence: np.ndarray, dataset: xr.Dataset, nbr_etas: int) -> np.ndarray:
+    def normalize_with_extremum(
+        confidence: np.ndarray, dataset: xr.Dataset, nbr_etas: int, subpix: int = 1
+    ) -> np.ndarray:
         """
         Normalize ambiguity with extremum
 
@@ -123,13 +125,15 @@ class AbstractCostVolumeConfidence:
         :tye dataset: xarray.Dataset
         :param nbr_etas: size of etas
         :type nbr_etas: int
+        :param subpix:  subpix used in matching cost
+        :type subpix: int
         :return: the normalized confidence
         :rtype: 2D np.ndarray (row, col) dtype = float32
         """
         norm_confidence = np.copy(confidence)
         global_disp_max = dataset.attrs["global_disparity"][1]
         global_disp_min = dataset.attrs["global_disparity"][0]
-        max_norm = (global_disp_max - global_disp_min) * nbr_etas
+        max_norm = (global_disp_max - global_disp_min) * nbr_etas * subpix
 
         return norm_confidence / max_norm
 

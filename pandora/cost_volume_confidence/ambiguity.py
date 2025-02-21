@@ -143,14 +143,18 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         # If activated, ambiguity normalization with percentile
         if self._normalization:
             if "global_disparity" in img_left.attrs:
-                ambiguity = self.normalize_with_extremum(ambiguity, img_left, nbr_etas=self._nbr_etas)
+                ambiguity = self.normalize_with_extremum(
+                    ambiguity, img_left, nbr_etas=self._nbr_etas, subpix=cv.attrs["subpixel"]
+                )
                 logging.info(
                     "You are not using ambiguity normalization by percentile; \n"
                     "you are in a specific case with the instantiation of global_disparity."
                 )
             # in case of cross correlation
             elif "global_disparity" in img_right.attrs:
-                ambiguity = self.normalize_with_extremum(ambiguity, img_right, nbr_etas=self._nbr_etas)
+                ambiguity = self.normalize_with_extremum(
+                    ambiguity, img_right, nbr_etas=self._nbr_etas, subpix=cv.attrs["subpixel"]
+                )
             else:
                 ambiguity = self.normalize_with_percentile(ambiguity)
 
