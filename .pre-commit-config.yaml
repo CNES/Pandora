@@ -38,3 +38,10 @@ repos:
       files: ^(docs/.*|pandora/.*)$
       pass_filenames: False
       stages: [pre-push]
+
+    - id: meson
+      name: meson
+      language: python
+      entry: meson format -e -i
+      files: ^(.*/)?(meson\.build|meson\.format|meson\.options)$
+      additional_dependencies: ['meson==1.6.1']
