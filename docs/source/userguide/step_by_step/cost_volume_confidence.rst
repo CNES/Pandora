@@ -110,7 +110,7 @@ ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial
    * - *normalization*
      - Ambiguity normalization
      - bool
-     - false
+     - true
      - true, false
      - No. Only available if "ambiguity" method
    * - *possibility_threshold*
