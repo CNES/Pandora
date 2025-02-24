@@ -57,7 +57,7 @@ check: ## check if cmake is installed
 .PHONY: venv
 venv: check ## create virtualenv in PANDORA_VENV directory if not exists
 	@test -d ${PANDORA_VENV} || python3 -m venv ${PANDORA_VENV}
-	@${PANDORA_VENV}/bin/python -m pip install --upgrade pip meson-python meson ninja setuptools_scm setuptools wheel # no check to upgrade each time
+	@${PANDORA_VENV}/bin/python -m pip install --upgrade pip meson-python meson ninja setuptools_scm setuptools wheel pybind11 # no check to upgrade each time
 	@touch ${PANDORA_VENV}/bin/activate
 
 .PHONY: cpp_deps
