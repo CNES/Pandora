@@ -57,7 +57,7 @@ check: ## check if cmake is installed
 .PHONY: venv
 venv: check ## create virtualenv in PANDORA_VENV directory if not exists
 	@test -d ${PANDORA_VENV} || python3 -m venv ${PANDORA_VENV}
-	@${PANDORA_VENV}/bin/python -m pip install --upgrade pip meson-python meson ninja setuptools_scm setuptools wheel # no check to upgrade each time
+	@${PANDORA_VENV}/bin/python -m pip install --upgrade pip meson-python meson ninja setuptools_scm setuptools wheel pybind11 # no check to upgrade each time
 	@touch ${PANDORA_VENV}/bin/activate
 
 .PHONY: cpp_deps
@@ -66,7 +66,7 @@ cpp_deps: ## retrieve cpp dependencies
 
 .PHONY: install
 install: venv ## install pandora without plugins
-	@test -f ${PANDORA_VENV}/bin/pandora || . ${PANDORA_VENV}/bin/activate; ${PANDORA_VENV}/bin/pip install --no-build-isolation --editable .[dev,docs,notebook]
+	@test -f ${PANDORA_VENV}/bin/pandora || . ${PANDORA_VENV}/bin/activate; ${PANDORA_VENV}/bin/pip install --no-build-isolation --editable .[dev,docs,notebook] --config-settings=setup-args=-Dbuild_cpp_tests=enabled
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${PANDORA_VENV}/bin/pre-commit install
 	@echo "PANDORA installed in dev mode in virtualenv ${PANDORA_VENV}"

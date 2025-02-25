@@ -4,9 +4,14 @@ requires = [
     "wheel",
     "setuptools_scm[toml]>=6.2",
     "meson-python",
+    "meson >= 1.1.0",
     "pybind11"
 ]
 build-backend = "mesonpy"
+
+[tool.meson-python.args]
+setup = ["-Dbuild_cpp_tests=disabled"]
+compile = ['-j0']
 
 # enable setuptools_scm version
 [tool.setuptools_scm]
@@ -82,4 +87,5 @@ pandora = "pandora.Pandora:main"
 
 [tool.cibuildwheel]
 skip = ["pp*", "*-win32", "cp36-*", "cp37-*", "cp38-*"]
+config-settings = {"setup-args" = "-Dbuild_cpp_tests=disabled"}
 
