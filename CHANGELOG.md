@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.6.3 (February 2025)
+
+### Changed
+
+- update pandora plugin libsgm version to 1.5.4
+
+### Fixed
+
+- normalisation of ambiguity: doc and bug
+- fix meson.build errors and clean
+- meson tests running
+- add pybind11 dependency in makefile
+
 ## 1.6.3a1 (February 2025)
 
 ### Added
@@ -18,6 +31,7 @@
 
 - Confidence measure robust to zncc matching cost measure.
 - properly manage multiband inputs in census
+- update the get_coordinates method to static method
 
 
 ## 1.6.2 (September 2024)
