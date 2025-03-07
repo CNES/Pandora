@@ -276,7 +276,7 @@ def add_mask(
         input_mask = rasterio_open(mask).read(1, window=window)
         # Masks invalid pixels
         # All pixels that are not valid_pixels, on the input mask, are considered as invalid pixels
-        dataset["msk"].data[np.where(input_mask > 0)] = (
+        dataset["msk"].data[np.where(input_mask != dataset.attrs["valid_pixels"])] = (
             dataset.attrs["valid_pixels"] + dataset.attrs["no_data_mask"] + 1
         )
 
