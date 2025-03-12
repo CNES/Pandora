@@ -36,10 +36,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "sphinx",
-    "sphinx_rtd_theme",
-    "sphinx_autoapi",
-    "sphinx_tabs",
+    "pandora[test]",
+    "pandora[docs]",
     "pylint",
     "pre-commit",
     "mypy",
@@ -91,6 +89,8 @@ pandora = "pandora.Pandora:main"
 [tool.cibuildwheel]
 skip = ["pp*", "*-win32", "cp36-*", "cp37-*", "cp38-*"]
 config-settings = {"setup-args" = "-Dbuild_cpp_tests=disabled"}
+test-extras = ["test"]
+test-command = "pytest {package}/tests/test_pandora.py"
 
 [tool.cibuildwheel.windows]
 before-build = "pip install delvewheel"
