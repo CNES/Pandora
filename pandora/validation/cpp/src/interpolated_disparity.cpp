@@ -183,8 +183,8 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_sgm(
     auto rw_out_valid = out_valid.mutable_unchecked<2>();
 
     std::array<float, 8> valid_neighbors;
-    for (int row = 0; row < n_row; ++row) {
-        for (int col = 0; col < n_col; ++col) {
+    for (int row = 0; row < static_cast<int>(n_row); ++row) {
+        for (int col = 0; col < static_cast<int>(n_col); ++col) {
 
             // Mismatched
             if (r_valid(row, col) & msk_pixel_mismatch) {
@@ -192,16 +192,10 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_sgm(
                 // Mismatched pixel areas that are direct neighbors
                 // of occluded pixels are treated as occlusions
                 bool found = false;
-                for (
-                    int i = std::max(0, row-1); 
-                    i < std::min(static_cast<int>(n_row) - 1, row + 1) + 1;
-                    ++i
-                ) {
-                    for (
-                        int j = std::max(0, col-1);
-                        j < std::min(static_cast<int>(n_col) - 1, col + 1) + 1;
-                        ++j
-                    ) {
+                int max_i = std::min(static_cast<int>(n_row) - 1, row + 1) + 1;
+                int max_j = std::min(static_cast<int>(n_col) - 1, col + 1) + 1;
+                for (int i = std::max(0, row-1); i < max_i; ++i) {
+                    for (int j = std::max(0, col-1); j < max_j; ++j) {
                         if ((r_valid(i, j) & msk_pixel_occlusion) != 0) {
                             found = true;
                             break;
@@ -346,8 +340,8 @@ std::tuple<py::array_t<float>, py::array_t<int>> interpolate_mismatch_mc_cnn(
     };
 
     std::array<float, 16> interp_mismatched;
-    for (int row = 0; row < n_row; ++row) {
-        for (int col = 0; col < n_col; ++col) {
+    for (size_t row = 0; row < n_row; ++row) {
+        for (size_t col = 0; col < n_col; ++col) {
 
             // Mismatch
             if (r_valid(row, col) & msk_pixel_mismatch) {
