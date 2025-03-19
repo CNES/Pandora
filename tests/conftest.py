@@ -31,6 +31,11 @@ import pytest
 import rasterio
 
 
+@pytest.fixture(scope="session")
+def root_dir(request):
+    return request.session.path
+
+
 @pytest.fixture()
 def memory_tiff_file() -> Callable:
     """Return an in memory Tiff file as a contextmanager.
