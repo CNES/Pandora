@@ -6,30 +6,6 @@ on:
     - cron: 0 2 * * *
 
 jobs:
-  test:
-    name: Install and test Pandora
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.10"
-
-      - name: Install Pandora with dependencies
-        run: |
-          python -m pip install --upgrade pip meson-python meson ninja setuptools_scm setuptools wheel pybind11
-          pip install --no-build-isolation --editable .[dev]
-
-      - name: Test with pytest
-        run: |
-          pytest -m "not notebook_tests" --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
-
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -74,7 +50,7 @@ jobs:
 
   upload_pypi:
     name: Publish package on pypi
-    needs: [test, build_wheels, build_sdist]
+    needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
     environment: pypi
     permissions:

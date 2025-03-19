@@ -132,7 +132,7 @@ def basic_pipeline_cfg():
     }
 
 
-@pytest.mark.skipif(any("sgm" in name for name in plugin_set), reason="SGM plugin not installed")
+@pytest.mark.skipif(not any("sgm" in name for name in plugin_set), reason="SGM plugin not installed")
 class TestMain:
     """Test Main."""
 
