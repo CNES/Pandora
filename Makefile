@@ -110,7 +110,7 @@ format: install format/black  ## run black formatting (depends install)
 .PHONY: format/black
 format/black: install  ## run black formatting (depends install) (source venv before)
 	@echo "+ $@"
-	@${PANDORA_VENV}/bin/black pandora tests ./*.py notebooks/snippets/*.py
+	@${PANDORA_VENV}/bin/black src/pandora tests ./*.py notebooks/snippets/*.py
 
 ### Check code quality and linting : black, mypy, pylint
 
@@ -120,17 +120,17 @@ lint: install lint/black lint/mypy lint/pylint ## check code quality and linting
 .PHONY: lint/black
 lint/black: ## check global style with black
 	@echo "+ $@"
-	@${PANDORA_VENV}/bin/black --check pandora tests ./*.py notebooks/snippets/*.py
+	@${PANDORA_VENV}/bin/black --check src/pandora tests ./*.py notebooks/snippets/*.py
 
 .PHONY: lint/mypy
 lint/mypy: ## check linting with mypy
 	@echo "+ $@"
-	@${PANDORA_VENV}/bin/mypy pandora tests
+	@${PANDORA_VENV}/bin/mypy src/pandora tests
 
 .PHONY: lint/pylint
 lint/pylint: ## check linting with pylint
 	@echo "+ $@"
-	@set -o pipefail; ${PANDORA_VENV}/bin/pylint pandora tests --rcfile=.pylintrc --output-format=parseable --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" # | tee pylint-report.txt # pipefail to propagate pylint exit code in bash
+	@set -o pipefail; ${PANDORA_VENV}/bin/pylint src/pandora tests --rcfile=.pylintrc --output-format=parseable --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" # | tee pylint-report.txt # pipefail to propagate pylint exit code in bash
 
 ## Documentation section
 
