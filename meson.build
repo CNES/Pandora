@@ -18,11 +18,11 @@ pybind11_dep = dependency('pybind11')
 doctest_dep = dependency('doctest', required: get_option('build_cpp_tests'))
 python_dep = py.dependency(embed: true, required: get_option('build_cpp_tests'))
 
-install_subdir(
-    'src/pandora',
-    install_dir: py.get_install_dir() / 'pandora',
-    strip_directory: true,
-)
+install_dir = py.get_install_dir() / 'pandora'
+
+install_subdir('src/pandora', install_dir: install_dir, strip_directory: true)
+
+install_data('src/pandora/py.typed', install_dir: install_dir)
 
 subdir('src/pandora/cpp')
 
