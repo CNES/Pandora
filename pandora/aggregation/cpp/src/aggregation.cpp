@@ -96,7 +96,7 @@ std::tuple<py::array_t<float>, py::array_t<float>> cbca_step_2(
     }
     
     for (size_t row = 0; row < n_row; ++row) {
-        for (size_t col = 0; col < r_range_row.shape(0); ++col) {
+        for (size_t col = 0; col < static_cast<size_t>(r_range_row.shape(0)); ++col) {
 
             int64_t left_range_row = r_range_row(col);
             int64_t right_range_row = r_range_row_right(col);
@@ -202,13 +202,15 @@ std::tuple<py::array_t<float>, py::array_t<float>> cbca_step_4(
 
             if (top > 0) {
                 float sum = 0;
-                for (size_t i = 1; i <= top; ++i) sum += r_sum2(row-i, left_range_row);
+                for (size_t i = 1; i <= static_cast<size_t>(top); ++i)
+                    sum += r_sum2(row-i, left_range_row);
 
                 rw_sum4(row, left_range_row) += sum;
             }
             if (bot > 0) {
                 float sum = 0;
-                for (size_t i = 1; i <= bot; ++i) sum += r_sum2(row+i, left_range_row);
+                for (size_t i = 1; i <= static_cast<size_t>(bot); ++i)
+                    sum += r_sum2(row+i, left_range_row);
 
                 rw_sum4(row, left_range_row) += sum;
             }
@@ -226,7 +228,9 @@ py::array_t<int16_t> cross_support(py::array_t<float> image, int16_t len_arms, f
     size_t n_col = buf_image.shape[1];
     auto rw_image = image.mutable_unchecked<2>();
 
-    py::array_t<int16_t> cross(py::array::ShapeContainer({n_row, n_col, 4}));
+    py::array_t<int16_t> cross(py::array::ShapeContainer({
+        static_cast<int>(n_row), static_cast<int>(n_col), 4
+    }));
     auto rw_cross = cross.mutable_unchecked<3>();
 
     auto set_cross_value = [&](

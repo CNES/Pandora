@@ -42,7 +42,6 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_re
     auto rw_disp = disp.mutable_unchecked<2>();
     auto rw_mask = mask.mutable_unchecked<2>();
     auto r_cv = cv.unchecked<3>();
-    size_t n_disp = r_cv.shape(2);
     size_t n_row = r_cv.shape(0);
     size_t n_col = r_cv.shape(1);
 
@@ -120,7 +119,6 @@ loop_approximate_refinement(
     auto rw_disp = disp.mutable_unchecked<2>();
     size_t n_row = r_cv.shape(0);
     size_t n_col = r_cv.shape(1);
-    size_t n_disp = r_cv.shape(2);
 
     py::array_t<float> itp_coeff = py::array_t<float>({n_row, n_col});
     auto rw_itp_coeff = itp_coeff.mutable_unchecked<2>();
@@ -146,7 +144,10 @@ loop_approximate_refinement(
 
             // If Information: calculations stopped at the pixel step, sub-pixel interpolation did
             // not succeed
-            if (raw_dsp == d_min || raw_dsp == d_max || diag == 0 || diag == n_col-1) {
+            if (
+                raw_dsp == d_min || raw_dsp == d_max || 
+                diag == 0 || diag == static_cast<int>(n_col)-1
+            ) {
                 rw_itp_coeff(row, col) = diag_cost;
                 rw_mask(row, col) += cst_pandora_msk_pixel_stopped_interpolation;
                 continue;

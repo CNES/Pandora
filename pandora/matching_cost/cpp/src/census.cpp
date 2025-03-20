@@ -25,7 +25,7 @@
 #include <bitset>
 
 #define CENSUS_TYPE char
-#define CENSUS_SINGLE_BIT (CENSUS_TYPE(1) << sizeof(CENSUS_TYPE)*CHAR_BIT - 1)
+#define CENSUS_SINGLE_BIT (CENSUS_TYPE(1) << ((sizeof(CENSUS_TYPE)*CHAR_BIT) - 1))
 
 namespace py = pybind11;
 
@@ -45,8 +45,8 @@ std::tuple<int, int, int, int, int> get_census_info(int census_width, int census
 CENSUS_TYPE* census_transform(py::array_t<float> img, int census_width, int census_height) {
 
     auto r_img = img.unchecked<2>();
-    size_t n_rows = r_img.shape(0);
-    size_t n_cols = r_img.shape(1);
+    int n_rows = r_img.shape(0);
+    int n_cols = r_img.shape(1);
 
     auto [c_half_w, c_half_h, nb_useful_bits, bits_per_elem, nb_chars] = get_census_info(
         census_width, census_height
@@ -108,9 +108,9 @@ py::array_t<float> compute_matching_costs(
 
     int min_disp = lround(rw_disps(0));
 
-    size_t n_rows = rw_cv.shape(0);
-    size_t n_cols = rw_cv.shape(1);
-    size_t n_disp = rw_cv.shape(2);
+    int n_rows = rw_cv.shape(0);
+    int n_cols = rw_cv.shape(1);
+    int n_disp = rw_cv.shape(2);
 
     auto [c_half_w, c_half_h, nb_useful_bits, bits_per_elem, nb_chars] = get_census_info(
         census_width, census_height

@@ -96,7 +96,7 @@ py::list compute_risk_and_sampled_risk(
                 if (!sample_risk)
                     continue;
 
-                for (size_t eta = 0; eta < nbr_etas; ++eta) {
+                for (int eta = 0; eta < nbr_etas; ++eta) {
                     rw_samp_risk_min->operator()(
                         row, col, eta
                     ) = std::numeric_limits<float>::quiet_NaN();
@@ -129,7 +129,7 @@ py::list compute_risk_and_sampled_risk(
             float sum_for_max = 0;
             float sum_for_disp_inf = 0;
             float sum_for_disp_sup = 0;
-            for (size_t eta = 0; eta < nbr_etas; ++eta) {
+            for (int eta = 0; eta < nbr_etas; ++eta) {
                 // Obtain min and max disparities for each sample
                 float min_disp_idx = std::numeric_limits<float>::infinity();
                 float max_disp_idx = -std::numeric_limits<float>::infinity();

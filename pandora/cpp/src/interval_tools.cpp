@@ -80,7 +80,7 @@ py::array_t<bool> create_connected_graph(
         for (size_t l = 0; l < n_segments; l++)
             list_lines[l] = connection_graph[pos_to_id(i, l, n_segments)];
 
-        for (size_t _d = 1; _d < depth; _d++) {
+        for (int _d = 1; _d < depth; _d++) {
             
             // reset any_new_points
             for (size_t l = 0; l < n_segments; l++) any_new_points[l] = false;
@@ -172,13 +172,10 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<bool>> graph_regu
         }
 
         // Contains the lengths of the segments
-        size_t total_pixels = n_pixels.back();
         std::vector<float> agg_inf;
         std::vector<float> agg_sup;
 
         for (size_t j = 0; j < n_pixels.size()-1; j++) {
-            int start = n_pixels[j];
-            int end = n_pixels[j + 1];
             int row = left_coords[j].first;
             int col_start = left_coords[j].second;
             int col_end = right_coords[j].second;
