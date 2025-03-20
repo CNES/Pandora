@@ -60,10 +60,6 @@ venv: check ## create virtualenv in PANDORA_VENV directory if not exists
 	@${PANDORA_VENV}/bin/python -m pip install --upgrade pip meson-python meson ninja setuptools_scm setuptools wheel pybind11 # no check to upgrade each time
 	@touch ${PANDORA_VENV}/bin/activate
 
-.PHONY: cpp_deps
-cpp_deps: ## retrieve cpp dependencies
-	@${PANDORA_VENV}/bin/meson wrap update-db
-
 .PHONY: install
 install: venv ## install pandora without plugins
 	@test -f ${PANDORA_VENV}/bin/pandora || . ${PANDORA_VENV}/bin/activate; ${PANDORA_VENV}/bin/pip install --no-build-isolation --editable .[dev,docs,notebook] --config-settings=setup-args=-Dbuild_cpp_tests=enabled
@@ -72,15 +68,37 @@ install: venv ## install pandora without plugins
 	@echo "PANDORA installed in dev mode in virtualenv ${PANDORA_VENV}"
 	@echo "PANDORA venv usage : source ${PANDORA_VENV}/bin/activate; pandora -h"
 
+.PHONY: install-sgm
+install-sgm: venv install## install pandora with sgm
+	@test -f ${PANDORA_VENV}/lib/python3.10/site-packages/pandora_plugin_libsgm || . ${PANDORA_VENV}/bin/activate; ${PANDORA_VENV}/bin/pip install --no-build-isolation --editable .[sgm]  --config-settings=setup-args=-Dbuild_cpp_tests=enabled
+	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
+	@test -f .git/hooks/pre-commit || ${PANDORA_VENV}/bin/pre-commit install
+	@echo "PANDORA installed in dev mode in virtualenv ${PANDORA_VENV} with sgm"
+	@echo "PANDORA venv usage : source ${PANDORA_VENV}/bin/activate; pandora -h"
+
 ## Test section
 
 .PHONY: test
 test: install ## run all tests (except notebooks) + coverage (source venv before)
 	@${PANDORA_VENV}/bin/pytest -m "not notebook_tests" --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
 
+.PHONY: test-unit-cpp
+test-unit-cpp: install ## run unit cpp tests only for dev
+	@echo "Run unit cpp tests"
+	. ${PANDORA_VENV}/bin/activate; meson test -C build/$(shell ls build)/ -v
+
+.PHONY: test-functional
+test-functional: install-sgm ## run functional tests only (for wheel validation temporary)
+	@echo "Run functional tests"
+	@${PANDORA_VENV}/bin/pytest -m "functional_tests"
+
 .PHONY: test-notebook
 test-notebook: install ## run notebook tests only
 	@${PANDORA_VENV}/bin/pytest -m "notebook_pandora"
+
+.PHONY: test-notebook-sgm
+test-notebook-sgm: install-sgm ## run notebook tests with sgm as dependency 
+	@${PANDORA_VENV}/bin/pytest -m "notebook_with_sgm"
 
 ## Code quality, linting section
 
@@ -211,8 +229,3 @@ clean-docker: ## clean docker image
 	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
 	@echo "Clean Docker image cnes/pandora dev"
 	@docker image rm cnes/pandora:dev
-
-.PHONY: test-unit-cpp
-test-unit-cpp: install ## run unit cpp tests only for dev
-	@echo "Run unit cpp tests"
-	. ${PANDORA_VENV}/bin/activate; meson test -C build/$(shell ls build)/ -v
