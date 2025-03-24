@@ -34,7 +34,7 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("../pandora"))
+sys.path.insert(0, os.path.abspath("../src/pandora"))
 
 # Extend Recursion limit for RecursionError in big files (bug astroid)
 sys.setrecursionlimit(8 * sys.getrecursionlimit())
@@ -70,7 +70,7 @@ extensions = [
 imgmath_embed = True
 
 # Autoapi configuration
-autoapi_dirs = ["../../pandora"]
+autoapi_dirs = ["../../src/pandora"]
 autoapi_root = "api_reference"
 autoapi_keep_files = True
 autoapi_options = [
