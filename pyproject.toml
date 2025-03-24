@@ -87,7 +87,8 @@ exclude = "(.eggs|.git|.mypy_cache|.nox|.tox|_build|build|dist|venv)"
 pandora = "pandora.Pandora:main"
 
 [tool.cibuildwheel]
-skip = ["pp*", "*-win32", "cp36-*", "cp37-*", "cp38-*", "*-musllinux*"]
+archs = "auto64"
+skip = ["pp*", "cp36-*", "cp37-*", "cp38-*", "*-musllinux*"]
 config-settings = {"setup-args" = "-Dbuild_cpp_tests=disabled"}
 test-extras = ["test", "sgm"]
 test-command = "pytest {project}/tests/functional_tests/test_basic.py"
