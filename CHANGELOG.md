@@ -1,24 +1,36 @@
 # Changelog
 
+## 1.6.4 (March 2025)
+
+### Changed
+
+- Update makefile and pytest.ini to add functionnal tests. [#439]
+
+### Fixed
+
+- Update add_mask method to valid only 0 value on mask. [#436]
+- Resolved compilation warnings. [#437]
+- Repair windows wheel and update github action to test wheels.
+
 ## 1.6.3 (February 2025)
 
 ### Changed
 
-- update pandora plugin libsgm version to 1.5.4
+- Update pandora plugin libsgm version to 1.5.4
 
 ### Fixed
 
-- normalisation of ambiguity: doc and bug
-- fix meson.build errors and clean
-- meson tests running
-- add pybind11 dependency in makefile
+- Normalisation of ambiguity: doc and bug
+- Fix meson.build errors and clean
+- Meson tests running
+- Add pybind11 dependency in makefile
 
 ## 1.6.3a1 (February 2025)
 
 ### Added
 
 - Multi wheel cibuildwheel in github CI for release
-- get disp min and disp max in datasets
+- Get disp min and disp max in datasets
 
 ### Changed
 

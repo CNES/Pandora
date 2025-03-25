@@ -31,6 +31,7 @@ This file keeps track of authors contributions.
 * David Youssefi <David.Youssefi@cnes.fr>
 * Roman Malinowski <roman.malinowski@hds.utc.fr>
 * Tommy Calendini <tommy.calendini@cs-soprasteria.com>
+* Marian Rassat <marian.rassat@cs-soprasteria.com>
 
 Update here with new contributors.
 
