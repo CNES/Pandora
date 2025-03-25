@@ -42,7 +42,7 @@ py::array_t<float> find_valid_neighbors(
     // Maximum path length
     size_t max_path_length = std::max(n_col, n_row);
 
-    py::array_t<float> out = py::array_t<float>({n_dirs});
+    py::array_t<float> out = py::array_t<float>({static_cast<int>(n_dirs)});
     auto rw_out = out.mutable_unchecked<1>();
 
     for (size_t dir = 0; dir < n_dirs; ++dir) {
@@ -75,7 +75,7 @@ py::array_t<float> find_valid_neighbors(
 float compute_median(pybind11::detail::unchecked_reference<float, 1> buf) {
 
     std::vector<float> data;
-    for (size_t i = 0; i < buf.shape(0); ++i) {
+    for (int i = 0; i < buf.shape(0); ++i) {
         float val = buf(i);
         if (!std::isnan(val)) {
             data.push_back(val);

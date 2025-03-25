@@ -86,7 +86,7 @@ py::list compute_ambiguity_and_sampled_ambiguity(
             if (std::isnan(norm_extremum)) {
                 rw_amb(row, col) = nbr_etas * n_disp;
                 if (sample_ambiguity)
-                    for (size_t eta = 0; eta < nbr_etas; ++eta)
+                    for (int eta = 0; eta < nbr_etas; ++eta)
                         rw_samp_amb->operator()(row, col, eta) = n_disp;
                 continue;
             }
@@ -119,7 +119,7 @@ py::list compute_ambiguity_and_sampled_ambiguity(
             amb_sum = 0;
             for (int eta = 0; eta < nbr_etas; ++eta) {
                 float amb_eta_sum = 0;
-                for (int disp = 0; disp < n_disp; ++disp) {
+                for (size_t disp = 0; disp < n_disp; ++disp) {
                     amb_status = normalized_pix_costs[disp] <= (norm_extremum + r_etas(eta));
                     amb_eta_sum += amb_status ? 1.f : 0.f;
                 }

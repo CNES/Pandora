@@ -52,9 +52,9 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
     float min_cost = std::numeric_limits<float>::infinity();
     float max_cost = -std::numeric_limits<float>::infinity();
     float cv_val;
-    for (int i = 0; i < n_row; ++i) {
-        for (int j = 0; j < n_col; ++j) {
-            for (int k = 0; k < n_disp; ++k) {
+    for (size_t i = 0; i < n_row; ++i) {
+        for (size_t j = 0; j < n_col; ++j) {
+            for (size_t k = 0; k < n_disp; ++k) {
                 cv_val = r_cv(i,j,k);
                 if ( !std::isnan(cv_val) ) {
                     min_cost = std::min(min_cost, cv_val);
@@ -93,7 +93,7 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
             max_pix_cost = -std::numeric_limits<float>::infinity();
             
             // Normalized cost volume
-            for (int disp = idx_disp_min; disp < idx_disp_max; ++disp) {
+            for (size_t disp = idx_disp_min; disp < idx_disp_max; ++disp) {
                 cv_val = r_cv(row, col, disp);
                 norm_pix_costs[disp] = (cv_val - min_cost) / diff_cost;
                 if (!std::isnan(cv_val)) {
@@ -108,7 +108,7 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
             }
 
             // possibility transformation
-            for (int disp = idx_disp_min; disp < idx_disp_max; ++disp) {
+            for (size_t disp = idx_disp_min; disp < idx_disp_max; ++disp) {
                 if (!std::isnan(norm_pix_costs[disp]))
                     norm_pix_costs[disp] = type_factor * norm_pix_costs[disp] + 1.f - max_pix_cost;
             }
@@ -116,7 +116,7 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
             // Computing the interval bounds by applying a threshold to the possibility distribution
 
             found = false;
-            for (int disp = idx_disp_min; disp < idx_disp_max; ++disp) {
+            for (size_t disp = idx_disp_min; disp < idx_disp_max; ++disp) {
                 if (norm_pix_costs[disp] >= possibility_threshold) {
                     found = true;
                     break;
@@ -131,12 +131,12 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
                 continue;
             }
 
-            min_valid_idx = std::numeric_limits<float>::infinity();
-            max_valid_idx = -std::numeric_limits<float>::infinity();
-            for (int disp = idx_disp_min; disp < idx_disp_max; ++disp) {
+            min_valid_idx = std::numeric_limits<int>::max();
+            max_valid_idx = std::numeric_limits<int>::min();
+            for (size_t disp = idx_disp_min; disp < idx_disp_max; ++disp) {
                 if (norm_pix_costs[disp] >= possibility_threshold) {
-                    min_valid_idx = std::min(min_valid_idx, disp);
-                    max_valid_idx = std::max(max_valid_idx, disp);
+                    min_valid_idx = std::min(min_valid_idx, static_cast<int>(disp));
+                    max_valid_idx = std::max(max_valid_idx, static_cast<int>(disp));
                 }
             }
 
@@ -144,7 +144,10 @@ std::tuple<py::array_t<float>, py::array_t<float>> compute_interval_bounds(
             // extending the interval (+/- 1) because of the disparity refinement
             if (min_valid_idx > 0 && static_cast<int>(norm_pix_costs[min_valid_idx])==1)
                 --min_valid_idx;
-            if (max_valid_idx < n_disp-1 && static_cast<int>(norm_pix_costs[max_valid_idx])==1)
+            if (
+                max_valid_idx < static_cast<int>(n_disp)-1 &&
+                static_cast<int>(norm_pix_costs[max_valid_idx])==1
+            )
                 ++max_valid_idx;
 
             rw_interval_inf(row, col) = r_disp_interval(min_valid_idx);
