@@ -22,13 +22,21 @@
 """
 This module contains functions associated to the disparity denoiser filter used to filter the disparity map.
 """
-import logging
 from typing import Dict, Union
 
 import xarray as xr
 from json_checker import Checker, And
+import numpy as np
+from scipy.ndimage import gaussian_filter
+from xarray import DataArray
+
+import pandora.constants as cst
 
 from . import filter  # pylint: disable=redefined-builtin
+
+
+def gaussian(value, sig=1.0):
+    return np.exp(-np.power(value / sig, 2.0) / 2.0)
 
 
 @filter.AbstractFilter.register_subclass("disparity_denoiser")
@@ -42,7 +50,7 @@ class DisparityDenoiser(filter.AbstractFilter):
     _SIGMA_EUCLIDIAN = 4.0
     _SIGMA_COLOR = 100.0
     _SIGMA_PLANAR = 12.0
-    _SIGMA_GRAD = 1.5
+    _BAND = "r"
 
     def __init__(self, *args, cfg: Dict, **kwargs):  # pylint:disable=unused-argument
         """
@@ -55,7 +63,19 @@ class DisparityDenoiser(filter.AbstractFilter):
         self._sigma_euclidian = float(self.cfg["sigma_euclidian"])
         self._sigma_color = float(self.cfg["sigma_color"])
         self._sigma_planar = float(self.cfg["sigma_planar"])
-        self._sigma_grad = float(self.cfg["sigma_grad"])
+        self._band = self.cfg["band"]
+
+        assert self._filter_size % 2 != 0
+        self.win_c = self._filter_size // 2  # index of the center of a window
+        self.win_size = self._filter_size  # size of the window
+
+        # coordinates within a window
+        win_coords = np.meshgrid(
+            np.arange(-(self._filter_size // 2), self._filter_size // 2 + 1),
+            np.arange(-(self._filter_size // 2), self._filter_size // 2 + 1),
+            indexing="ij",
+        )
+        self.win_coords = np.stack(win_coords, 0)
 
     def check_conf(self, cfg: Dict) -> Dict[str, Union[str, float]]:
         """
@@ -75,8 +95,8 @@ class DisparityDenoiser(filter.AbstractFilter):
             cfg["sigma_color"] = self._SIGMA_COLOR
         if "sigma_planar" not in cfg:
             cfg["sigma_planar"] = self._SIGMA_PLANAR
-        if "sigma_grad" not in cfg:
-            cfg["sigma_grad"] = self._SIGMA_GRAD
+        if "band" not in cfg:
+            cfg["band"] = self._BAND
 
         schema = {
             "filter_method": And(str, lambda input: "disparity_denoiser"),
@@ -84,7 +104,7 @@ class DisparityDenoiser(filter.AbstractFilter):
             "sigma_euclidian": And(float, lambda input: input > 0),
             "sigma_color": And(float, lambda input: input > 0),
             "sigma_planar": And(float, lambda input: input > 0),
-            "sigma_grad": And(float, lambda input: input > 0),
+            "band": str,
         }
 
         checker = Checker(schema)
@@ -96,6 +116,114 @@ class DisparityDenoiser(filter.AbstractFilter):
         Describes the filtering method
         """
         print("Disparity denoiser filter description")
+
+    def get_grad(self, disp: np.ndarray) -> np.ndarray:
+        """
+        Get the disparity gradient
+
+        :param disp: disparity map
+        :type disp: np.array
+        :return disp_grad: the gradient of the disparity map
+        :rtype disp_grad: np.array
+        """
+        disp_blur = gaussian_filter(disp, sigma=1.5)
+        disp_grad = np.stack(np.gradient(disp_blur), axis=0)
+        return disp_grad
+
+    def sliding_window(self, im: np.ndarray) -> np.ndarray:
+        """
+        Get a sliding window view of the input image
+
+        :param im: input image [C, H, W]
+        :type im: np.array
+        :return im_view: a windowed view of the image [H, W, C, ws, ws]
+        :rtype im_view: np.array
+        """
+        pad = self.win_size // 2
+        im_pad = np.pad(im, ((0,), (pad,), (pad,)), "reflect")
+        im_view = np.lib.stride_tricks.sliding_window_view(
+            im_pad,
+            (im.shape[0], self.win_size, self.win_size),
+        )
+        return im_view.squeeze(0)
+
+    def get_disparity_dist(self, disp_view: np.ndarray) -> DataArray:
+        """
+        Get the difference in disparity between the center
+        of the window and the neighbours
+
+        :param disp_view: windowed view of the disparity map
+        :type disp_view: np.array
+        :return dist: the signed disparity distance
+        :rtype dist: np.array
+        """
+        c = self.win_c
+        dist = disp_view - disp_view[..., :, c : c + 1, c : c + 1]
+        return dist
+
+    def get_color_dist(self, clr_view: np.ndarray) -> np.ndarray:
+        """
+        Get the color distance between the center of the window
+        and the neighbours
+
+        :param clr_view: windowed view of the color map
+        :type clr_view: np.array
+        :return dist: the signed color distance
+        :rtype dist: np.array
+        """
+        c = self.win_c
+        dist = clr_view - clr_view[..., :, c : c + 1, c : c + 1]
+        return dist
+
+    def get_planar_dist(
+        self, disp_view: np.ndarray, disp_grad_view: np.ndarray, centered_plane: bool = False
+    ) -> np.ndarray:
+        """
+        Get the distance from the tangent plane
+
+        :param disp_view: windowed view of the disparity map
+        :type disp_view: np.array
+        :param disp_grad_view: windowed view of the disparity map gradient
+        :type disp_grad_view: np.array
+        :param centered_plane: center the plane with least squares.
+            If False, the plane will be tangent to the center of the window
+        :type centered_plane: bool
+        :return dist: the gap in disparity from the local plane
+        :rtype dist: np.array
+        """
+        c = self.win_c
+        dist = disp_view - np.sum(
+            self.win_coords * disp_grad_view[..., :, c : c + 1, c : c + 1],
+            axis=-3,
+            keepdims=True,
+        )
+        if centered_plane:
+            offset = np.mean(dist, axis=(-2, -1), keepdims=True)  # average distance to the plane
+        else:
+            offset = disp_view[..., :, c : c + 1, c : c + 1]  # center of the window
+        return dist - offset
+
+    def bilateral_filter(self, disp: np.ndarray, planar_dist: np.ndarray, weights: np.ndarray) -> np.ndarray:
+        """
+        Apply a bilateral filter on the disparity map using the
+        weighted contibutions of the neighbours
+
+        :param disp: noisy disparity map
+        :type disp: np.array
+        :param planar_dist: signed distance in disparity with the local plane
+        :type planar_dist: np.array
+        :param weights: weight of each neighbour
+        :type weights: np.array
+        :return disp_filt: filtered disparity map
+        :rtype disp_filt: np.array
+        """
+
+        disp_filt = disp.copy()
+        if weights is not None:
+            weights = weights / np.sum(weights, axis=(-2, -1), keepdims=True)
+
+            disp_filt[0] += np.sum(planar_dist * weights, axis=(-2, -1)).squeeze()
+        return disp_filt
 
     def filter_disparity(
         self,
@@ -122,4 +250,67 @@ class DisparityDenoiser(filter.AbstractFilter):
         :return: None
         """
 
-        logging.warning("This method is under development")
+        self.check_band_input_mc(img_left)
+
+        disp_map = disp["disparity_map"].data
+        disp_map = disp_map[None, ...]
+
+        band_index = list(img_left.band_im.data).index(self._band)
+        color_band = img_left["im"].data[band_index, :, :][None, ...]
+
+        # Derive gradient
+        disp_grad = self.get_grad(disp_map.squeeze())
+
+        # Sliding window view
+        disp_view = self.sliding_window(disp_map)  # [H, W, C, ws, ws]
+        clr_view = self.sliding_window(color_band)
+        disp_grad_view = self.sliding_window(disp_grad)
+
+        # Compute distances
+        euclidian_dist = np.tile(
+            np.linalg.norm(self.win_coords, axis=0),
+            (disp_view.shape[0], disp_view.shape[1], 1, 1, 1),
+        )
+        clr_dist = self.get_color_dist(clr_view)
+        planar_dist = self.get_planar_dist(disp_view, disp_grad_view)
+        planar_dist_centered = self.get_planar_dist(disp_view, disp_grad_view, centered_plane=True)
+
+        # define neighbour weights
+        weights = (
+            1
+            * gaussian(euclidian_dist, sig=self._sigma_euclidian)
+            * gaussian(clr_dist, sig=self._sigma_color)
+            * gaussian(planar_dist_centered, sig=self._sigma_planar)
+        )
+
+        masked_data = disp["disparity_map"].copy(deep=True).data
+        masked_data[np.where((disp["validity_mask"].data & cst.PANDORA_MSK_PIXEL_INVALID) != 0)] = np.nan
+
+        valid = np.isfinite(masked_data)
+
+        # Apply bilateral filter
+        disp_filt = self.bilateral_filter(disp_map, planar_dist, weights)
+
+        disp["disparity_map"].data[valid] = disp_filt[0][valid]
+        disp.attrs["filter"] = "disparity_denoiser"
+
+    def check_band_input_mc(self, img_left: xr.Dataset) -> None:
+        """
+        Check coherence band parameter between inputs and filter step
+
+        :param img_left: left Dataset image containing :
+
+                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
+                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
+                - msk (optional): 2D (row, col) xarray.DataArray int16
+                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
+                - segm (optional): 2D (row, col) xarray.DataArray int16
+        :type img_left: xarray.Dataset
+        :return: None
+        """
+        try:
+            list(img_left.band_im.data)
+        except AttributeError:
+            raise AttributeError(f"Img dataset is monoband: {self._band} band cannot be selected")
+        if self._band not in list(img_left.band_im.data):
+            raise AttributeError(f"Wrong band instantiate : {self._band} not in img")
