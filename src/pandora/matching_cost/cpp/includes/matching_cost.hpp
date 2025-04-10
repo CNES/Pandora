@@ -17,25 +17,28 @@
  * limitations under the License.
  */
 
+/*
+This module contains functions associated with matching cost general algorithms in cpp.
+*/
+
+#ifndef MATCHING_COST_HPP
+#define MATCHING_COST_HPP
+
+#include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
-#include "census.hpp"
-#include "matching_cost.hpp"
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(matching_cost_cpp, m) {
-    m.doc() = "Matching cost functions implemented in C++ with Pybind11";
-    
-    m.def(
-        "compute_matching_costs", 
-        &compute_matching_costs, 
-        "Computes matching costs of images."
-    );
+/**
+ * @brief Create the right_cv from the left_one by reindexing (i,j,d) -> (i, j + d, -d)
+ *
+ * @param left_cv: the 3D cost_colume data array, with dimensions row, col, disp
+ * @param disp_min: the minimum of the right disparities
+ * @return: The right cost volume data
+ */
+py::array_t<float> reverse_cost_volume(
+    py::array_t<float> left_cv,
+    int min_disp
+);
 
-    m.def(
-        "reverse_cost_volume", 
-        &reverse_cost_volume, 
-        "Computes right cost volume from left cost volume."
-    );
-
-}
+#endif  // MATCHING_COST_HPP

@@ -37,6 +37,7 @@ from scipy.ndimage import binary_dilation
 
 from pandora.margins.descriptors import HalfWindowMargins
 from pandora.criteria import mask_invalid_variable_disparity_range, mask_border
+from .cpp import matching_cost_cpp
 
 
 class AbstractMatchingCost:
@@ -898,3 +899,16 @@ class AbstractMatchingCost:
         :rtype: np.ndarray
         """
         return cost_volume[:, offset:-offset, offset:-offset] if offset else cost_volume
+
+    @staticmethod
+    def reverse_cost_volume(left_cv, disp_min):
+        """
+        Create the right_cv from the left_one by reindexing (i,j,d) -> (i, j + d, -d)
+        :param left_cv: the 3D cost_colume data array, with dimensions row, col, disp
+        :type left_cv: np.ndarray(dtype=float32)
+        :param disp_min: the minimum of the right disparities
+        :type min_disp: int64
+        :return: The right cost volume data
+        :rtype: 3D np.ndarray of type float32
+        """
+        return matching_cost_cpp.reverse_cost_volume(left_cv, disp_min)

@@ -1,7 +1,7 @@
 
 py.extension_module(
     'matching_cost_cpp',
-    ['src/bindings.cpp', 'src/census.cpp'],
+    ['src/bindings.cpp', 'src/census.cpp', 'src/matching_cost.cpp'],
     include_directories: ['includes'],
     subdir: 'pandora/matching_cost/cpp',
     install: true,
