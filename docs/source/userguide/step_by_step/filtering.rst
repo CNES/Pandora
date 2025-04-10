@@ -78,6 +78,57 @@ The filtering methods allow to homogenize the disparity maps, those available in
                   - 
                   - No
 
+    .. tab:: Disparity denoiser
+
+        .. tabs::
+
+            .. list-table::
+                :widths: 19 19 19 19 19 19
+                :header-rows: 1
+
+                * - Name
+                  - Description
+                  - Type
+                  - Default value
+                  - Available value
+                  - Required
+                * - filter_method
+                  - Filtering method
+                  - str
+                  -
+                  - "disparity_denoiser"
+                  - Yes
+                * - filter_size
+                  - Bilateral filter parameter
+                  - int
+                  - 11
+                  -
+                  - No
+                * - sigma_euclidian
+                  - Bilateral filter parameter
+                  - float
+                  - 4.0
+                  -
+                  - No
+                * - sigma_color
+                  - Bilateral filter parameter
+                  - float
+                  - 100.0
+                  -
+                  - No
+                * - sigma_planar
+                  - Bilateral filter parameter
+                  - float
+                  - 12.0
+                  -
+                  - No
+                * - sigma_grad
+                  - Bilateral filter parameter
+                  - float
+                  - 1.5
+                  -
+                  - No
+
     .. tab:: Median for intervals
 
         .. tabs:: 
