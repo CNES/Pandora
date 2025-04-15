@@ -291,6 +291,7 @@ class CrossCheckingAccurate(AbstractValidation):
 
             col_right = col_left + dataset_left["disparity_map"].data[row, col_left]
             # Round elements of the array to the nearest integer
+            col_right = col_right[np.logical_not(np.isnan(col_right))]
             col_right = np.rint(col_right).astype(int)
 
             # Left-Right consistency, for pixel i :

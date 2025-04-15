@@ -431,13 +431,6 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             self.right_cv["cost_volume"].data = matching_cost.AbstractMatchingCost.reverse_cost_volume(
                 self.left_cv["cost_volume"].data, self.right_disp_min.min()
             )
-            self.matching_cost_.cv_masked(
-                self.right_img,
-                self.left_img,
-                self.right_cv,
-                self.right_disp_min,
-                self.right_disp_max,
-            )
 
             self.right_cv.attrs["type_measure"] = self.left_cv.attrs["type_measure"]
             self.right_cv.attrs["cmax"] = self.left_cv.attrs["cmax"]
