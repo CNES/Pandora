@@ -38,26 +38,83 @@ import pandora.filter as flt
 class TestDisparityDenoiser:
     """Test DisparityDenoiser"""
 
+    @pytest.fixture(params=["monoband", "multiband"])
+    def test_image(self, request, filter_cfg):
+        """
+        Initialization of a multiband and a monoband image
+        """
+        if request.param == "monoband":
+            # initialize monoband data
+            data = np.zeros((2, 2))
+            data[:, :] = np.array(
+                ([1, 1], [1, 3]),
+                dtype=np.float64,
+            )
+
+            left = xr.Dataset(
+                {"im": (["row", "col"], data)},
+                coords={
+                    "row": np.arange(data.shape[0]),
+                    "col": np.arange(data.shape[1]),
+                },
+            )
+
+            filter_cfg["band"] = None
+        else:
+            # Initialize multiband data
+            data = np.zeros((3, 2, 2))
+            data[0, :, :] = np.array(
+                ([1, 1], [1, 3]),
+                dtype=np.float64,
+            )
+
+            data[1, :, :] = np.array(
+                ([2, 3], [8, 7]),
+                dtype=np.float64,
+            )
+
+            data[2, :, :] = np.array(
+                ([2, 3], [8, 8]),
+                dtype=np.float64,
+            )
+
+            left = xr.Dataset(
+                {"im": (["band_im", "row", "col"], data)},
+                coords={
+                    "band_im": ["r", "g", "b"],
+                    "row": np.arange(data.shape[1]),
+                    "col": np.arange(data.shape[2]),
+                },
+            )
+
+            filter_cfg["band"] = "r"
+
+        return left, filter_cfg
+
+    @pytest.fixture
+    def filter_cfg(self):
+        """
+        Define the configuration
+        """
+        return {
+            "filter_method": "disparity_denoiser",
+            "filter_size": 11,
+            "sigma_euclidian": 4.0,
+            "sigma_color": 100.0,
+            "sigma_planar": 12.0,
+        }
+
     def test_disparity_denoiser_filter(self):
         """
         Instantiate a disparity_denoiser Filter.
         """
         return flt.AbstractFilter(cfg={"filter_method": "disparity_denoiser"})
 
-    def test_check_conf_with_default_values(self):
-        """Test check conf with default values"""
-        filter_config = {
-            "filter_method": "disparity_denoiser",
-            "filter_size": 11,
-            "sigma_euclidian": 4.0,
-            "sigma_color": 100.0,
-            "sigma_planar": 12.0,
-            "band": "r",
-        }
+    def test_check_conf_with_monoband(self, filter_cfg):
+        """Test check conf with new values"""
+        disparity_denoiser = flt.AbstractFilter(cfg=filter_cfg)
 
-        disparity_denoiser = flt.AbstractFilter(cfg=filter_config)
-
-        assert disparity_denoiser.cfg == filter_config
+        assert disparity_denoiser.cfg == filter_cfg
 
     def test_check_conf_with_new_values(self):
         """Test check conf with new values"""
@@ -67,7 +124,7 @@ class TestDisparityDenoiser:
             "sigma_euclidian": 5.0,
             "sigma_color": 90.0,
             "sigma_planar": 10.0,
-            "band": "b",
+            "band": "r",
         }
 
         disparity_denoiser = flt.AbstractFilter(cfg=filter_config)
@@ -75,26 +132,25 @@ class TestDisparityDenoiser:
         assert disparity_denoiser.cfg == filter_config
 
     @pytest.mark.parametrize("missing_key", ["filter_method"])
-    def test_check_conf_fails_when_is_missing_mandatory_key(self, missing_key):
+    def test_check_conf_fails_when_is_missing_mandatory_key(self, missing_key, filter_cfg):
         """When a mandatory key is missing instanciation should fail."""
-        filter_config = {"filter_method": "disparity_denoiser", "sigma_color": 100.0}
-        del filter_config[missing_key]
+        del filter_cfg[missing_key]
 
         with pytest.raises((MissKeyCheckerError, KeyError)):
-            flt.AbstractFilter(cfg=filter_config)
+            flt.AbstractFilter(cfg=filter_cfg)
 
-    def test_check_conf_fails_when_there_is_wrong_values(self):
+    def test_check_conf_fails_when_there_is_wrong_values(self, filter_cfg):
         """When there is a wrong type value instanciation should fail."""
-        filter_config = {"filter_method": "disparity_denoiser", "sigma_color": 100}
+        filter_cfg["sigma_color"] = 100
 
         with pytest.raises((DictCheckerError, KeyError)):
-            flt.AbstractFilter(cfg=filter_config)
+            flt.AbstractFilter(cfg=filter_cfg)
 
-    def test_get_grad(self):
+    def test_get_grad(self, filter_cfg):
         """Test the get grad function on a simple case"""
-        user_cfg = {"filter_method": "disparity_denoiser", "sigma_grad": 0.0}
+        filter_cfg["sigma_grad"] = 0.0
 
-        disparity_denoiser = flt.AbstractFilter(cfg=user_cfg)
+        disparity_denoiser = flt.AbstractFilter(cfg=filter_cfg)
 
         disp = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=float)
 
@@ -119,15 +175,15 @@ class TestDisparityDenoiser:
         assert np.allclose(dx, gt_x, atol=1e-7)
         assert np.allclose(dy, gt_y, atol=1e-7)
 
-    def test_sliding_window(self):
+    def test_sliding_window(self, filter_cfg):
         """
         Test the sliding_window method
         """
 
         # instantiate the filter
-        user_cfg = {"filter_method": "disparity_denoiser", "filter_size": 3}
+        filter_cfg["filter_size"] = 3
 
-        disparity_denoiser = flt.AbstractFilter(cfg=user_cfg)
+        disparity_denoiser = flt.AbstractFilter(cfg=filter_cfg)
 
         disp = np.array([[1, 2], [4, 5]], dtype=float)
 
@@ -161,15 +217,15 @@ class TestDisparityDenoiser:
 
         assert np.allclose(window_view, gt_window_view, atol=1e-7)
 
-    def test_disparity_and_color_dist(self):
+    def test_disparity_and_color_dist(self, filter_cfg):
         """
         Test get_color_dist and get_disparity_dist
         """
 
         # instantiate the filter
-        user_cfg = {"filter_method": "disparity_denoiser", "filter_size": 3}
+        filter_cfg["filter_size"] = 3
 
-        disparity_denoiser = flt.AbstractFilter(cfg=user_cfg)
+        disparity_denoiser = flt.AbstractFilter(cfg=filter_cfg)
 
         # disp = np.array([[1, 2], [4, 5]], dtype=float)
 
@@ -281,15 +337,15 @@ class TestDisparityDenoiser:
 
         assert np.allclose(color_dist, gt_disparity_dist, atol=1e-7)
 
-    def test_planar_dist(self):
+    def test_planar_dist(self, filter_cfg):
         """
         Test the function get_planar_dist
         """
 
         # instantiate the filter
-        user_cfg = {"filter_method": "disparity_denoiser", "filter_size": 3}
+        filter_cfg["filter_size"] = 3
 
-        disparity_denoiser = flt.AbstractFilter(cfg=user_cfg)
+        disparity_denoiser = flt.AbstractFilter(cfg=filter_cfg)
 
         # disp = np.array([[1, 2], [4, 5]], dtype=float)
 
@@ -627,90 +683,13 @@ class TestDisparityDenoiser:
 
         assert np.allclose(planar_dist, gt_planar_dist, atol=1e-7)
 
-    def test_check_band_input_mc(self):
+    def test_with_valid_pixel_multiband_and_monoband(self, test_image):
         """
-        Check if an error is raised when there is no band color
+        Test the disparity denoiser method on valid pixels and multiband and monoband image.
+        disparity denoiser filter is only applied on valid pixels.
         """
-        # instantiate the filter
-        user_cfg = {"filter_method": "disparity_denoiser", "filter_size": 3}
-
-        disparity_denoiser = flt.AbstractFilter(cfg=user_cfg)
-
-        # Initialize multiband data
-        data = np.zeros((3, 5, 5))
-        data[0, :, :] = np.array(
-            (
-                [1, 1, 1, 3, 1],
-                [1, 3, 2, 5, 4],
-                [2, 1, 0, 1, 4],
-                [1, 5, 4, 3, 8],
-                [1, 5, 4, 3, 9],
-            ),
-            dtype=np.float64,
-        )
-
-        data[1, :, :] = np.array(
-            (
-                [2, 3, 4, 6, 8],
-                [8, 7, 0, 4, 7],
-                [4, 9, 1, 5, 1],
-                [6, 5, 2, 1, 4],
-                [1, 5, 4, 3, 2],
-            ),
-            dtype=np.float64,
-        )
-
-        data[2, :, :] = np.array(
-            (
-                [2, 3, 4, 6, 3],
-                [8, 8, 0, 4, 1],
-                [4, 9, 1, 5, 2],
-                [6, 5, 4, 1, 1],
-                [1, 5, 4, 3, 3],
-            ),
-            dtype=np.float64,
-        )
-
-        left = xr.Dataset(
-            {"im": (["band_im", "row", "col"], data)},
-            coords={
-                "band_im": ["r", "g", "b"],
-                "row": np.arange(data.shape[1]),
-                "col": np.arange(data.shape[2]),
-            },
-        )
-
-        disparity_denoiser.check_band_input_mc(left)
-
-        # initialize monoband image
-        data_without_band = np.array(
-            (
-                [1, 1, 1, 3, 1],
-                [1, 3, 2, 5, 4],
-                [2, 1, 0, 1, 4],
-                [1, 5, 4, 3, 8],
-                [1, 5, 4, 3, 9],
-            ),
-            dtype=np.float64,
-        )
-
-        left_without_band = xr.Dataset(
-            {"im": (["row", "col"], data_without_band)},
-            coords={
-                "row": np.arange(data_without_band.shape[0]),
-                "col": np.arange(data_without_band.shape[1]),
-            },
-        )
-
-        with pytest.raises((Exception, AttributeError)):
-            disparity_denoiser.check_band_input_mc(left_without_band)
-
-    def test_with_valid_pixel(self):
-        """
-        Test the disparity denoiser method on valid pixels. disparity denoiser filter is only applied on valid pixels.
-        """
-        # instantiate the filter
-        user_cfg = {"filter_method": "disparity_denoiser", "filter_size": 3}
+        left, user_cfg = test_image
+        user_cfg["filter_size"] = 3
 
         disparity_denoiser = flt.AbstractFilter(cfg=user_cfg)
 
@@ -729,32 +708,6 @@ class TestDisparityDenoiser:
         disp_dataset = xr.Dataset(
             {"disparity_map": (["row", "col"], disp), "validity_mask": (["row", "col"], valid)},
             coords={"row": np.arange(2), "col": np.arange(2)},
-        )
-
-        # Initialize multiband data
-        data = np.zeros((3, 2, 2))
-        data[0, :, :] = np.array(
-            ([1, 1], [1, 3]),
-            dtype=np.float64,
-        )
-
-        data[1, :, :] = np.array(
-            ([2, 3], [8, 7]),
-            dtype=np.float64,
-        )
-
-        data[2, :, :] = np.array(
-            ([2, 3], [8, 8]),
-            dtype=np.float64,
-        )
-
-        left = xr.Dataset(
-            {"im": (["band_im", "row", "col"], data)},
-            coords={
-                "band_im": ["r", "g", "b"],
-                "row": np.arange(data.shape[1]),
-                "col": np.arange(data.shape[2]),
-            },
         )
 
         # The win coords is a meshgrid using the size of the window 3 (from -1 to 1)
@@ -949,8 +902,13 @@ class TestDisparityDenoiser:
 
         np.testing.assert_allclose(gt[0], disp_dataset["disparity_map"].data, rtol=1e-07)
 
+        # instantiate the filter with monoband
+        user_cfg = {"filter_method": "disparity_denoiser", "filter_size": 3}
+
+        disparity_denoiser = flt.AbstractFilter(cfg=user_cfg)
+
     @staticmethod
-    def test_with_invalid_center():
+    def test_with_invalid_center(filter_cfg):
         """
         Test the disparity denoiser method with center pixel invalid.
         disparity denoiser filter is only applied on valid pixels.
@@ -958,9 +916,7 @@ class TestDisparityDenoiser:
         """
 
         # instantiate the filter
-        user_cfg = {"filter_method": "disparity_denoiser"}
-
-        disparity_denoiser = flt.AbstractFilter(cfg=user_cfg)
+        disparity_denoiser = flt.AbstractFilter(cfg=filter_cfg)
 
         # create the disparity map
         disp = np.array(
