@@ -435,9 +435,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             image_shape=(self.left_img.sizes["row"], self.left_img.sizes["col"]),
             step=self.step,
         )  # type: ignore
-        filter_.filter_disparity(self.left_disparity)
+        filter_.filter_disparity(self.left_disparity, self.left_img)
         if self.right_disp_map == "cross_checking_accurate":
-            filter_.filter_disparity(self.right_disparity)
+            filter_.filter_disparity(self.right_disparity, self.right_img)
 
     def refinement_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """

@@ -25,6 +25,7 @@ Init file for filter module.
 from . import bilateral
 from . import median
 from . import median_for_intervals
+from . import disparity_denoiser
 from .filter import AbstractFilter
 
 # pylint: disable=missing-module-docstring
