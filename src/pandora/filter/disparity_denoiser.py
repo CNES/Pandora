@@ -25,7 +25,7 @@ This module contains functions associated to the disparity denoiser filter used 
 from typing import Dict, Union
 
 import xarray as xr
-from json_checker import Checker, And
+from json_checker import Checker, And, Or
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
@@ -58,7 +58,7 @@ class DisparityDenoiser(filter.AbstractFilter):
     _SIGMA_COLOR = 100.0
     _SIGMA_PLANAR = 12.0
     _SIGMA_GRAD = 1.5
-    _BAND = "r"
+    _BAND = None
 
     def __init__(self, *args, cfg: Dict, **kwargs):  # pylint:disable=unused-argument
         """
@@ -116,7 +116,7 @@ class DisparityDenoiser(filter.AbstractFilter):
             "sigma_color": And(float, lambda input: input > 0),
             "sigma_planar": And(float, lambda input: input > 0),
             "sigma_grad": And(float, lambda input: input >= 0),
-            "band": str,
+            "band": Or(str, lambda input: input is None),
         }
 
         checker = Checker(schema)
@@ -263,13 +263,17 @@ class DisparityDenoiser(filter.AbstractFilter):
         :return: None
         """
 
-        self.check_band_input_mc(img_left)
-
         disp_map = disp["disparity_map"].data
         disp_map = disp_map[None, ...]
 
-        band_index = list(img_left.band_im.data).index(self._band)
-        color_band = img_left["im"].data[band_index, :, :][None, ...]
+        if self._band is None:
+            if not hasattr(img_left, "band_im"):
+                color_band = img_left["im"].data[None, ...]
+            else:
+                color_band = img_left["im"].data[1, :, :][None, ...]
+        else:
+            band_index = list(img_left.band_im.data).index(self._band)
+            color_band = img_left["im"].data[band_index, :, :][None, ...]
 
         # Derive gradient
         disp_grad = self.get_grad(disp_map.squeeze())
@@ -306,24 +310,3 @@ class DisparityDenoiser(filter.AbstractFilter):
 
         disp["disparity_map"].data[valid] = disp_filt[0][valid]
         disp.attrs["filter"] = "disparity_denoiser"
-
-    def check_band_input_mc(self, img_left: xr.Dataset) -> None:
-        """
-        Check coherence band parameter between inputs and filter step
-
-        :param img_left: left Dataset image containing :
-
-                - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
-                - disparity (optional): 3D (disp, row, col) xarray.DataArray float32
-                - msk (optional): 2D (row, col) xarray.DataArray int16
-                - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
-                - segm (optional): 2D (row, col) xarray.DataArray int16
-        :type img_left: xarray.Dataset
-        :return: None
-        """
-        try:
-            list(img_left.band_im.data)
-        except AttributeError:
-            raise AttributeError(f"Img dataset is monoband: {self._band} band cannot be selected")
-        if self._band not in list(img_left.band_im.data):
-            raise AttributeError(f"Wrong band instantiate : {self._band} not in img")
