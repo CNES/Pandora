@@ -262,12 +262,11 @@ class DisparityDenoiser(filter.AbstractFilter):
         :type cv: xarray.Dataset
         :return: None
         """
-
         disp_map = disp["disparity_map"].data
         disp_map = disp_map[None, ...]
 
         if self._band is None:
-            if not hasattr(img_left, "band_im"):
+            if len(img_left["im"].shape) < 3:
                 color_band = img_left["im"].data[None, ...]
             else:
                 color_band = img_left["im"].data[1, :, :][None, ...]
@@ -304,9 +303,7 @@ class DisparityDenoiser(filter.AbstractFilter):
         masked_data[np.where((disp["validity_mask"].data & cst.PANDORA_MSK_PIXEL_INVALID) != 0)] = np.nan
 
         valid = np.isfinite(masked_data)
-
         # Apply bilateral filter
         disp_filt = self.bilateral_filter(disp_map, planar_dist, weights)
-
         disp["disparity_map"].data[valid] = disp_filt[0][valid]
         disp.attrs["filter"] = "disparity_denoiser"
