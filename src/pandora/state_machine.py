@@ -878,6 +878,17 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                 "The cross-checking step cannot be processed if disp_min, disp_max are paths to the "
                 "left disparity grids and disp_right_min, disp_right_max are none."
             )
+        if isinstance(self.left_img.attrs["disparity_source"], list) and isinstance(
+            self.right_img.attrs["disparity_source"], list
+        ):
+            if not (
+                self.left_img.attrs["disparity_source"][0] == -self.right_img.attrs["disparity_source"][1]
+                and self.left_img.attrs["disparity_source"][1] == -self.right_img.attrs["disparity_source"][0]
+            ):
+                raise AttributeError(
+                    "The cross-checking step can't be processed if disp_min, disp_max, disp_right_min, disp_right_max "
+                    "are all ints and disp_min != -disp_right_max && disp_max != -disp_right_min"
+                )
 
     def multiscale_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
