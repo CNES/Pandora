@@ -901,9 +901,12 @@ class AbstractMatchingCost:
         return cost_volume[:, offset:-offset, offset:-offset] if offset else cost_volume
 
     @staticmethod
-    def reverse_cost_volume(left_cv, disp_min):
+    def reverse_cost_volume(left_cv: np.ndarray, disp_min: int) -> np.ndarray:
         """
-        Create the right_cv from the left_one by reindexing (i,j,d) -> (i, j + d, -d)
+        Create the right cost volume from the left cost volume, by reindexing.
+
+        (i,j,d) -> (i, j + d, -d)
+
         :param left_cv: the 3D cost_colume data array, with dimensions row, col, disp
         :type left_cv: np.ndarray(dtype=float32)
         :param disp_min: the minimum of the right disparities
