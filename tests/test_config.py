@@ -196,7 +196,7 @@ class TestConfig(unittest.TestCase):
             }
         }
         # Json checker must raise an error
-        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
+        self.assertRaises(ValueError, check_configuration.check_input_section, cfg)
 
     def test_multiband_pipeline(self):
         """
