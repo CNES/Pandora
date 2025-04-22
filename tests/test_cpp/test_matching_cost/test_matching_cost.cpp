@@ -124,9 +124,9 @@ TEST_CASE("Cost volume inversion test 1"){
     //    std::cout << std::endl;
     //}
 
-    for (int i = 0; i < n_rows; ++i)
-        for (int j = 0; j < n_cols; ++j)
-            for (int k = 0; k < n_disp; ++k)
+    for (size_t i = 0; i < n_rows; ++i)
+        for (size_t j = 0; j < n_cols; ++j)
+            for (size_t k = 0; k < n_disp; ++k)
                 if (std::isnan(r_right_cv(i, j, k)))
                     // check that ref is also a nan
                     CHECK( std::isnan(ref_right_cv_arr[i][j][k]) );
@@ -200,9 +200,9 @@ TEST_CASE("Cost volume inversion test 2"){
         }
     };
 
-    for (int i = 0; i < n_rows; ++i)
-        for (int j = 0; j < n_cols; ++j)
-            for (int k = 0; k < n_disp; ++k)
+    for (size_t i = 0; i < n_rows; ++i)
+        for (size_t j = 0; j < n_cols; ++j)
+            for (size_t k = 0; k < n_disp; ++k)
                 rw_cv(i,j,k) = left_cv_arr[i][j][k];
 
     // float min_disp = -2; // unused
@@ -225,9 +225,9 @@ TEST_CASE("Cost volume inversion test 2"){
     //    std::cout << std::endl;
     //}
 
-    for (int i = 0; i < n_rows; ++i)
-        for (int j = 0; j < n_cols; ++j)
-            for (int k = 0; k < n_disp; ++k)
+    for (size_t i = 0; i < n_rows; ++i)
+        for (size_t j = 0; j < n_cols; ++j)
+            for (size_t k = 0; k < n_disp; ++k)
                 if (std::isnan(r_right_cv(i, j, k)))
                     // check that ref is also a nan
                     CHECK( std::isnan(ref_right_cv_arr[i][j][k]) );
