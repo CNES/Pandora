@@ -311,12 +311,8 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         if self.right_disp_map is not None:
 
             # Update min and max disparity according to the current scale
-            if self.right_disp_map == "cross_checking_accurate":
-                self.right_disp_min = self.right_disp_min * self.scale_factor
-                self.right_disp_max = self.right_disp_max * self.scale_factor
-            elif self.right_disp_map == "cross_checking_fast":
-                self.right_disp_min = -self.disp_max
-                self.right_disp_max = -self.disp_min
+            self.right_disp_min = self.right_disp_min * self.scale_factor
+            self.right_disp_max = self.right_disp_max * self.scale_factor
 
             self.right_cv = self.matching_cost_.allocate_cost_volume(
                 self.right_img, (self.right_disp_min, self.right_disp_max), cfg
