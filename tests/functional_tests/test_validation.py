@@ -164,23 +164,23 @@ class TestMain:
         Test that there's a crash when not giving validation_method
         """
         with pytest.raises(KeyError):
-            validation_ = validation.AbstractValidation(**{"something's wrong": "b"}) # type: ignore
+            validation_ = validation.AbstractValidation(**{"something's wrong": "b"})  # type: ignore
 
     def test_fails_with_invalid_method(self):
         """
         Test that there's a crash when giving a validation method that doesn't exist
         """
         with pytest.raises(KeyError):
-            validation_ = validation.AbstractValidation(**{"validation_method": "hello"}) # type: ignore
+            validation_ = validation.AbstractValidation(**{"validation_method": "hello"})  # type: ignore
 
     def test_right_instance_created(self):
         """
         Test that the right instance is created when creating specific validation method objects
         """
-        validation_ = validation.AbstractValidation(**{"validation_method": "cross_checking_fast"}) # type: ignore
+        validation_ = validation.AbstractValidation(**{"validation_method": "cross_checking_fast"})  # type: ignore
         assert isinstance(validation_, validation.AbstractValidation)
         assert isinstance(validation_, CrossCheckingAccurate)  # the instance is the same for both methods
 
-        validation_ = validation.AbstractValidation(**{"validation_method": "cross_checking_accurate"}) # type: ignore
+        validation_ = validation.AbstractValidation(**{"validation_method": "cross_checking_accurate"})  # type: ignore
         assert isinstance(validation_, validation.AbstractValidation)
         assert isinstance(validation_, CrossCheckingAccurate)

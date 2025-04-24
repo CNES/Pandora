@@ -57,6 +57,7 @@ from pandora import (  # pylint: disable=redefined-builtin
     semantic_segmentation,
 )
 from pandora.margins import GlobalMargins
+from pandora.img_tools import rasterio_open
 
 from pandora.criteria import validity_mask
 
@@ -868,27 +869,37 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         self.right_disp_map = validation_.cfg["validation_method"]
 
-        # If left disparities are grids of disparity and the right disparities are none, the cross-checking
-        # method cannot be used
-        if (
-            isinstance(self.left_img.attrs["disparity_source"], str)
-            and self.right_img.attrs["disparity_source"] is None
-        ):
-            raise AttributeError(
-                "The cross-checking step cannot be processed if disp_min, disp_max are paths to the "
-                "left disparity grids and disp_right_min, disp_right_max are none."
-            )
-        if isinstance(self.left_img.attrs["disparity_source"], list) and isinstance(
-            self.right_img.attrs["disparity_source"], list
-        ):
-            if not (
-                self.left_img.attrs["disparity_source"][0] == -self.right_img.attrs["disparity_source"][1]
-                and self.left_img.attrs["disparity_source"][1] == -self.right_img.attrs["disparity_source"][0]
-            ):
+        ds_left = self.left_img.attrs["disparity_source"]
+        ds_right = self.right_img.attrs["disparity_source"]
+
+        # If both disp bounds are lists, check that they add up
+        if isinstance(ds_left, list) and isinstance(ds_right, list):
+            if ds_left[0] != -ds_right[1] or ds_left[1] != -ds_right[0]:
                 raise AttributeError(
                     "The cross-checking step can't be processed if disp_min, disp_max, disp_right_min, disp_right_max "
-                    "are all ints and disp_min != -disp_right_max && disp_max != -disp_right_min"
+                    "are all ints and disp_min != -disp_right_max or disp_max != -disp_right_min"
                 )
+
+        # If both disp bounds are strs, check that their global min/max adds up
+        elif isinstance(ds_left, str) and isinstance(ds_right, str):
+            left_img = rasterio_open(ds_left).read()
+            right_img = rasterio_open(ds_right).read()
+
+            left_min = left_img.min()
+            left_max = left_img.max()
+            right_min = right_img.min()
+            right_max = right_img.max()
+
+            if left_min != -right_max or left_max != -right_min:
+                raise AttributeError(
+                    "The cross-checking step can't be processed if "
+                    "disp_min != -disp_right_max or disp_max != -disp_right_min"
+                )
+
+        elif type(ds_left) != type(ds_right) and ds_left is not None and ds_right is not None:
+            raise AttributeError(
+                "The cross-checking step does not support left and right disparities of different kinds at this time."
+            )
 
     def multiscale_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
