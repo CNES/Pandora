@@ -459,6 +459,10 @@ class WinnerTakesAll(AbstractDisparity):
         # ----- Validity mask ----
         # Get validity mask from cost volume
         disp_map["validity_mask"] = copy.deepcopy(cv["validity_mask"])
+        new_invalid_pixels = np.where(
+            np.logical_and(invalid_mc, (disp_map["validity_mask"].data & cst.PANDORA_MSK_PIXEL_INVALID) == 0)
+        )
+        disp_map["validity_mask"].data[new_invalid_pixels] = cst.PANDORA_MSK_PIXEL_INVALID
 
         # Remove temporary values
         del indices_nan
