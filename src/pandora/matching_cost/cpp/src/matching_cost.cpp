@@ -18,6 +18,8 @@
  */
 
 #include "matching_cost.hpp"
+#include <cmath>
+#include <limits>
 
 namespace py = pybind11;
 
@@ -51,4 +53,80 @@ py::array_t<float> reverse_cost_volume(
     }
 
     return right_cv;
+}
+
+
+std::tuple<py::array_t<float>, py::array_t<float>> reverse_disp_range(
+    py::array_t<float> left_min,
+    py::array_t<float> left_max
+) {
+    auto r_left_min = left_min.unchecked<2>();
+    auto r_left_max = left_max.unchecked<2>();
+    
+    size_t n_row = r_left_min.shape(0);
+    size_t n_col = r_left_min.shape(1);
+
+    py::array_t<float> right_min = py::array_t<float>({n_row, n_col});
+    py::array_t<float> right_max = py::array_t<float>({n_row, n_col});
+    auto rw_right_min = right_min.mutable_unchecked<2>();
+    auto rw_right_max = right_max.mutable_unchecked<2>();
+
+    // init the min and max values at inf
+    for (size_t row = 0; row < n_row; ++row) {
+        for (size_t col = 0; col < n_col; ++col) {
+            rw_right_min(row, col) =  std::numeric_limits<float>::infinity();
+            rw_right_max(row, col) = -std::numeric_limits<float>::infinity();
+        }
+    }
+
+    for (size_t row = 0; row < n_row; ++row) {
+        for (size_t col = 0; col < n_col; ++col) {
+
+            float d_min_raw = r_left_min(row, col);
+            float d_max_raw = r_left_max(row, col);
+
+            // skip nans
+            if (std::isnan(d_min_raw))
+                continue;
+            if (std::isnan(d_max_raw))
+                continue;
+
+            int d_min = static_cast<int>(d_min_raw);
+            int d_max = static_cast<int>(d_max_raw);
+            
+            for (int d = d_min; d <= d_max; d++) {
+                
+                int right_col = static_cast<int>(col) + d;
+                
+                // increment d when right_col is too low, break when too high
+                if (right_col < 0)
+                    continue;
+                if (right_col >= static_cast<int>(n_col))
+                    break;
+
+                // update mins and maxs with -d to reach left_img(row, col) from
+                // right_img(row, right_col)
+                rw_right_min(row, right_col) = std::min(
+                    rw_right_min(row, right_col), static_cast<float>(-d)
+                );
+                rw_right_max(row, right_col) = std::max(
+                    rw_right_max(row, right_col), static_cast<float>(-d)
+                );
+                
+            }
+
+        }
+    }
+
+    // set the disp ranges that have not been filled to nan
+    for (size_t row = 0; row < n_row; ++row) {
+        for (size_t col = 0; col < n_col; ++col) {
+            if ( std::isinf(rw_right_min(row, col)) ) {
+                rw_right_min(row, col) = std::nanf("");
+                rw_right_max(row, col) = std::nanf("");
+            }
+        }
+    }
+
+    return {right_min, right_max};
 }

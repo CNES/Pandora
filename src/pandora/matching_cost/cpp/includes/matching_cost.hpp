@@ -41,4 +41,16 @@ py::array_t<float> reverse_cost_volume(
     int min_disp
 );
 
+/**
+ * @brief Create the right disp ranges from the left disp ranges
+ *
+ * @param left_min: the 2D left disp min array, with dimensions row, col
+ * @param left_max: the 2D left disp min array, with dimensions row, col
+ * @return: The min and max disp ranges for the right image
+ */
+std::tuple<py::array_t<float>, py::array_t<float>> reverse_disp_range(
+    py::array_t<float> left_min,
+    py::array_t<float> left_max
+);
+
 #endif  // MATCHING_COST_HPP

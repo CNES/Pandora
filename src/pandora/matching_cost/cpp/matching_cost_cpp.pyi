@@ -49,3 +49,15 @@ def reverse_cost_volume(left_cv, disp_min):
     :rtype: 3D np.ndarray of type float32
     """
     ...
+
+def reverse_disp_range(left_min, left_max):
+    """
+    Create the right disp ranges from the left disp ranges
+    :param left_min: the 2D left disp min array, with dimensions row, col
+    :type left_min: np.ndarray(dtype=float32)
+    :param left_max: the 2D left disp max array, with dimensions row, col
+    :type left_max: np.ndarray(dtype=float32)
+    :return: The min and max disp ranges for the right image
+    :rtype: Tuple[np.ndarray(dtype=float32), np.ndarray(dtype=float32)]
+    """
+    return None, None

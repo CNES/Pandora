@@ -57,7 +57,6 @@ from pandora import (  # pylint: disable=redefined-builtin
     semantic_segmentation,
 )
 from pandora.margins import GlobalMargins
-from pandora.img_tools import rasterio_open
 
 from pandora.criteria import validity_mask
 
@@ -315,9 +314,19 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             self.right_disp_min = self.right_disp_min * self.scale_factor
             self.right_disp_max = self.right_disp_max * self.scale_factor
 
-            self.right_cv = self.matching_cost_.allocate_cost_volume(
-                self.right_img, (self.right_disp_min, self.right_disp_max), cfg
-            )
+            if self.right_disp_map == "cross_checking_accurate":
+                # allocate the cost volume the standard way
+                self.right_cv = self.matching_cost_.allocate_cost_volume(
+                    self.right_img, (self.right_disp_min, self.right_disp_max), cfg
+                )
+
+            elif self.right_disp_map == "cross_checking_fast":
+                # the right cv may have a different size from left cv if created from its disp range
+                # (ex: with the test disparity grids)
+                # create it from the left disps instead, to match the left cv's size
+                self.right_cv = self.matching_cost_.allocate_cost_volume(
+                    self.right_img, (-self.disp_max, -self.disp_min), cfg
+                )
 
             # Compute validity mask to identify invalid points in cost volume
             self.right_cv = validity_mask(self.right_img, self.left_img, self.right_cv)
@@ -426,7 +435,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             # Fast cross checking is used, compute right cv at wta time
             # Compute right cost volume and mask it
             self.right_cv["cost_volume"].data = matching_cost.AbstractMatchingCost.reverse_cost_volume(
-                self.left_cv["cost_volume"].data, self.right_disp_min.min()
+                self.left_cv["cost_volume"].data, np.nanmin(self.right_disp_min)
             )
 
             self.right_cv.attrs["type_measure"] = self.left_cv.attrs["type_measure"]
@@ -638,8 +647,10 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                 self.right_disp_min = right_img["disparity"].sel(band_disp="min").data
                 self.right_disp_max = right_img["disparity"].sel(band_disp="max").data
             else:
-                self.right_disp_min = -left_img["disparity"].sel(band_disp="max").data
-                self.right_disp_max = -left_img["disparity"].sel(band_disp="min").data
+                # Right disparities : always infered from left disparities
+                self.right_disp_min, self.right_disp_max = matching_cost.AbstractMatchingCost.reverse_disp_range(
+                    self.disp_min, self.disp_max
+                )
 
         # Initiate output disparity datasets
         self.left_disparity = xr.Dataset()
@@ -875,31 +886,11 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # If both disp bounds are lists, check that they add up
         if isinstance(ds_left, list) and isinstance(ds_right, list):
             if ds_left[0] != -ds_right[1] or ds_left[1] != -ds_right[0]:
-                raise AttributeError(
-                    "The cross-checking step can't be processed if disp_min, disp_max, disp_right_min, disp_right_max "
-                    "are all ints and disp_min != -disp_right_max or disp_max != -disp_right_min"
-                )
+                raise AttributeError("disp_min != -disp_right_max or disp_max != -disp_right_min")
 
-        # If both disp bounds are strs, check that their global min/max adds up
+        # If both disp bounds are strs, warn that the right disp will be ignored
         elif isinstance(ds_left, str) and isinstance(ds_right, str):
-            left_img = rasterio_open(ds_left).read()
-            right_img = rasterio_open(ds_right).read()
-
-            left_min = left_img.min()
-            left_max = left_img.max()
-            right_min = right_img.min()
-            right_max = right_img.max()
-
-            if left_min != -right_max or left_max != -right_min:
-                raise AttributeError(
-                    "The cross-checking step can't be processed if "
-                    "disp_min != -disp_right_max or disp_max != -disp_right_min"
-                )
-
-        elif type(ds_left) != type(ds_right) and ds_left is not None and ds_right is not None:
-            raise AttributeError(
-                "The cross-checking step does not support left and right disparities of different kinds at this time."
-            )
+            logging.warning("The right disp will be ignored, and instead computed from the left disp.")
 
     def multiscale_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """

@@ -38,4 +38,10 @@ PYBIND11_MODULE(matching_cost_cpp, m) {
         "Computes right cost volume from left cost volume."
     );
 
+    m.def(
+        "reverse_disp_range",
+        &reverse_disp_range,
+        "Computes the right disp range from the left one."
+    );
+
 }
