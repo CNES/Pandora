@@ -88,7 +88,7 @@ test-unit-cpp: install ## run unit cpp tests only for dev
 	. ${PANDORA_VENV}/bin/activate; meson test -C build/$(shell ls build)/ -v
 
 .PHONY: test-functional
-test-functional: install-sgm ## run functional tests only (for wheel validation temporary)
+test-functional: install ## run functional tests only (for wheel validation temporary)
 	@echo "Run functional tests"
 	@${PANDORA_VENV}/bin/pytest -m "functional_tests"
 
