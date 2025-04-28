@@ -167,6 +167,7 @@ class AbstractValidation:
 
 
 @AbstractValidation.register_subclass("cross_checking_accurate")
+@AbstractValidation.register_subclass("cross_checking_fast")
 class CrossCheckingAccurate(AbstractValidation):
     """
     CrossChecking class allows to perform the validation step
@@ -184,6 +185,7 @@ class CrossCheckingAccurate(AbstractValidation):
         """
         self.cfg = self.check_conf(**cfg)
         self._threshold = self.cfg["cross_checking_threshold"]
+        self._method = self.cfg["validation_method"]
 
     def check_conf(self, **cfg: Union[str, int, float, bool]) -> Dict[str, Union[str, int, float, bool]]:
         """
@@ -199,7 +201,7 @@ class CrossCheckingAccurate(AbstractValidation):
             cfg["cross_checking_threshold"] = self._THRESHOLD
 
         schema = {
-            "validation_method": And(str, lambda input: "cross_checking_accurate"),
+            "validation_method": And(str, lambda input: input in ["cross_checking_accurate", "cross_checking_fast"]),
             "cross_checking_threshold": Or(int, float),
             OptionalKey("interpolated_disparity"): And(str, lambda input: common.is_method(input, ["mc-cnn", "sgm"])),
         }
@@ -289,6 +291,7 @@ class CrossCheckingAccurate(AbstractValidation):
 
             col_right = col_left + dataset_left["disparity_map"].data[row, col_left]
             # Round elements of the array to the nearest integer
+            col_right = col_right[np.logical_not(np.isnan(col_right))]
             col_right = np.rint(col_right).astype(int)
 
             # Left-Right consistency, for pixel i :
@@ -347,7 +350,7 @@ class CrossCheckingAccurate(AbstractValidation):
             outside_right = np.where((col_right < 0) & (col_right >= nb_col))
             dataset_left["validity_mask"].data[row, col_left[outside_right]] += cst.PANDORA_MSK_PIXEL_OCCLUSION
 
-        dataset_left.attrs["validation"] = "cross_checking_accurate"
+        dataset_left.attrs["validation"] = self._method
 
         dataset_left, _ = AbstractCostVolumeConfidence.allocate_confidence_map(
             "left_right_consistency", conf_measure, dataset_left, cv

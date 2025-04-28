@@ -25,6 +25,7 @@ This module contains functions to test the disparity map validation step.
 """
 
 import unittest
+import pytest
 
 import numpy as np
 import xarray as xr
@@ -32,6 +33,7 @@ import xarray as xr
 from tests import common
 import pandora.constants as cst
 from pandora import validation
+from pandora.validation.validation import CrossCheckingAccurate
 
 
 class TestValidation(unittest.TestCase):
@@ -72,6 +74,32 @@ class TestValidation(unittest.TestCase):
             coords={"row": [0, 1], "col": np.arange(4)},
         )
         self.right.attrs["offset_row_col"] = 0
+
+    def test_validation_method_is_mandatory(self):
+        """
+        Test that there's a crash when not giving validation_method
+        """
+        with pytest.raises(KeyError):
+            validation.AbstractValidation(**{"something's wrong": "b"})  # type: ignore
+
+    def test_fails_with_invalid_method(self):
+        """
+        Test that there's a crash when giving a validation method that doesn't exist
+        """
+        with pytest.raises(KeyError):
+            validation.AbstractValidation(**{"validation_method": "hello"})  # type: ignore
+
+    def test_right_instance_created(self):
+        """
+        Test that the right instance is created when creating specific validation method objects
+        """
+        validation_ = validation.AbstractValidation(**{"validation_method": "cross_checking_fast"})  # type: ignore
+        assert isinstance(validation_, validation.AbstractValidation)
+        assert isinstance(validation_, CrossCheckingAccurate)  # the instance is the same for both methods
+
+        validation_ = validation.AbstractValidation(**{"validation_method": "cross_checking_accurate"})  # type: ignore
+        assert isinstance(validation_, validation.AbstractValidation)
+        assert isinstance(validation_, CrossCheckingAccurate)
 
     def test_cross_checking(self):
         """

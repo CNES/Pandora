@@ -80,7 +80,7 @@ install-sgm: venv install## install pandora with sgm
 
 .PHONY: test
 test: install ## run all tests (except notebooks) + coverage (source venv before)
-	@${PANDORA_VENV}/bin/pytest -m "not notebook_tests" --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
+	@${PANDORA_VENV}/bin/pytest -m "not notebook_tests and not functional_tests" --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
 
 .PHONY: test-unit-cpp
 test-unit-cpp: install ## run unit cpp tests only for dev

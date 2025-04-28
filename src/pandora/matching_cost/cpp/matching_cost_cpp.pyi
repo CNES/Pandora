@@ -37,3 +37,27 @@ def compute_matching_costs(img_left, imgs_right, cv, disps, census_width, census
     :rtype: 3D np.array (row, col, disps) dtype = np.float32
     """
     ...
+
+def reverse_cost_volume(left_cv, disp_min):
+    """
+    Create the right_cv from the left_one by reindexing (i,j,d) -> (i, j + d, -d)
+    :param left_cv: the 3D cost_colume data array, with dimensions row, col, disp
+    :type left_cv: np.ndarray(dtype=float32)
+    :param disp_min: the minimum of the right disparities
+    :type min_disp: int64
+    :return: The right cost volume data
+    :rtype: 3D np.ndarray of type float32
+    """
+    ...
+
+def reverse_disp_range(left_min, left_max):
+    """
+    Create the right disp ranges from the left disp ranges
+    :param left_min: the 2D left disp min array, with dimensions row, col
+    :type left_min: np.ndarray(dtype=float32)
+    :param left_max: the 2D left disp max array, with dimensions row, col
+    :type left_max: np.ndarray(dtype=float32)
+    :return: The min and max disp ranges for the right image
+    :rtype: Tuple[np.ndarray(dtype=float32), np.ndarray(dtype=float32)]
+    """
+    return None, None

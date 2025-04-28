@@ -6,6 +6,8 @@ project(
     meson_version: '>=1.1',
 )
 
+add_project_arguments('-Werror', language: 'cpp')
+
 meson.add_dist_script(
     meson.project_source_root() / 'version.sh',
     'set-dist',

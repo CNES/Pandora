@@ -19,6 +19,7 @@
 
 #include <pybind11/pybind11.h>
 #include "census.hpp"
+#include "matching_cost.hpp"
 
 namespace py = pybind11;
 
@@ -29,6 +30,18 @@ PYBIND11_MODULE(matching_cost_cpp, m) {
         "compute_matching_costs", 
         &compute_matching_costs, 
         "Computes matching costs of images."
+    );
+
+    m.def(
+        "reverse_cost_volume", 
+        &reverse_cost_volume, 
+        "Computes right cost volume from left cost volume."
+    );
+
+    m.def(
+        "reverse_disp_range",
+        &reverse_disp_range,
+        "Computes the right disp range from the left one."
     );
 
 }

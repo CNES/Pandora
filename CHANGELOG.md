@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.7.0 (April 2025)
+
+### Added
+- Added new disparity denoiser filter. [#441] [#442]
+- Added cross validation fast method. 
+
+### Fixed
+- Fix multiband checking. [#445]
+- Fix statistical_and_visual_analysis notebook. [#447]
+
 ## 1.6.4 (March 2025)
 
 ### Changed

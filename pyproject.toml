@@ -54,11 +54,11 @@ test = [
 ]
 
 sgm = [
-    "pandora_plugin_libsgm==1.5.4"
+    "pandora_plugin_libsgm>=1.5.4"
 ]
 
 mccnn = [
-    "pandora_plugin_mccnn>=1.3.2"
+    "pandora_plugin_mccnn>=1.3.3"
 ]
 
 docs = [

@@ -602,7 +602,7 @@ input_configuration_schema_integer_disparity: Mapping = {
         "disp": [int, int],
     },
     "right": {
-        "disp": (lambda input: input is None),
+        "disp": Or([int, int], (lambda input: input is None)),
     },
 }
 
