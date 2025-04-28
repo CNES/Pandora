@@ -70,7 +70,7 @@ Configuration and parameters
      - Validation method
      - str
      -
-     - "cross_checking_accurate"
+     - "cross_checking_accurate", "cross_checking_fast"
      - Yes
    * - cross_checking_threshold
      - Threshold for cross-checking method
@@ -84,6 +84,10 @@ Configuration and parameters
      - 
      - "mc_cnn", "sgm"
      - No
+
+.. note:: The *cross_checking_fast* method computes the right cost volume using the left cost volume,
+  instead of re-running the entire pipeline. This results in faster run times, at the cost of accuracy
+  when using optimization methods like SGM.
 
 
 **Example**

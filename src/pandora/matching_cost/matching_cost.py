@@ -37,6 +37,7 @@ from scipy.ndimage import binary_dilation
 
 from pandora.margins.descriptors import HalfWindowMargins
 from pandora.criteria import mask_invalid_variable_disparity_range, mask_border
+from .cpp import matching_cost_cpp
 
 
 class AbstractMatchingCost:
@@ -898,3 +899,33 @@ class AbstractMatchingCost:
         :rtype: np.ndarray
         """
         return cost_volume[:, offset:-offset, offset:-offset] if offset else cost_volume
+
+    @staticmethod
+    def reverse_cost_volume(left_cv: np.ndarray, disp_min: int) -> np.ndarray:
+        """
+        Create the right cost volume from the left cost volume, by reindexing.
+
+        (i,j,d) -> (i, j + d, -d)
+
+        :param left_cv: the 3D cost_colume data array, with dimensions row, col, disp
+        :type left_cv: np.ndarray(dtype=float32)
+        :param disp_min: the minimum of the right disparities
+        :type min_disp: int64
+        :return: The right cost volume data
+        :rtype: 3D np.ndarray of type float32
+        """
+        return matching_cost_cpp.reverse_cost_volume(left_cv, disp_min)
+
+    @staticmethod
+    def reverse_disp_range(left_min: np.ndarray, left_max: np.ndarray) -> np.ndarray:
+        """
+        Create the right disp ranges from the left disp ranges
+
+        :param left_min: the 2D left disp min array, with dimensions row, col
+        :type left_min: np.ndarray(dtype=float32)
+        :param left_max: the 2D left disp max array, with dimensions row, col
+        :type left_max: np.ndarray(dtype=float32)
+        :return: The min and max disp ranges for the right image
+        :rtype: Tuple[np.ndarray(dtype=float32), np.ndarray(dtype=float32)]
+        """
+        return matching_cost_cpp.reverse_disp_range(left_min, left_max)

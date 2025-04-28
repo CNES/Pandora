@@ -259,7 +259,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         # Margins that cumulates:
         self.margins = GlobalMargins()
-        # Right disparity map computation information: Can be None or "cross_checking_accurate"
+        # Right disparity map computation information: Can be None, "cross_checking_accurate" or "cross_checking_fast"
         # Useful during the running steps to choose if we must compute left and right objects.
         self.right_disp_map = None
         # Define avalaible states
@@ -308,13 +308,25 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # Compute validity mask to identify invalid points in cost volume
         self.left_cv = validity_mask(self.left_img, self.right_img, self.left_cv)
 
-        if self.right_disp_map == "cross_checking_accurate":
+        if self.right_disp_map is not None:
+
             # Update min and max disparity according to the current scale
             self.right_disp_min = self.right_disp_min * self.scale_factor
             self.right_disp_max = self.right_disp_max * self.scale_factor
-            self.right_cv = self.matching_cost_.allocate_cost_volume(
-                self.right_img, (self.right_disp_min, self.right_disp_max), cfg
-            )
+
+            if self.right_disp_map == "cross_checking_accurate":
+                # allocate the cost volume the standard way
+                self.right_cv = self.matching_cost_.allocate_cost_volume(
+                    self.right_img, (self.right_disp_min, self.right_disp_max), cfg
+                )
+
+            elif self.right_disp_map == "cross_checking_fast":
+                # the right cv may have a different size from left cv if created from its disp range
+                # (ex: with the test disparity grids)
+                # create it from the left disps instead, to match the left cv's size
+                self.right_cv = self.matching_cost_.allocate_cost_volume(
+                    self.right_img, (-self.disp_max, -self.disp_min), cfg
+                )
 
             # Compute validity mask to identify invalid points in cost volume
             self.right_cv = validity_mask(self.right_img, self.left_img, self.right_cv)
@@ -419,6 +431,17 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         if self.right_disp_map == "cross_checking_accurate":
             self.right_disparity = disparity_.to_disp(self.right_cv, self.right_img, self.left_img)
+        elif self.right_disp_map == "cross_checking_fast":
+            # Fast cross checking is used, compute right cv at wta time
+            # Compute right cost volume and mask it
+            self.right_cv["cost_volume"].data = matching_cost.AbstractMatchingCost.reverse_cost_volume(
+                self.left_cv["cost_volume"].data, np.nanmin(self.right_disp_min)
+            )
+
+            self.right_cv.attrs["type_measure"] = self.left_cv.attrs["type_measure"]
+            self.right_cv.attrs["cmax"] = self.left_cv.attrs["cmax"]
+
+            self.right_disparity = disparity_.to_disp(self.right_cv, self.right_img, self.left_img)
 
     def filter_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
@@ -436,7 +459,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             step=self.step,
         )  # type: ignore
         filter_.filter_disparity(self.left_disparity, self.left_img)
-        if self.right_disp_map == "cross_checking_accurate":
+        if self.right_disp_map is not None:
             filter_.filter_disparity(self.right_disparity, self.right_img)
 
     def refinement_run(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -452,7 +475,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         refinement_ = refinement.AbstractRefinement(**cfg["pipeline"][input_step])  # type: ignore
 
         refinement_.subpixel_refinement(self.left_cv, self.left_disparity)
-        if self.right_disp_map == "cross_checking_accurate":
+        if self.right_disp_map is not None:
             refinement_.subpixel_refinement(self.right_cv, self.right_disparity)
 
     def validation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
@@ -468,11 +491,11 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         validation_ = validation.AbstractValidation(**cfg["pipeline"][input_step])  # type: ignore
 
         self.left_disparity = validation_.disparity_checking(self.left_disparity, self.right_disparity)
-        if self.right_disp_map == "cross_checking_accurate":
+        if self.right_disp_map is not None:
             self.right_disparity = validation_.disparity_checking(self.right_disparity, self.left_disparity)
             # Interpolated mismatch and occlusions
             if "interpolated_disparity" in cfg["pipeline"][input_step]:
-                interpolate_ = validation.AbstractInterpolation(**cfg["pipeline"][input_step])  # type: ignore
+                interpolate_ = validation.AbstractInterpolation(**cfg["pipeline"][input_step])
                 interpolate_.interpolated_disparity(self.left_disparity)
                 interpolate_.interpolated_disparity(self.right_disparity)
 
@@ -499,7 +522,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # Set to None the disparity map for the next scale
         self.left_disparity = None
 
-        if self.right_disp_map == "cross_checking_accurate":
+        if self.right_disp_map is not None:
             # Update min and max user disparity according to the current scale
             self.dmin_user_right = self.dmin_user_right * self.scale_factor
             self.dmax_user_right = self.dmax_user_right * self.scale_factor
@@ -624,8 +647,10 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                 self.right_disp_min = right_img["disparity"].sel(band_disp="min").data
                 self.right_disp_max = right_img["disparity"].sel(band_disp="max").data
             else:
-                self.right_disp_min = -left_img["disparity"].sel(band_disp="max").data
-                self.right_disp_max = -left_img["disparity"].sel(band_disp="min").data
+                # Right disparities : always infered from left disparities
+                self.right_disp_min, self.right_disp_max = matching_cost.AbstractMatchingCost.reverse_disp_range(
+                    self.disp_min, self.disp_max
+                )
 
         # Initiate output disparity datasets
         self.left_disparity = xr.Dataset()
@@ -855,16 +880,17 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         self.right_disp_map = validation_.cfg["validation_method"]
 
-        # If left disparities are grids of disparity and the right disparities are none, the cross-checking
-        # method cannot be used
-        if (
-            isinstance(self.left_img.attrs["disparity_source"], str)
-            and self.right_img.attrs["disparity_source"] is None
-        ):
-            raise AttributeError(
-                "The cross-checking step cannot be processed if disp_min, disp_max are paths to the "
-                "left disparity grids and disp_right_min, disp_right_max are none."
-            )
+        ds_left = self.left_img.attrs["disparity_source"]
+        ds_right = self.right_img.attrs["disparity_source"]
+
+        # If both disp bounds are lists, check that they add up
+        if isinstance(ds_left, list) and isinstance(ds_right, list):
+            if ds_left[0] != -ds_right[1] or ds_left[1] != -ds_right[0]:
+                raise AttributeError("disp_min != -disp_right_max or disp_max != -disp_right_min")
+
+        # If both disp bounds are strs, warn that the right disp will be ignored
+        elif isinstance(ds_left, str) and isinstance(ds_right, str):
+            logging.warning("The right disp will be ignored, and instead computed from the left disp.")
 
     def multiscale_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
         """

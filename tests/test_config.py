@@ -196,7 +196,7 @@ class TestConfig(unittest.TestCase):
             }
         }
         # Json checker must raise an error
-        self.assertRaises(json_checker.core.exceptions.DictCheckerError, check_configuration.check_input_section, cfg)
+        self.assertRaises(ValueError, check_configuration.check_input_section, cfg)
 
     def test_multiband_pipeline(self):
         """
@@ -522,8 +522,8 @@ class TestConfig(unittest.TestCase):
             "pipeline": copy.deepcopy(common.validation_pipeline_cfg),
         }
 
-        # When left disparities are grids and right are none, cross checking method cannot be used : the program exits
-        self.assertRaises(MachineError, check_configuration.check_conf, cfg, pandora_machine)
+        # When left disparities are grids and right are none, cross checking should succeed
+        check_configuration.check_conf(cfg, pandora_machine)
 
         # Check the configuration returned with left and right disparity grids and cross checking method
         cfg = {
