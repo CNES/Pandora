@@ -47,6 +47,7 @@ class Profiler:
     enabled = False
     save_graphs = False
     save_raw_data = False
+    display_graphs = False
     _profiling_info = pd.DataFrame(
         columns=["level", "parent", "name", "uuid", "time", "call_time", "memory", "merge_calls"]
     )
