@@ -34,6 +34,7 @@ import numpy as np
 import xarray as xr
 from scipy.ndimage import binary_dilation
 
+from pandora.profiler import profile
 
 from pandora.margins.descriptors import HalfWindowMargins
 from pandora.criteria import mask_invalid_variable_disparity_range, mask_border
@@ -368,6 +369,7 @@ class AbstractMatchingCost:
 
         return grid
 
+    @profile("matching_cost.allocate_cost_volume")
     def allocate_cost_volume(
         self, image: xr.Dataset, disparity_grids: Tuple[np.ndarray, np.ndarray], cfg: Dict = None
     ) -> xr.Dataset:
@@ -756,6 +758,7 @@ class AbstractMatchingCost:
 
         return column_interval_left, column_interval_right
 
+    @profile("matching_cost.cv_masked")
     def cv_masked(
         self,
         img_left: xr.Dataset,
@@ -857,6 +860,7 @@ class AbstractMatchingCost:
         if offset > 0:
             mask_border(cost_volume)
 
+    @profile("matching_cost.allocate_numpy_cost_volume")
     def allocate_numpy_cost_volume(self, img_left: xr.Dataset, disparity_range: Union[np.ndarray, List]) -> np.ndarray:
         """
         Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
@@ -886,6 +890,7 @@ class AbstractMatchingCost:
         )
 
     @staticmethod
+    @profile("matching_cost.crop_cost_volume")
     def crop_cost_volume(cost_volume: np.ndarray, offset: int = 0) -> np.ndarray:
         """
         Return a cropped view of cost_volume.
@@ -901,6 +906,7 @@ class AbstractMatchingCost:
         return cost_volume[:, offset:-offset, offset:-offset] if offset else cost_volume
 
     @staticmethod
+    @profile("matching_cost.reverse_cost_volume")
     def reverse_cost_volume(left_cv: np.ndarray, disp_min: int) -> np.ndarray:
         """
         Create the right cost volume from the left cost volume, by reindexing.
@@ -917,6 +923,7 @@ class AbstractMatchingCost:
         return matching_cost_cpp.reverse_cost_volume(left_cv, disp_min)
 
     @staticmethod
+    @profile("matching_cost.reverse_disp_range")
     def reverse_disp_range(left_min: np.ndarray, left_max: np.ndarray) -> np.ndarray:
         """
         Create the right disp ranges from the left disp ranges

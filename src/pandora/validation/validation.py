@@ -36,6 +36,8 @@ from pandora.cost_volume_confidence.cost_volume_confidence import AbstractCostVo
 from pandora.criteria import mask_border
 from pandora.disparity import extract_disparity_range_from_disparity_map
 
+from pandora.profiler import profile
+
 
 class AbstractValidation:
     """
@@ -176,6 +178,7 @@ class CrossCheckingAccurate(AbstractValidation):
     # Default configuration, do not change this value
     _THRESHOLD = 1.0
 
+    @profile("cross_checking.__init__")
     def __init__(self, **cfg) -> None:
         """
         :param cfg: optional configuration, {'cross_checking_threshold': value,
@@ -217,6 +220,7 @@ class CrossCheckingAccurate(AbstractValidation):
         """
         print("Cross-checking method")
 
+    @profile("cross_checking.disparity_checking")
     def disparity_checking(
         self,
         dataset_left: xr.Dataset,

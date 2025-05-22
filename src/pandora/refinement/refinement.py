@@ -31,6 +31,7 @@ import xarray as xr
 
 import pandora.constants as cst
 from pandora.margins.descriptors import NullMargins
+from pandora.profiler import profile
 
 from .cpp import refinement_cpp
 
@@ -73,6 +74,7 @@ class AbstractRefinement:
             return super(AbstractRefinement, cls).__new__(cls)
         return None
 
+    @profile("subpixel_refinement")
     def subpixel_refinement(self, cv: xr.Dataset, disp: xr.Dataset) -> None:
         """
         Subpixel refinement of disparities and costs.

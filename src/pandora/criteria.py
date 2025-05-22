@@ -29,6 +29,8 @@ from scipy.ndimage import binary_dilation
 import xarray as xr
 import pandora.constants as cst
 
+from pandora.profiler import profile
+
 
 def binary_dilation_msk(img: xr.Dataset, window_size: int) -> np.ndarray:
     """
@@ -58,6 +60,7 @@ def binary_dilation_msk(img: xr.Dataset, window_size: int) -> np.ndarray:
     return dil
 
 
+@profile("validity_mask")
 def validity_mask(
     img_left: xr.Dataset,
     img_right: xr.Dataset,

@@ -32,10 +32,13 @@ from typing import Dict, Tuple
 
 import xarray as xr
 
+from pandora.profiler import Profiler, profile
+
 from . import common
 from .check_configuration import check_conf, check_datasets, read_config_file, read_multiscale_params
 from .img_tools import create_dataset_from_inputs
 from .state_machine import PandoraMachine
+
 
 if sys.version_info < (3, 10):
     from importlib_metadata import entry_points
@@ -44,6 +47,7 @@ else:
 
 
 # pylint: disable=too-many-arguments
+@profile("main.run", memprof=True)
 def run(
     pandora_machine: PandoraMachine,
     img_left: xr.Dataset,
@@ -132,6 +136,7 @@ def setup_logging(verbose: bool) -> None:
         logging.basicConfig(format="[%(asctime)s][%(levelname)s] %(message)s", level=logging.ERROR)
 
 
+@profile("main.import_plugin")
 def import_plugin() -> None:
     """
     Load all the registered entry points
@@ -156,6 +161,8 @@ def main(cfg_path: PathLike | str, output: str, verbose: bool) -> None:
 
     # Read the user configuration file
     user_cfg = read_config_file(cfg_path)
+
+    Profiler.enable_from_config(user_cfg)
 
     # Import pandora plugins
     import_plugin()
@@ -189,3 +196,5 @@ def main(cfg_path: PathLike | str, output: str, verbose: bool) -> None:
     cfg["margins"] = pandora_machine.margins.to_dict()
     # Save the configuration
     common.save_config(output, cfg)
+
+    Profiler.generate_summary(output)

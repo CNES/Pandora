@@ -31,6 +31,7 @@ from json_checker import Checker, And
 
 from pandora.img_tools import shift_right_img
 from pandora.matching_cost import matching_cost
+from pandora.profiler import profile
 
 from .cpp import matching_cost_cpp  # pylint:disable=import-error
 
@@ -41,6 +42,7 @@ class Census(matching_cost.AbstractMatchingCost):
     Census class allows to compute the cost volume
     """
 
+    @profile("census.__init__")
     def __init__(self, **cfg: Dict[str, Union[str, int]]) -> None:
         """
         :param cfg: optional configuration,  {'window_size': value, 'subpix': value}
@@ -69,6 +71,7 @@ class Census(matching_cost.AbstractMatchingCost):
         checker.validate(cfg)
         return cfg
 
+    @profile("census.compute_cost_volume")
     def compute_cost_volume(
         self,
         img_left: xr.Dataset,

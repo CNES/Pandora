@@ -32,6 +32,7 @@ from json_checker import Checker, And
 
 import pandora.constants as cst
 from pandora.margins import Margins
+from pandora.profiler import profile
 from . import filter  # pylint: disable=redefined-builtin
 from ..common import sliding_window
 
@@ -46,6 +47,7 @@ class BilateralFilter(filter.AbstractFilter):
     _SIGMA_COLOR = 2.0
     _SIGMA_SPACE = 6.0
 
+    @profile("bilateral_filter.__init__")
     def __init__(self, cfg: Dict, image_shape: Tuple[int, int], step: int = 1):
         """
         :param cfg: optional configuration, {'sigmaColor' : value, 'sigmaSpace' : value, 'image_shape': value}
@@ -94,6 +96,7 @@ class BilateralFilter(filter.AbstractFilter):
         """
         print("Bilateral filter description")
 
+    @profile("bilateral_filter.filter_disparity")
     def filter_disparity(
         self,
         disp: xr.Dataset,

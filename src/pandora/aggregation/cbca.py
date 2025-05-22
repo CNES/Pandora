@@ -31,6 +31,7 @@ from json_checker import Checker, And
 
 from pandora.filter import AbstractFilter
 from pandora.img_tools import shift_right_img
+from pandora.profiler import profile
 from .cpp import aggregation_cpp
 from . import aggregation
 
@@ -45,6 +46,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
     _CBCA_INTENSITY = 30.0
     _CBCA_DISTANCE = 5
 
+    @profile("aggregation.__init__")
     def __init__(self, **cfg: dict):
         """
         :param cfg: optional configuration, {'cbca_intensity': value, 'cbca_distance': value}
@@ -85,6 +87,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         """
         print("CrossBasedCostAggregation method")
 
+    @profile("aggregation.cost_volume_aggregation")
     def cost_volume_aggregation(
         self, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset, **cfg: Union[str, int]
     ) -> None:

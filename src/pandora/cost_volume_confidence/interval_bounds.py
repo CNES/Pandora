@@ -29,6 +29,7 @@ import numpy as np
 from json_checker import And, Checker
 import xarray as xr
 
+from pandora.profiler import profile
 from . import cost_volume_confidence
 from ..interval_tools import interval_regularization
 from .cpp import cost_volume_confidence_cpp
@@ -50,6 +51,7 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
     # Method name
     _method = "interval_bounds"
 
+    @profile("interval_bounds.__init__")
     def __init__(self, **cfg: str) -> None:
         """
         :param cfg: optional configuration, {
@@ -125,6 +127,7 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
         """
         print("Interval bounds confidence method with regularization")
 
+    @profile("interval_bounds.confidence_prediction")
     def confidence_prediction(
         self,
         disp: xr.Dataset,

@@ -29,6 +29,7 @@ from json_checker import Checker, And, Or
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
+from pandora.profiler import profile
 import pandora.constants as cst
 
 from . import filter  # pylint: disable=redefined-builtin
@@ -60,6 +61,7 @@ class DisparityDenoiser(filter.AbstractFilter):
     _SIGMA_GRAD = 1.5
     _BAND = None
 
+    @profile("disparity_denoiser.__init__")
     def __init__(self, *args, cfg: Dict, **kwargs):  # pylint:disable=unused-argument
         """
         :param cfg: optional configuration, {'filterSize': value,  'sigmaEuclidian' : value,
@@ -238,6 +240,7 @@ class DisparityDenoiser(filter.AbstractFilter):
 
         return disp_filt
 
+    @profile("disparity_denoiser.filter_disparity")
     def filter_disparity(
         self,
         disp: xr.Dataset,
