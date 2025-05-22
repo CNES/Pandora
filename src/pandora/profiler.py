@@ -161,7 +161,7 @@ class Profiler:
             fig = Profiler.plot_trace_for_call(call_row["uuid"], "memory")
 
             if Profiler.save_graphs and fig:
-                fig.write_html(os.path.join(output, f"memory_{call_row["name"]}.html"))
+                fig.write_html(os.path.join(output, "memory_{}.html".format(call_row["name"])))
 
     @staticmethod
     def plot_trace_for_call(call_uuid, data_name):
@@ -232,7 +232,7 @@ class Profiler:
             current_offset += offset_step
 
         fig.update_layout(
-            title=f"{data_name} usage during {parent_row["name"]} call",
+            title="{} usage during {} call".format(data_name, parent_row["name"]),
             xaxis_title="Time (s)",
             yaxis_title="Memory (MB)",
             showlegend=True,
