@@ -32,11 +32,11 @@ from multiprocessing import Pipe
 from threading import Thread
 from json_checker import Checker
 
-import pandas as pd
-import psutil
+import pandas as pd  # type: ignore
+import psutil  # type: ignore
 
-import plotly.express as px
-import plotly.graph_objects as go
+import plotly.express as px  # type: ignore
+import plotly.graph_objects as go  # type: ignore
 
 
 class Profiler:
