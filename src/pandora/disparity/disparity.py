@@ -36,6 +36,8 @@ from pandora.img_tools import compute_std_raster
 from pandora.margins.descriptors import NullMargins
 from pandora.criteria import mask_border
 
+from pandora.profiler import profile
+
 
 class AbstractDisparity:
     """
@@ -351,6 +353,7 @@ class WinnerTakesAll(AbstractDisparity):
     # Default configuration, do not change this value
     _INVALID_DISPARITY = -9999
 
+    @profile("wta.__init__")
     def __init__(self, **cfg):
         """float
         :param cfg: optional configuration
@@ -390,6 +393,7 @@ class WinnerTakesAll(AbstractDisparity):
         """
         print("Winner takes all method")
 
+    @profile("wta.to_disp")
     def to_disp(self, cv: xr.Dataset, img_left: xr.Dataset = None, img_right: xr.Dataset = None) -> xr.Dataset:
         """
         Disparity computation by applying the Winner Takes All strategy

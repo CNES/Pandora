@@ -28,6 +28,7 @@ import numpy as np
 import xarray as xr
 from json_checker import And, Checker
 
+from pandora.profiler import profile
 from .cpp import cost_volume_confidence_cpp
 
 from . import cost_volume_confidence
@@ -52,6 +53,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
     _method_disp_inf = "disp_inf_from_risk"
     _method_disp_sup = "disp_sup_from_risk"
 
+    @profile("risk.__init__")
     def __init__(self, **cfg: str) -> None:
         """
         :param cfg: optional configuration, {'confidence_method': 'risk', 'eta_min': float, 'eta_max': float,
@@ -105,6 +107,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         """
         print("Risk method")
 
+    @profile("risk.confidence_prediction")
     def confidence_prediction(
         self,
         disp: xr.Dataset,

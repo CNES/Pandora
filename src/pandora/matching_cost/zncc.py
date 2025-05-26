@@ -32,6 +32,8 @@ from json_checker import Checker, And
 from pandora.img_tools import shift_right_img, compute_mean_raster, compute_std_raster
 from pandora.matching_cost import matching_cost
 
+from pandora.profiler import profile
+
 
 @matching_cost.AbstractMatchingCost.register_subclass("zncc")
 class Zncc(matching_cost.AbstractMatchingCost):
@@ -40,6 +42,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
     Zncc class allows to compute the cost volume
     """
 
+    @profile("zncc.__init__")
     def __init__(self, **cfg: Union[str, int]) -> None:
         """
         :param cfg: optional configuration,  {'window_size': value, 'subpix': value}
@@ -106,6 +109,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
 
         return point_p, point_q
 
+    @profile("zncc.compute_cost_volume")
     def compute_cost_volume(
         self,
         img_left: xr.Dataset,
