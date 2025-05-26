@@ -27,7 +27,7 @@ This module contains functions to test the disparity map validation step.
 import unittest
 import pytest
 
-from json_checker.core.exceptions import DictCheckerError
+from json_checker.core.exceptions import DictCheckerError, MissKeyCheckerError
 
 from pandora.profiler import Profiler
 
@@ -101,6 +101,22 @@ class TestProfiling(unittest.TestCase):
         """
         Test that there's a crash with invalid values
         """
+        with pytest.raises(MissKeyCheckerError):
+            Profiler.enable_from_config(
+                {
+                    "profiling": {
+                        "display_graphs": True,
+                    }
+                }
+            )  # type: ignore
+        with pytest.raises(MissKeyCheckerError):
+            Profiler.enable_from_config(
+                {
+                    "profiling": {
+                        "wrong key": True,
+                    }
+                }
+            )  # type: ignore
         for value in [134, "Something's wrong", [True, False], None]:
             with pytest.raises(TypeError):
                 Profiler.enable_from_config({"profiling": value})  # type: ignore

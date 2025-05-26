@@ -62,16 +62,18 @@ class Profiler:
         base_conf = conf.get("profiling", False)
 
         if isinstance(base_conf, bool):
-            cfg = {
+            base_conf = {
                 "save_graphs": base_conf,
                 "save_raw_data": base_conf,
             }
 
         elif isinstance(base_conf, dict):
-            cfg = {
-                "save_graphs": base_conf.get("save_graphs", False),
-                "save_raw_data": base_conf.get("save_raw_data", False),
-            }
+            base_conf.update(
+                {
+                    "save_graphs": base_conf.get("save_graphs", False),
+                    "save_raw_data": base_conf.get("save_raw_data", False),
+                }
+            )
 
         else:
             raise TypeError("The 'profiling' key in the configuration has to be either a dict or a boolean.")
@@ -82,10 +84,10 @@ class Profiler:
         }
 
         checker = Checker(schema)
-        checker.validate(cfg)
+        checker.validate(base_conf)
 
-        Profiler.save_graphs = cfg["save_graphs"]
-        Profiler.save_raw_data = cfg["save_raw_data"]
+        Profiler.save_graphs = base_conf["save_graphs"]
+        Profiler.save_raw_data = base_conf["save_raw_data"]
         Profiler.enabled = Profiler.save_graphs or Profiler.save_raw_data
 
     @staticmethod
