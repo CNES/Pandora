@@ -34,7 +34,7 @@ Example configuration :
 
     {
         "profiling": {
-            "display_graphs": true,
+            "save_raw_data": true,
             "save_graphs": true
         },
         "input": {
