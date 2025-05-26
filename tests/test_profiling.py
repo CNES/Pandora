@@ -53,37 +53,46 @@ class TestProfiling(unittest.TestCase):
         Profiler.enable_from_config(
             {
                 "profiling": {
-                    "enabled": True,
+                    "save_graphs": True,
                 }
             }
         )  # type: ignore
         Profiler.enable_from_config(
             {
                 "profiling": {
-                    "enabled": False,
+                    "save_raw_data": True,
+                }
+            }
+        )  # type: ignore
+        Profiler.enable_from_config(
+            {
+                "profiling": {
+                    "save_graphs": False,
+                    "save_raw_data": True,
+                }
+            }
+        )  # type: ignore
+        Profiler.enable_from_config(
+            {
+                "profiling": {
+                    "save_graphs": True,
+                    "save_raw_data": False,
+                }
+            }
+        )  # type: ignore
+        Profiler.enable_from_config(
+            {
+                "profiling": {
                     "save_graphs": False,
                     "save_raw_data": False,
-                    "display_graphs": False,
                 }
             }
         )  # type: ignore
         Profiler.enable_from_config(
             {
                 "profiling": {
-                    "enabled": False,
                     "save_graphs": True,
                     "save_raw_data": True,
-                    "display_graphs": True,
-                }
-            }
-        )  # type: ignore
-        Profiler.enable_from_config(
-            {
-                "profiling": {
-                    "enabled": True,
-                    "save_graphs": True,
-                    "save_raw_data": True,
-                    "display_graphs": True,
                 }
             }
         )  # type: ignore
@@ -99,14 +108,6 @@ class TestProfiling(unittest.TestCase):
                 Profiler.enable_from_config(
                     {
                         "profiling": {
-                            "enabled": value,
-                        }
-                    }
-                )  # type: ignore
-            with pytest.raises(DictCheckerError):
-                Profiler.enable_from_config(
-                    {
-                        "profiling": {
                             "save_graphs": value,
                         }
                     }
@@ -116,14 +117,6 @@ class TestProfiling(unittest.TestCase):
                     {
                         "profiling": {
                             "save_raw_data": value,
-                        }
-                    }
-                )  # type: ignore
-            with pytest.raises(DictCheckerError):
-                Profiler.enable_from_config(
-                    {
-                        "profiling": {
-                            "display_graphs": value,
                         }
                     }
                 )  # type: ignore

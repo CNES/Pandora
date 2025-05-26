@@ -47,10 +47,7 @@ class Profiler:
     enabled = False
     save_graphs = False
     save_raw_data = False
-    display_graphs = False
-    _profiling_info = pd.DataFrame(
-        columns=["level", "parent", "name", "uuid", "time", "call_time", "memory", "merge_calls"]
-    )
+    _profiling_info = pd.DataFrame(columns=["level", "parent", "name", "uuid", "time", "call_time", "memory"])
     running_processes = []
 
     @staticmethod
@@ -59,43 +56,37 @@ class Profiler:
         Enables the profiler if specified in the config file
 
         :param conf: The configuration dict
+        :type conf: dict
         """
 
         base_conf = conf.get("profiling", False)
 
         if isinstance(base_conf, bool):
             cfg = {
-                "enabled": base_conf,
                 "save_graphs": base_conf,
                 "save_raw_data": base_conf,
-                "display_graphs": base_conf,
             }
 
         elif isinstance(base_conf, dict):
             cfg = {
-                "enabled": base_conf.get("enabled", False),
                 "save_graphs": base_conf.get("save_graphs", False),
                 "save_raw_data": base_conf.get("save_raw_data", False),
-                "display_graphs": base_conf.get("display_graphs", False),
             }
 
         else:
             raise TypeError("The 'profiling' key in the configuration has to be either a dict or a boolean.")
 
         schema = {
-            "enabled": bool,
             "save_graphs": bool,
             "save_raw_data": bool,
-            "display_graphs": bool,
         }
 
         checker = Checker(schema)
         checker.validate(cfg)
 
-        Profiler.enabled = cfg["enabled"]
         Profiler.save_graphs = cfg["save_graphs"]
         Profiler.save_raw_data = cfg["save_raw_data"]
-        Profiler.display_graphs = cfg["display_graphs"]
+        Profiler.enabled = Profiler.save_graphs or Profiler.save_raw_data
 
     @staticmethod
     def add_profiling_info(info: dict):
@@ -103,6 +94,7 @@ class Profiler:
         Add profiling info to the profiling DataFrame.
 
         :param info: dictionary with profiling data keys
+        :type info: dict
         """
 
         Profiler._profiling_info.loc[len(Profiler._profiling_info)] = {
@@ -113,13 +105,15 @@ class Profiler:
             "time": info["time"],
             "call_time": info["call_time"],
             "memory": info["memory"],
-            "merge_calls": info["merge_calls"],
         }
 
     @staticmethod
     def generate_summary(base_output: str):
         """
         Generate Profiling summary
+
+        :param base_output: Pandora's output directory
+        :type base_output: str
         """
 
         if not Profiler.enabled:
@@ -136,40 +130,44 @@ class Profiler:
         Profiler._profiling_info["text_display"] = (
             Profiler._profiling_info["name"] + " (" + Profiler._profiling_info["time"].round(2).astype(str) + " s)"
         )
-        # time profiling flame graph
-        fig = px.icicle(
-            Profiler._profiling_info,
-            names="text_display",
-            ids="uuid",
-            parents="parent",
-            values="time",
-            title="Time profiling icicle graph (functions tagged only)",
-            color="time",
-            color_continuous_scale="thermal",
-            branchvalues="total",
-        )
-
-        fig.update_traces(tiling_orientation="v")
-
-        if Profiler.display_graphs:
-            fig.show()
 
         if Profiler.save_graphs:
+            # time profiling flame graph
+            fig = px.icicle(
+                Profiler._profiling_info,
+                names="text_display",
+                ids="uuid",
+                parents="parent",
+                values="time",
+                title="Time profiling icicle graph (functions tagged only)",
+                color="time",
+                color_continuous_scale="thermal",
+                branchvalues="total",
+            )
+
+            fig.update_traces(tiling_orientation="v")
+
             fig.write_html(os.path.join(output, "time_graph.html"))
 
-        # memory profiling graph
-        for _, call_row in Profiler._profiling_info[Profiler._profiling_info["memory"].notnull()].iterrows():
-            fig = Profiler.plot_trace_for_call(call_row["uuid"], "memory")
+            # memory profiling graph
+            for _, call_row in Profiler._profiling_info[Profiler._profiling_info["memory"].notnull()].iterrows():
+                fig = Profiler.plot_trace_for_call(call_row["uuid"], "memory")
 
-            if Profiler.save_graphs and fig:
-                fig.write_html(os.path.join(output, "memory_{}.html".format(call_row["name"])))
+                if fig:
+                    fig.write_html(os.path.join(output, "memory_{}.html".format(call_row["name"])))
 
     @staticmethod
     def plot_trace_for_call(call_uuid, data_name):
         """
-        Plot memory usage over time for a function call and markers for its subcalls.
+        Plot memory (or any resource tracked) usage over time for a function call, with markers for its subcalls.
 
         :param call_uuid: UUID of the parent function call
+        :type call_uuid: str
+        :param data_name: The name of the data to plot (if cpu consumption were to be added for example)
+        :type data_name: str
+
+        :return: The generated plotly figure
+        :rtype: plotly.graph_objs._figure.Figure
         """
 
         # Get the parent call entry
@@ -239,21 +237,19 @@ class Profiler:
             showlegend=True,
         )
 
-        if Profiler.display_graphs:
-            fig.show()
-
         return fig
 
 
-def profile(name, interval=0.001, memprof=False, merge_calls=False):
+def profile(name, interval=0.05, memprof=False):
     """
     Pandora profiling decorator
 
     :param name: name of the function in the report
+    :type name: str
     :param interval: memory sampling interval (seconds)
+    :type interval: int or float
     :param memprof: whether or not to profile the memory consumption
-    :param merge_calls: whether or not to merge the calls to this func in a single one in the report,
-        when they come from the same parent call. Does not merge recursive calls.
+    :type memprof: bool
     """
 
     def decorator_generator(func):
@@ -268,7 +264,6 @@ def profile(name, interval=0.001, memprof=False, merge_calls=False):
             Generate profiling logs of function, run
 
             :return: func(*args, **kwargs)
-
             """
 
             # if profiling is disabled, remove overhead
@@ -311,7 +306,6 @@ def profile(name, interval=0.001, memprof=False, merge_calls=False):
                 "time": total_time,
                 "call_time": start_time,
                 "memory": thread_monitoring.mem_data if memprof else None,
-                "merge_calls": merge_calls,
             }
 
             Profiler.add_profiling_info(func_data)
@@ -333,6 +327,13 @@ class MemProf(Thread):
     def __init__(self, pid, pipe, interval):
         """
         Init function of MemProf
+
+        :param pid: The process ID of the monitored process
+        :type pid: int
+        :param pipe: The pipe used to send the end monitoring signal
+        :type pipe: multiprocessing.connection.Connection
+        :param interval: Time interval (seconds) between memory measurements
+        :type interval: float
         """
         super().__init__()
         self.pipe = pipe

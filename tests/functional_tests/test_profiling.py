@@ -79,14 +79,10 @@ class TestMain:
     @pytest.mark.parametrize(
         "profiling_conf",
         [
-            {"enabled": True, "save_raw_data": True, "save_graphs": True},
-            {"enabled": True, "save_raw_data": True, "save_graphs": False},
-            {"enabled": True, "save_raw_data": False, "save_graphs": True},
-            {"enabled": True, "save_raw_data": False, "save_graphs": False},
-            {"enabled": False, "save_raw_data": True, "save_graphs": True},
-            {"enabled": False, "save_raw_data": True, "save_graphs": False},
-            {"enabled": False, "save_raw_data": False, "save_graphs": True},
-            {"enabled": False, "save_raw_data": False, "save_graphs": False},
+            {"save_raw_data": True, "save_graphs": True},
+            {"save_raw_data": True, "save_graphs": False},
+            {"save_raw_data": False, "save_graphs": True},
+            {"save_raw_data": False, "save_graphs": False},
         ],
     )
     def test_profiling_saves_data(self, tmp_path, user_cfg):
@@ -95,9 +91,8 @@ class TestMain:
         Runs the pipeline twice (with fast & accurate) then compare the results
         and assert they are striclty equal.
         """
-        enabled = user_cfg["profiling"]["enabled"]
-        s_rd = user_cfg["profiling"]["save_raw_data"] and enabled
-        s_gr = user_cfg["profiling"]["save_graphs"] and enabled
+        s_rd = user_cfg["profiling"]["save_raw_data"]
+        s_gr = user_cfg["profiling"]["save_graphs"]
 
         config_prof = tmp_path / "config_prof.json"
         out_prof = tmp_path / "out_profiling"
