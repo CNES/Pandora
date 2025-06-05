@@ -30,6 +30,7 @@ import xarray as xr
 import pandora.constants as cst
 
 from pandora.profiler import profile
+from .cpp import criteria_cpp
 
 
 def binary_dilation_msk(img: xr.Dataset, window_size: int) -> np.ndarray:
@@ -146,10 +147,20 @@ def validity_mask(
 
     if "msk" in img_right.data_vars:
         allocate_right_mask(cv, img_right, bit_1)
+        # img right contains masked values : get the pixels affected
+        mask_partially_missing_variable_ranges(cv, img_left, img_right)
 
     return cv
 
 
+@profile("mask_partially_missing_variable_ranges")
+def mask_partially_missing_variable_ranges(cv, img_left, img_right):
+    mask = criteria_cpp.partially_missing_variable_ranges(img_left["disparity"].data, img_right["msk"].data)
+
+    cv["validity_mask"].data[mask] |= cst.PANDORA_MSK_PIXEL_INCOMPLETE_VARIABLE_DISPARITY_RANGE
+
+
+@profile("allocate_left_mask")
 def allocate_left_mask(cv: xr.Dataset, img_left: xr.Dataset) -> None:
     """
     Allocate the left image mask
@@ -186,6 +197,7 @@ def allocate_left_mask(cv: xr.Dataset, img_left: xr.Dataset) -> None:
     ).astype(np.uint16)
 
 
+@profile("allocate_right_mask")
 def allocate_right_mask(cv: xr.Dataset, img_right: xr.Dataset, bit_1: Union[np.ndarray, Tuple]) -> None:
     """
     Allocate the right image mask
