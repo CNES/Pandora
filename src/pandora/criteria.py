@@ -155,7 +155,22 @@ def validity_mask(
 
 @profile("mask_partially_missing_variable_ranges")
 def mask_partially_missing_variable_ranges(cv, img_left, img_right):
-    mask = criteria_cpp.partially_missing_variable_ranges(img_left["disparity"].data, img_right["msk"].data)
+    """
+    Mask the pixels with a partially missing variable range in the right image.
+    Applies the mask directly to the CV's validity mask.
+
+    :param cv: Cost volume dataset
+    :type cv: xarray.Dataset
+    :param img_left: Left image dataset
+    :type img_left: xarray.Dataset
+    :param img_right: Right image dataset
+    :type img_right: xarray.Dataset
+    """
+    mask = criteria_cpp.partially_missing_variable_ranges(
+        img_left["disparity"].data,
+        # mask with true = invalid, false = valid
+        img_right["msk"].data != img_right.attrs["valid_pixels"],
+    )
 
     cv["validity_mask"].data[mask] |= cst.PANDORA_MSK_PIXEL_INCOMPLETE_VARIABLE_DISPARITY_RANGE
 
