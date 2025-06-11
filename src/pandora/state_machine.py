@@ -1045,7 +1045,12 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             for _, band in band_used.items():
                 if band not in band_list:
                     raise AttributeError(f"Wrong band instantiate on {step} step: {band} not in input image")
-        else:
+        elif isinstance(band_used, list):
             for band in band_used:
                 if band not in band_list:
                     raise AttributeError(f"Wrong band instantiate on {step} step: {band} not in input image")
+        elif isinstance(band_used, str):
+            if band_used not in band_list:
+                raise AttributeError(f"Wrong band instantiate on {step} step: {band_used} not in input image")
+        else:
+            raise TypeError(f"Wrong type for band {band_used} used in {step}")

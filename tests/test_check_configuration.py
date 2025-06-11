@@ -97,7 +97,7 @@ class TestCheckDataset:
                 np.array(np.full((2, 3, 4), np.nan), dtype=np.float32),
                 ["band_im", "row", "col"],
                 {
-                    "band_im": ["r", "g"],
+                    "band_im": ["red", "green"],
                     "row": np.arange(3),
                     "col": np.arange(4),
                 },
@@ -473,7 +473,7 @@ class TestCheckDisparitiesFromDataset:
                     ),
                     dims=["band_disp", "row", "col"],
                     coords={
-                        "band_disp": ["a", "b"],
+                        "band_disp": ["a", "blue"],
                         "row": np.arange(3),
                         "col": np.arange(4),
                     },

@@ -267,7 +267,7 @@ class TestMatchingCostZncc(unittest.TestCase):
 
         # Initialization of matching_cost plugin with wrong band
         matching_cost_ = matching_cost.AbstractMatchingCost(
-            **{"matching_cost_method": "zncc", "window_size": 3, "subpix": 1, "band": "b"}
+            **{"matching_cost_method": "zncc", "window_size": 3, "subpix": 1, "band": "blue"}
         )
 
         grid = matching_cost_.allocate_cost_volume(
@@ -275,7 +275,7 @@ class TestMatchingCostZncc(unittest.TestCase):
         )
 
         # Compute the cost_volume
-        with pytest.raises(AttributeError, match="Wrong band instantiate : b not in img_left or img_right"):
+        with pytest.raises(AttributeError, match="Wrong band instantiate : blue not in img_left or img_right"):
             _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
 
         # Initialization of matching_cost plugin with no band
