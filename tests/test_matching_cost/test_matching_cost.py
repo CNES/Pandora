@@ -72,7 +72,7 @@ class TestMatchingCost:
 
         # Create matching cost object
         matching_cost_ = matching_cost.AbstractMatchingCost(
-            **{"matching_cost_method": "census", "window_size": 3, "subpix": 1, "band": "b"}
+            **{"matching_cost_method": "census", "window_size": 3, "subpix": 1, "band": "blue"}
         )
 
         # Function allocate_numpy_cost_volume
@@ -585,7 +585,7 @@ class TestMatchingCost:
     def test_find_nearest_multiple_of_step(self, step_col, value, expected):
         """Test values returned by find_nearest_multiple_of_step."""
         matching_cost_ = matching_cost.AbstractMatchingCost(
-            **{"matching_cost_method": "census", "window_size": 5, "subpix": 4, "band": "b"}
+            **{"matching_cost_method": "census", "window_size": 5, "subpix": 4, "band": "blue"}
         )
 
         result = matching_cost_.find_nearest_multiple_of_step(value, step_col)

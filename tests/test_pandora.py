@@ -597,7 +597,7 @@ class TestPandora(unittest.TestCase):
         user_cfg["input"]["right"]["nodata"] = np.nan
         user_cfg["input"]["right"]["disp"] = None
         # working on green band
-        user_cfg["pipeline"]["matching_cost"]["band"] = "g"
+        user_cfg["pipeline"]["matching_cost"]["band"] = "green"
 
         left_rgb = create_dataset_from_inputs(input_config=user_cfg["input"]["left"])
         right_rgb = create_dataset_from_inputs(input_config=user_cfg["input"]["right"])
@@ -626,7 +626,7 @@ class TestPandora(unittest.TestCase):
         user_cfg["input"]["left"]["mask"] = "tests/pandora/occlusion.png"
 
         # working on green band
-        user_cfg["pipeline"]["matching_cost"]["band"] = "g"
+        user_cfg["pipeline"]["matching_cost"]["band"] = "green"
 
         input_config = user_cfg["input"]
         input_config["left"]["mask"] = None
@@ -661,7 +661,7 @@ class TestPandora(unittest.TestCase):
         user_cfg["input"]["left"]["mask"] = "tests/pandora/occlusion.png"
 
         # working on green band
-        user_cfg["pipeline"]["matching_cost"]["band"] = "g"
+        user_cfg["pipeline"]["matching_cost"]["band"] = "green"
 
         input_config = user_cfg["input"]
         input_config["left"]["mask"] = None
@@ -696,7 +696,7 @@ class TestPandora(unittest.TestCase):
         user_cfg["input"]["left"]["mask"] = "tests/pandora/occlusion.png"
 
         # working on green band
-        user_cfg["pipeline"]["matching_cost"]["band"] = "g"
+        user_cfg["pipeline"]["matching_cost"]["band"] = "green"
         user_cfg["input"]["left"]["nodata"] = np.nan
         user_cfg["input"]["right"]["nodata"] = np.nan
 

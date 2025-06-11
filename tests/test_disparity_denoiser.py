@@ -81,13 +81,13 @@ class TestDisparityDenoiser:
             left = xr.Dataset(
                 {"im": (["band_im", "row", "col"], data)},
                 coords={
-                    "band_im": ["r", "g", "b"],
+                    "band_im": ["red", "green", "blue"],
                     "row": np.arange(data.shape[1]),
                     "col": np.arange(data.shape[2]),
                 },
             )
 
-            filter_cfg["band"] = "r"
+            filter_cfg["band"] = "red"
 
         return left, filter_cfg
 
@@ -124,7 +124,7 @@ class TestDisparityDenoiser:
             "sigma_euclidian": 5.0,
             "sigma_color": 90.0,
             "sigma_planar": 10.0,
-            "band": "r",
+            "band": "red",
         }
 
         disparity_denoiser = flt.AbstractFilter(cfg=filter_config)
@@ -978,7 +978,7 @@ class TestDisparityDenoiser:
         left = xr.Dataset(
             {"im": (["band_im", "row", "col"], data)},
             coords={
-                "band_im": ["r", "g", "b"],
+                "band_im": ["red", "green", "blue"],
                 "row": np.arange(data.shape[1]),
                 "col": np.arange(data.shape[2]),
             },

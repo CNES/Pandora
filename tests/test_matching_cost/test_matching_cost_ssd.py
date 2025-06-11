@@ -134,7 +134,7 @@ class TestMatchingCostSSD(unittest.TestCase):
         )
         # Computes the sd cost for the whole images
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
-            **{"matching_cost_method": "ssd", "window_size": 1, "subpix": 1, "band": "r"}
+            **{"matching_cost_method": "ssd", "window_size": 1, "subpix": 1, "band": "red"}
         )
 
         grid = matching_cost_matcher.allocate_cost_volume(
@@ -169,7 +169,7 @@ class TestMatchingCostSSD(unittest.TestCase):
         ssd_cmax_ground_truth = np.nanmax(sd_ground_truth) * window_size**2
         # Computes the sd cost for the whole images
         matching_cost_matcher = matching_cost.AbstractMatchingCost(
-            **{"matching_cost_method": "ssd", "window_size": 5, "subpix": 1, "band": "r"}
+            **{"matching_cost_method": "ssd", "window_size": 5, "subpix": 1, "band": "red"}
         )
         grid = matching_cost_matcher.allocate_cost_volume(
             self.left_multiband,
@@ -268,7 +268,7 @@ class TestMatchingCostSSD(unittest.TestCase):
 
         # Initialization of matching_cost plugin with wrong band
         matching_cost_ = matching_cost.AbstractMatchingCost(
-            **{"matching_cost_method": "ssd", "window_size": 3, "subpix": 1, "band": "b"}
+            **{"matching_cost_method": "ssd", "window_size": 3, "subpix": 1, "band": "blue"}
         )
 
         grid = matching_cost_.allocate_cost_volume(
@@ -276,7 +276,7 @@ class TestMatchingCostSSD(unittest.TestCase):
         )
 
         # Compute the cost_volume
-        with pytest.raises(AttributeError, match="Wrong band instantiate : b not in img_left or img_right"):
+        with pytest.raises(AttributeError, match="Wrong band instantiate : blue not in img_left or img_right"):
             _ = matching_cost_.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
 
         # Initialization of matching_cost plugin with no band

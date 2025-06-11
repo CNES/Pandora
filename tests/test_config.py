@@ -206,7 +206,7 @@ class TestConfig(unittest.TestCase):
         cfg = {
             "input": copy.deepcopy(common.input_multiband_cfg),
             "pipeline": {
-                "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": "r"},
+                "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": "red"},
                 "disparity": {"disparity_method": "wta"},
             },
         }
@@ -235,7 +235,7 @@ class TestConfig(unittest.TestCase):
             "pipeline": copy.deepcopy(common.basic_pipeline_cfg),
         }
         # correct band for correlation
-        cfg_gt["pipeline"]["matching_cost"]["band"] = "r"
+        cfg_gt["pipeline"]["matching_cost"]["band"] = "red"
 
         del cfg_gt["pipeline"]["refinement"]
         del cfg_gt["pipeline"]["filter"]
@@ -253,7 +253,7 @@ class TestConfig(unittest.TestCase):
         cfg = {
             "input": copy.deepcopy(common.input_multiband_cfg),
             "pipeline": {
-                "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": "n"},
+                "matching_cost": {"matching_cost_method": "zncc", "window_size": 5, "subpix": 2, "band": "nir"},
                 "disparity": {"disparity_method": "wta"},
             },
         }
@@ -263,13 +263,13 @@ class TestConfig(unittest.TestCase):
         with pytest.raises(MachineError, match="A problem occurs during Pandora checking. Be sure of your sequencing"):
             check_configuration.check_conf(cfg, pandora_machine)
         # Check that the check_band_pipeline raises an error (this shall be the source of check_conf's error)
-        with pytest.raises(AttributeError, match="Wrong band instantiate on zncc step: n not in input image"):
+        with pytest.raises(AttributeError, match="Wrong band instantiate on zncc step: nir not in input image"):
             pandora_machine.check_band_pipeline(
                 img_left.coords["band_im"].data,
                 cfg["pipeline"]["matching_cost"]["matching_cost_method"],
                 cfg["pipeline"]["matching_cost"]["band"],
             )
-        with pytest.raises(AttributeError, match="Wrong band instantiate on zncc step: n not in input image"):
+        with pytest.raises(AttributeError, match="Wrong band instantiate on zncc step: nir not in input image"):
             pandora_machine.check_band_pipeline(
                 img_right.coords["band_im"].data,
                 cfg["pipeline"]["matching_cost"]["matching_cost_method"],

@@ -80,7 +80,7 @@ class TestValidation(unittest.TestCase):
         Test that there's a crash when not giving validation_method
         """
         with pytest.raises(KeyError):
-            validation.AbstractValidation(**{"something's wrong": "b"})  # type: ignore
+            validation.AbstractValidation(**{"something's wrong": "blue"})  # type: ignore
 
     def test_fails_with_invalid_method(self):
         """
