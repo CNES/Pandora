@@ -33,10 +33,15 @@ from threading import Thread
 from json_checker import Checker
 
 import pandas as pd  # type: ignore
-import psutil  # type: ignore
 
-import plotly.express as px  # type: ignore
-import plotly.graph_objects as go  # type: ignore
+try:
+    import plotly.express as px  # type: ignore
+    import plotly.graph_objects as go  # type: ignore
+    import psutil  # type: ignore
+
+    _HAS_PLOTLY_PSUTIL = True
+except ImportError:
+    _HAS_PLOTLY_PSUTIL = False
 
 
 class Profiler:
@@ -59,36 +64,40 @@ class Profiler:
         :type conf: dict
         """
 
-        base_conf = conf.get("profiling", False)
+        if _HAS_PLOTLY_PSUTIL:
 
-        if isinstance(base_conf, bool):
-            base_conf = {
-                "save_graphs": base_conf,
-                "save_raw_data": base_conf,
+            base_conf = conf.get("profiling", False)
+
+            if isinstance(base_conf, bool):
+                base_conf = {
+                    "save_graphs": base_conf,
+                    "save_raw_data": base_conf,
+                }
+
+            elif isinstance(base_conf, dict):
+                base_conf.update(
+                    {
+                        "save_graphs": base_conf.get("save_graphs", False),
+                        "save_raw_data": base_conf.get("save_raw_data", False),
+                    }
+                )
+
+            else:
+                raise TypeError("The 'profiling' key in the configuration has to be either a dict or a boolean.")
+
+            schema = {
+                "save_graphs": bool,
+                "save_raw_data": bool,
             }
 
-        elif isinstance(base_conf, dict):
-            base_conf.update(
-                {
-                    "save_graphs": base_conf.get("save_graphs", False),
-                    "save_raw_data": base_conf.get("save_raw_data", False),
-                }
-            )
+            checker = Checker(schema)
+            checker.validate(base_conf)
 
+            Profiler.save_graphs = base_conf["save_graphs"]
+            Profiler.save_raw_data = base_conf["save_raw_data"]
+            Profiler.enabled = Profiler.save_graphs or Profiler.save_raw_data
         else:
-            raise TypeError("The 'profiling' key in the configuration has to be either a dict or a boolean.")
-
-        schema = {
-            "save_graphs": bool,
-            "save_raw_data": bool,
-        }
-
-        checker = Checker(schema)
-        checker.validate(base_conf)
-
-        Profiler.save_graphs = base_conf["save_graphs"]
-        Profiler.save_raw_data = base_conf["save_raw_data"]
-        Profiler.enabled = Profiler.save_graphs or Profiler.save_raw_data
+            pass
 
     @staticmethod
     def add_profiling_info(info: dict):
@@ -250,7 +259,7 @@ def profile(name, interval=0.05, memprof=False):
     :type name: str
     :param interval: memory sampling interval (seconds)
     :type interval: int or float
-    :param memprof: whether or not to profile the memory consumption
+    :param memprof: whether to profile the memory consumption
     :type memprof: bool
     """
 
