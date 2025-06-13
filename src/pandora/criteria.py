@@ -153,7 +153,6 @@ def validity_mask(
     return cv
 
 
-@profile("mask_partially_missing_variable_ranges")
 def mask_partially_missing_variable_ranges(cv, img_left, img_right):
     """
     Mask the pixels with a partially missing variable range in the right image.
@@ -175,7 +174,6 @@ def mask_partially_missing_variable_ranges(cv, img_left, img_right):
     cv["validity_mask"].data[mask] |= cst.PANDORA_MSK_PIXEL_INCOMPLETE_VARIABLE_DISPARITY_RANGE
 
 
-@profile("allocate_left_mask")
 def allocate_left_mask(cv: xr.Dataset, img_left: xr.Dataset) -> None:
     """
     Allocate the left image mask
@@ -212,7 +210,6 @@ def allocate_left_mask(cv: xr.Dataset, img_left: xr.Dataset) -> None:
     ).astype(np.uint16)
 
 
-@profile("allocate_right_mask")
 def allocate_right_mask(cv: xr.Dataset, img_right: xr.Dataset, bit_1: Union[np.ndarray, Tuple]) -> None:
     """
     Allocate the right image mask
