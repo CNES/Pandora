@@ -22,6 +22,11 @@ from typing import Tuple
 
 def partially_missing_variable_ranges(disps: np.ndarray, img_mask: np.ndarray) -> np.ndarray:
     """
-    do stuff
+    Returns a mask of the pixels with a partially missing variable range in the right image.
+
+    :param disps: Disparity range, np.ndarray of shape (2, width, height)
+    :type disps: np.ndarray(float)
+    :param img_mask: Mask of valid pixels in the right image, np.ndarray of shape (width, height)
+    :type img_mask: np.ndarray(bool)
     """
     ...
