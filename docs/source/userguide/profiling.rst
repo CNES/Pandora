@@ -5,6 +5,10 @@ Profiling
 
 Pandora has a built-in profiling tool, that can be used to provide more insight on the memory and time use of each step in the pipeline.
 
+.. warning::
+
+    Make sure to install Pandora with development dependencies included.
+
 By default, two graphs will be created :
 
 * an icicle graph, showing the time spent in each step of the pipeline

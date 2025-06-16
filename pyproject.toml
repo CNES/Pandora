@@ -31,9 +31,7 @@ dependencies = [
     "json-checker",
     "transitions",
     "scikit-image>=0.19.0",
-    "importlib-metadata;python_version<'3.10'",
-    "psutil",
-    "plotly"
+    "importlib-metadata;python_version<'3.10'"
 ]
 
 [project.optional-dependencies]
@@ -46,7 +44,9 @@ dev = [
     "black",
     "types-setuptools",
     "build",
-    "cibuildwheel==2.22.0"
+    "cibuildwheel==2.22.0",
+    "psutil",
+    "plotly"
 ]
 
 test = [
