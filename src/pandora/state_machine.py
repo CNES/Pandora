@@ -669,7 +669,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             # Create new data band for disparity
             disp_range_right = xr.DataArray(
                 np.stack([self.right_disp_min, self.right_disp_max], axis=0),
-                dims=("band_disp", "y", "x"),
+                dims=("band_disp", "row", "col"),
                 coords={"band_disp": ["min", "max"]},
             )
 
