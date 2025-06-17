@@ -664,17 +664,13 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                     self.disp_min, self.disp_max
                 )
 
-        # If the disp range is not contained in right_img, add the computed disp range
-        if "disparity" not in right_img.data_vars:
-            # Create new data band for disparity
-            disp_range_right = xr.DataArray(
-                np.stack([self.right_disp_min, self.right_disp_max], axis=0),
-                dims=("band_disp", "row", "col"),
-                coords={"band_disp": ["min", "max"]},
-            )
-
-            # Assign it to right_img["disparity"]
-            self.right_img["disparity"] = disp_range_right
+                # Assign the computed disp range to right_img["disparity"]
+                disp_range_right = xr.DataArray(
+                    np.stack([self.right_disp_min, self.right_disp_max], axis=0),
+                    dims=("band_disp", "row", "col"),
+                    coords={"band_disp": ["min", "max"]},
+                )
+                self.right_img["disparity"] = disp_range_right
 
         # Initiate output disparity datasets
         self.left_disparity = xr.Dataset()

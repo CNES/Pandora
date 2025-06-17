@@ -147,8 +147,9 @@ def validity_mask(
 
     if "msk" in img_right.data_vars:
         allocate_right_mask(cv, img_right, bit_1)
-        # img right contains masked values : get the pixels affected
-        mask_partially_missing_variable_ranges(cv, img_left, img_right)
+        # img right contains masked values and img left disp ranges: get the pixels affected
+        if "disparity" in img_left.data_vars:
+            mask_partially_missing_variable_ranges(cv, img_left, img_right)
 
     return cv
 
