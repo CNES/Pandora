@@ -28,6 +28,7 @@ import numpy as np
 from json_checker import Checker, And
 import xarray as xr
 
+from pandora.profiler import profile
 from pandora.margins import Margins
 
 from . import filter  # pylint: disable= redefined-builtin
@@ -49,6 +50,7 @@ class MedianForIntervalsFilter(filter.AbstractFilter):
     _VERTICAL_DEPTH = 0
     _QUANTILE_REGULARIZATION = 1.0
 
+    @profile("median_for_intervals.__init__")
     def __init__(self, *args, cfg: Dict, step: int = 1, **kwargs):  # pylint:disable=unused-argument
         """
         :param cfg: optional configuration, {'filter_size': value}
@@ -119,6 +121,7 @@ class MedianForIntervalsFilter(filter.AbstractFilter):
         value = self._filter_size * self._step
         return Margins(value, value, value, value)
 
+    @profile("median_for_intervals.filter_disparity")
     def filter_disparity(
         self,
         disp: xr.Dataset,

@@ -33,6 +33,8 @@ from pandora.img_tools import shift_right_img
 from pandora import common
 from pandora.matching_cost import matching_cost
 
+from pandora.profiler import profile
+
 
 @matching_cost.AbstractMatchingCost.register_subclass("sad", "ssd")
 class SadSsd(matching_cost.AbstractMatchingCost):
@@ -40,6 +42,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
     SadSsd class allows to compute the cost volume
     """
 
+    @profile("sad_ssd.__init__")
     def __init__(self, **cfg: Union[str, int]) -> None:
         """
         :param cfg: optional configuration,  {'matching_cost_method': value, 'window_size': value, 'subpix': value}
@@ -69,6 +72,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         checker.validate(cfg)
         return cfg
 
+    @profile("sad_ssd.compute_cost_volume")
     def compute_cost_volume(
         self,
         img_left: xr.Dataset,

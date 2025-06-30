@@ -69,6 +69,10 @@ criteria is raised and 0 otherwise.
      - 2¹¹ = 2048
      - Information
      - pixel interval regularized
+   * - 12
+     - 2¹² = 4096
+     - Information
+     - pixel's disparity range is partially incomplete
 
 These criteria are stored in a Xarray.DataArray `validity_mask` in cost volume and disparity map Xarray.Datasets.
 The `validity_mask` is the same size as the left image.  
@@ -162,6 +166,13 @@ Criteria 2 is raised when a point in right image has part of its disparity range
 Criteria 7 is raised for a pixel when all the points in its disparity range are invalid,
 either because they are invalid in the right mask or because they have an exploration window out of the image.  
 
+**Criteria 12: partially incomplete disparity range**
+
+Criteria 12 is raised for a pixel when at least one of the points in its disparity range is either outside of the right image,
+or marked as NaN in its validity mask. This criteria works with variable disparity ranges.
+
+.. note::  Criteria 12 is an information and does not invalidate a point. 
+
 Example of validity mask with criteria 1, 2 and 7 raised
 --------------------------------------------------------
 
@@ -199,6 +210,17 @@ We raise criteria 2 for point (9,2) and for all points having some of their expl
 
 Criteria 7 is only raised for the point (9, 5) because it is the only point which has its entire disparity range invalidated in the right mask. 
 In fact, in the mask on the right, the point with coordinates (9, 5), the two points to its left and the two points to its right are invalid. 
+
+Example of validity mask with criteria 12 raised
+--------------------------------------------------------
+
+In this example, the matching cost window is equal to 1, meaning the offset is 0.
+The disparity range varies along the rows : [-2, 0] for the first row, [0, 1] for the second, and [-1, 1] for the last.
+The left image's mask is entirely valid.
+
+.. image:: ../Images/criteria_12_example.png
+
+This criteria flags all the pixels whose match in the right image may not actually be present in said image, either because it could be outside the image, or marked as "invalid".
 
 Validity mask after matching cost step
 --------------------------------------

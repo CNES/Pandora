@@ -29,6 +29,9 @@ from scipy.ndimage import binary_dilation
 import xarray as xr
 import pandora.constants as cst
 
+from pandora.profiler import profile
+from .cpp import criteria_cpp
+
 
 def binary_dilation_msk(img: xr.Dataset, window_size: int) -> np.ndarray:
     """
@@ -58,6 +61,7 @@ def binary_dilation_msk(img: xr.Dataset, window_size: int) -> np.ndarray:
     return dil
 
 
+@profile("validity_mask")
 def validity_mask(
     img_left: xr.Dataset,
     img_right: xr.Dataset,
@@ -143,8 +147,32 @@ def validity_mask(
 
     if "msk" in img_right.data_vars:
         allocate_right_mask(cv, img_right, bit_1)
+        # img right contains masked values and img left disp ranges: get the pixels affected
+        if "disparity" in img_left.data_vars:
+            mask_partially_missing_variable_ranges(cv, img_left, img_right)
 
     return cv
+
+
+def mask_partially_missing_variable_ranges(cv, img_left, img_right):
+    """
+    Mask the pixels with a partially missing variable range in the right image.
+    Applies the mask directly to the CV's validity mask.
+
+    :param cv: Cost volume dataset
+    :type cv: xarray.Dataset
+    :param img_left: Left image dataset
+    :type img_left: xarray.Dataset
+    :param img_right: Right image dataset
+    :type img_right: xarray.Dataset
+    """
+    mask = criteria_cpp.partially_missing_variable_ranges(
+        img_left["disparity"].data,
+        # mask with true = invalid, false = valid
+        img_right["msk"].data != img_right.attrs["valid_pixels"],
+    )
+
+    cv["validity_mask"].data[mask] |= cst.PANDORA_MSK_PIXEL_INCOMPLETE_VARIABLE_DISPARITY_RANGE
 
 
 def allocate_left_mask(cv: xr.Dataset, img_left: xr.Dataset) -> None:

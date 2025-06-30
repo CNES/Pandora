@@ -44,7 +44,9 @@ dev = [
     "black",
     "types-setuptools",
     "build",
-    "cibuildwheel==2.22.0"
+    "cibuildwheel==2.22.0",
+    "psutil",
+    "plotly"
 ]
 
 test = [

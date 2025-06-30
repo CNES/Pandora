@@ -1,17 +1,29 @@
-
 # Procédure pour une release Pandora + plugins
 
 
 Voici la liste des actions pour Pandora:
-- [ ] Créer une branche Pandora du nom de la release
-- [ ] Tester la branche Pandora
-    - [ ] 1. En local
-    - [ ] 2. Lancer une CI Jenkins
-    - [ ] 3. Le cluster
+- [ ] Créer une branche Pandora du nom de la release (pas obligatoire car il est possible de tout faire sur la branche release)
+- [ ] Tester la branche 
+    - [ ] 1. En local 
+        - Regarder le Makefile et tester les différentes commandes
+        - Builder la documentation et la regarder
+        - Lancer tous les tests existants (surtout ceux non présent dans la CI Jenkins)
+        - Lancer les notebook avec jupyter (en plus de la version test) afin de vérifier visuellement les résultats
+        - Lancer tous les fichiers de configurations présents dans le répertoire data_samples et vérifier sous QGIS le résultat
+    - [ ] 2. Lancer une CI Jenkins (attention si dépendance de prendre les bonnes branches) et cocher toutes les options pour en lancer une la plus complète.
+    - [ ] 3. Le cluster 
+        - Tester de faire une installation avec le Makefile
+        - Lancer les tests
+        - Lancer les fichiers de configurations & check les résultats (QGIS est disponible dans le desktop de jupyterhub)
+- [ ] Vérifier que la CI github du dépôt n'est pas désactivée.
+- [ ] Vérifier que les dernières CI github sur release ne sont pas failed. Sinon les corriger avant même de commencer la release.
+- [ ] Vérifier et mettre à jour le pyproject.toml (numéro des dépendances Pandora/plugins/etc...)
 - [ ] Mettre à jour le changelog de Pandora
-- [ ] Merger la branche dans master
-- [ ] Créer le tag
-- [ ] Gitlab to Github
+- [ ] Mettre à jour le fichier AUTHORS.md (si besoin )
+- [ ] Mettre à jour la date dans le copyright
+- [ ] Merger la branche dans master (ou bien la nouvelle dans release puis de release dans master)
+- [ ] Créer le tag :warning: **Ce dernier doit être fait depuis la branche master.**
+- [ ] Gitlab to Github (Rien à faire juste surveiller)
 - [ ] CI Github à vérifier
 - [ ] Pypi à vérifier
 - [ ] Faire une communication sur la release (si besoin)
@@ -26,6 +38,10 @@ Refaire la même procédure pour les plugins:
 - [ ] Plugin_arnn (pas à faire pour le moment)
 
 Ci-dessous les explications pour chacune des actions pour Pandora et les plugins.
+
+:warning: Faire la release de pandora avant celle des plugins.
+
+:exclamation: A la fin il y a une partie sur les différentes erreurs/problèmes que l'on peut avoir.
 
 
 ## Créer une branche
@@ -52,7 +68,7 @@ Commencer par cloner le répertoire et sur la branche de la release vérifier :
  - le format des fichiers avec `black`, `mypy` et `pylint` (`make format`, `make lint`)
 
 :warning: Il se peut que ces commandes n'existement pas pour les plugins. Dans ce cas voici les différentes commandes:
-- créer un environnement `virtualenv -q venv`
+- créer un environnement `virtualenv -q venv` ou `python3 -m venv venv`
 - sourcer l'environnement `source venv/bin/activate`
 - réaliser l'installation `pip install -e .[dev,notebook,doc]`
 - lancer les tests `pytest`
@@ -102,7 +118,7 @@ Voici la liste des tâches:
     ```
     :warning: attention le chemin des images dans le json fait que ces dernières sont dans le même dossier que le fichier de configuration.
 
-:warning: Pour la suite, vérifier également la version de Python utilisée. Actuellement il s’agit de la 3.8.
+:warning: Pour la suite, vérifier également la version de Python utilisée. Actuellement il s’agit de la 3.9.
 
 5. Vérifier que l'exécution se déroule normalement ainsi que son résultat.
     - Le dossier résultat contient la(les) carte(s) de disparité(s) ainsi qu'un dossier cfg.
@@ -148,3 +164,39 @@ A la fin du build, qui est normalement ok, le tag n'est pas poussé sur github. 
 Et relancer un build. Une fois celui-ci terminé, aller sur Github pour vérifier que la tag a bien été poussé. Là, la CI Github va de nouveau effectuer un build. Si celle-ci est ok, alors le tag sera poussé sur pypi.
 
 Dans le cas contraire, supprimer le tag sur Github et ensuite gitlab. Puis, faire les modifications nécessaires et lancer un build de CI Jenkins gitlab. Puis reprendre à partir du chapitre **créer le tag**.
+
+
+## Erreurs/problèmes connus
+
+Voici une liste des erreurs/problèmes connus:
+
+1. Rien ne se passe sur Github
+
+    Voici une liste des différentes causes/sources à ce problème:
+    
+    - la CI du dépôt est désactivée. Pour cela, regarder la date du dernier run, si cette dernière date de plus de 24h c'est qu'il y a un hic.
+    - la CI Jenkins a failed et n'a donc rien poussé sur Gihub.
+    - la branche n'est ni une branche de release ni une branche de master sur laquelle vous testez et donc elle ne sera pas présente sur Github (à par si vous le forcez).
+    - la branche (release/master) a été réécrite (en forçant) et donc ne convient pas vace l'historique existant. Il faut alors supprimer la branche Github et pousser sur Jenkins cette nouvelle branche. :warning: A ne faire qu'en cas de force majeur.
+
+2. La création du tag met en erreur la CI Jenkins
+
+    Dans ce cas, il faut :
+    
+    - supprimer le tag qui vient d'êrte crée dans Gitlab.
+    - regarder dans Jenkins la source de l'erreur pour la corriger (ne pas le faire sur master)
+    - remettre à jour les différentes branches
+    - re-créer le tag :warning: **Ce dernier doit être fait depuis la branche master.**
+    
+    Si de nouveau une erreur apparaît, re-faire la liste ci-dessus des actions.
+
+3. La création du tag met en erreur la CI github
+
+    Dans ce cas il faut :
+
+    - supprimer le tag qui vient d'êrte crée dans Github & dans Gitlab.
+    - regarder dans Jenkins la source de l'erreur pour la corriger (ne pas le faire sur master). Penser à regarder le fichier qui se trouve dans le répertoire *.github* qui est la configuration sur Github de la CI du projet.
+    - remettre à jour les différentes branches
+    - re-créer le tag :warning: **Ce dernier doit être fait depuis la branche master.**
+
+    Si de nouveau une erreur apparaît, re-faire la liste ci-dessus des actions.

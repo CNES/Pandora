@@ -51,3 +51,5 @@ PANDORA_MSK_PIXEL_MISMATCH = 1 << 9
 PANDORA_MSK_PIXEL_FILLED_NODATA = 1 << 10
 # if bit 11 activate : Information : Interval was in a regularization zone
 PANDORA_MSK_PIXEL_INTERVAL_REGULARIZED = 1 << 11
+# if bit 12 activate : Information : Interval in the image touches a border or contains 1 or more nodata
+PANDORA_MSK_PIXEL_INCOMPLETE_VARIABLE_DISPARITY_RANGE = 1 << 12

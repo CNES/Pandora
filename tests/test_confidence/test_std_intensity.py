@@ -130,7 +130,7 @@ def test_std_intensity_multiband():
     left = xr.Dataset(
         {"im": (["band_im", "row", "col"], left_data)},
         coords={
-            "band_im": ["r", "g"],
+            "band_im": ["red", "green"],
             "row": np.arange(left_data.shape[1]),
             "col": np.arange(left_data.shape[2]),
         },
@@ -154,7 +154,7 @@ def test_std_intensity_multiband():
     right = xr.Dataset(
         {"im": (["band_im", "row", "col"], right_data)},
         coords={
-            "band_im": ["r", "g"],
+            "band_im": ["red", "green"],
             "row": np.arange(right_data.shape[1]),
             "col": np.arange(right_data.shape[2]),
         },
@@ -170,7 +170,7 @@ def test_std_intensity_multiband():
 
     # create matching_cost object
     stereo_matcher = matching_cost.AbstractMatchingCost(
-        **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1, "band": "g"}
+        **{"matching_cost_method": "sad", "window_size": 3, "subpix": 1, "band": "green"}
     )
 
     # Compute bright standard deviation inside a window of size 3 and create the confidence measure

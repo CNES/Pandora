@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.7.1a1 (July 2025)
+
+### Added
+- Profiling options for experts [CARS issue #1068]
+- New criteria for managing borders [CARS issue #1080]
+
+### Fixed
+- Upgrade of release md files [#449]
+- Optional dependencies 
+- Managing band name with several characters [#454]
+
 ## 1.7.0 (April 2025)
 
 ### Added

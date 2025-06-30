@@ -60,7 +60,7 @@ def multiband_image():
     def inner(shape):
         return xr.Dataset(
             {},
-            coords={"band_im": ["R", "G", "B"], "row": np.arange(shape[0]), "col": np.arange(shape[1])},
+            coords={"band_im": ["red", "green", "blue"], "row": np.arange(shape[0]), "col": np.arange(shape[1])},
             attrs={"disparity_source": None},
         )
 

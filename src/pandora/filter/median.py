@@ -30,6 +30,7 @@ import xarray as xr
 from json_checker import Checker, And
 
 import pandora.constants as cst
+from pandora.profiler import profile
 from pandora.margins import Margins
 from . import filter  # pylint: disable= redefined-builtin
 from ..common import sliding_window
@@ -45,6 +46,7 @@ class MedianFilter(filter.AbstractFilter):
     _FILTER_SIZE = 3
     # We ignore type because we just override a null value.
 
+    @profile("median.__init__")
     def __init__(self, *args, cfg: Dict, step: int = 1, **kwargs):  # pylint:disable=unused-argument
         """
         :param cfg: optional configuration, {'filter_size': value}
@@ -87,6 +89,7 @@ class MedianFilter(filter.AbstractFilter):
         """
         print("Median filter description")
 
+    @profile("median.filter_disparity")
     def filter_disparity(
         self,
         disp: xr.Dataset,

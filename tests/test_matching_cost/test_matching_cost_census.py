@@ -344,7 +344,7 @@ class TestMatchingCostCensus(unittest.TestCase):
 
         # Initialization of matching_cost plugin with wrong band
         matching_cost_ = matching_cost.AbstractMatchingCost(
-            **{"matching_cost_method": "census", "window_size": 3, "subpix": 1, "band": "b"}
+            **{"matching_cost_method": "census", "window_size": 3, "subpix": 1, "band": "blue"}
         )
 
         grid = matching_cost_.allocate_cost_volume(
@@ -352,7 +352,7 @@ class TestMatchingCostCensus(unittest.TestCase):
         )
 
         # Compute the cost_volume
-        with pytest.raises(AttributeError, match="Wrong band instantiate : b not in img_left or img_right"):
+        with pytest.raises(AttributeError, match="Wrong band instantiate : blue not in img_left or img_right"):
             _ = matching_cost_.compute_cost_volume(left, right, grid)
 
         # Initialization of matching_cost plugin with no band
@@ -409,14 +409,14 @@ class TestMatchingCostCensus(unittest.TestCase):
 
         # Initialization of matching_cost plugin with a band
         matching_cost_ = matching_cost.AbstractMatchingCost(
-            **{"matching_cost_method": "census", "window_size": 3, "subpix": 1, "band": "r"}
+            **{"matching_cost_method": "census", "window_size": 3, "subpix": 1, "band": "red"}
         )
 
         grid = matching_cost_.allocate_cost_volume(
             left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
         )
         # Compute the cost_volume
-        with pytest.raises(AttributeError, match="Right dataset is monoband: r band cannot be selected"):
+        with pytest.raises(AttributeError, match="Right dataset is monoband: red band cannot be selected"):
             _ = matching_cost_.compute_cost_volume(left, right, grid)
 
     @staticmethod

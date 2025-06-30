@@ -32,6 +32,7 @@ import xarray as xr
 
 import pandora.constants as cst
 from pandora.criteria import mask_border
+from pandora.profiler import profile
 
 from .cpp import validation_cpp
 
@@ -160,6 +161,7 @@ class McCnnInterpolation(AbstractInterpolation):
     McCnnInterpolation class allows to perform the interpolation of the disparity map
     """
 
+    @profile("mccnn_interpolation.__init__")
     def __init__(self, **cfg: dict) -> None:
         """
         :param cfg: optional configuration, {}
@@ -185,6 +187,7 @@ class McCnnInterpolation(AbstractInterpolation):
         """
         print("MC-CNN interpolation method")
 
+    @profile("mccnn_interpolation.interpolated_disparity")
     def interpolated_disparity(
         self,
         left: xr.Dataset,
@@ -269,6 +272,7 @@ class SgmInterpolation(AbstractInterpolation):
     SgmInterpolation class allows to perform the interpolation of the disparity map
     """
 
+    @profile("sgm_interpolation.__init__")
     def __init__(self, **cfg: dict) -> None:
         """
         :param cfg: optional configuration, {}
@@ -294,6 +298,7 @@ class SgmInterpolation(AbstractInterpolation):
         """
         print("SGM interpolation method")
 
+    @profile("sgm_interpolation.interpolated_disparity")
     def interpolated_disparity(
         self,
         left: xr.Dataset,

@@ -16,3 +16,12 @@ py.extension_module(
     install: true,
     dependencies: [pybind11_dep],
 )
+
+py.extension_module(
+    'criteria_cpp',
+    ['src/bindings_criteria.cpp', 'src/criteria.cpp'],
+    include_directories: ['includes'],
+    subdir: 'pandora/cpp',
+    install: true,
+    dependencies: [pybind11_dep],
+)

@@ -29,6 +29,7 @@ import numpy as np
 from json_checker import Checker, And
 import xarray as xr
 
+from pandora.profiler import profile
 from pandora.img_tools import compute_std_raster
 from . import cost_volume_confidence
 
@@ -43,6 +44,7 @@ class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
     # Method name
     _method = "intensity_std"
 
+    @profile("std_intensity.__init__")
     def __init__(self, **cfg: str) -> None:
         """
         :param cfg: optional configuration, {'confidence_method': 'std_intensity'}
@@ -78,6 +80,7 @@ class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
         """
         print("Intensity confidence method")
 
+    @profile("std_intensity.confidence_prediction")
     def confidence_prediction(
         self,
         disp: xr.Dataset,

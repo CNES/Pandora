@@ -56,8 +56,8 @@ from pandora import (  # pylint: disable=redefined-builtin
     matching_cost,
     semantic_segmentation,
 )
+from pandora.profiler import profile
 from pandora.margins import GlobalMargins
-
 from pandora.criteria import validity_mask
 
 from pandora import validation
@@ -290,6 +290,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
         logging.getLogger("transitions").setLevel(logging.WARNING)
 
+    @profile("matching_cost_prepare")
     def matching_cost_prepare(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Matching cost computation
@@ -331,6 +332,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             # Compute validity mask to identify invalid points in cost volume
             self.right_cv = validity_mask(self.right_img, self.left_img, self.right_cv)
 
+    @profile("matching_cost_run")
     def matching_cost_run(self, _: Dict[str, dict], __: str) -> None:
         """
         Matching cost computation
@@ -363,6 +365,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                 self.right_disp_max,
             )
 
+    @profile("aggregation_run")
     def aggregation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Cost (support) aggregation
@@ -378,6 +381,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         if self.right_disp_map == "cross_checking_accurate":
             aggregation_.cost_volume_aggregation(self.right_img, self.left_img, self.right_cv)
 
+    @profile("semantic_segmentation_run")
     def semantic_segmentation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Building semantic segmentation computation
@@ -399,6 +403,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                 self.right_cv, self.right_img, self.left_img
             )
 
+    @profile("optimization_run")
     def optimization_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Cost optimization
@@ -415,6 +420,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         if self.right_disp_map == "cross_checking_accurate":
             self.right_cv = optimization_.optimize_cv(self.right_cv, self.right_img, self.left_img)
 
+    @profile("disparity_run")
     def disparity_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Disparity computation and validity mask
@@ -443,6 +449,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
             self.right_disparity = disparity_.to_disp(self.right_cv, self.right_img, self.left_img)
 
+    @profile("filter_run")
     def filter_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Disparity filter
@@ -462,6 +469,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         if self.right_disp_map is not None:
             filter_.filter_disparity(self.right_disparity, self.right_img)
 
+    @profile("refinement_run")
     def refinement_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Subpixel disparity refinement
@@ -478,6 +486,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         if self.right_disp_map is not None:
             refinement_.subpixel_refinement(self.right_cv, self.right_disparity)
 
+    @profile("validation_run")
     def validation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Validation of disparity map
@@ -499,6 +508,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                 interpolate_.interpolated_disparity(self.left_disparity)
                 interpolate_.interpolated_disparity(self.right_disparity)
 
+    @profile("run_multiscale")
     def run_multiscale(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Compute the disparity range for the next scale
@@ -538,6 +548,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # Update the current scale for the next state
         self.current_scale = self.current_scale - 1
 
+    @profile("cost_volume_confidence_run")
     def cost_volume_confidence_run(self, cfg: Dict[str, dict], input_step: str) -> None:
         """
         Confidence prediction
@@ -565,6 +576,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                 self.right_disparity, self.right_img, self.left_img, self.right_cv
             )
 
+    @profile("run_prepare")
     def run_prepare(
         self,
         cfg: Dict[str, dict],
@@ -652,6 +664,14 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                     self.disp_min, self.disp_max
                 )
 
+                # Assign the computed disp range to right_img["disparity"]
+                disp_range_right = xr.DataArray(
+                    np.stack([self.right_disp_min, self.right_disp_max], axis=0),
+                    dims=("band_disp", "row", "col"),
+                    coords={"band_disp": ["min", "max"]},
+                )
+                self.right_img["disparity"] = disp_range_right
+
         # Initiate output disparity datasets
         self.left_disparity = xr.Dataset()
         self.right_disparity = xr.Dataset()
@@ -689,6 +709,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             logging.error("A problem occurs during Pandora running %s  step. Be sure of your sequencement", input_step)
             raise
 
+    @profile("run_exit")
     def run_exit(self) -> None:
         """
         Clear transitions and return to state begin
@@ -918,6 +939,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = confidence_.cfg
 
+    @profile("check_conf")
     def check_conf(
         self, cfg: Dict[str, dict], img_left: xr.Dataset, img_right: xr.Dataset, right_left_img_check: bool = False
     ) -> None:
@@ -1031,7 +1053,12 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             for _, band in band_used.items():
                 if band not in band_list:
                     raise AttributeError(f"Wrong band instantiate on {step} step: {band} not in input image")
-        else:
+        elif isinstance(band_used, list):
             for band in band_used:
                 if band not in band_list:
                     raise AttributeError(f"Wrong band instantiate on {step} step: {band} not in input image")
+        elif isinstance(band_used, str):
+            if band_used not in band_list:
+                raise AttributeError(f"Wrong band instantiate on {step} step: {band_used} not in input image")
+        else:
+            raise TypeError(f"Wrong type for band {band_used} used in {step}")

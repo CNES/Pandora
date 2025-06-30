@@ -93,7 +93,7 @@ class TestSensusTransform:
         Test the census transform method for multiband image
         """
         # Computes the census transform for the image self.img_multiband with window size 5
-        census_transform = img_tools.census_transform(multiband_image, window_size, "r")
+        census_transform = img_tools.census_transform(multiband_image, window_size, "red")
         # Check if the census_transform is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(census_transform["im"].data, expected)
 
@@ -134,7 +134,7 @@ class TestComputeMeanMaster:
 
         """
         # Computes the mean raster for the image with window_size
-        mean_r = img_tools.compute_mean_raster(multiband_image, window_size, "r")
+        mean_r = img_tools.compute_mean_raster(multiband_image, window_size, "red")
         # Check if the calculated mean is equal to the ground truth (same shape and all elements equals)
         np.testing.assert_array_equal(mean_r, expected)
 
@@ -238,7 +238,7 @@ class TestStdRaster:
             )
         )
         # Computes the standard deviation raster for the image self.img with window size 3
-        std_r = img_tools.compute_std_raster(multiband_image, 3, "r")
+        std_r = img_tools.compute_std_raster(multiband_image, 3, "red")
         # Check if the calculated standard deviation is equal ( to desired tolerance 1e-07 ) to the ground truth
         np.testing.assert_allclose(std_r, std_ground_truth, rtol=1e-07)
 
@@ -249,7 +249,7 @@ class TestStdRaster:
             ([[np.std(multiband_image["im"][0, :, :5]), np.std(multiband_image["im"][0, :, 1:])]])
         )
         # Computes the standard deviation raster for the image self.img with window size 5
-        std_r = img_tools.compute_std_raster(multiband_image, 5, "r")
+        std_r = img_tools.compute_std_raster(multiband_image, 5, "red")
         # Check if the calculated standard deviation is equal ( to desired tolerance 1e-07 ) to the ground truth
         np.testing.assert_allclose(std_r, std_ground_truth, rtol=1e-07)
 
@@ -501,8 +501,8 @@ class TestCreateDatasetFromInputs:
         }
         dst_left = img_tools.create_dataset_from_inputs(input_config=input_config["left"])
 
-        # The bands present in left_rgb are "r", "g", "b"
-        gt_bands = ["r", "g", "b"]
+        # The bands present in left_rgb are "red", "green", "blue"
+        gt_bands = ["red", "green", "blue"]
         # Check if the classes names are correctly set on the dataset
         np.testing.assert_array_equal(list(dst_left.band_im.data), gt_bands)
 
@@ -980,7 +980,7 @@ class TestShiftRightImg:
         """
         expected = np.array([0.25, 1.25, 2.25, 3.25, 4.25])
 
-        shifted_img = img_tools.shift_right_img(multiband_image, 4, "r")
+        shifted_img = img_tools.shift_right_img(multiband_image, 4, "red")
 
         # check if columns coordinates has been shifted
         np.testing.assert_array_equal(expected, shifted_img[1].col)
