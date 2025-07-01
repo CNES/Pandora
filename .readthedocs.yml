@@ -9,13 +9,11 @@ build:
   tools:
     python: "3.10"
 
-# add projet [docs] extra url dependencies in sphinx RTD virtualenv
+# Install readthedocs requirements (without installing package, as using autoAPI)
 python:
   install:
-    - method: pip
-      path: .
-      extra_requirements:
-        - docs
+    - requirements: docs/requirements.txt
+
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
