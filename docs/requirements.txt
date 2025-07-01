@@ -1,0 +1,6 @@
+# Readthedocs requirements to avoid install all packages in readthedocs CI.
+# Be aware to align with pyproject.toml docs optional dependencies
+sphinx
+sphinx-autoapi
+sphinx-rtd-theme
+sphinx_tabs
