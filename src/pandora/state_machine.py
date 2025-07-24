@@ -466,7 +466,12 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             step=self.step,
         )  # type: ignore
         filter_.filter_disparity(self.left_disparity, self.left_img)
-        if self.right_disp_map is not None:
+
+        # Disable median_for_interval on the right disp when using cross validation fast
+        if self.right_disp_map == "cross_checking_accurate" or (
+            self.right_disp_map == "cross_checking_fast"
+            and cfg["pipeline"][input_step]["filter_method"] != "median_for_intervals"
+        ):
             filter_.filter_disparity(self.right_disparity, self.right_img)
 
     @profile("refinement_run")
@@ -507,6 +512,13 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                 interpolate_ = validation.AbstractInterpolation(**cfg["pipeline"][input_step])
                 interpolate_.interpolated_disparity(self.left_disparity)
                 interpolate_.interpolated_disparity(self.right_disparity)
+
+        # in the case where fast cross checking is the method used,
+        # erase all data about the right disp and cv after the check was done,
+        # so we don't return incomplete data to the user
+        if self.right_disp_map == "cross_checking_fast":
+            self.right_disparity = xr.Dataset()  # reset to state machine post-init state
+            self.right_cv = None
 
     @profile("run_multiscale")
     def run_multiscale(self, cfg: Dict[str, dict], input_step: str) -> None:

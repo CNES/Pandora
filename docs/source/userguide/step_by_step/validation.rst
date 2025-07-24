@@ -87,7 +87,8 @@ Configuration and parameters
 
 .. note:: The *cross_checking_fast* method computes the right cost volume using the left cost volume,
   instead of re-running the entire pipeline. This results in faster run times, at the cost of accuracy
-  when using optimization methods like SGM.
+  when using optimization methods like SGM. Note that no disparity map for the right image will be returned
+  when using this method.
 
 
 **Example**
