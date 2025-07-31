@@ -29,11 +29,13 @@ import sys
 
 import numpy as np
 import pytest
+import xarray as xr
 
 import pandora
 from pandora import validation
 from pandora.validation.validation import CrossCheckingAccurate
-from pandora.img_tools import rasterio_open
+from pandora.img_tools import rasterio_open, create_dataset_from_inputs
+from pandora.check_configuration import check_conf
 
 if sys.version_info < (3, 10):
     from importlib_metadata import entry_points
@@ -158,3 +160,31 @@ class TestMain:
 
         # Check they are *strictly* equal
         assert error(result_fast, result_accurate, threshold=0) == 0
+
+    @pytest.mark.parametrize("left_disparity", [[-60, 0]])
+    @pytest.mark.parametrize("left_classif_path", [None, "classif_file"], indirect=["left_classif_path"])
+    @pytest.mark.parametrize("matching_cost_method", ["ssd", "sad", "zncc", "census"])
+    def test_validation_fast_right_output(self, tmp_path, user_cfg):
+        """
+        Test the whole pipeline's output when using validation fast,
+        and ensure that the right disp is empty
+        """
+
+        user_cfg["pipeline"]["validation"]["validation_method"] = "cross_checking_fast"
+
+        if user_cfg["pipeline"]["matching_cost"]["matching_cost_method"] == "mc_cnn":
+            if not any("mc_cnn" in x for x in plugin_set):
+                pytest.skip(reason="MCCNN plugin not installed")
+
+        pandora_machine = pandora.PandoraMachine()
+        cfg = pandora.check_conf(user_cfg, pandora_machine)
+
+        img_left = create_dataset_from_inputs(input_config=cfg["input"]["left"])
+        img_right = create_dataset_from_inputs(input_config=cfg["input"]["right"])
+
+        pandora.check_datasets(img_left, img_right)
+
+        left, right = pandora.run(pandora_machine, img_left, img_right, cfg)
+
+        assert left is not None
+        assert not right  # check that right fully is empty
