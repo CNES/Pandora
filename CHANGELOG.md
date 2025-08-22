@@ -1,12 +1,20 @@
 # Changelog
 
+## 1.7.1 (August 2025)
+
+### Fixed
+
+- Fix crash when confidence intervals are used with fast cross correlation [CARS issue #1083]
+
 ## 1.7.1a1 (July 2025)
 
 ### Added
+
 - Profiling options for experts [CARS issue #1068]
 - New criteria for managing borders [CARS issue #1080]
 
 ### Fixed
+
 - Upgrade of release md files [#449]
 - Optional dependencies 
 - Managing band name with several characters [#454]
@@ -14,10 +22,12 @@
 ## 1.7.0 (April 2025)
 
 ### Added
+
 - Added new disparity denoiser filter. [#441] [#442]
 - Added cross validation fast method. 
 
 ### Fixed
+
 - Fix multiband checking. [#445]
 - Fix statistical_and_visual_analysis notebook. [#447]
 
