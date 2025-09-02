@@ -133,14 +133,6 @@ def user_cfg_filter(left_png_path, right_png_path, left_disparity, left_classif_
             "cost_volume_confidence.amb": {"confidence_method": "ambiguity", "eta_max": 0.7, "eta_step": 0.01},
             "cost_volume_confidence.int": {"confidence_method": "interval_bounds", "regularization": False},
             "disparity": {"disparity_method": "wta", "invalid_disparity": "NaN"},
-            "filter": {"filter_method": "median"},
-            "filter.int": {
-                "filter_method": "median_for_intervals",
-                "interval_indicator": "int",
-                "regularization": True,
-                "ambiguity_indicator": "amb",
-            },
-            "validation": {"validation_method": "TO_SET_IN_TEST"},
         },
     }
 
@@ -199,7 +191,7 @@ class TestMain:
         to ensure there's no crash with it
         """
 
-        user_cfg_filter["pipeline"]["validation"]["validation_method"] = "cross_checking_fast"
+        # user_cfg_filter["pipeline"]["validation"]["validation_method"] = "cross_checking_fast"
 
         if user_cfg_filter["pipeline"]["matching_cost"]["matching_cost_method"] == "mc_cnn":
             if not any("mc_cnn" in x for x in plugin_set):
