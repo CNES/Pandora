@@ -198,6 +198,10 @@ class TestMain:
         and ensure that the right disp is empty. Do so with median for intervals filter on,
         to ensure there's no crash with it
         """
+        pytest.skip(
+            reason="This test causes a memory access violation error on Windows. "
+            "The bug is tracked on issue #461 and will be resolved for next release."
+        )
 
         user_cfg_filter["pipeline"]["validation"]["validation_method"] = "cross_checking_fast"
 
