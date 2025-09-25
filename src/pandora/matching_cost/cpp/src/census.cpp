@@ -138,9 +138,16 @@ py::array_t<float> compute_matching_costs(
                 int right_x = (col+disp/subpix+min_disp); // pixel
                 if (right_x < c_half_w || right_x >= n_cols-c_half_w)
                     continue;
-                int right_pos = row*nb_chars*n_cols + right_x*nb_chars;
 
                 for (int id_right = 0; (id_right < subpix) && (disp+id_right < n_disp); id_right++){
+                    
+                    int right_pos;
+                    if (id_right != 0) {
+                        // the shifted images are 1 px shorter in cols
+                        right_pos = row*nb_chars*(n_cols-1) + right_x*nb_chars;
+                    } else {
+                        right_pos = row*nb_chars*n_cols + right_x*nb_chars;
+                    }
                     
                     right_img = census_imgs_right_shift[id_right];
 
