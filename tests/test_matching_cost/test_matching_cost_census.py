@@ -692,6 +692,100 @@ class TestMatchingCostCensus(unittest.TestCase):
             13,
         )
 
+    @staticmethod
+    def test_subpix_results():
+        """
+        Test the census method with subpix enabled
+
+        """
+
+        def test_census(left_data, right_data, ref_out, window_size, subpix):
+
+            left = xr.Dataset(
+                {"im": (["row", "col"], left_data)},
+                coords={"row": np.arange(left_data.shape[0]), "col": np.arange(left_data.shape[1])},
+            )
+            left.attrs["crs"] = None
+            left.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+            left.pipe(add_disparity, disparity=[-1, 1], window=None)
+
+            right = xr.Dataset(
+                {"im": (["row", "col"], right_data)},
+                coords={"row": np.arange(right_data.shape[0]), "col": np.arange(right_data.shape[1])},
+            )
+            right.attrs["crs"] = None
+            right.attrs["transform"] = Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+
+            # Computes the census transform for the images
+            matching_cost_matcher = matching_cost.AbstractMatchingCost(
+                **{"matching_cost_method": "census", "window_size": window_size, "subpix": subpix}
+            )
+
+            grid = matching_cost_matcher.allocate_cost_volume(
+                left, (left["disparity"].sel(band_disp="min"), left["disparity"].sel(band_disp="max"))
+            )
+
+            # Compute validity mask
+            grid = validity_mask(left, right, grid)
+
+            census = matching_cost_matcher.compute_cost_volume(img_left=left, img_right=right, cost_volume=grid)
+
+            matching_cost_matcher.cv_masked(
+                left,
+                right,
+                census,
+                left["disparity"].sel(band_disp="min"),
+                left["disparity"].sel(band_disp="max"),
+            )
+
+            print(census["cost_volume"].sel(disp=0.5))
+            # Check if the calculated census cost is equal to the ground truth (same shape and all elements equals)
+            np.testing.assert_array_equal(census["cost_volume"], ref_out)
+
+        n = np.nan
+        test_census(
+            np.array(
+                (
+                    [4, 0, 4, 0, 4],
+                    [4, 1, 2, 3, 0],
+                    [0, 4, 0, 0, 0],
+                ),
+                dtype=np.float64,
+            ),
+            np.array(
+                (
+                    [0, 0, 0, 0, 4],
+                    [4, 1, 2, 3, 0],
+                    [0, 4, 4, 0, 4],
+                ),
+                dtype=np.float64,
+                # with subpix=2, the 2nd right image =
+                # [  0,   0,   0,   2]
+                # [2.5, 1.5, 2.5, 1.5]
+                # [  2,   4,   2,   2]
+            ),
+            # transpose CV to make it easier to read
+            np.transpose(
+                np.array(
+                    [
+                        # disp = -1
+                        [[n, n, n, n, n], [n, n, 5, 5, n], [n, n, n, n, n]],
+                        # disp = -0.5
+                        [[n, n, n, n, n], [n, n, 4, 3, n], [n, n, n, n, n]],
+                        # disp = 0
+                        [[n, n, n, n, n], [n, 3, 2, 3, n], [n, n, n, n, n]],
+                        # disp = 0.5
+                        [[n, n, n, n, n], [n, 4, 2, n, n], [n, n, n, n, n]],
+                        # disp = 1
+                        [[n, n, n, n, n], [n, 4, 4, n, n], [n, n, n, n, n]],
+                    ]
+                ),
+                (1, 2, 0),
+            ),
+            3,
+            2,
+        )
+
 
 if __name__ == "__main__":
     common.setup_logging()
