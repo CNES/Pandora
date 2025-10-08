@@ -146,7 +146,8 @@ py::array_t<float> compute_matching_costs(
                         // if the check below passes:
                         //   right_x's window reaches exactly the last pixel of the right image
                         //   if we tried to get the same pixel in the shifted image, we'd be oob
-                        if (right_x >= n_cols-c_half_w-1) break;
+                        if (right_x >= n_cols-c_half_w-1)
+                            break;
                         // the shifted images are 1 px shorter in cols
                         right_pos = row*nb_chars*(n_cols-1) + right_x*nb_chars;
                     } else {
