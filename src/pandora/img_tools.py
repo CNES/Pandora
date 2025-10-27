@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2024 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -643,7 +643,6 @@ def convert_pyramid_to_dataset(
             )
             # add the disparity if provided
             if disps is not None:
-
                 dataset.coords["band_disp"] = ["min", "max"]
                 dataset["disparity"] = xr.DataArray(
                     np.array([disps[0][index].astype(np.int64), disps[1][index].astype(np.int64)]),
@@ -666,7 +665,6 @@ def convert_pyramid_to_dataset(
             )
             # add the disparity if provided
             if disps is not None:
-
                 dataset.coords["band_disp"] = ["min", "max"]
                 dataset["disparity"] = xr.DataArray(
                     np.array([disps[0][index].astype(np.int64), disps[1][index].astype(np.int64)]),

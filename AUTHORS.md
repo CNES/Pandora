@@ -1,6 +1,6 @@
 # Credits
 
-Copyright (c) 2024 Centre National d'Etudes Spatiales (CNES).
+Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
 
 Pandora is licensed under permissive Apache 2 license (See LICENSE file).
 The copyright is kept CNES only for long term maintenance ease.
