@@ -4,7 +4,7 @@
 # !/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2024 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -310,7 +310,6 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         self.left_cv = validity_mask(self.left_img, self.right_img, self.left_cv)
 
         if self.right_disp_map is not None:
-
             # Update min and max disparity according to the current scale
             self.right_disp_min = self.right_disp_min * self.scale_factor
             self.right_disp_max = self.right_disp_max * self.scale_factor

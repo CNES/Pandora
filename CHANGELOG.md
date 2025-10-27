@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.2a1 (October 2025)
+
+### Fixed
+
+- Fix census subpix computation. [#463]
+
 ## 1.7.1 (August 2025)
 
 ### Fixed

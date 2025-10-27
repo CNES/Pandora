@@ -2,7 +2,7 @@
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2024 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -38,7 +38,6 @@ from tests import common
 
 
 class TestCensusWindowSize:
-
     @pytest.mark.parametrize("window_size", [3, 5, 7, 9, 11, 13])
     def test_nominal_window_size(self, window_size):
         result = matching_cost.AbstractMatchingCost(**{"matching_cost_method": "census", "window_size": window_size})

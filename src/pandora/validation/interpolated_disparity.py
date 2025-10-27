@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2024 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -245,7 +245,6 @@ class McCnnInterpolation(AbstractInterpolation):
 
     @staticmethod
     def interpolate_occlusion_mc_cnn(disp: np.ndarray, valid: np.ndarray):
-
         return validation_cpp.interpolate_occlusion_mc_cnn(
             disp,
             valid,
@@ -256,7 +255,6 @@ class McCnnInterpolation(AbstractInterpolation):
 
     @staticmethod
     def interpolate_mismatch_mc_cnn(disp: np.ndarray, valid: np.ndarray):
-
         return validation_cpp.interpolate_mismatch_mc_cnn(
             disp,
             valid,
@@ -351,7 +349,6 @@ class SgmInterpolation(AbstractInterpolation):
 
     @staticmethod
     def interpolate_occlusion_sgm(disp: np.ndarray, valid: np.ndarray):
-
         return validation_cpp.interpolate_occlusion_sgm(
             disp,
             valid,
@@ -362,7 +359,6 @@ class SgmInterpolation(AbstractInterpolation):
 
     @staticmethod
     def interpolate_mismatch_sgm(disp: np.ndarray, valid: np.ndarray):
-
         return validation_cpp.interpolate_mismatch_sgm(
             disp,
             valid,

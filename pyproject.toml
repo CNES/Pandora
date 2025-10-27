@@ -56,11 +56,11 @@ test = [
 ]
 
 sgm = [
-    "pandora_plugin_libsgm>=1.5.4"
+    "pandora_plugin_libsgm==1.5.6a1"
 ]
 
 mccnn = [
-    "pandora_plugin_mccnn>=1.3.3"
+    "pandora_plugin_mccnn==1.3.5a1"
 ]
 
 # If updated, align with docs/requirements.txt for Readthedocs CI
