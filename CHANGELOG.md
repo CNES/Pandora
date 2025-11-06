@@ -1,5 +1,7 @@
 # Changelog
 
+## 1.7.2 (November 2025)
+
 ## 1.7.2a1 (October 2025)
 
 ### Fixed
