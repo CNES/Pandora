@@ -11,7 +11,6 @@ build-backend = "mesonpy"
 
 [tool.meson-python.args]
 setup = ["-Dbuild_cpp_tests=disabled"]
-compile = ['-j0']
 
 # enable setuptools_scm version
 [tool.setuptools_scm]
