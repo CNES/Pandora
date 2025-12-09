@@ -176,7 +176,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         cv.attrs["aggregation"] = "cbca"
 
         # Maximal cost of the cost volume after agregation
-        cmax = cv.attrs["cmax"] * ((self._cbca_distance * 2) - 1) ** 2  # type: ignore
+        cmax = cv.attrs["cmax"] * ((self._cbca_distance * 2) - 1) ** 2
         cv.attrs["cmax"] = cmax
 
     def computes_cross_supports(

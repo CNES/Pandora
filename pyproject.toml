@@ -11,6 +11,7 @@ build-backend = "mesonpy"
 
 [tool.meson-python.args]
 setup = ["-Dbuild_cpp_tests=disabled"]
+compile = ['-j4']
 
 # enable setuptools_scm version
 [tool.setuptools_scm]
@@ -51,6 +52,7 @@ dev = [
 test = [
     "pytest",
     "pytest-cov",
+    "pytest-html",
     "pytest-mock",
 ]
 

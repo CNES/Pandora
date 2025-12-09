@@ -1,0 +1,226 @@
+# Organization of the different stages and jobs:
+# build:
+#  |_ functional-test (functional tests)
+#  |_ functional-sgm-test (functional sgm tests)
+#  |_ notebook-test (notebook tests)
+#  |_ notebook-sgm-test (notebook tests) (manual)
+#  |_ py-pytest (Python unit tests)
+#  |_ sphinx-build (documentation)
+#  |_ unit-cpp-test (C++ unit tests)
+#
+# test:
+#  |_ py-black (Python code formatting)
+#  |_ py-lint (static analysis with Pylint)
+#  |_ py-mypy (static type checking with Mypy)
+#  |_ py-trivy (dependency scanning)
+#  |_ sonar (SonarQube analysis)
+
+spec:
+  # Define input parameters for the TBC pipeline.
+  inputs:
+    # Test stage definition.
+    # The python stage (py-pytest) is implicit and included by default.
+    test-cpp:
+      type: boolean
+      default: true
+    test-functional:
+      type: boolean
+      default: true
+    test-sgm-functional:
+      type: boolean
+      default: false
+    test-notebook:
+      type: boolean
+      default: true
+    test-sgm-notebook:
+      type: boolean
+      default: false
+---
+include:
+  - component: $CI_SERVER_FQDN/to-be-continuous/python/gitlab-ci-python@8.6.0  # TBC Python component version
+    # Default stage for jobs is build.
+    # Below is the list of items to contains.
+    inputs:
+      image: ${UL_ARTIFACTORY_HOST}/publicremotes-docker/python:3.9
+      pytest-enabled: true
+      pylint-enabled: true
+      black-enabled: true
+      mypy-enabled: true
+      build-system: setuptools
+      # Install pandora test dependencies (see pyproject.toml file)
+      extra-deps: test
+  - component: $CI_SERVER_FQDN/to-be-continuous/sonar/gitlab-ci-sonar@5.0.1
+    inputs:
+      host-url: "${UL_SONARQUBE_URL}"
+      quality-gate-enabled: true
+  - component: $CI_SERVER_FQDN/to-be-continuous/sphinx/gitlab-ci-sphinx@1.5.0
+    inputs:
+      image: ${UL_ARTIFACTORY_HOST}/ghcr.io/sphinx-doc/sphinx-ci:latest
+      project-dir: docs
+      build-args: --fail-on-warning  # fail if a warning is raised
+    
+variables:
+  # default production ref name (pattern)
+  PROD_REF: /^(master|main)$/
+  # default integration ref name (pattern)
+  # Decomment to add new branch TickerNumber-XXX
+  #INTEG_REF: /^(develop|release|TickerNumber-XXX)$/
+  INTEG_REF: /^(develop|release)$/
+
+  # Python
+  PIP_INDEX_URL: "https://${PANDORA_ARTIFACTORY_USERNAME}:${PANDORA_ARTIFACTORY_KEY}@${UL_ARTIFACTORY_HOST}/artifactory/api/pypi/pypi/simple"
+  # Hack: Use extraneous parentesis to avoid spaces in expression due to over-tokenization of GitLab
+  # Command line executed for Python unit tests, excluding notebook and plugin tests
+  PYTEST_ARGS: -m (not(notebook_tests))and(not(functional_tests))
+  # Runs Pylint only on the following directories
+  PYLINT_FILES: pandora tests
+  # HACK: Override MYPY_FILES without files definition in order to reuse the config from mypy.ini
+  MYPY_FILES: '--exclude "(.cache|.venv)"'
+
+  # Tests
+  TEST_CPP: $[[ inputs.test-cpp ]]
+  TEST_FUNCTIONAL: $[[ inputs.test-functional ]]
+  TEST_FUNCTIONAL_SGM: $[[ inputs.test-sgm-functional ]]
+  TEST_NOTEBOOK: $[[ inputs.test-notebook ]]
+  TEST_NOTEBOOK_SGM: $[[ inputs.test-sgm-notebook ]]
+
+# Default configuration for all jobs
+default:
+  tags:
+    - Usine_Logicielle
+
+# Override to restrict scope of PIP_OPT redefinition
+# Cf issue https://gitlab.com/to-be-continuous/sphinx/-/issues/4
+.sphinx-base:
+  variables:
+    # The image follow PEP 668
+    PIP_OPTS: "--break-system-packages"
+
+py-black:
+  stage: test
+
+py-lint:
+  stage: test
+
+py-mypy:
+  stage: test
+  variables:
+    PYTHON_EXTRA_DEPS: dev
+
+# Override to use the Makefile rules
+py-pytest:
+  script:
+    - apt-get update && apt-get install -y cmake
+    # ${TRACE+-d} define the log level
+    # Install in editable mode to compute coverage
+    - make ${TRACE+-d} test
+
+# C++ unit Test
+unit-cpp-test:
+  extends: .python-test
+  coverage: /^lines:\s+(\d+\.*\d*\%)\s/  # Linear regression for the items to be verified
+  variables:
+  script:
+    - apt-get update && apt-get install -y cmake
+    # ${TRACE+-d} define the log level
+    - make ${TRACE+-d} test-unit-cpp
+  rules:
+    # exclude if $TEST_CPP not set
+    - if: '$TEST_CPP != "true"'
+      when: manual
+      allow_failure: true
+    - !reference [.test-policy, rules]
+
+# Functional tests
+functional-test:
+  extends: py-pytest
+  script:
+    - apt-get update && apt-get install -y cmake
+    # ${TRACE+-d} define the log level
+    # Install in editable mode to compute coverage
+    - make ${TRACE+-d} test-functional
+  artifacts:
+    paths:
+      - reports/py-coverage-functional.cobertura.xml
+  rules:
+    # exclude if $TEST_FUNCTIONAL not set
+    - if: '$TEST_FUNCTIONAL != "true"'
+      when: manual
+      allow_failure: true
+    - !reference [.test-policy, rules]
+
+# Functional sgm tests
+functional-sgm-test:
+  extends: py-pytest
+  script:
+    - apt-get update && apt-get install -y cmake
+    # ${TRACE+-d} define the log level
+    # Install in editable mode to compute coverage
+    - make ${TRACE+-d} test-functional
+  variables:
+    PYTHON_EXTRA_DEPS: test,sgm
+  artifacts:
+    paths:
+      - reports/py-coverage-functional-sgm.cobertura.xml
+  rules:
+    # exclude if $TEST_FUNCTIONAL_SGM not set
+    - if: '$TEST_FUNCTIONAL_SGM != "true"'
+      when: manual
+      allow_failure: true
+    - !reference [.test-policy, rules]
+
+# Notebook Test
+notebook-test:
+  extends: py-pytest
+  script:
+    - apt-get update && apt-get install -y cmake
+    - make ${TRACE+-d} test-notebook
+  variables:
+    PYTHON_EXTRA_DEPS: test,notebook
+  rules:
+    # exclude if $TEST_NOTEBOOK not set
+    - if: '$TEST_NOTEBOOK != "true"'
+      when: manual
+      allow_failure: true
+    - !reference [.test-policy, rules]
+
+# Notebook Test SGM
+notebook-sgm-test:
+  extends: py-pytest
+  script:
+    - apt-get update && apt-get install -y cmake
+    - make ${TRACE+-d} test-notebook-sgm
+  variables:
+    PYTHON_EXTRA_DEPS: test,notebook,sgm
+  rules:
+    # exclude if $TEST_NOTEBOOK_SGM not set
+    - if: '$TEST_NOTEBOOK_SGM != "true"'
+      when: manual
+      allow_failure: true
+    - !reference [.test-policy, rules]
+
+# GitHub push
+github-sync:
+  stage: .post
+  image:
+    name: ${UL_ARTIFACTORY_HOST}/publicremotes-docker/alpine/git
+    entrypoint: [""]
+  variables:
+    # Ensure we fetch enough history before pushing it
+    GIT_DEPTH: 100
+  before_script:
+    # Add Cnes certificates
+    - mkdir /usr/local/share/ca-certificates/
+    - cat ${CNES_CERTIFICATE} > /usr/local/share/ca-certificates/my-cert.crt
+    - cat /usr/local/share/ca-certificates/my-cert.crt >> /etc/ssl/certs/ca-certificates.crt
+  script:
+    - echo "CI_COMMIT_REF_NAME=$CI_COMMIT_REF_NAME"
+    - echo "GITHUB_URL=$GITHUB_URL"
+    - echo "CI_COMMIT_SHA=$CI_COMMIT_SHA"
+    - git remote add github https://${PANDORA_CNES_GITHUB_TOKEN_USERNAME}:${PANDORA_CNES_GITHUB_TOKEN_PASSWORD}@${GITHUB_URL}
+    - git fetch origin ${CI_COMMIT_SHA}
+    - git checkout -B ${CI_COMMIT_REF_NAME}
+    - git push github ${CI_COMMIT_REF_NAME}
+  rules:
+    # run on production and integration branches + release pipelines
+    - !reference [.delivery-policy, rules]
