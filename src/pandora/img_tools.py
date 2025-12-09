@@ -209,7 +209,7 @@ def add_segm(dataset: xr.Dataset, segm: Union[str, None], window: Window) -> xr.
     return dataset
 
 
-def add_no_data(dataset: xr.Dataset, no_data: Union[int, float], no_data_pixels: np.ndarray) -> xr.Dataset:
+def add_no_data(dataset: xr.Dataset, no_data: Union[int, float], no_data_pixels: Tuple[np.ndarray, ...]) -> xr.Dataset:
     """
     Add no data information to dataset
 
@@ -233,7 +233,12 @@ def add_no_data(dataset: xr.Dataset, no_data: Union[int, float], no_data_pixels:
 
 
 def add_mask(
-    dataset: xr.Dataset, mask: Union[str, None], no_data_pixels: np.ndarray, width: int, height: int, window: Window
+    dataset: xr.Dataset,
+    mask: Union[str, None],
+    no_data_pixels: Tuple[np.ndarray, ...],
+    width: int,
+    height: int,
+    window: Window,
 ) -> xr.Dataset:
     """
     Add mask information and image to dataset
@@ -850,7 +855,7 @@ def compute_mean_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.
 find_valid_neighbors = img_tools_cpp.find_valid_neighbors
 
 
-def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np.float64:
+def compute_mean_patch(img: xr.Dataset, row: int, col: int, win_size: int) -> np.float32:
     """
     Compute the mean within a window centered at position row,col
 

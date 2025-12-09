@@ -154,6 +154,6 @@ def create_images(create_grids_and_disparity_range_with_variable_disparities):
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         },
-    ).pipe(add_disparity, disparity=disparity, window=None)
+    ).pipe(add_disparity, disparity, window=None)
 
     return left, right, grids

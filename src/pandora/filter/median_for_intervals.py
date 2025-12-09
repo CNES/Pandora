@@ -117,7 +117,7 @@ class MedianForIntervalsFilter(filter.AbstractFilter):
         print("Median filter for intervals description")
 
     @property
-    def margins(self):
+    def margins(self):  # type: ignore[override]
         value = self._filter_size * self._step
         return Margins(value, value, value, value)
 

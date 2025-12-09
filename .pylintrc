@@ -18,10 +18,6 @@ limit-inference-results=100
 # Pickle collected data for later comparisons.
 persistent=yes
 
-# When enabled, pylint would attempt to guess common misconfiguration and emit
-# user-friendly hints instead of false-positive error messages.
-suggestion-mode=yes
-
 # Allow loading of arbitrary C extensions. Extensions are imported into the
 # active Python interpreter and may run arbitrary code.
 unsafe-load-any-extension=no
@@ -512,3 +508,6 @@ max-statements=100
 
 # Minimum number of public methods for a class (see R0903).
 min-public-methods=2
+
+# Maximum positional arguments
+max-positional-arguments=11
