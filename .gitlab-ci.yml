@@ -65,7 +65,7 @@ variables:
   # default integration ref name (pattern)
   # Decomment to add new branch TickerNumber-XXX
   #INTEG_REF: /^(develop|release|TickerNumber-XXX)$/
-  INTEG_REF: /^(develop|release)$/
+  INTEG_REF: /^(develop|release|488-fix-github-ci)$/
 
   # Python
   PIP_INDEX_URL: "https://${PANDORA_ARTIFACTORY_USERNAME}:${PANDORA_ARTIFACTORY_KEY}@${UL_ARTIFACTORY_HOST}/artifactory/api/pypi/pypi/simple"
