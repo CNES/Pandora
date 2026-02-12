@@ -1,4 +1,4 @@
-# type:ignore
+# type: ignore
 #!/usr/bin/env python
 # coding: utf8
 #
@@ -23,6 +23,7 @@
 """
 This module contains functions to test the configuration
 """
+
 import unittest
 import copy
 import json_checker
@@ -220,6 +221,7 @@ class TestConfig(unittest.TestCase):
                     "mask": None,
                     "classif": None,
                     "segm": None,
+                    "edges": None,
                     "disp": [-60, 0],
                     "img": "tests/pandora/left_rgb.tif",
                 },
@@ -228,6 +230,7 @@ class TestConfig(unittest.TestCase):
                     "mask": None,
                     "classif": None,
                     "segm": None,
+                    "edges": None,
                     "disp": None,
                     "img": "tests/pandora/right_rgb.tif",
                 },
@@ -457,6 +460,7 @@ class TestConfig(unittest.TestCase):
                     "mask": None,
                     "classif": None,
                     "segm": None,
+                    "edges": None,
                     "disp": "tests/pandora/left_disparity_grid.tif",
                     "img": "tests/pandora/left.png",
                 },
@@ -465,6 +469,7 @@ class TestConfig(unittest.TestCase):
                     "mask": None,
                     "classif": None,
                     "segm": None,
+                    "edges": None,
                     "disp": None,
                     "img": "tests/pandora/right.png",
                 },
@@ -495,6 +500,7 @@ class TestConfig(unittest.TestCase):
                     "mask": None,
                     "classif": None,
                     "segm": None,
+                    "edges": None,
                     "disp": "tests/pandora/left_disparity_grid.tif",
                     "img": "tests/pandora/left.png",
                 },
@@ -503,6 +509,7 @@ class TestConfig(unittest.TestCase):
                     "mask": None,
                     "classif": None,
                     "segm": None,
+                    "edges": None,
                     "disp": "tests/pandora/right_disparity_grid.tif",
                     "img": "tests/pandora/right.png",
                 },
@@ -540,6 +547,7 @@ class TestConfig(unittest.TestCase):
                     "mask": None,
                     "classif": None,
                     "segm": None,
+                    "edges": None,
                     "disp": "tests/pandora/left_disparity_grid.tif",
                     "img": "tests/pandora/left.png",
                 },
@@ -548,6 +556,7 @@ class TestConfig(unittest.TestCase):
                     "mask": None,
                     "classif": None,
                     "segm": None,
+                    "edges": None,
                     "disp": "tests/pandora/right_disparity_grid.tif",
                     "img": "tests/pandora/right.png",
                 },
@@ -584,6 +593,7 @@ class TestConfig(unittest.TestCase):
                     "mask": None,
                     "classif": None,
                     "segm": None,
+                    "edges": None,
                     "disp": [-60, 0],
                     "img": "tests/pandora/left.png",
                 },
@@ -592,6 +602,7 @@ class TestConfig(unittest.TestCase):
                     "mask": None,
                     "classif": None,
                     "segm": None,
+                    "edges": None,
                     "disp": None,
                     "img": "tests/pandora/right.png",
                 },
