@@ -66,6 +66,7 @@ def run(
             - msk (optional): 2D (row, col) xarray.DataArray int16
             - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
             - segm (optional): 2D (row, col) xarray.DataArray int16
+            - edges (optional): 2D (row, col) xarray.DataArray int16
     :type img_left: xarray.Dataset
     :param img_right: right Dataset image containing :
 
@@ -74,6 +75,7 @@ def run(
             - msk (optional): 2D (row, col) xarray.DataArray int16
             - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
             - segm (optional): 2D (row, col) xarray.DataArray int16
+            - edges (optional): 2D (row, col) xarray.DataArray int16
     :type img_right: xarray.Dataset
     :param cfg: pipeline configuration
     :type cfg: Dict[str, dict]
