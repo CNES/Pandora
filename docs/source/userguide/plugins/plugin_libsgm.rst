@@ -54,21 +54,26 @@ For each segment, optimization will only be applied inside this segment.
 If no *geometric_prior* is specified, the default `internal` mode is used. For now, 3SGM doesn't compute piecewise layer from internal mode.
 Hence, no piecewise optimization will be done (equivalent to performing SGM optimization).
 
-The user can use the `classif` or `segm` layer respectively corresponding to the `left_classif` and `left_segm` (`right_classif` and `right_segm` for right image) specified in the input configuration.
+The user can use the `classif`, `segm`, or `edges` layer respectively corresponding to the `left_classif`, `left_segm`, and `left_edges` (`right_classif`, `right_segm` and `right_edges` for right image) specified in the input configuration.
 
-The input segmentation or classification must be provided as raster image. This .tif file must have the same format as the input image, with the same dimensions. Moreover, this input must meet the following conditions :
+The input segmentation, classification or edge map must be provided as raster image. This .tif file must have the same format as the input image, with the same dimensions. Moreover, this input must meet the following conditions :
   For input segmentation:
     - All pixels inside a segment must have the same value (int or float).
     - The value of a segment must be different to the values of surrounding segments.
-    - The data must be dense, which means that all pixels must be filed in: for example if the user wants to perform a piecewise optimization with only one small segment, the data must be composed of two different values for all the image.
+    - The data must be dense, which means that all pixels must be filled in: for example if the user wants to perform a piecewise optimization with only one small segment, the data must be composed of two different values for all the image.
   For input classification:
     - The input classification image must have one band per class (with value 1 on the pixels belonging to the class, and 0 for the rest), and the band's names must be present on the image metadata. To see how to add band's names on the classification image's metadata, please
       see :ref:`faq`.
-
+  For input edge maps:
+    - All pixels not classified as edges must have a value lower than or equal to zero (int or float).
+    - All pixels classified as edges must have a value higher than zero.
+    - The data must be dense, which means that all pixels must be filled in: no nodatas should be present.
 
 The following diagram explains the concept:
 
     .. image:: ../../Images/piecewise_optimization_segments.png
+
+When using edges, the optimization paths will stop at the first edge found.
 
 .. [Hirschmuller2008] Hirschmuller, H. "Stereo Processing by Semiglobal Matching and Mutual Information," in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 30, no. 2, pp. 328-341, Feb. 2008. doi: 10.1109/TPAMI.2007.1166
 .. [Banz2012] Banz, C. & Pirsch, P. & Blume, Holger. (2012). EVALUATION OF PENALTY FUNCTIONS FOR SEMI-GLOBAL MATCHING COST AGGREGATION. ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences. XXXIX-B3. 1-6. 10.5194/isprsarchives-XXXIX-B3-1-2012.
@@ -118,9 +123,10 @@ There are some parameters depending on sgm but not penalties
      - Layer to use during piecewise optimization
      - dict
      - "internal"
-     - | "internal" or 
+     - | "internal" or
        | "classif" or
-       | "segm"
+       | "segm" or
+       | "edges"
      - No
    * - *geometric_prior classes*
      - Classes to use if source is classif
