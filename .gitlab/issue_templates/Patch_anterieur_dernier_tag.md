@@ -96,7 +96,7 @@ Voici la liste des tâches:
     ```
     :warning: attention le chemin des images dans le json fait que ces dernières sont dans le même dossier que le fichier de configuration.
 
-:warning: Pour la suite, vérifier également la version de Python utilisée. Actuellement il s’agit de la 3.8.
+:warning: Pour la suite, vérifier également la version de Python utilisée. Actuellement il s’agit de la 3.10.
 
 
 5. Vérifier que l'exécution se déroule normalement ainsi que son résultat.
