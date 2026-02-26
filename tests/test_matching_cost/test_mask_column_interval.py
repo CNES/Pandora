@@ -1,4 +1,4 @@
-# type:ignore
+# type: ignore
 #!/usr/bin/env python
 #
 # Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).

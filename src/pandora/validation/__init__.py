@@ -21,5 +21,6 @@
 """
 Init file for validation module.
 """
+
 from .interpolated_disparity import AbstractInterpolation
 from .validation import AbstractValidation

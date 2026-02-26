@@ -23,6 +23,7 @@
 """
 This module contains functions allowing to check the configuration given to Pandora pipeline.
 """
+
 from __future__ import annotations
 
 import copy
@@ -195,7 +196,7 @@ def check_images(user_cfg: Dict[str, dict]) -> None:
     check_image_dimension(left_, right_)
 
     # verify others images
-    images = ["mask", "classif", "segm"]
+    images = ["mask", "classif", "segm", "edges"]
     for img in images:
         if img in user_cfg["left"] and user_cfg["left"][img] is not None:
             check_image_dimension(left_, rasterio_open(user_cfg["left"][img]))
@@ -517,12 +518,14 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> di
         cfg_input["input"]["left"]["disp"],
         cfg_input["input"]["left"]["classif"],
         cfg_input["input"]["left"]["segm"],
+        cfg_input["input"]["left"]["edges"],
     )
     img_right_metadata = get_metadata(
         cfg_input["input"]["right"]["img"],
         cfg_input["input"]["right"]["disp"],
         cfg_input["input"]["right"]["classif"],
         cfg_input["input"]["right"]["segm"],
+        cfg_input["input"]["right"]["edges"],
     )
 
     # check pipeline
@@ -586,6 +589,7 @@ input_configuration_schema = {
         "mask": And(Or(str, lambda input: input is None), rasterio_can_open),
         "classif": And(Or(str, lambda x: x is None), rasterio_can_open),
         "segm": And(Or(str, lambda x: x is None), rasterio_can_open),
+        "edges": And(Or(str, lambda x: x is None), rasterio_can_open),
     },
     "right": {
         "img": And(str, rasterio_can_open_mandatory),
@@ -593,6 +597,7 @@ input_configuration_schema = {
         "mask": And(Or(str, lambda input: input is None), rasterio_can_open),
         "classif": And(Or(str, lambda x: x is None), rasterio_can_open),
         "segm": And(Or(str, lambda x: x is None), rasterio_can_open),
+        "edges": And(Or(str, lambda x: x is None), rasterio_can_open),
     },
 }
 
@@ -633,12 +638,14 @@ default_short_configuration_input = {
             "mask": None,
             "classif": None,
             "segm": None,
+            "edges": None,
         },
         "right": {
             "nodata": -9999,
             "mask": None,
             "classif": None,
             "segm": None,
+            "edges": None,
             "disp": None,
         },
     }

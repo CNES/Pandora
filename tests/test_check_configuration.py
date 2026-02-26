@@ -20,6 +20,7 @@
 """
 This module contains functions to test all the methods in check_configuration module.
 """
+
 import re
 
 import numpy as np

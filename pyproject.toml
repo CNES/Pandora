@@ -22,7 +22,7 @@ dynamic = ["version"]
 authors = [{ name = "CNES" }]
 description = "Pandora is a stereo matching framework that helps emulate state of the art algorithms"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = [
     "numpy",
     "xarray>=0.13.0",

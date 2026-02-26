@@ -209,6 +209,28 @@ def add_segm(dataset: xr.Dataset, segm: Union[str, None], window: Window) -> xr.
     return dataset
 
 
+def add_edges(dataset: xr.Dataset, edges: Union[str, None], window: Window) -> xr.Dataset:
+    """
+    Add Edges information and image to dataset
+
+    :param dataset: xarray dataset without edges
+    :type dataset: xr.Dataset
+    :param edges: edges image path
+    :type edges: str or None
+
+    :param window : Windowed reading with rasterio
+    :type window: Window
+    :return: dataset : updated dataset
+    :rtype: xr.Dataset
+    """
+    if edges is not None:
+        dataset["edges"] = xr.DataArray(
+            rasterio_open(edges).read(1, out_dtype=np.int16, window=window),
+            dims=["row", "col"],
+        )
+    return dataset
+
+
 def add_no_data(dataset: xr.Dataset, no_data: Union[int, float], no_data_pixels: Tuple[np.ndarray, ...]) -> xr.Dataset:
     """
     Add no data information to dataset
@@ -341,11 +363,12 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
             - msk (optional): 2D (row, col) xarray.DataArray int16
             - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
             - segm (optional): 2D (row, col) xarray.DataArray int16
+            - edges (optional): 2D (row, col) xarray.DataArray int16
 
     :rtype: xarray.DataSet
     """
     # Set default values
-    input_parameters = {"mask": None, "classif": None, "segm": None}
+    input_parameters = {"mask": None, "classif": None, "segm": None, "edges": None}
     input_parameters.update(input_config)
 
     img_ds = rasterio_open(input_parameters["img"])
@@ -408,13 +431,14 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
     return (
         dataset.pipe(add_classif, input_parameters["classif"], window)
         .pipe(add_segm, input_parameters["segm"], window)
+        .pipe(add_edges, input_parameters["edges"], window)
         .pipe(add_no_data, no_data, no_data_pixels)
         .pipe(add_mask, input_parameters["mask"], no_data_pixels, nx_, ny_, window)
     )
 
 
 def get_metadata(
-    img: str, disparity: list[int] | str | None = None, classif: str = None, segm: str = None
+    img: str, disparity: list[int] | str | None = None, classif: str = None, segm: str = None, edges: str = None
 ) -> xr.Dataset:
     """
     Read metadata from image, and return the corresponding xarray.DataSet
@@ -427,6 +451,8 @@ def get_metadata(
     :type classif: str
     :param segm: path to the segm (optional)
     :type segm: str
+    :param edges: path to the edges (optional)
+    :type edges: str
     :return: partial xarray.DataSet (attributes and coordinates)
     :rtype: xarray.DataSet
     """
@@ -446,6 +472,7 @@ def get_metadata(
         dataset.pipe(add_disparity, disparity=disparity, window=None)
         .pipe(add_classif, classif, window=None)
         .pipe(add_segm, segm, window=None)
+        .pipe(add_edges, edges, window=None)
     )
 
 

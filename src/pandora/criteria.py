@@ -22,6 +22,7 @@
 """
 This module contains functions associated to the validity mask created in the cost volume step.
 """
+
 from typing import Union, Tuple
 
 import numpy as np
@@ -45,6 +46,7 @@ def binary_dilation_msk(img: xr.Dataset, window_size: int) -> np.ndarray:
             - msk (optional): 2D (row, col) xarray.DataArray int16
             - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
             - segm (optional): 2D (row, col) xarray.DataArray int16
+            - edges (optional): 2D (row, col) xarray.DataArray int16
     :type img: xarray.Dataset
     :param window_size: window size of the cost volume
     :type window_size: int
@@ -77,6 +79,7 @@ def validity_mask(
             - msk (optional): 2D (row, col) xarray.DataArray int16
             - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
             - segm (optional): 2D (row, col) xarray.DataArray int16
+            - edges (optional): 2D (row, col) xarray.DataArray int16
     :type img_left: xarray.Dataset
     :param img_right: right Dataset image containing :
 
@@ -85,6 +88,7 @@ def validity_mask(
             - msk (optional): 2D (row, col) xarray.DataArray int16
             - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
             - segm (optional): 2D (row, col) xarray.DataArray int16
+            - edges (optional): 2D (row, col) xarray.DataArray int16
     :type img_right: xarray.Dataset
     :param cv: cost volume dataset with the data variables:
 
@@ -191,6 +195,7 @@ def allocate_left_mask(cv: xr.Dataset, img_left: xr.Dataset) -> None:
             - msk (optional): 2D (row, col) xarray.DataArray int16
             - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
             - segm (optional): 2D (row, col) xarray.DataArray int16
+            - edges (optional): 2D (row, col) xarray.DataArray int16
     :type img_left: xarray.Dataset
     :return: None
     """
@@ -227,6 +232,7 @@ def allocate_right_mask(cv: xr.Dataset, img_right: xr.Dataset, bit_1: Union[np.n
             - msk (optional): 2D (row, col) xarray.DataArray int16
             - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
             - segm (optional): 2D (row, col) xarray.DataArray int16
+            - edges (optional): 2D (row, col) xarray.DataArray int16
     :type img_right: xarray.Dataset
     :param bit_1: where the disparity interval is missing in the right image ( disparity range outside the image )
     :type: ndarray or Tuple

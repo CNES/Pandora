@@ -22,6 +22,7 @@
 """
 This module contains functions associated to the disparity denoiser filter used to filter the disparity map.
 """
+
 from typing import Dict, Union
 
 import xarray as xr

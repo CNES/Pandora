@@ -20,6 +20,7 @@
 """
 Test margins.
 """
+
 import re
 
 import pytest

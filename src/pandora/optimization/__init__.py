@@ -22,6 +22,7 @@
 """
 Init file for optimization module.
 """
+
 from .optimization import AbstractOptimization
 
 # pylint: disable=missing-module-docstring

@@ -22,6 +22,7 @@ Pandora input configuration files are divided into two parts: left and right.
     *mask*,Path to the left mask,string,"none",No
     *classif*,Path to the left classification map,string,"none",No
     *segm*,Path to the left segmentation map,string,"none",No
+    *edges*,Path to the left edges map,string,"none",No
 
 **Right input** 
 
@@ -34,6 +35,7 @@ Pandora input configuration files are divided into two parts: left and right.
     *mask*,Path to the right mask,string,"none",No
     *classif*,Path to the right classification map,string,"none",No
     *segm*,Path to the right segmentation map,string,"none",No
+    *edges*,Path to the right edges map,string,"none",No
 
 **Requirement** 
 

@@ -19,6 +19,7 @@
 """
 Test optimization module.
 """
+
 from pandora.margins import Margins
 from pandora.margins.descriptors import UniformMargins
 from pandora.optimization import AbstractOptimization

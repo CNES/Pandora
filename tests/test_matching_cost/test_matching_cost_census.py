@@ -1,4 +1,4 @@
-# type:ignore
+# type: ignore
 #!/usr/bin/env python
 # coding: utf8
 #
@@ -23,6 +23,7 @@
 """
 This module contains functions to test the census matching cost step.
 """
+
 import pytest
 
 import numpy as np

@@ -22,6 +22,7 @@
 """
 Init file for disparity module.
 """
+
 from .disparity import (
     AbstractDisparity,
     extract_disparity_interval_from_cost_volume,

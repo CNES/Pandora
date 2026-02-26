@@ -22,6 +22,7 @@
 """
 Init file for refinement module.
 """
+
 from . import quadratic
 from . import vfit
 from .refinement import AbstractRefinement

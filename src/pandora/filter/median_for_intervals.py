@@ -22,6 +22,7 @@
 """
 This module contains functions associated to the median filter used to filter the disparity map.
 """
+
 from typing import Dict, cast
 
 import numpy as np

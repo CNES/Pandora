@@ -119,7 +119,7 @@ Here is the list of tasks:
     ```
     :warning: Note that the path of the images in the JSON file assumes they are in the same directory as the configuration file.
 
-:warning: Also, verify the Python version used. Currently, it is 3.9.
+:warning: Also, verify the Python version used. Currently, it is 3.10.
 
 5. Verify that the execution runs normally and check its result.
     - The result directory contains the disparity map(s) and a cfg directory.
