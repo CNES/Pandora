@@ -24,12 +24,12 @@ Descriptors are a kind of properties object that can be reused in several classe
 They meant to be used as class attributes.
 
 """
+
 from __future__ import annotations
 
 from typing import overload
 
 from pandora.margins import Margins
-
 
 # In order to make a descriptor instance aware of the name it is affected to,
 # we can use the dunder method `__set_name__` which is called at affectation.

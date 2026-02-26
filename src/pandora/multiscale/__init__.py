@@ -22,5 +22,6 @@
 """
 Init file for multiscale module.
 """
+
 from . import fixed_zoom_pyramid
 from .multiscale import AbstractMultiscale

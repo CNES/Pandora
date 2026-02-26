@@ -22,6 +22,7 @@
 """
 Contains functions for wrapper logs
 """
+
 # pylint: disable=too-many-lines
 
 import logging

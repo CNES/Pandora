@@ -22,6 +22,7 @@
 """
 Init file for matching cost module.
 """
+
 from . import census
 from . import sad_ssd
 from . import zncc

@@ -22,6 +22,7 @@
 """
 Init file for semantic_segmentation module.
 """
+
 from .semantic_segmentation import AbstractSemanticSegmentation
 
 # pylint: disable=missing-module-docstring

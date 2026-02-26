@@ -22,6 +22,7 @@
 """
 Init file for aggregation module.
 """
+
 from . import cbca
 from .aggregation import AbstractAggregation
 

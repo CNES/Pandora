@@ -64,7 +64,6 @@ from pandora import validation
 from pandora import cost_volume_confidence
 from .img_tools import prepare_pyramid
 
-
 # This module contains class associated to the pandora state machine
 
 
@@ -906,9 +905,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         validation_ = validation.AbstractValidation(**cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = validation_.cfg
         if "interpolated_disparity" in validation_.cfg:
-            _ = validation.AbstractInterpolation(  # type:ignore
-                **cfg[input_step]
-            )
+            _ = validation.AbstractInterpolation(**cfg[input_step])  # type: ignore
 
         self.right_disp_map = validation_.cfg["validation_method"]
 

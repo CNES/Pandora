@@ -22,6 +22,7 @@
 """
 This module contains functions to run Pandora pipeline.
 """
+
 from __future__ import annotations
 
 import logging
@@ -38,7 +39,6 @@ from . import common
 from .check_configuration import check_conf, check_datasets, read_config_file, read_multiscale_params
 from .img_tools import create_dataset_from_inputs
 from .state_machine import PandoraMachine
-
 
 if sys.version_info < (3, 10):
     from importlib_metadata import entry_points

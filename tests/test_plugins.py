@@ -1,4 +1,4 @@
-# type:ignore
+# type: ignore
 #!/usr/bin/env python
 # coding: utf8
 #
@@ -25,6 +25,7 @@ This module contains functions to test the error message of Pandora
  when a plugin step is present on the pipeline, but the plugin has not
  been installed.
 """
+
 import copy
 import unittest
 

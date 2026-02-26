@@ -1,5 +1,5 @@
 # pylint: disable=duplicate-code
-# type:ignore
+# type: ignore
 #!/usr/bin/env python
 # coding: utf8
 #
@@ -24,6 +24,7 @@
 """
 This module contains functions to test the SSD matching cost step.
 """
+
 import unittest
 import pytest
 

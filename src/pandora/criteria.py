@@ -22,6 +22,7 @@
 """
 This module contains functions associated to the validity mask created in the cost volume step.
 """
+
 from typing import Union, Tuple
 
 import numpy as np

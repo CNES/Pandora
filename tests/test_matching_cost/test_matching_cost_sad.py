@@ -1,6 +1,6 @@
 # pylint: disable=duplicate-code
 # pylint:disable=too-many-lines
-# type:ignore
+# type: ignore
 #!/usr/bin/env python
 # coding: utf8
 #
@@ -25,6 +25,7 @@
 """
 This module contains functions to test the SAD matching cost step.
 """
+
 import unittest
 import pytest
 

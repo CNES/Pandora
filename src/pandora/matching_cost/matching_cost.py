@@ -23,6 +23,7 @@
 """
 This module contains functions associated to the cost volume measure step.
 """
+
 # pylint:disable=too-many-branches
 import sys
 from abc import ABCMeta, abstractmethod
@@ -93,7 +94,7 @@ class AbstractMatchingCost:
                 except:
                     raise KeyError("No matching cost method named {} supported".format(cfg["matching_cost_method"]))
             else:
-                if isinstance(cfg["matching_cost_method"], unicode):  # type:ignore # pylint:disable=undefined-variable
+                if isinstance(cfg["matching_cost_method"], unicode):  # type: ignore # pylint:disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractMatchingCost, cls).__new__(

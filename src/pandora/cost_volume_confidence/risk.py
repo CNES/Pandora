@@ -22,6 +22,7 @@
 """
 This module contains functions for estimating the risk.
 """
+
 from typing import Dict, Tuple, Union
 
 import numpy as np

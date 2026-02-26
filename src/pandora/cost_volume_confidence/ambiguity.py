@@ -19,6 +19,7 @@
 """
 This module contains functions for estimating confidence from ambiguity.
 """
+
 import logging
 from typing import Dict, Tuple, Union
 

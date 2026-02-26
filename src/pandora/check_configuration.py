@@ -23,6 +23,7 @@
 """
 This module contains functions allowing to check the configuration given to Pandora pipeline.
 """
+
 from __future__ import annotations
 
 import copy
