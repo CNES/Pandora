@@ -423,7 +423,7 @@ class AbstractMatchingCost:
             disparity_range = np.arange(disparity_min, disparity_max + 1)
         else:
             disparity_range = np.arange(disparity_min, disparity_max, 1 / float(subpix), dtype=np.float64)
-            disparity_range = np.append(disparity_range, [disparity_max])
+            disparity_range = np.append(disparity_range, [disparity_max])  # type: ignore
         return disparity_range
 
     def point_interval(
