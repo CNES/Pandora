@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -66,7 +66,6 @@ class Profiler:
         """
 
         if _HAS_PLOTLY_PSUTIL:
-
             base_conf = conf.get("profiling", False)
 
             if isinstance(base_conf, bool):
@@ -363,7 +362,6 @@ class MemProf(Thread):
             self.pipe.send(0)
 
             while True:
-
                 timestamp = time.time()
 
                 # Get memory in megabytes
