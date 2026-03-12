@@ -439,7 +439,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             # Fast cross checking is used, compute right cv at wta time
             # Compute right cost volume and mask it
             self.right_cv["cost_volume"].data = matching_cost.AbstractMatchingCost.reverse_cost_volume(
-                self.left_cv["cost_volume"].data, np.nanmin(self.right_disp_min)
+                self.left_cv["cost_volume"].data, np.nanmin(-self.disp_max)
             )
 
             self.right_cv.attrs["type_measure"] = self.left_cv.attrs["type_measure"]
