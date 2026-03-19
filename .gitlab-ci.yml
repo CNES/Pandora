@@ -87,7 +87,7 @@ variables:
 # Default configuration for all jobs
 default:
   tags:
-    - Usine_Logicielle
+    - Usine_Logicielle_Podman
 
 # Override to restrict scope of PIP_OPT redefinition
 # Cf issue https://gitlab.com/to-be-continuous/sphinx/-/issues/4
