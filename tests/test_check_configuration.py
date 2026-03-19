@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -20,6 +20,7 @@
 """
 This module contains functions to test all the methods in check_configuration module.
 """
+
 import re
 
 import numpy as np

@@ -33,7 +33,7 @@ ifeq (, $(PYTHON))
 endif
 
 # Check Python version supported globally
-PYTHON_VERSION_MIN = 3.8
+PYTHON_VERSION_MIN = 3.10
 PYTHON_VERSION_CUR=$(shell $(PYTHON) -c 'import sys; print("%d.%d"% sys.version_info[0:2])')
 PYTHON_VERSION_OK=$(shell $(PYTHON) -c 'import sys; cur_ver = sys.version_info[0:2]; min_ver = tuple(map(int, "$(PYTHON_VERSION_MIN)".split("."))); print(int(cur_ver >= min_ver))')
 ifeq ($(PYTHON_VERSION_OK), 0)
@@ -42,6 +42,10 @@ endif
 
 
 ################ MAKE targets by sections ######################
+
+.PHONY: reports_dir
+reports_dir:
+	mkdir -p reports
 
 .PHONY: help
 help: ## this help
@@ -79,8 +83,8 @@ install-sgm: venv install## install pandora with sgm
 ## Test section
 
 .PHONY: test
-test: install ## run all tests (except notebooks) + coverage (source venv before)
-	@${PANDORA_VENV}/bin/pytest -m "not notebook_tests and not functional_tests" --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
+test: install reports_dir ## run all tests (except notebooks) + coverage (source venv before)
+	@${PANDORA_VENV}/bin/pytest -m "not notebook_tests and not functional_tests" --junitxml=reports/pytest-report.xml --cov-config=.coveragerc --cov-report=xml:reports/py-coverage.cobertura.xml --cov-report term --cov
 
 .PHONY: test-unit-cpp
 test-unit-cpp: install ## run unit cpp tests only for dev
@@ -88,17 +92,17 @@ test-unit-cpp: install ## run unit cpp tests only for dev
 	. ${PANDORA_VENV}/bin/activate; meson test -C build/$(shell ls build)/ -v
 
 .PHONY: test-functional
-test-functional: install ## run functional tests only (for wheel validation temporary)
+test-functional: install reports_dir ## run functional tests only (for wheel validation temporary)
 	@echo "Run functional tests"
-	@${PANDORA_VENV}/bin/pytest -m "functional_tests"
+	@${PANDORA_VENV}/bin/pytest -m "functional_tests" --html=functional-test-report.html --cov-config=.coveragerc --cov-report xml:reports/py-coverage-functional.cobertura.xml --cov-report term --cov
 
 .PHONY: test-notebook
 test-notebook: install ## run notebook tests only
-	@${PANDORA_VENV}/bin/pytest -m "notebook_pandora"
+	. ${PANDORA_VENV}/bin/activate; pytest -m "notebook_pandora"
 
 .PHONY: test-notebook-sgm
 test-notebook-sgm: install-sgm ## run notebook tests with sgm as dependency 
-	@${PANDORA_VENV}/bin/pytest -m "notebook_with_sgm"
+	. ${PANDORA_VENV}/bin/activate; pytest -m "notebook_with_sgm"
 
 ## Code quality, linting section
 
@@ -207,6 +211,7 @@ clean-test:
 	@rm -f pytest-report.xml
 	@rm -f pylint-report.txt
 	@rm -f debug.log
+	@rm -rf reports
 
 .PHONY: clean-doc
 clean-doc:

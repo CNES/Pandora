@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -22,6 +22,7 @@
 """
 This module contains functions associated to the median filter used to filter the disparity map.
 """
+
 from typing import Dict, cast
 
 import numpy as np
@@ -117,7 +118,7 @@ class MedianForIntervalsFilter(filter.AbstractFilter):
         print("Median filter for intervals description")
 
     @property
-    def margins(self):
+    def margins(self):  # type: ignore[override]
         value = self._filter_size * self._step
         return Margins(value, value, value, value)
 

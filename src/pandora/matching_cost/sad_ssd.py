@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -89,6 +89,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
@@ -97,6 +98,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
         :param cost_volume: an empty cost volume
         :type cost_volume: xr.Dataset
@@ -243,6 +245,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :param img_right: right Dataset image
         :type img_right:
             xarray.Dataset containing :
@@ -251,6 +254,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :return: the absolute difference pixel-wise between elements in the interval
         :rtype: numpy array
         """
@@ -294,6 +298,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :param img_right: right Dataset image
         :type img_right:
             xarray.Dataset containing :
@@ -302,6 +307,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :return: the squared difference pixel-wise between elements in the interval
         :rtype: numpy array
         """

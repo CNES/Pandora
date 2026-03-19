@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -104,6 +104,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
@@ -112,6 +113,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
         :param cv: cost volume dataset with the data variables:
 
@@ -176,7 +178,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         cv.attrs["aggregation"] = "cbca"
 
         # Maximal cost of the cost volume after agregation
-        cmax = cv.attrs["cmax"] * ((self._cbca_distance * 2) - 1) ** 2  # type: ignore
+        cmax = cv.attrs["cmax"] * ((self._cbca_distance * 2) - 1) ** 2
         cv.attrs["cmax"] = cmax
 
     def computes_cross_supports(
@@ -193,6 +195,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
@@ -201,6 +204,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
         :param cv: cost volume dataset with the data variables:
 

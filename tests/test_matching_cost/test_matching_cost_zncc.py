@@ -1,9 +1,9 @@
 # pylint: disable=duplicate-code
-# type:ignore
+# type: ignore
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -393,7 +393,7 @@ def test_point_interval_zncc(disp, p_ground_truth_disp, q_ground_truth_disp, lef
         **{"matching_cost_method": "zncc", "window_size": 3, "subpix": 1}
     )
 
-    (point_p, point_q) = matching_cost_.point_interval(left, right, disp)
+    point_p, point_q = matching_cost_.point_interval(left, right, disp)
 
     # Check if the calculated range is equal to the ground truth
     np.testing.assert_array_equal(point_p, p_ground_truth_disp)

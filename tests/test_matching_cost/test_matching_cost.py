@@ -1,8 +1,8 @@
-# type:ignore
+# type: ignore
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -103,7 +103,7 @@ class TestMatchingCost:
         Test the crop_cost_volume function
         """
         # Function allocate_numpy_cost_volume
-        result = matching_cost.AbstractMatchingCost.crop_cost_volume(cost_volume, offset)  # type:ignore
+        result = matching_cost.AbstractMatchingCost.crop_cost_volume(cost_volume, offset)  # type: ignore
 
         np.testing.assert_array_equal(result, expected)
 
@@ -189,7 +189,7 @@ class TestMatchingCost:
             **{"matching_cost_method": matching_cost_method, "window_size": 3, "subpix": 1}
         )
 
-        (point_p, point_q) = matching_cost_.point_interval(left, right, disp)
+        point_p, point_q = matching_cost_.point_interval(left, right, disp)
 
         # Check if the calculated range is equal to the ground truth
         np.testing.assert_array_equal(point_p, p_ground_truth_disp)

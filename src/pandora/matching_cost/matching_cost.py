@@ -2,7 +2,7 @@
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -23,6 +23,7 @@
 """
 This module contains functions associated to the cost volume measure step.
 """
+
 # pylint:disable=too-many-branches
 import sys
 from abc import ABCMeta, abstractmethod
@@ -93,7 +94,7 @@ class AbstractMatchingCost:
                 except:
                     raise KeyError("No matching cost method named {} supported".format(cfg["matching_cost_method"]))
             else:
-                if isinstance(cfg["matching_cost_method"], unicode):  # type:ignore # pylint:disable=undefined-variable
+                if isinstance(cfg["matching_cost_method"], unicode):  # type: ignore # pylint:disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
                         return super(AbstractMatchingCost, cls).__new__(
@@ -193,6 +194,7 @@ class AbstractMatchingCost:
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param img_right: right Dataset  containing :
 
@@ -201,6 +203,7 @@ class AbstractMatchingCost:
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
         :return: None
         """
@@ -244,6 +247,7 @@ class AbstractMatchingCost:
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
@@ -252,6 +256,7 @@ class AbstractMatchingCost:
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
         :param cost_volume: an empty cost volume
         :type cost_volume: xr.Dataset
@@ -418,7 +423,7 @@ class AbstractMatchingCost:
             disparity_range = np.arange(disparity_min, disparity_max + 1)
         else:
             disparity_range = np.arange(disparity_min, disparity_max, 1 / float(subpix), dtype=np.float64)
-            disparity_range = np.append(disparity_range, [disparity_max])
+            disparity_range = np.append(disparity_range, [disparity_max])  # type: ignore
         return disparity_range
 
     def point_interval(
@@ -434,6 +439,7 @@ class AbstractMatchingCost:
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
@@ -442,6 +448,7 @@ class AbstractMatchingCost:
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
         :param disp: current disparity
         :type disp: float
@@ -494,6 +501,7 @@ class AbstractMatchingCost:
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
@@ -502,6 +510,7 @@ class AbstractMatchingCost:
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
         :param window_size: window size of the measure
         :type window_size: int
@@ -781,6 +790,7 @@ class AbstractMatchingCost:
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
@@ -789,6 +799,7 @@ class AbstractMatchingCost:
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
         :param cost_volume: the cost_volume DataSet with the data variables:
 
@@ -872,6 +883,7 @@ class AbstractMatchingCost:
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param disparity_range: disparity range
         :type disparity_range: np.ndarray

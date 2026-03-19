@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -143,6 +143,7 @@ class AbstractValidation:
             - msk (optional): 2D (row, col) xarray.DataArray int16
             - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
             - segm (optional): 2D (row, col) xarray.DataArray int16
+            - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
@@ -151,6 +152,7 @@ class AbstractValidation:
             - msk (optional): 2D (row, col) xarray.DataArray int16
             - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
             - segm (optional): 2D (row, col) xarray.DataArray int16
+            - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
         :param cv: cost_volume Dataset with the variables:
 
@@ -256,6 +258,7 @@ class CrossCheckingAccurate(AbstractValidation):
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_left: xarray.Dataset
         :param img_right: right Dataset image containing :
 
@@ -264,6 +267,7 @@ class CrossCheckingAccurate(AbstractValidation):
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
         :param cv: cost_volume Dataset with the variables:
 

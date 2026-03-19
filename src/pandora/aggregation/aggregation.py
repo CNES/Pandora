@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -112,6 +112,7 @@ class AbstractAggregation:
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :param img_right: right Dataset image containing :
 
                 - im: 2D (row, col) or 3D (band_im, row, col) xarray.DataArray float32
@@ -119,6 +120,7 @@ class AbstractAggregation:
                 - msk (optional): 2D (row, col) xarray.DataArray int16
                 - classif (optional): 3D (band_classif, row, col) xarray.DataArray int16
                 - segm (optional): 2D (row, col) xarray.DataArray int16
+                - edges (optional): 2D (row, col) xarray.DataArray int16
         :type img_right: xarray.Dataset
         :param cv: the cost volume dataset with the data variables:
 

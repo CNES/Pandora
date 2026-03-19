@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -19,6 +19,8 @@
 """
 Set of fixtures available to all confidence tests.
 """
+
+# pylint: disable=redefined-outer-name
 
 import numpy as np
 import pytest
@@ -154,6 +156,8 @@ def create_images(create_grids_and_disparity_range_with_variable_disparities):
             "crs": None,
             "transform": Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         },
-    ).pipe(add_disparity, disparity=disparity, window=None)
+    ).pipe(
+        add_disparity, disparity, window=None  # type: ignore[arg-type]
+    )
 
     return left, right, grids

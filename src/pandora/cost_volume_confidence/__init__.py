@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -19,6 +19,7 @@
 """
 Init file for cost volume confidence module.
 """
+
 from . import ambiguity
 from .cost_volume_confidence import AbstractCostVolumeConfidence
 from . import interval_bounds

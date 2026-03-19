@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -60,7 +60,7 @@ class BilateralFilter(filter.AbstractFilter):
         self._step = step
 
     @property
-    def margins(self):
+    def margins(self):  # type: ignore[override]
         sigma = int(3 * self._sigma_space + 1)
         value = min(*self._image_shape, sigma) * self._step
         return Margins(value, value, value, value)

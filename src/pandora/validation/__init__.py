@@ -1,6 +1,6 @@
 # pylint: disable=missing-module-docstring
 # coding: utf8
-# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -21,5 +21,6 @@
 """
 Init file for validation module.
 """
+
 from .interpolated_disparity import AbstractInterpolation
 from .validation import AbstractValidation

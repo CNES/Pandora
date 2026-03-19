@@ -4,7 +4,7 @@
 # !/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -63,7 +63,6 @@ from pandora.criteria import validity_mask
 from pandora import validation
 from pandora import cost_volume_confidence
 from .img_tools import prepare_pyramid
-
 
 # This module contains class associated to the pandora state machine
 
@@ -440,7 +439,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             # Fast cross checking is used, compute right cv at wta time
             # Compute right cost volume and mask it
             self.right_cv["cost_volume"].data = matching_cost.AbstractMatchingCost.reverse_cost_volume(
-                self.left_cv["cost_volume"].data, np.nanmin(self.right_disp_min)
+                self.left_cv["cost_volume"].data, np.nanmin(-self.disp_max)
             )
 
             self.right_cv.attrs["type_measure"] = self.left_cv.attrs["type_measure"]
@@ -906,9 +905,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         validation_ = validation.AbstractValidation(**cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = validation_.cfg
         if "interpolated_disparity" in validation_.cfg:
-            _ = validation.AbstractInterpolation(  # type:ignore
-                **cfg[input_step]
-            )
+            _ = validation.AbstractInterpolation(**cfg[input_step])  # type: ignore
 
         self.right_disp_map = validation_.cfg["validation_method"]
 

@@ -1,5 +1,6 @@
 [run]
+# Directories to include in coverage analysis
 source = pandora
-omit =
-    # Omit tests
-    /tests/*
+
+# Files and directories to omit from coverage analysis
+omit = */build/*,tests/*

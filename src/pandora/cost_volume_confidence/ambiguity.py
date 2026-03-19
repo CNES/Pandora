@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -19,6 +19,7 @@
 """
 This module contains functions for estimating confidence from ambiguity.
 """
+
 import logging
 from typing import Dict, Tuple, Union
 

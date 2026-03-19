@@ -1,6 +1,6 @@
 # Credits
 
-Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 
 Pandora is licensed under permissive Apache 2 license (See LICENSE file).
 The copyright is kept CNES only for long term maintenance ease.
@@ -11,7 +11,7 @@ This file keeps track of authors contributions.
 
 ## Development Lead
 
-* Alexandre Constantin <alexandre.constatin@cnes.fr>
+* Alexandre Constantin <alexandre.constantin@cnes.fr>
 * Alice de Bardonnèche-Richard <alice.de-bardonneche-richard@cs-soprasteria.com>
 * Marie Leconte <marie.leconte@cs-soprasteria.com>
 * Elisa Duz <elisa.duz@cs-soprasteria.com>
