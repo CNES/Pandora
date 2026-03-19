@@ -1,7 +1,7 @@
 # pylint: skip-file
 #
 # coding: utf8
-# Copyright (c) 2025 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of PANDORA
 #
@@ -42,13 +42,13 @@ sys.setrecursionlimit(8 * sys.getrecursionlimit())
 # -- Project information -----------------------------------------------------
 
 project = "Pandora"
-copyright = "2024, CNES"
+copyright = "2026, CNES"
 author = "CNES"
 
 # The full version, including alpha/beta/rc tags
 # not useful at the moment :  see  https://gitlab.cnes.fr/OutilsCommuns/CorrelateurChaine3D/pandora/issues/124
 # release = '0.2.0'
-version = "1.2.1"
+version = "1.8.0a1"
 
 
 # -- General configuration ---------------------------------------------------
