@@ -66,7 +66,7 @@ venv: check ## create virtualenv in PANDORA_VENV directory if not exists
 
 .PHONY: install
 install: venv ## install pandora without plugins
-	@test -f ${PANDORA_VENV}/bin/pandora || . ${PANDORA_VENV}/bin/activate; ${PANDORA_VENV}/bin/pip install --no-build-isolation --editable .[dev,docs,notebook] --config-settings=setup-args=-Dbuild_cpp_tests=enabled
+	@test -f ${PANDORA_VENV}/bin/pandora || { . ${PANDORA_VENV}/bin/activate; ${PANDORA_VENV}/bin/pip install --no-build-isolation --editable .[dev,docs,notebook] --config-settings=setup-args=-Dbuild_cpp_tests=enabled ; }
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${PANDORA_VENV}/bin/pre-commit install
 	@echo "PANDORA installed in dev mode in virtualenv ${PANDORA_VENV}"
@@ -74,7 +74,7 @@ install: venv ## install pandora without plugins
 
 .PHONY: install-sgm
 install-sgm: venv install## install pandora with sgm
-	@test -f ${PANDORA_VENV}/lib/python3.10/site-packages/pandora_plugin_libsgm || . ${PANDORA_VENV}/bin/activate; ${PANDORA_VENV}/bin/pip install --no-build-isolation --editable .[sgm]  --config-settings=setup-args=-Dbuild_cpp_tests=enabled
+	@test -f ${PANDORA_VENV}/lib/python3.10/site-packages/pandora_plugin_libsgm || { . ${PANDORA_VENV}/bin/activate; ${PANDORA_VENV}/bin/pip install --no-build-isolation --editable .[sgm]  --config-settings=setup-args=-Dbuild_cpp_tests=enabled ; }
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${PANDORA_VENV}/bin/pre-commit install
 	@echo "PANDORA installed in dev mode in virtualenv ${PANDORA_VENV} with sgm"
