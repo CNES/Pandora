@@ -15,7 +15,7 @@ The available methods are :
 
     .. math::
 
-       Amb(x,y,\eta) &= Card(d \in [d_min,d_max] | cv(x,y,d) < \min_{d}(cv(x,y,d)) +\eta \})
+       Amb(x,y,\eta) &= Card(\{ d \in [d_{min},d_{max}] | cv(x,y,d) < \min_{d}(cv(x,y,d)) +\eta \})
 
   , where :math:`cv(x,y,d)` is the cost value at pixel :math:`(x,y)` for disparity :math:`d` in disparity range :math:`[d_{min},d_{max}]`.
   From the previous equation, ambiguity integral measure is derived and it is defined as the area under the ambiguity curve. Then, ambiguity integral measure
