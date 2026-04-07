@@ -1,5 +1,7 @@
 # Changelog
 
+## 1.8.0 (April 2026)
+
 ## 1.8.0a1 (March 2026)
 
 ### Added
