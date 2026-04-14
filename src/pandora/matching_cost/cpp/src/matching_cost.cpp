@@ -21,6 +21,8 @@
 #include <cmath>
 #include <limits>
 #include <iostream>
+#include <algorithm>
+#include <vector>
 
 namespace py = pybind11;
 
@@ -165,10 +167,21 @@ void cv_masked(
     size_t n_col = rw_cv.shape(1);
     size_t n_disp = rw_cv.shape(2);
     
-    size_t n_col_mask_right_native = r_mask_right_native.shape(1);
-    size_t n_col_mask_right_shift = r_mask_right_shift.shape(1);
+    int n_col_mask_right_native = static_cast<int>(r_mask_right_native.shape(1));
+    int n_col_mask_right_shift = static_cast<int>(r_mask_right_shift.shape(1));
 
     float nan_val = std::numeric_limits<float>::quiet_NaN();
+    float min_disp_f = static_cast<float>(min_disp);
+
+    // Precompute disparity data :
+    // - use shifted or native mask
+    // - floor(disp) so we don't recompute it every time
+    std::vector<bool> use_shifted(n_disp);
+    std::vector<int> disp_floor(n_disp);
+    for (size_t d = 0; d < n_disp; ++d) {
+        use_shifted[d] = (static_cast<int>(d) % subpix != 0);
+        disp_floor[d] = static_cast<int>(std::floor(r_disps(d)));
+    }
 
     for (size_t row = 0; row < n_row; ++row) {
         for (size_t col = 0; col < n_col; ++col) {
@@ -180,34 +193,43 @@ void cv_masked(
                 continue;
             }
 
-            // Get local disparity range for this pixel
+            int col_i = static_cast<int>(col);
+
+            // Get local disparity range
             float local_disp_min = r_disp_min(row, col);
             float local_disp_max = r_disp_max(row, col);
 
-            // Process each disparity
-            for (size_t d = 0; d < n_disp; ++d) {
-                float disp_value = r_disps(d);
+            // Get corresponding indices
+            int local_min_idx = static_cast<int>(std::ceil((local_disp_min - min_disp_f) * subpix));
+            int local_max_idx = static_cast<int>(std::floor((local_disp_max - min_disp_f) * subpix));
 
-                // Check if disparity is within local range
-                if (disp_value < local_disp_min || disp_value > local_disp_max) {
-                    rw_cv(row, col, d) = nan_val;
-                    continue;
-                }
+            int valid_start = std::max(local_min_idx, 0);
+            int valid_end = std::min(local_max_idx, static_cast<int>(n_disp) - 1);
 
-                // Determine which right mask to use
-                bool use_shifted = (static_cast<int>(d) % subpix != 0);
+            // Mask disparities below/above the range
+            for (int d = 0; d < valid_start; ++d) {
+                rw_cv(row, col, d) = nan_val;
+            }
+            for (int d = valid_end + 1; d < static_cast<int>(n_disp); ++d) {
+                rw_cv(row, col, d) = nan_val;
+            }
 
-                // Calculate right column (image coords)
-                float right_col_float = col + disp_value;
-                int right_col = static_cast<int>(std::floor(right_col_float));
+            if (valid_start > valid_end) {
+                // The whole range is invalid (= all disps are already masked)
+                continue;
+            }
+
+            // Process disps in range
+            for (int d = valid_start; d <= valid_end; ++d) {
+                int right_col = col_i + disp_floor[d];
 
                 float mask_value = nan_val;
                 if (right_col >= 0) { // Check left bound
 
                     // The right bound check depends on whether we use shifted or native mask
-                    if (use_shifted && n_col_mask_right_shift > 0 && right_col < static_cast<int>(n_col_mask_right_shift)) {
+                    if (use_shifted[d] && right_col < n_col_mask_right_shift) {
                         mask_value = r_mask_right_shift(row, right_col);
-                    } else if (!use_shifted && right_col < static_cast<int>(n_col_mask_right_native)) {
+                    } else if (!use_shifted[d] && right_col < n_col_mask_right_native) {
                         mask_value = r_mask_right_native(row, right_col);
                     } else {
                         // Out of bounds, mask with NaN
