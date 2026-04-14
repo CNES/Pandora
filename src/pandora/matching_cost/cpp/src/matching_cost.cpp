@@ -20,6 +20,7 @@
 #include "matching_cost.hpp"
 #include <cmath>
 #include <limits>
+#include <iostream>
 
 namespace py = pybind11;
 
@@ -129,4 +130,101 @@ std::tuple<py::array_t<float>, py::array_t<float>> reverse_disp_range(
     }
 
     return {right_min, right_max};
+}
+
+#define PRINT_IF_POS(row, col, message) \
+    if (row == 1 && col == 1) { \
+        std::cout << message << std::endl; \
+    }
+
+#define PRINT_IF_POS_2(row, col, disp, message) \
+    if (row == 1 && col == 1 && disp == 2) { \
+        std::cout << message << std::endl; \
+    }
+
+void cv_masked(
+    py::array_t<float> cost_volume,
+    py::array_t<float> mask_left,
+    py::array_t<float> mask_right_native,
+    py::array_t<float> mask_right_shift,
+    py::array_t<float> disp_min,
+    py::array_t<float> disp_max,
+    py::array_t<float> disp_range,
+    int min_disp,
+    int subpix
+) {
+    auto rw_cv = cost_volume.mutable_unchecked<3>();
+    auto r_mask_left = mask_left.unchecked<2>();
+    auto r_mask_right_native = mask_right_native.unchecked<2>();
+    auto r_mask_right_shift = mask_right_shift.unchecked<2>();
+    auto r_disp_min = disp_min.unchecked<2>();
+    auto r_disp_max = disp_max.unchecked<2>();
+    auto r_disps = disp_range.unchecked<1>();
+
+    size_t n_row = rw_cv.shape(0);
+    size_t n_col = rw_cv.shape(1);
+    size_t n_disp = rw_cv.shape(2);
+    
+    size_t n_col_mask_right_native = r_mask_right_native.shape(1);
+    size_t n_col_mask_right_shift = r_mask_right_shift.shape(1);
+
+    float nan_val = std::numeric_limits<float>::quiet_NaN();
+
+    for (size_t row = 0; row < n_row; ++row) {
+        for (size_t col = 0; col < n_col; ++col) {
+            // If pixel is masked in left image, fill entire disparity range with NaN
+            if (std::isnan(r_mask_left(row, col))) {
+                for (size_t d = 0; d < n_disp; ++d) {
+                    rw_cv(row, col, d) = nan_val;
+                }
+                continue;
+            }
+
+            // Get local disparity range for this pixel
+            float local_disp_min = r_disp_min(row, col);
+            float local_disp_max = r_disp_max(row, col);
+
+            // Process each disparity
+            for (size_t d = 0; d < n_disp; ++d) {
+                float disp_value = r_disps(d);
+
+                // Check if disparity is within local range
+                if (disp_value < local_disp_min || disp_value > local_disp_max) {
+                    rw_cv(row, col, d) = nan_val;
+                    continue;
+                }
+
+                // Determine which right mask to use
+                bool use_shifted = (static_cast<int>(d) % subpix != 0);
+
+                // Calculate right column (image coords)
+                float right_col_float = col + disp_value;
+                int right_col = static_cast<int>(std::floor(right_col_float));
+
+                float mask_value = nan_val;
+                if (right_col >= 0) { // Check left bound
+
+                    // The right bound check depends on whether we use shifted or native mask
+                    if (use_shifted && n_col_mask_right_shift > 0 && right_col < static_cast<int>(n_col_mask_right_shift)) {
+                        mask_value = r_mask_right_shift(row, right_col);
+                    } else if (!use_shifted && right_col < static_cast<int>(n_col_mask_right_native)) {
+                        mask_value = r_mask_right_native(row, right_col);
+                    } else {
+                        // Out of bounds, mask with NaN
+                        mask_value = nan_val;
+                    }
+
+                } else {
+                    mask_value = nan_val;
+                }
+
+                // Right pixel is masked
+                if (std::isnan(mask_value)) {
+                    rw_cv(row, col, d) = nan_val;
+                } else if (mask_value != 0.0f) {
+                    rw_cv(row, col, d) = nan_val;
+                }
+            }
+        }
+    }
 }

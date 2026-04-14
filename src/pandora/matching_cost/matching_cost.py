@@ -811,53 +811,32 @@ class AbstractMatchingCost:
         :type disp_max: np.ndarray
         :return: None
         """
-
-        ny_, nx_, nd_ = cost_volume["cost_volume"].shape
-
         dmin, _ = self.get_min_max_from_grid(disp_min, disp_max)
 
-        # ----- Masking invalid pixels -----
+        # ----- Masking invalid pixels and local disparity range -----
 
         # Computes the validity mask of the cost volume : invalid pixels or no_data are masked with the value nan.
         # Valid pixels are = 0
         mask_left, mask_right = self.masks_dilatation(img_left, img_right, self._window_size, self._subpix)
 
-        for disp in cost_volume.coords["disp"].data:
-            i_right = int((disp % 1) * self._subpix)
-            i_mask_right = min(1, i_right)
-            dsp = int((disp - dmin) * self._subpix)
+        # Depending on subpix, create an empty mask or use the shifted right mask
+        if self._subpix > 1:
+            mask_right_shift = mask_right[1].data.astype(np.float32)
+        else:
+            mask_right_shift = np.empty((0, 0), dtype=np.float32)
 
-            point_p, point_q = self.mask_column_interval(
-                cost_volume, mask_left.coords["col"].data, mask_right[i_mask_right].coords["col"].data, disp
-            )
-
-            # Invalid costs in the cost volume
-            cost_volume["cost_volume"].loc[{"col": point_p, "disp": disp}] = (
-                cost_volume["cost_volume"].loc[{"col": point_p, "disp": disp}].data
-                + mask_right[i_mask_right].loc[{"col": point_q}].data
-                + mask_left.loc[{"col": point_p}].data
-            )
-
-        # ----- Masking disparity range -----
-
-        # Fixed range of disparities
-        # Disparity range may be one size bigger in y axis
-        if disp_min.shape[0] > ny_:
-            disp_min = disp_min[0:ny_, :]
-            disp_max = disp_max[0:ny_, :]
-        if disp_min.shape[1] > nx_:
-            disp_min = disp_min[:, 0:nx_]
-            disp_max = disp_max[:, 0:nx_]
-
-        # Mask the costs computed with a disparity lower than disp_min and higher than disp_max
-        for dsp in range(nd_):
-            masking = np.where(
-                np.logical_or(
-                    cost_volume.coords["disp"].data[dsp] < disp_min,
-                    cost_volume.coords["disp"].data[dsp] > disp_max,
-                )
-            )
-            cost_volume["cost_volume"].data[masking[0], masking[1], dsp] = np.nan
+        # mask the cost volume
+        matching_cost_cpp.cv_masked(
+            cost_volume["cost_volume"].data,
+            mask_left.data,
+            mask_right[0].data,
+            mask_right_shift,
+            disp_min.astype(np.float32),
+            disp_max.astype(np.float32),
+            cost_volume.coords["disp"].data.astype(np.float32),
+            dmin,
+            self._subpix,
+        )
 
         # The disp_min and disp_max used to search missing disparity interval are not the local disp_min and disp_max
         # in case of a variable range of disparities. So there may be pixels that have missing disparity range (all
