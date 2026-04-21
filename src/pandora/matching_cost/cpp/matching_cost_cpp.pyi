@@ -63,7 +63,7 @@ def reverse_disp_range(left_min, left_max):
     return None, None
 
 def cv_masked(
-    cost_volume, mask_left, mask_right_shift, mask_right_native, disp_min, disp_max, disp_range, min_disp, subpix
+    cost_volume, mask_left, mask_right_shift, mask_right_native, disp_min, disp_max, disp_range, global_disp_min, subpix
 ):
     """
     Apply masking to cost volume based on valid pixels and local disparity ranges
@@ -87,8 +87,8 @@ def cv_masked(
     :type disp_max: np.ndarray(dtype=float32)
     :param disp_range: the 1D disparity range values (disp)
     :type disp_range: np.ndarray(dtype=float32)
-    :param min_disp: global cost volume minimum disparity
-    :type min_disp: int
+    :param global_disp_min: global cost volume minimum disparity
+    :type global_disp_min: int
     :param subpix: subpixel precision
     :type subpix: int
 

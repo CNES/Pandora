@@ -20,7 +20,6 @@
 #include "matching_cost.hpp"
 #include <cmath>
 #include <limits>
-#include <iostream>
 #include <algorithm>
 #include <vector>
 
@@ -134,15 +133,6 @@ std::tuple<py::array_t<float>, py::array_t<float>> reverse_disp_range(
     return {right_min, right_max};
 }
 
-#define PRINT_IF_POS(row, col, message) \
-    if (row == 1 && col == 1) { \
-        std::cout << message << std::endl; \
-    }
-
-#define PRINT_IF_POS_2(row, col, disp, message) \
-    if (row == 1 && col == 1 && disp == 2) { \
-        std::cout << message << std::endl; \
-    }
 
 void cv_masked(
     py::array_t<float> cost_volume,
@@ -152,7 +142,7 @@ void cv_masked(
     py::array_t<float> disp_min,
     py::array_t<float> disp_max,
     py::array_t<float> disp_range,
-    int min_disp,
+    int global_disp_min,
     int subpix
 ) {
     auto rw_cv = cost_volume.mutable_unchecked<3>();
@@ -171,7 +161,7 @@ void cv_masked(
     int n_col_mask_right_shift = static_cast<int>(r_mask_right_shift.shape(1));
 
     float nan_val = std::numeric_limits<float>::quiet_NaN();
-    float min_disp_f = static_cast<float>(min_disp);
+    float global_disp_min_f = static_cast<float>(global_disp_min);
 
     // Precompute disparity data :
     // - use shifted or native mask
@@ -200,8 +190,8 @@ void cv_masked(
             float local_disp_max = r_disp_max(row, col);
 
             // Get corresponding indices
-            int local_min_idx = static_cast<int>(std::ceil((local_disp_min - min_disp_f) * subpix));
-            int local_max_idx = static_cast<int>(std::floor((local_disp_max - min_disp_f) * subpix));
+            int local_min_idx = static_cast<int>(std::ceil((local_disp_min - global_disp_min_f) * subpix));
+            int local_max_idx = static_cast<int>(std::floor((local_disp_max - global_disp_min_f) * subpix));
 
             int valid_start = std::max(local_min_idx, 0);
             int valid_end = std::min(local_max_idx, static_cast<int>(n_disp) - 1);

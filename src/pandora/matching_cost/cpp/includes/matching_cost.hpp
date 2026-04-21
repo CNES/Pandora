@@ -68,7 +68,7 @@ std::tuple<py::array_t<float>, py::array_t<float>> reverse_disp_range(
  * @param disp_min: the 2D local minimum disparities (row, col)
  * @param disp_max: the 2D local maximum disparities (row, col)
  * @param disp_range: the 1D disparity range values (disp)
- * @param min_disp: global cost volume minimum disparity
+ * @param global_disp_min: global cost volume minimum disparity
  * @param subpix: subpixel precision
  * @return: None
  */
@@ -80,7 +80,7 @@ void cv_masked(
     py::array_t<float> disp_min,
     py::array_t<float> disp_max,
     py::array_t<float> disp_range,
-    int min_disp,
+    int global_disp_min,
     int subpix
 );
 

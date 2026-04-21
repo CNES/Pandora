@@ -777,11 +777,12 @@ class AbstractMatchingCost:
         disp_max: np.ndarray,
     ) -> None:
         """
-        Masks the cost volume :
-            - costs which are not inside their disparity range, are masked with a nan value
-            - costs of invalid_pixels (invalidated by the input image mask), are masked with a nan value
-            - costs of no_data pixels, are masked with a nan value. If a valid pixel contains a no_data in its
-                aggregation window, then the cost of the central pixel is masked with a nan value
+        Masks the cost volume by:
+            - Setting entire disparity range to NaN for pixels masked in the
+              left image (including the window of matching cost)
+            - Setting disparities outside local [disp_min, disp_max] range to NaN
+            - Setting disparities to NaN if corresponding right pixel is
+              masked (including the window of matching cost)
 
         :param img_left: left Dataset image containing :
 
