@@ -779,10 +779,10 @@ class AbstractMatchingCost:
         """
         Masks the cost volume by:
             - Setting entire disparity range to NaN for pixels masked in the
-              left image (including the window of matching cost)
+              left image (including the window of matching cost when left pixel is NaN)
             - Setting disparities outside local [disp_min, disp_max] range to NaN
             - Setting disparities to NaN if corresponding right pixel is
-              masked (including the window of matching cost)
+              masked (including the window of matching cost when right pixel is NaN)
 
         :param img_left: left Dataset image containing :
 
