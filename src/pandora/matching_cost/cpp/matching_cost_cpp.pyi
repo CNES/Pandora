@@ -61,3 +61,38 @@ def reverse_disp_range(left_min, left_max):
     :rtype: Tuple[np.ndarray(dtype=float32), np.ndarray(dtype=float32)]
     """
     return None, None
+
+def cv_masked(
+    cost_volume, mask_left, mask_right_shift, mask_right_native, disp_min, disp_max, disp_range, global_disp_min, subpix
+):
+    """
+    Apply masking to cost volume based on valid pixels and local disparity ranges
+
+    Masks the cost volume by:
+    - Setting entire disparity range to NaN for pixels masked in left image
+    - Setting disparities outside local [disp_min, disp_max] range to NaN
+    - Setting disparities to NaN if corresponding right pixel is masked
+
+    :param cost_volume: the 3D cost volume data array (row, col, disp)
+    :type cost_volume: np.ndarray(dtype=float32)
+    :param mask_left: the 2D left mask array (row, col)
+    :type mask_left: np.ndarray(dtype=float32)
+    :param mask_right_native: the 2D right mask for whole pixel disparities (row, col)
+    :type mask_right_native: np.ndarray(dtype=float32)
+    :param mask_right_shift: the 2D right mask for subpix disparities (row, col)
+    :type mask_right_shift: np.ndarray(dtype=float32)
+    :param disp_min: the 2D local minimum disparities (row, col)
+    :type disp_min: np.ndarray(dtype=float32)
+    :param disp_max: the 2D local maximum disparities (row, col)
+    :type disp_max: np.ndarray(dtype=float32)
+    :param disp_range: the 1D disparity range values (disp)
+    :type disp_range: np.ndarray(dtype=float32)
+    :param global_disp_min: global cost volume minimum disparity
+    :type global_disp_min: int
+    :param subpix: subpixel precision
+    :type subpix: int
+
+    :return: None
+    :rtype: None
+    """
+    ...
