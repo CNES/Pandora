@@ -41,7 +41,7 @@ include:
     # Default stage for jobs is build.
     # Below is the list of items to contains.
     inputs:
-      image: ${UL_ARTIFACTORY_HOST}/publicremotes-docker/python:3.10
+      image: ${UL_ARTIFACTORY_HOST}/publicremotes-docker/python:3.10.13
       pytest-enabled: true
       pylint-enabled: true
       black-enabled: true
