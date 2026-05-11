@@ -110,8 +110,8 @@ class AbstractRefinement:
             subpixel,
             measure,
             self.refinement_method,
-            cst.PANDORA_MSK_PIXEL_INVALID,
-            cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+            cst.Criteria.PANDORA_MSK_PIXEL_INVALID,
+            cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
         )
 
         disp.attrs["refinement"] = self._refinement_method_name
@@ -164,8 +164,8 @@ class AbstractRefinement:
             subpixel,
             measure,
             self.refinement_method,
-            cst.PANDORA_MSK_PIXEL_INVALID,
-            cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+            cst.Criteria.PANDORA_MSK_PIXEL_INVALID,
+            cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
         )
 
         disp_right.attrs["refinement"] = self._refinement_method_name

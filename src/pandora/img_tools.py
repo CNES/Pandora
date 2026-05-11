@@ -589,8 +589,8 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
             img, msk = interpolate_nodata_sgm(
                 dataset["im"].data,
                 dataset["msk"].data,
-                cst.PANDORA_MSK_PIXEL_INVALID,
-                cst.PANDORA_MSK_PIXEL_FILLED_NODATA,
+                cst.Criteria.PANDORA_MSK_PIXEL_INVALID,
+                cst.Criteria.PANDORA_MSK_PIXEL_FILLED_NODATA,
             )
         else:
             img = dataset["im"].data
@@ -601,8 +601,8 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
                 img[band, :, :], msk[:, :] = interpolate_nodata_sgm(
                     dataset["im"].data[band, :, :],
                     dataset["msk"].data[:, :],
-                    cst.PANDORA_MSK_PIXEL_INVALID,
-                    cst.PANDORA_MSK_PIXEL_FILLED_NODATA,
+                    cst.Criteria.PANDORA_MSK_PIXEL_INVALID,
+                    cst.Criteria.PANDORA_MSK_PIXEL_FILLED_NODATA,
                 )
     else:
         msk = np.full(

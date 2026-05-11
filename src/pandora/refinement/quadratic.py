@@ -43,7 +43,7 @@ class Quadratic(refinement.AbstractRefinement):
     @staticmethod
     def refinement_method(cost: np.ndarray, disp: float, measure: str) -> Tuple[float, float, int]:
         return refinement_cpp.quadratic_refinement_method(
-            cost, disp, measure, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
+            cost, disp, measure, cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
         )
 
     def __init__(self, **cfg: str) -> None:

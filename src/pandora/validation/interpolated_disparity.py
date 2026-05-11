@@ -252,9 +252,9 @@ class McCnnInterpolation(AbstractInterpolation):
         return validation_cpp.interpolate_occlusion_mc_cnn(
             disp,
             valid,
-            cst.PANDORA_MSK_PIXEL_OCCLUSION,
-            cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
-            cst.PANDORA_MSK_PIXEL_INVALID,
+            cst.Criteria.PANDORA_MSK_PIXEL_OCCLUSION,
+            cst.Criteria.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
+            cst.Criteria.PANDORA_MSK_PIXEL_INVALID,
         )
 
     @staticmethod
@@ -262,9 +262,9 @@ class McCnnInterpolation(AbstractInterpolation):
         return validation_cpp.interpolate_mismatch_mc_cnn(
             disp,
             valid,
-            cst.PANDORA_MSK_PIXEL_MISMATCH,
-            cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH,
-            cst.PANDORA_MSK_PIXEL_INVALID,
+            cst.Criteria.PANDORA_MSK_PIXEL_MISMATCH,
+            cst.Criteria.PANDORA_MSK_PIXEL_FILLED_MISMATCH,
+            cst.Criteria.PANDORA_MSK_PIXEL_INVALID,
         )
 
 
@@ -358,9 +358,9 @@ class SgmInterpolation(AbstractInterpolation):
         return validation_cpp.interpolate_occlusion_sgm(
             disp,
             valid,
-            cst.PANDORA_MSK_PIXEL_OCCLUSION,
-            cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
-            cst.PANDORA_MSK_PIXEL_INVALID,
+            cst.Criteria.PANDORA_MSK_PIXEL_OCCLUSION,
+            cst.Criteria.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
+            cst.Criteria.PANDORA_MSK_PIXEL_INVALID,
         )
 
     @staticmethod
@@ -368,8 +368,8 @@ class SgmInterpolation(AbstractInterpolation):
         return validation_cpp.interpolate_mismatch_sgm(
             disp,
             valid,
-            cst.PANDORA_MSK_PIXEL_MISMATCH,
-            cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH,
-            cst.PANDORA_MSK_PIXEL_OCCLUSION,
-            cst.PANDORA_MSK_PIXEL_INVALID,
+            cst.Criteria.PANDORA_MSK_PIXEL_MISMATCH,
+            cst.Criteria.PANDORA_MSK_PIXEL_FILLED_MISMATCH,
+            cst.Criteria.PANDORA_MSK_PIXEL_OCCLUSION,
+            cst.Criteria.PANDORA_MSK_PIXEL_INVALID,
         )

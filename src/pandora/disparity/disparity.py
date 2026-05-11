@@ -253,9 +253,9 @@ class AbstractDisparity:
                 disp_map["disparity_map"].loc[{"col": col}] = invalid_value
 
                 # Invalid pixel : the disparity interval is missing in the right image
-                disp_map["validity_mask"].loc[
-                    {"col": col}
-                ] += cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
+                disp_map["validity_mask"].loc[{"col": col}] |= np.uint16(
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
+                )
             else:
                 # Diagonal search for the minimum or maximum
 
@@ -280,9 +280,9 @@ class AbstractDisparity:
                 # Disparity interval is incomplete
                 if x_d[valid].size != disp_range.size:
                     #  Information: the disparity interval is incomplete (border reached in the right image)
-                    disp_map["validity_mask"].loc[
-                        {"col": col}
-                    ] += cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
+                    disp_map["validity_mask"].loc[{"col": col}] |= np.uint16(
+                        cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
+                    )
 
                 disp_map["disparity_map"].loc[{"col": col}] = -1 * np.flip(disp_range[valid])[min_.data]  # type: ignore
 
@@ -469,9 +469,9 @@ class WinnerTakesAll(AbstractDisparity):
         # Get validity mask from cost volume
         disp_map["validity_mask"] = copy.deepcopy(cv["validity_mask"])
         new_invalid_pixels = np.where(
-            np.logical_and(invalid_mc, (disp_map["validity_mask"].data & cst.PANDORA_MSK_PIXEL_INVALID) == 0)
+            np.logical_and(invalid_mc, (disp_map["validity_mask"].data & cst.Criteria.PANDORA_MSK_PIXEL_INVALID) == 0)
         )
-        disp_map["validity_mask"].data[new_invalid_pixels] = cst.PANDORA_MSK_PIXEL_INVALID
+        disp_map["validity_mask"].data[new_invalid_pixels] = cst.Criteria.PANDORA_MSK_PIXEL_INVALID
 
         # Remove temporary values
         del indices_nan

@@ -118,7 +118,7 @@ class TestRefinement(unittest.TestCase):
         )
 
         # Validity mask ground truth
-        gt_mask = np.array([[0, 0, 0, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION]], dtype=np.uint16)
+        gt_mask = np.array([[0, 0, 0, cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION]], dtype=np.uint16)
 
         # -------- Compute the refinement with quadratic by calling subpixel_refinement --------
         quadratic_refinement = refinement.AbstractRefinement(**{"refinement_method": "quadratic"})
@@ -203,7 +203,7 @@ class TestRefinement(unittest.TestCase):
         )
 
         # Validity mask ground truth
-        gt_mask = np.array([[0, 0, 0, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION]], dtype=np.uint16)
+        gt_mask = np.array([[0, 0, 0, cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION]], dtype=np.uint16)
 
         # -------- Compute the refinement with quadratic by calling subpixel_refinement --------
         quadratic_refinement = refinement.AbstractRefinement(**{"refinement_method": "quadratic"})
@@ -291,9 +291,9 @@ class TestRefinement(unittest.TestCase):
             [
                 [
                     0,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                 ]
             ],
             dtype=np.uint16,
@@ -347,7 +347,7 @@ class TestRefinement(unittest.TestCase):
         )
 
         # Validity mask ground truth
-        gt_mask = np.array([[0, 0, 0, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION]], dtype=np.uint16)
+        gt_mask = np.array([[0, 0, 0, cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION]], dtype=np.uint16)
 
         # -------- Compute the refinement with vfit by calling subpixel_refinement --------
         vfit_refinement = refinement.AbstractRefinement(**{"refinement_method": "vfit"})
@@ -426,7 +426,7 @@ class TestRefinement(unittest.TestCase):
         )
 
         # Validity mask ground truth
-        gt_mask = np.array([[0, 0, 0, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION]], dtype=np.uint16)
+        gt_mask = np.array([[0, 0, 0, cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION]], dtype=np.uint16)
 
         # -------- Compute the refinement with vfit by calling subpixel_refinement --------
         vfit_refinement = refinement.AbstractRefinement(**{"refinement_method": "vfit"})
@@ -497,7 +497,14 @@ class TestRefinement(unittest.TestCase):
 
         # Validity mask ground truth
         gt_mask = np.array(
-            [[cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0, 0]],
+            [
+                [
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    0,
+                    0,
+                ]
+            ],
             np.uint16,
         )
 
@@ -545,7 +552,7 @@ class TestRefinement(unittest.TestCase):
         gt_sub_cost = np.array([[np.nan, 2, 4 + (((3 - 4) / (2 * (4 - 1))) - 1) * (4 - 1)]])
 
         # Validity mask ground truth
-        gt_mask = np.array([[0, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0]], np.uint16)
+        gt_mask = np.array([[0, cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0]], np.uint16)
 
         # -------- Compute the refinement with vfit by calling subpixel_refinement --------
         vfit_refinement = refinement.AbstractRefinement(**{"refinement_method": "vfit"})
@@ -629,9 +636,9 @@ class TestRefinement(unittest.TestCase):
             [
                 [
                     0,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                 ]
             ],
             dtype=np.uint16,

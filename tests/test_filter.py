@@ -58,9 +58,9 @@ class TestMedianFilter:
         valid = np.array(
             [
                 [0, 0, 0, 0, 0],
-                [0, cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0],
-                [0, cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION, 0, 0, 0],
-                [0, 0, 0, 0, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION],
+                [0, cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0],
+                [0, cst.Criteria.PANDORA_MSK_PIXEL_FILLED_OCCLUSION, 0, 0, 0],
+                [0, 0, 0, 0, cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION],
             ],
             dtype=np.uint16,
         )
@@ -78,33 +78,34 @@ class TestMedianFilter:
         valid = np.array(
             [
                 [
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                     0,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                    cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION + cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    0,
-                ],
-                [
-                    cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT,
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_OCCLUSION,
-                    0,
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    cst.Criteria.PANDORA_MSK_PIXEL_FILLED_OCCLUSION
+                    + cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                     0,
                 ],
                 [
-                    cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
-                    cst.PANDORA_MSK_PIXEL_MISMATCH,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
-                    + cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT,
+                    cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.Criteria.PANDORA_MSK_PIXEL_OCCLUSION,
+                    0,
                     0,
                 ],
                 [
-                    cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                    cst.PANDORA_MSK_PIXEL_OCCLUSION,
-                    cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
+                    cst.Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
+                    cst.Criteria.PANDORA_MSK_PIXEL_MISMATCH,
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
+                    + cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                     0,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                ],
+                [
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                    cst.Criteria.PANDORA_MSK_PIXEL_OCCLUSION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
+                    0,
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                 ],
             ],
             dtype=np.uint16,
@@ -123,22 +124,23 @@ class TestMedianFilter:
         valid = np.array(
             [
                 [
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                     0,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                    cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION + cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    cst.Criteria.PANDORA_MSK_PIXEL_FILLED_OCCLUSION
+                    + cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                     0,
                 ],
-                [0, 0, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0, 0],
+                [0, 0, cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0, 0],
                 [
                     0,
                     0,
                     0,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
-                    + cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
+                    + cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                     0,
                 ],
-                [cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT, 0, 0, 0, 0],
+                [cst.Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT, 0, 0, 0, 0],
             ],
             dtype=np.uint16,
         )
@@ -158,28 +160,29 @@ class TestMedianFilter:
         valid = np.array(
             [
                 [
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                     0,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                    cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION + cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    cst.Criteria.PANDORA_MSK_PIXEL_FILLED_OCCLUSION
+                    + cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                     0,
                 ],
-                [0, 0, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0, 0],
+                [0, 0, cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0, 0],
                 [
                     0,
                     0,
                     0,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
-                    + cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
+                    + cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                     0,
                 ],
-                [cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT, 0, 0, 0, 0],
+                [cst.Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT, 0, 0, 0, 0],
                 [
-                    cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
+                    cst.Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
                     0,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
-                    + cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
+                    + cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                     0,
                 ],
             ],
@@ -490,9 +493,9 @@ class TestBilateralFilter:
         valid = np.array(
             [
                 [0, 0, 0, 0, 0],
-                [0, 0, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0, 0],
+                [0, 0, cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0, 0],
                 [0, 0, 0, 0, 0],
-                [0, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0, 0, 0],
+                [0, cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0, 0, 0],
                 [0, 0, 0, 0, 0],
             ],
             dtype=np.uint16,
@@ -524,10 +527,16 @@ class TestBilateralFilter:
 
         valid = np.array(
             [
-                [0, 0, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0, 0],
-                [0, cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0],
-                [0, cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION, 0, 0, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION],
-                [0, 0, 0, 0, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION],
+                [0, 0, cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION, 0, 0],
+                [0, cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0],
+                [
+                    0,
+                    cst.Criteria.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
+                    0,
+                    0,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                ],
+                [0, 0, 0, 0, cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION],
                 [0, 0, 0, 0, 0],
             ],
             dtype=np.uint16,
@@ -635,9 +644,9 @@ class TestBilateralFilter:
         valid = np.array(
             [
                 [0, 0, 0, 0, 0],
-                [0, cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0],
-                [0, cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION, cst.PANDORA_MSK_PIXEL_INVALID, 0, 0],
-                [0, 0, 0, 0, cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION],
+                [0, cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE, 0, 0, 0],
+                [0, cst.Criteria.PANDORA_MSK_PIXEL_FILLED_OCCLUSION, cst.Criteria.PANDORA_MSK_PIXEL_INVALID, 0, 0],
+                [0, 0, 0, 0, cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION],
                 [0, 0, 0, 0, 0],
             ],
             dtype=np.uint16,

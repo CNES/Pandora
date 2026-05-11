@@ -87,32 +87,32 @@ class TestMultiScale(unittest.TestCase):
         gt_mask = np.array(
             [
                 [
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,  # info
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,  # info
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                 ],
                 [0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0],
                 [
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                     # invalid
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                 ],
                 [
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                     # info
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                 ],
             ],
             dtype=np.uint16,
@@ -184,32 +184,32 @@ class TestMultiScale(unittest.TestCase):
         gt_mask = np.array(
             [
                 [
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,  # invalid
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,  # info
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,  # info
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,  # invalid
+                    cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,  # info
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,  # info
+                    cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                 ],  # info
                 [0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0],
                 [
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                     # invalid
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                 ],
                 [
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                     # info
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                 ],
             ],
             dtype=np.uint16,
