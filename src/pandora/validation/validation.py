@@ -47,7 +47,7 @@ class AbstractValidation:
     __metaclass__ = ABCMeta
 
     validation_methods_avail: Dict = {}
-    cfg = None
+    cfg: Dict | None = None
 
     def __new__(cls, **cfg: dict):
         """

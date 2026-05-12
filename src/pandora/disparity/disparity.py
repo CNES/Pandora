@@ -47,7 +47,7 @@ class AbstractDisparity:
     __metaclass__ = ABCMeta
 
     disparity_methods_avail: Dict = {}
-    cfg = None
+    cfg: Dict | None = None
     margins = NullMargins()
 
     def __new__(cls, **cfg: dict):

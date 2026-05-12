@@ -117,7 +117,7 @@ def validity_mask(
 
     # Negative disparity range
     if d_max < 0:
-        bit_1 = np.where((col + d_max) < (col[0] + offset))
+        bit_1 = np.where((col + d_max) < (col[0] + offset))  # type: ignore[var-annotated]
         # Information: the disparity interval is incomplete (border reached in the right image)
         cv["validity_mask"].data[
             :,
@@ -135,7 +135,7 @@ def validity_mask(
 
         # Disparity range contains 0
         else:
-            bit_1 = ([],)  # type: ignore
+            bit_1 = ([],)
             # Information: the disparity interval is incomplete (border reached in the right image)
             cv["validity_mask"].data[
                 :,

@@ -50,20 +50,20 @@ class AbstractMatchingCost:
     __metaclass__ = ABCMeta
 
     matching_cost_methods_avail: Dict = {}
-    _subpix = None
-    _window_size = None
-    cfg = None
-    _band = None
-    _step_col = None
-    _method = None
-    _spline_order = None
+    _subpix: int | None = None
+    _window_size: int | None = None
+    cfg: Dict[str, Union[str, int]] | None = None
+    _band: str | None = None
+    _step_col: int | None = None
+    _method: str | None = None
+    _spline_order: int | None = None
 
     # Default configuration, do not change these values
-    _WINDOW_SIZE = 5
-    _SUBPIX = 1
-    _BAND = None
-    _STEP_COL = 1
-    _SPLINE_ORDER = 1
+    _WINDOW_SIZE: int = 5
+    _SUBPIX: int = 1
+    _BAND: str | None = None
+    _STEP_COL: int = 1
+    _SPLINE_ORDER: int = 1
 
     # Matching cost schema confi
     schema = {
@@ -147,7 +147,7 @@ class AbstractMatchingCost:
         self.cfg = self.check_conf(**cfg)  # type: ignore
         self._window_size = int(self.cfg["window_size"])
         self._subpix = int(self.cfg["subpix"])
-        self._band = self.cfg["band"]
+        self._band = self.cfg["band"]  # type: ignore
         self._step_col = int(self.cfg["step"])
         self._method = str(self.cfg["matching_cost_method"])
         self._spline_order = int(self.cfg["spline_order"])
@@ -155,7 +155,7 @@ class AbstractMatchingCost:
         # Remove spline_order key because it is a pandora2d setting and a need
         del self.cfg["spline_order"]
 
-    def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict:
+    def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
@@ -171,7 +171,7 @@ class AbstractMatchingCost:
         if "subpix" not in cfg:
             cfg["subpix"] = self._SUBPIX  # type: ignore
         if "band" not in cfg:
-            cfg["band"] = self._BAND
+            cfg["band"] = self._BAND  # type: ignore
 
         if "pandora2d" not in sys.modules:
             if "step" in cfg and cfg["step"] != 1:
@@ -181,7 +181,7 @@ class AbstractMatchingCost:
         if "spline_order" not in cfg:
             cfg["spline_order"] = self._SPLINE_ORDER  # type: ignore
 
-        return cfg
+        return cfg  # type: ignore
 
     def check_band_input_mc(self, img_left: xr.Dataset, img_right: xr.Dataset) -> None:
         """
@@ -423,7 +423,7 @@ class AbstractMatchingCost:
             disparity_range = np.arange(disparity_min, disparity_max + 1)
         else:
             disparity_range = np.arange(disparity_min, disparity_max, 1 / float(subpix), dtype=np.float64)
-            disparity_range = np.append(disparity_range, [disparity_max])  # type: ignore
+            disparity_range = np.append(disparity_range, [disparity_max])
         return disparity_range
 
     def point_interval(
@@ -463,13 +463,13 @@ class AbstractMatchingCost:
         if abs(disp) > nx_left:
             point_p = (nx_left, nx_left)
         else:
-            point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))  # type: ignore
+            point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))
         # range in the right image
         # if disp is outside the image, point_q corresponds to an empty range
         if abs(disp) > nx_right:
             point_q = (nx_right, nx_right)
         else:
-            point_q = (max(0 + disp, 0), min(nx_right + disp, nx_right))  # type: ignore
+            point_q = (max(0 + disp, 0), min(nx_right + disp, nx_right))
 
         # Because the disparity can be floating
         if disp < 0:

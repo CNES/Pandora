@@ -44,8 +44,8 @@ class AbstractRefinement:
     __metaclass__ = ABCMeta
 
     subpixel_methods_avail: Dict = {}
-    _refinement_method_name = None
-    cfg = None
+    _refinement_method_name: str | None = None
+    cfg: Dict | None = None
     margins = NullMargins()
 
     def __new__(cls, **cfg: dict):
