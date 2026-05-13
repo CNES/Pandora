@@ -23,7 +23,7 @@
 This module contains functions associated to the Cross Based Cost Aggregation (cbca) method.
 """
 
-from typing import Dict, Union, Tuple, List
+from typing import Dict, Union, Tuple, List, cast
 
 import numpy as np
 import xarray as xr
@@ -53,8 +53,9 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         :type cfg: dict
         """
         self.cfg = self.check_conf(**cfg)  # type: ignore
-        self._cbca_intensity = self.cfg["cbca_intensity"]
-        self._cbca_distance = self.cfg["cbca_distance"]
+        # Cast to int/float in order to help mypy because self.cfg is a Dict, and it can not know the type of step.
+        self._cbca_intensity = cast(float, self.cfg["cbca_intensity"])
+        self._cbca_distance = cast(int, self.cfg["cbca_distance"])
 
     def check_conf(self, **cfg: Union[str, float, int]) -> Dict[str, Union[str, float, int]]:
         """

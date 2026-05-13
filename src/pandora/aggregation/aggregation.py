@@ -39,7 +39,7 @@ class AbstractAggregation:
     __metaclass__ = ABCMeta
 
     aggreg_methods_avail: Dict = {}
-    cfg = None
+    cfg: Dict | None = None
     margins = NullMargins()
 
     def __new__(cls, **cfg: dict):

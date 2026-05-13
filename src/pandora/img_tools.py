@@ -392,7 +392,7 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
         image = {"im": (["band_im", "row", "col"], data)}
         # Band names are in the image metadata
         coords = {
-            "band_im": list(img_ds.descriptions),  # type: ignore
+            "band_im": list(img_ds.descriptions),
             "row": np.arange(row_off, ny_ + row_off),
             "col": np.arange(col_off, nx_ + col_off),
         }

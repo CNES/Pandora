@@ -40,7 +40,7 @@ class AbstractMultiscale:
     __metaclass__ = ABCMeta
 
     multiscale_methods_avail: Dict = {}
-    cfg = None
+    cfg: Dict | None = None
 
     def __new__(cls, _left_img: xr.Dataset, _right_img: xr.Dataset, **cfg: Union[str, int]):
         """
