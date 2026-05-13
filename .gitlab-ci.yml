@@ -157,7 +157,7 @@ functional-sgm-test:
     - apt-get update && apt-get install -y cmake
     # ${TRACE+-d} define the log level
     # Install in editable mode to compute coverage
-    - make ${TRACE+-d} test-functional
+    - make ${TRACE+-d} test-functional-sgm
   variables:
     PYTHON_EXTRA_DEPS: test,sgm
   artifacts:
