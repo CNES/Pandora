@@ -29,7 +29,7 @@ import numpy as np
 from numpy.typing import DTypeLike
 from scipy.ndimage import binary_dilation
 import xarray as xr
-import pandora.constants as cst
+from pandora.constants import Criteria
 
 from pandora.profiler import profile
 from .cpp import criteria_cpp  # pylint: disable=no-name-in-module
@@ -66,7 +66,7 @@ def binary_dilation_msk(img: xr.Dataset, window_size: int) -> np.ndarray:
 
 def allocate_validity_mask(
     cv: xr.Dataset,
-    value: int | cst.Criteria = cst.Criteria.PANDORA_VALID,
+    value: int | Criteria = Criteria.PANDORA_VALID,
     data_type: DTypeLike = np.uint16,
 ) -> xr.DataArray:
     """
@@ -146,7 +146,7 @@ def validity_mask(
         cv["validity_mask"].data[
             :,
             np.where(((col + d_max) >= (col[0] + offset)) & ((col + d_min) < (col[0] + offset))),
-        ] |= np.uint16(cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE)
+        ] |= np.uint16(Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE)
     else:
         # Positive disparity range
         if d_min > 0:
@@ -155,7 +155,7 @@ def validity_mask(
             cv["validity_mask"].data[
                 :,
                 np.where(((col + d_min) <= (col[-1] - offset)) & ((col + d_max) > (col[-1] - offset))),
-            ] |= np.uint16(cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE)
+            ] |= np.uint16(Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE)
 
         # Disparity range contains 0
         else:
@@ -164,13 +164,11 @@ def validity_mask(
             cv["validity_mask"].data[
                 :,
                 np.where(((col + d_min) < (col[0] + offset)) | (col + d_max > (col[-1]) - offset)),
-            ] |= np.uint16(cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE)
+            ] |= np.uint16(Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE)
 
     # Invalid pixel : the disparity interval is missing in the right image ( disparity range
     # outside the image )
-    cv["validity_mask"].data[:, bit_1] |= np.uint16(
-        cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
-    )
+    cv["validity_mask"].data[:, bit_1] |= np.uint16(Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING)
 
     if "msk" in img_left.data_vars:
         allocate_left_mask(cv, img_left)
@@ -202,7 +200,7 @@ def mask_partially_missing_variable_ranges(cv, img_left, img_right):
         img_right["msk"].data != img_right.attrs["valid_pixels"],
     )
 
-    cv["validity_mask"].data[mask] |= np.uint16(cst.Criteria.PANDORA_MSK_PIXEL_INCOMPLETE_VARIABLE_DISPARITY_RANGE)
+    cv["validity_mask"].data[mask] |= np.uint16(Criteria.PANDORA_MSK_PIXEL_INCOMPLETE_VARIABLE_DISPARITY_RANGE)
 
 
 def allocate_left_mask(cv: xr.Dataset, img_left: xr.Dataset) -> None:
@@ -232,12 +230,12 @@ def allocate_left_mask(cv: xr.Dataset, img_left: xr.Dataset) -> None:
     dil = binary_dilation_msk(img_left, cv.attrs["window_size"])
 
     # Invalid pixel : no_data in the left image
-    cv["validity_mask"].data |= dil.astype(np.uint16) * np.uint16(cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER)
+    cv["validity_mask"].data |= dil.astype(np.uint16) * np.uint16(Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER)
 
     # Invalid pixel : invalidated by the validity mask of the left image given as input
     cv["validity_mask"].data |= xr.where(
         (r_mask != img_left.attrs["no_data_mask"]) & (r_mask != img_left.attrs["valid_pixels"]),
-        np.uint16(cst.Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT),
+        np.uint16(Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT),
         np.uint16(0),
     ).data.astype(np.uint16)
 
@@ -304,13 +302,13 @@ def allocate_right_mask(cv: xr.Dataset, img_right: xr.Dataset, bit_1: Union[np.n
 
         # Invalid pixel: right positions invalidated by the mask of the right image given as input
         cv["validity_mask"].data[np.where(b_2_7 == len(range(d_min, d_max + 1)))] |= np.uint16(
-            cst.Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT
+            Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT
         )
 
         # If Invalid pixel : the disparity interval is missing in the right image (disparity interval
         # is invalidated by no_data in the right image )
         cv["validity_mask"].data[np.where(no_data_right == len(range(d_min, d_max + 1)))] |= np.uint16(
-            cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
+            Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
         )
 
 
@@ -332,9 +330,9 @@ def mask_invalid_variable_disparity_range(cv: xr.Dataset) -> None:
     missing_range_y, missing_range_x = np.where(missing_disparity_range)
 
     # Mask the positions which have an missing disparity range, not already taken into account
-    flag_uint16 = np.uint16(cst.Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING)
-    condition_to_mask = (cv["validity_mask"].data[missing_range_y, missing_range_x] & flag) == 0
-    masking_value = cv["validity_mask"].data[missing_range_y, missing_range_x] | flag
+    flag_uint16 = np.uint16(Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING)
+    condition_to_mask = (cv["validity_mask"].data[missing_range_y, missing_range_x] & flag_uint16) == 0
+    masking_value = cv["validity_mask"].data[missing_range_y, missing_range_x] | flag_uint16
     no_masking_value = cv["validity_mask"].data[missing_range_y, missing_range_x]
 
     cv["validity_mask"].data[missing_range_y, missing_range_x] = np.where(
@@ -365,10 +363,10 @@ def mask_border(dataset: xr.Dataset) -> xr.DataArray:
     offset = dataset.attrs["offset_row_col"]
 
     # Border pixels have invalid disparity, erase the potential previous values
-    left_nodata_or_border_uint = np.uint16(cst.Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER)
-    dataset["validity_mask"].data[:offset, :] = border
-    dataset["validity_mask"].data[-offset:, :] = border
-    dataset["validity_mask"].data[offset:-offset, :offset] = border
-    dataset["validity_mask"].data[offset:-offset, -offset:] = border
+    left_nodata_or_border_uint = np.uint16(Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER)
+    dataset["validity_mask"].data[:offset, :] = left_nodata_or_border_uint
+    dataset["validity_mask"].data[-offset:, :] = left_nodata_or_border_uint
+    dataset["validity_mask"].data[offset:-offset, :offset] = left_nodata_or_border_uint
+    dataset["validity_mask"].data[offset:-offset, -offset:] = left_nodata_or_border_uint
 
     return dataset["validity_mask"]

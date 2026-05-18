@@ -29,7 +29,7 @@ from typing import Dict, Tuple
 import numpy as np
 import xarray as xr
 
-import pandora.constants as cst
+from pandora.constants import Criteria
 from pandora.margins.descriptors import NullMargins
 from pandora.profiler import profile
 
@@ -110,8 +110,8 @@ class AbstractRefinement:
             subpixel,
             measure,
             self.refinement_method,
-            cst.Criteria.PANDORA_MSK_PIXEL_INVALID,
-            cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+            Criteria.PANDORA_MSK_PIXEL_INVALID,
+            Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
         )
 
         disp.attrs["refinement"] = self._refinement_method_name
@@ -164,8 +164,8 @@ class AbstractRefinement:
             subpixel,
             measure,
             self.refinement_method,
-            cst.Criteria.PANDORA_MSK_PIXEL_INVALID,
-            cst.Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+            Criteria.PANDORA_MSK_PIXEL_INVALID,
+            Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
         )
 
         disp_right.attrs["refinement"] = self._refinement_method_name
