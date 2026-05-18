@@ -24,15 +24,48 @@ This module contains functions associated to the validity mask created in the co
 """
 
 from typing import Union, Tuple
+from enum import IntFlag
 
 import numpy as np
-from numpy.typing import DTypeLike
+from numpy.typing import DTypeLike, ArrayLike
 from scipy.ndimage import binary_dilation
 import xarray as xr
 from pandora.constants import Criteria
 
 from pandora.profiler import profile
 from .cpp import criteria_cpp  # pylint: disable=no-name-in-module
+
+
+class FlagArray(np.ndarray):
+    """NDArray subclass that expects to be filled with Flags and with dedicated repr."""
+
+    def __new__(cls, input_array: ArrayLike, flag: type[IntFlag], dtype: DTypeLike = np.uint16):
+        obj = np.asarray(input_array, dtype=dtype).view(cls)
+        obj.flag = flag
+        return obj
+
+    def __array_finalize__(self, obj):
+        if obj is None:
+            return
+        self.flag = getattr(obj, "flag", None)  # pylint: disable=attribute-defined-outside-init
+
+    def __repr__(self) -> str:
+        if self.flag is None:
+            return super().__repr__()
+        max_line_width = np.get_printoptions()["linewidth"]
+
+        flag_reprs = [repr(self.flag(i)).replace(self.flag.__name__ + ".", "") for i in range(sum(self.flag))]
+        prefix = f"{self.__class__.__name__}<{self.flag.__name__}>"
+        suffix = f"dtype={self.dtype}"
+        array_repr = np.array2string(
+            self,
+            prefix=prefix,
+            formatter={"int_kind": lambda x: flag_reprs[x]},
+            separator=", ",
+            suffix=suffix,
+            max_line_width=max_line_width,
+        )
+        return f"{prefix}({array_repr}, {suffix})"
 
 
 def binary_dilation_msk(img: xr.Dataset, window_size: int) -> np.ndarray:
@@ -76,16 +109,13 @@ def allocate_validity_mask(
     :type cv: xarray.Dataset
     :param value: initial value (default Criteria.PANDORA_VALID = 0)
     :type value: int or Criteria
-    :param data_type: must be np.uint16. Default np.uint16.
+    :param data_type: dtype of the validity mask. Default np.uint16.
     :type data_type: DTypeLike
     :return: validity_mask 2D DataArray (row, col)
     :rtype: xarray.DataArray
     """
-    dtype = np.dtype(data_type)
-    if dtype != np.dtype(np.uint16):
-        raise ValueError("validity_mask dtype must be np.uint16")
     return xr.DataArray(
-        np.full((cv.sizes["row"], cv.sizes["col"]), int(value), dtype=data_type),
+        FlagArray(np.full((cv.sizes["row"], cv.sizes["col"]), value, dtype=data_type), Criteria, data_type),
         dims=["row", "col"],
     )
 
