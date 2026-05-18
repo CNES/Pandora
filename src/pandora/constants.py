@@ -42,7 +42,8 @@ class Criteria(IntFlag):
     PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING = auto()
     # if bit 2 activated : Information : disparity range to explore is incomplete (borders reached in right image)
     PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE = auto()
-    # if bit 3 activated : Information : Computation stopped during pixelic step, under pixelic interpolation never ended
+    # if bit 3 activated : Information : Computation stopped during pixelic step,
+    # under pixelic interpolation never ended
     PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION = auto()
     # if bit 4 activated : Information : Occlusion was filled
     PANDORA_MSK_PIXEL_FILLED_OCCLUSION = auto()
