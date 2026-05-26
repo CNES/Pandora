@@ -33,7 +33,7 @@ import xarray as xr
 from pandora.constants import Criteria
 
 from pandora.profiler import profile
-from .cpp import criteria_cpp  # pylint: disable=no-name-in-module
+from .cpp import criteria_cpp
 
 
 class FlagArray(np.ndarray):

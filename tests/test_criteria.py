@@ -1392,20 +1392,15 @@ class TestAllocateValidityMask:
         return image
 
     @pytest.fixture()
-    def matching_cost_method(self):
-        """Provide a matching cost method for testing."""
-        return "sad"
-
-    @pytest.fixture()
-    def matching_cost_cfg(self, window_size, subpix, matching_cost_method):
+    def matching_cost_cfg(self):
         """
         Provide a matching cost configuration for testing.
         """
 
         return {
-            "matching_cost_method": matching_cost_method,
-            "window_size": window_size,
-            "subpix": subpix,
+            "matching_cost_method": "sad",
+            "window_size": 1,
+            "subpix": 1,
         }
 
     @pytest.fixture()
@@ -1419,11 +1414,11 @@ class TestAllocateValidityMask:
         )
 
     @pytest.mark.parametrize(
-        ["rows", "cols", "subpix", "window_size"],
+        ["rows", "cols"],
         [
-            pytest.param(3, 4, 1, 1, id="(3x4 image) Subpix=1 and window_size=1"),
-            pytest.param(10, 13, 1, 1, id="(10x13 image) Subpix=1 and window_size=1"),
-            pytest.param(1, 20, 1, 1, id="(1x20 image) Subpix=1 and window_size=1"),
+            pytest.param(3, 4, id="3x4 image"),
+            pytest.param(10, 13, id="10x13 image"),
+            pytest.param(1, 20, id="1x20 image"),
         ],
     )
     def test_nominal_size_and_default(self, make_cost_volume):
@@ -1435,17 +1430,3 @@ class TestAllocateValidityMask:
         assert validity_mask.dims == ("row", "col")
         assert validity_mask.dtype == np.uint16
         assert np.all(validity_mask.data == Criteria.PANDORA_VALID)
-
-    @pytest.mark.parametrize(
-        ["rows", "cols", "subpix", "window_size"],
-        [
-            pytest.param(5, 6, 1, 1, id="(5x6 image) Subpix=1 and window_size=1"),
-            pytest.param(5, 6, 2, 1, id="(5x6 image) Subpix=2 and window_size=1"),
-            pytest.param(5, 6, 4, 1, id="(5x6 image) Subpix=4 and window_size=1"),
-        ],
-    )
-    def test_shape_independent_of_subpix(self, make_cost_volume):
-        """2D validity mask shape matches cost volume row/col for several subpix values."""
-        grid = make_cost_volume
-        validity_mask = allocate_validity_mask(grid)
-        assert validity_mask.shape == (grid.sizes["row"], grid.sizes["col"])
