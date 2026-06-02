@@ -32,7 +32,7 @@ import xarray as xr
 
 from tests import common
 from pandora import multiscale
-import pandora.constants as cst
+from pandora.constants import Criteria
 
 
 class TestMultiScale(unittest.TestCase):
@@ -87,32 +87,32 @@ class TestMultiScale(unittest.TestCase):
         gt_mask = np.array(
             [
                 [
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,  # info
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,  # info
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                 ],
                 [0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0],
                 [
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                     # invalid
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                 ],
                 [
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                     # info
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                 ],
             ],
             dtype=np.uint16,
@@ -184,32 +184,32 @@ class TestMultiScale(unittest.TestCase):
         gt_mask = np.array(
             [
                 [
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,  # invalid
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,  # info
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,  # info
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,  # invalid
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,  # info
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,  # info
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                 ],  # info
                 [0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0],
                 [
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                     # invalid
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                 ],
                 [
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                     # info
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                 ],
             ],
             dtype=np.uint16,

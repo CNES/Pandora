@@ -928,7 +928,7 @@ class TestDisparityDenoiser:
             [
                 [0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0],
-                [0, 0, cst.PANDORA_MSK_PIXEL_INVALID, 0, 0],
+                [0, 0, cst.Criteria.PANDORA_MSK_PIXEL_INVALID, 0, 0],
                 [0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0],
             ],

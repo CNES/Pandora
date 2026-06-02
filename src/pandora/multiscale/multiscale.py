@@ -147,7 +147,7 @@ class AbstractMultiscale:
 
         # Set all invalid disparities to nan
         for idxes, val in np.ndenumerate(disp["validity_mask"].data):
-            if val & cst.PANDORA_MSK_PIXEL_INVALID != 0:
+            if val & cst.Criteria.PANDORA_MSK_PIXEL_INVALID != 0:
                 filtered_disp_map[idxes] = np.nan
 
         return filtered_disp_map

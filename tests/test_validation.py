@@ -31,7 +31,7 @@ import numpy as np
 import xarray as xr
 
 from tests import common
-import pandora.constants as cst
+from pandora.constants import Criteria
 from pandora import validation
 from pandora.validation.validation import CrossCheckingAccurate
 
@@ -55,7 +55,10 @@ class TestValidation(unittest.TestCase):
                 "validity_mask": (
                     ["row", "col"],
                     np.array(
-                        [[0, 0, 0, cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING], [0, 0, 0, 0]],
+                        [
+                            [0, 0, 0, Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
+                            [0, 0, 0, 0],
+                        ],
                         dtype=np.uint16,
                     ),
                 ),
@@ -129,8 +132,13 @@ class TestValidation(unittest.TestCase):
         # validity mask ground truth
         gt_mask = np.array(
             [
-                [0, cst.PANDORA_MSK_PIXEL_MISMATCH, 0, cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
-                [0, cst.PANDORA_MSK_PIXEL_MISMATCH, 0, cst.PANDORA_MSK_PIXEL_OCCLUSION],
+                [
+                    0,
+                    Criteria.PANDORA_MSK_PIXEL_MISMATCH,
+                    0,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                ],
+                [0, Criteria.PANDORA_MSK_PIXEL_MISMATCH, 0, Criteria.PANDORA_MSK_PIXEL_OCCLUSION],
             ],
             dtype=np.uint16,
         )
@@ -160,22 +168,22 @@ class TestValidation(unittest.TestCase):
                     np.array(
                         [
                             [
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                             ],
                             [
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                                 0,
                                 0,
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                             ],
                             [
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                             ],
                         ],
                         dtype=np.uint16,
@@ -203,22 +211,22 @@ class TestValidation(unittest.TestCase):
                     np.array(
                         [
                             [
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                             ],
                             [
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                                 0,
                                 0,
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                             ],
                             [
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                                cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                                Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
                             ],
                         ],
                         dtype=np.uint16,
@@ -267,7 +275,10 @@ class TestValidation(unittest.TestCase):
                 "validity_mask": (
                     ["row", "col"],
                     np.array(
-                        [[0, 0, 0, cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING], [0, 0, 0, 0]],
+                        [
+                            [0, 0, 0, Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
+                            [0, 0, 0, 0],
+                        ],
                         dtype=np.uint16,
                     ),
                 ),
@@ -297,8 +308,13 @@ class TestValidation(unittest.TestCase):
         # validity mask ground truth
         gt_mask = np.array(
             [
-                [0, cst.PANDORA_MSK_PIXEL_MISMATCH, 0, cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING],
-                [0, cst.PANDORA_MSK_PIXEL_MISMATCH, 0, cst.PANDORA_MSK_PIXEL_OCCLUSION],
+                [
+                    0,
+                    Criteria.PANDORA_MSK_PIXEL_MISMATCH,
+                    0,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                ],
+                [0, Criteria.PANDORA_MSK_PIXEL_MISMATCH, 0, Criteria.PANDORA_MSK_PIXEL_OCCLUSION],
             ],
             dtype=np.uint16,
         )
@@ -316,16 +332,16 @@ class TestValidation(unittest.TestCase):
         msk_data = np.array(
             [
                 [
-                    cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                    cst.PANDORA_MSK_PIXEL_OCCLUSION,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                    Criteria.PANDORA_MSK_PIXEL_OCCLUSION,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                     0,
                 ],
                 [
-                    cst.PANDORA_MSK_PIXEL_OCCLUSION,
-                    cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
+                    Criteria.PANDORA_MSK_PIXEL_OCCLUSION,
+                    Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
                     0,
-                    cst.PANDORA_MSK_PIXEL_OCCLUSION,
+                    Criteria.PANDORA_MSK_PIXEL_OCCLUSION,
                 ],
             ],
             dtype=np.uint16,
@@ -346,16 +362,16 @@ class TestValidation(unittest.TestCase):
         gt_mask_after_int = np.array(
             [
                 [
-                    cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
-                    cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
+                    Criteria.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING,
                     0,
                 ],
                 [
-                    cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
-                    cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
+                    Criteria.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
+                    Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
                     0,
-                    cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
+                    Criteria.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
                 ],
             ],
             dtype=np.uint16,
@@ -382,21 +398,21 @@ class TestValidation(unittest.TestCase):
         msk_data = np.array(
             [
                 [
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                     0,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                     0,
                 ],
-                [0, 0, cst.PANDORA_MSK_PIXEL_MISMATCH, 0, 0],
+                [0, 0, Criteria.PANDORA_MSK_PIXEL_MISMATCH, 0, 0],
                 [
                     0,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_MISMATCH,
-                    cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
-                    cst.PANDORA_MSK_PIXEL_MISMATCH,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_MISMATCH,
+                    Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
+                    Criteria.PANDORA_MSK_PIXEL_MISMATCH,
                 ],
-                [0, cst.PANDORA_MSK_PIXEL_MISMATCH, 0, 0, 0],
+                [0, Criteria.PANDORA_MSK_PIXEL_MISMATCH, 0, 0, 0],
             ],
             dtype=np.uint16,
         )
@@ -416,21 +432,21 @@ class TestValidation(unittest.TestCase):
         gt_mask_after_int = np.array(
             [
                 [
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                     0,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                     0,
                 ],
-                [0, 0, cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH, 0, 0],
+                [0, 0, Criteria.PANDORA_MSK_PIXEL_FILLED_MISMATCH, 0, 0],
                 [
                     0,
                     (1 << 3),
-                    cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH,
-                    cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
-                    cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH,
+                    Criteria.PANDORA_MSK_PIXEL_FILLED_MISMATCH,
+                    Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
+                    Criteria.PANDORA_MSK_PIXEL_FILLED_MISMATCH,
                 ],
-                [0, cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH, 0, 0, 0],
+                [0, Criteria.PANDORA_MSK_PIXEL_FILLED_MISMATCH, 0, 0, 0],
             ],
             dtype=np.uint16,
         )
@@ -470,21 +486,21 @@ class TestValidation(unittest.TestCase):
         msk_data = np.array(
             [
                 [
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                     0,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                     0,
                 ],
-                [0, 0, cst.PANDORA_MSK_PIXEL_OCCLUSION, 0, 0],
+                [0, 0, Criteria.PANDORA_MSK_PIXEL_OCCLUSION, 0, 0],
                 [
                     0,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_OCCLUSION,
-                    cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
-                    cst.PANDORA_MSK_PIXEL_OCCLUSION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_OCCLUSION,
+                    Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
+                    Criteria.PANDORA_MSK_PIXEL_OCCLUSION,
                 ],
-                [0, cst.PANDORA_MSK_PIXEL_OCCLUSION, 0, 0, 0],
+                [0, Criteria.PANDORA_MSK_PIXEL_OCCLUSION, 0, 0, 0],
             ],
             dtype=np.uint16,
         )
@@ -502,21 +518,21 @@ class TestValidation(unittest.TestCase):
         gt_mask_after_int = np.array(
             [
                 [
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                     0,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                     0,
                 ],
-                [0, 0, cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION, 0, 0],
+                [0, 0, Criteria.PANDORA_MSK_PIXEL_FILLED_OCCLUSION, 0, 0],
                 [
                     0,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
-                    cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
-                    cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
+                    Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
+                    Criteria.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
                 ],
-                [0, cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION, 0, 0, 0],
+                [0, Criteria.PANDORA_MSK_PIXEL_FILLED_OCCLUSION, 0, 0, 0],
             ],
             dtype=np.uint16,
         )
@@ -544,21 +560,21 @@ class TestValidation(unittest.TestCase):
         msk_data = np.array(
             [
                 [
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                     0,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                     0,
                 ],
-                [0, 0, cst.PANDORA_MSK_PIXEL_MISMATCH, 0, 0],
+                [0, 0, Criteria.PANDORA_MSK_PIXEL_MISMATCH, 0, 0],
                 [
                     0,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_MISMATCH,
-                    cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
-                    cst.PANDORA_MSK_PIXEL_MISMATCH,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_MISMATCH,
+                    Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
+                    Criteria.PANDORA_MSK_PIXEL_MISMATCH,
                 ],
-                [0, cst.PANDORA_MSK_PIXEL_MISMATCH, 0, 0, 0],
+                [0, Criteria.PANDORA_MSK_PIXEL_MISMATCH, 0, 0, 0],
             ],
             dtype=np.uint16,
         )
@@ -576,21 +592,21 @@ class TestValidation(unittest.TestCase):
         gt_mask_after_int = np.array(
             [
                 [
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                     0,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
                     0,
                 ],
-                [0, 0, cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH, 0, 0],
+                [0, 0, Criteria.PANDORA_MSK_PIXEL_FILLED_MISMATCH, 0, 0],
                 [
                     0,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH,
-                    cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
-                    cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_FILLED_MISMATCH,
+                    Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
+                    Criteria.PANDORA_MSK_PIXEL_FILLED_MISMATCH,
                 ],
-                [0, cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH, 0, 0, 0],
+                [0, Criteria.PANDORA_MSK_PIXEL_FILLED_MISMATCH, 0, 0, 0],
             ],
             dtype=np.uint16,
         )
@@ -625,21 +641,21 @@ class TestValidation(unittest.TestCase):
         msk_data = np.array(
             [
                 [
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                     0,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_OCCLUSION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_OCCLUSION,
                 ],
-                [0, 0, cst.PANDORA_MSK_PIXEL_MISMATCH, 0, 0],
+                [0, 0, Criteria.PANDORA_MSK_PIXEL_MISMATCH, 0, 0],
                 [
                     0,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_MISMATCH,
-                    cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
-                    cst.PANDORA_MSK_PIXEL_MISMATCH,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_MISMATCH,
+                    Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
+                    Criteria.PANDORA_MSK_PIXEL_MISMATCH,
                 ],
-                [cst.PANDORA_MSK_PIXEL_OCCLUSION, cst.PANDORA_MSK_PIXEL_MISMATCH, 0, 0, 0],
+                [Criteria.PANDORA_MSK_PIXEL_OCCLUSION, Criteria.PANDORA_MSK_PIXEL_MISMATCH, 0, 0, 0],
             ],
             dtype=np.uint16,
         )
@@ -657,21 +673,27 @@ class TestValidation(unittest.TestCase):
         gt_mask_after_int = np.array(
             [
                 [
-                    cst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
-                    cst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
+                    Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER,
+                    Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE,
                     0,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
                 ],
-                [0, 0, cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH, 0, 0],
+                [0, 0, Criteria.PANDORA_MSK_PIXEL_FILLED_MISMATCH, 0, 0],
                 [
                     0,
-                    cst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
-                    cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH,
-                    cst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
-                    cst.PANDORA_MSK_PIXEL_FILLED_MISMATCH,
+                    Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
+                    Criteria.PANDORA_MSK_PIXEL_FILLED_MISMATCH,
+                    Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT,
+                    Criteria.PANDORA_MSK_PIXEL_FILLED_MISMATCH,
                 ],
-                [cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION, cst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION, 0, 0, 0],
+                [
+                    Criteria.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
+                    Criteria.PANDORA_MSK_PIXEL_FILLED_OCCLUSION,
+                    0,
+                    0,
+                    0,
+                ],
             ],
             dtype=np.uint16,
         )

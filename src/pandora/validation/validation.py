@@ -30,7 +30,7 @@ import numpy as np
 import xarray as xr
 from json_checker import And, Checker, OptionalKey, Or
 
-import pandora.constants as cst
+from pandora.constants import Criteria
 from pandora import common
 from pandora.cost_volume_confidence.cost_volume_confidence import AbstractCostVolumeConfidence
 from pandora.criteria import mask_border
@@ -292,7 +292,9 @@ class CrossCheckingAccurate(AbstractValidation):
 
         for row in range(0, nb_row):
             # Exclude invalid pixel :
-            valid_pixel = np.where((dataset_left["validity_mask"].data[row, :] & cst.PANDORA_MSK_PIXEL_INVALID) == 0)
+            valid_pixel = np.where(
+                (dataset_left["validity_mask"].data[row, :] & Criteria.PANDORA_MSK_PIXEL_INVALID) == 0
+            )
 
             col_left = np.arange(nb_col, dtype=np.int64)
             col_left = col_left[valid_pixel]
@@ -346,17 +348,21 @@ class CrossCheckingAccurate(AbstractValidation):
             comp = np.sum(comp, axis=1)
             comp[comp > 1] = 1
 
-            dataset_left["validity_mask"].data[row, col_left[inside_right][invalid]] += cst.PANDORA_MSK_PIXEL_OCCLUSION
+            dataset_left["validity_mask"].data[row, col_left[inside_right][invalid]] += np.uint16(
+                Criteria.PANDORA_MSK_PIXEL_OCCLUSION
+            )
             dataset_left["validity_mask"].data[row, col_left[inside_right][invalid]] += (
-                cst.PANDORA_MSK_PIXEL_MISMATCH * comp
+                np.uint16(Criteria.PANDORA_MSK_PIXEL_MISMATCH) * comp
             ).astype(np.uint16)
             dataset_left["validity_mask"].data[row, col_left[inside_right][invalid]] -= (
-                cst.PANDORA_MSK_PIXEL_OCCLUSION * comp
+                np.uint16(Criteria.PANDORA_MSK_PIXEL_OCCLUSION) * comp
             ).astype(np.uint16)
 
             # Pixels i + round(Disp_left(i) outside the right image are occlusions
             outside_right = np.where((col_right < 0) & (col_right >= nb_col))
-            dataset_left["validity_mask"].data[row, col_left[outside_right]] += cst.PANDORA_MSK_PIXEL_OCCLUSION
+            dataset_left["validity_mask"].data[row, col_left[outside_right]] += np.uint16(
+                Criteria.PANDORA_MSK_PIXEL_OCCLUSION
+            )
 
         dataset_left.attrs["validation"] = self._method
 
