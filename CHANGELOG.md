@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.8.1a1 (June 2026)
+
+### Changed
+
+- Optimization of cv_masked method. [#443]
+- Using the enum type for criteria. [#475]
+- Updated documentation about MCCNN plugin. [#494]
+
 ## 1.8.0 (April 2026)
 
 ## 1.8.0a1 (March 2026)
