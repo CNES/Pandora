@@ -38,7 +38,7 @@ class AbstractFilter:
     __metaclass__ = ABCMeta
 
     filter_methods_avail: Dict = {}
-    cfg = None
+    cfg: Dict | None = None
     margins = NullMargins()
 
     def __new__(cls, *args, cfg: dict = None, step=1, **kwargs):  # pylint:disable=unused-argument

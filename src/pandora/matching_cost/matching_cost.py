@@ -50,20 +50,20 @@ class AbstractMatchingCost:
     __metaclass__ = ABCMeta
 
     matching_cost_methods_avail: Dict = {}
-    _subpix = None
-    _window_size = None
-    cfg = None
-    _band = None
-    _step_col = None
-    _method = None
-    _spline_order = None
+    _subpix: int | None = None
+    _window_size: int | None = None
+    cfg: Dict[str, Union[str, int]] | None = None
+    _band: str | None = None
+    _step_col: int | None = None
+    _method: str | None = None
+    _spline_order: int | None = None
 
     # Default configuration, do not change these values
-    _WINDOW_SIZE = 5
-    _SUBPIX = 1
-    _BAND = None
-    _STEP_COL = 1
-    _SPLINE_ORDER = 1
+    _WINDOW_SIZE: int = 5
+    _SUBPIX: int = 1
+    _BAND: str | None = None
+    _STEP_COL: int = 1
+    _SPLINE_ORDER: int = 1
 
     # Matching cost schema confi
     schema = {
@@ -147,7 +147,7 @@ class AbstractMatchingCost:
         self.cfg = self.check_conf(**cfg)  # type: ignore
         self._window_size = int(self.cfg["window_size"])
         self._subpix = int(self.cfg["subpix"])
-        self._band = self.cfg["band"]
+        self._band = self.cfg["band"]  # type: ignore
         self._step_col = int(self.cfg["step"])
         self._method = str(self.cfg["matching_cost_method"])
         self._spline_order = int(self.cfg["spline_order"])
@@ -155,7 +155,7 @@ class AbstractMatchingCost:
         # Remove spline_order key because it is a pandora2d setting and a need
         del self.cfg["spline_order"]
 
-    def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict:
+    def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
@@ -171,7 +171,7 @@ class AbstractMatchingCost:
         if "subpix" not in cfg:
             cfg["subpix"] = self._SUBPIX  # type: ignore
         if "band" not in cfg:
-            cfg["band"] = self._BAND
+            cfg["band"] = self._BAND  # type: ignore
 
         if "pandora2d" not in sys.modules:
             if "step" in cfg and cfg["step"] != 1:
@@ -181,7 +181,7 @@ class AbstractMatchingCost:
         if "spline_order" not in cfg:
             cfg["spline_order"] = self._SPLINE_ORDER  # type: ignore
 
-        return cfg
+        return cfg  # type: ignore
 
     def check_band_input_mc(self, img_left: xr.Dataset, img_right: xr.Dataset) -> None:
         """
@@ -423,7 +423,7 @@ class AbstractMatchingCost:
             disparity_range = np.arange(disparity_min, disparity_max + 1)
         else:
             disparity_range = np.arange(disparity_min, disparity_max, 1 / float(subpix), dtype=np.float64)
-            disparity_range = np.append(disparity_range, [disparity_max])  # type: ignore
+            disparity_range = np.append(disparity_range, [disparity_max])
         return disparity_range
 
     def point_interval(
@@ -463,13 +463,13 @@ class AbstractMatchingCost:
         if abs(disp) > nx_left:
             point_p = (nx_left, nx_left)
         else:
-            point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))  # type: ignore
+            point_p = (max(0 - disp, 0), min(nx_left - disp, nx_left))
         # range in the right image
         # if disp is outside the image, point_q corresponds to an empty range
         if abs(disp) > nx_right:
             point_q = (nx_right, nx_right)
         else:
-            point_q = (max(0 + disp, 0), min(nx_right + disp, nx_right))  # type: ignore
+            point_q = (max(0 + disp, 0), min(nx_right + disp, nx_right))
 
         # Because the disparity can be floating
         if disp < 0:
@@ -777,11 +777,12 @@ class AbstractMatchingCost:
         disp_max: np.ndarray,
     ) -> None:
         """
-        Masks the cost volume :
-            - costs which are not inside their disparity range, are masked with a nan value
-            - costs of invalid_pixels (invalidated by the input image mask), are masked with a nan value
-            - costs of no_data pixels, are masked with a nan value. If a valid pixel contains a no_data in its
-                aggregation window, then the cost of the central pixel is masked with a nan value
+        Masks the cost volume by:
+            - Setting entire disparity range to NaN for pixels masked in the
+              left image (including the window of matching cost when left pixel is NaN)
+            - Setting disparities outside local [disp_min, disp_max] range to NaN
+            - Setting disparities to NaN if corresponding right pixel is
+              masked (including the window of matching cost when right pixel is NaN)
 
         :param img_left: left Dataset image containing :
 
@@ -811,53 +812,32 @@ class AbstractMatchingCost:
         :type disp_max: np.ndarray
         :return: None
         """
-
-        ny_, nx_, nd_ = cost_volume["cost_volume"].shape
-
         dmin, _ = self.get_min_max_from_grid(disp_min, disp_max)
 
-        # ----- Masking invalid pixels -----
+        # ----- Masking invalid pixels and local disparity range -----
 
         # Computes the validity mask of the cost volume : invalid pixels or no_data are masked with the value nan.
         # Valid pixels are = 0
         mask_left, mask_right = self.masks_dilatation(img_left, img_right, self._window_size, self._subpix)
 
-        for disp in cost_volume.coords["disp"].data:
-            i_right = int((disp % 1) * self._subpix)
-            i_mask_right = min(1, i_right)
-            dsp = int((disp - dmin) * self._subpix)
+        # Depending on subpix, create an empty mask or use the shifted right mask
+        if self._subpix > 1:
+            mask_right_shift = mask_right[1].data.astype(np.float32)
+        else:
+            mask_right_shift = np.empty((0, 0), dtype=np.float32)
 
-            point_p, point_q = self.mask_column_interval(
-                cost_volume, mask_left.coords["col"].data, mask_right[i_mask_right].coords["col"].data, disp
-            )
-
-            # Invalid costs in the cost volume
-            cost_volume["cost_volume"].loc[{"col": point_p, "disp": disp}] = (
-                cost_volume["cost_volume"].loc[{"col": point_p, "disp": disp}].data
-                + mask_right[i_mask_right].loc[{"col": point_q}].data
-                + mask_left.loc[{"col": point_p}].data
-            )
-
-        # ----- Masking disparity range -----
-
-        # Fixed range of disparities
-        # Disparity range may be one size bigger in y axis
-        if disp_min.shape[0] > ny_:
-            disp_min = disp_min[0:ny_, :]
-            disp_max = disp_max[0:ny_, :]
-        if disp_min.shape[1] > nx_:
-            disp_min = disp_min[:, 0:nx_]
-            disp_max = disp_max[:, 0:nx_]
-
-        # Mask the costs computed with a disparity lower than disp_min and higher than disp_max
-        for dsp in range(nd_):
-            masking = np.where(
-                np.logical_or(
-                    cost_volume.coords["disp"].data[dsp] < disp_min,
-                    cost_volume.coords["disp"].data[dsp] > disp_max,
-                )
-            )
-            cost_volume["cost_volume"].data[masking[0], masking[1], dsp] = np.nan
+        # mask the cost volume
+        matching_cost_cpp.cv_masked(
+            cost_volume["cost_volume"].data,
+            mask_left.data,
+            mask_right[0].data,
+            mask_right_shift,
+            disp_min.astype(np.float32),
+            disp_max.astype(np.float32),
+            cost_volume.coords["disp"].data.astype(np.float32),
+            dmin,
+            self._subpix,
+        )
 
         # The disp_min and disp_max used to search missing disparity interval are not the local disp_min and disp_max
         # in case of a variable range of disparities. So there may be pixels that have missing disparity range (all

@@ -24,7 +24,7 @@ This module contains classes and functions to estimate confidence.
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import Tuple
+from typing import Tuple, Dict
 
 import xarray as xr
 import numpy as np
@@ -38,7 +38,7 @@ class AbstractCostVolumeConfidence:
     __metaclass__ = ABCMeta
 
     confidence_methods_avail = {}
-    cfg = None
+    cfg: Dict | None = None
     # Indicator
     _indicator = ""
 

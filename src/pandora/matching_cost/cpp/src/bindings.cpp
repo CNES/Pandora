@@ -44,4 +44,10 @@ PYBIND11_MODULE(matching_cost_cpp, m) {
         "Computes the right disp range from the left one."
     );
 
+    m.def(
+        "cv_masked",
+        &cv_masked,
+        "Masks the cost volume based on valid pixels and local disparity ranges."
+    );
+
 }

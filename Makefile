@@ -96,6 +96,17 @@ test-functional: install reports_dir ## run functional tests only (for wheel val
 	@echo "Run functional tests"
 	@${PANDORA_VENV}/bin/pytest -m "functional_tests" --html=functional-test-report.html --cov-config=.coveragerc --cov-report xml:reports/py-coverage-functional.cobertura.xml --cov-report term --cov
 
+.PHONY: test-functional-sgm
+test-functional-sgm: install-sgm reports_dir ## run functional tests with sgm
+	@echo "Run functional tests with SGM"
+	@${PANDORA_VENV}/bin/pytest \
+		-m "functional_tests" \
+		--html=functional-test-report.html \
+		--cov-config=.coveragerc \
+		--cov-report xml:reports/py-coverage-functional-sgm.cobertura.xml \
+		--cov-report term \
+		--cov
+
 .PHONY: test-notebook
 test-notebook: install ## run notebook tests only
 	. ${PANDORA_VENV}/bin/activate; pytest -m "notebook_pandora"

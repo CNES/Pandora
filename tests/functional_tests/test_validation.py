@@ -151,7 +151,7 @@ class TestMain:
 
     @pytest.mark.parametrize("left_disparity", [[-60, 0]])
     @pytest.mark.parametrize("left_classif_path", [None, "classif_file"], indirect=["left_classif_path"])
-    @pytest.mark.parametrize("matching_cost_method", ["ssd", "sad", "zncc", "census"])
+    @pytest.mark.parametrize("matching_cost_method", ["ssd", "sad", "zncc", "census", "mc_cnn"])
     def test_validation_fast(self, tmp_path, user_cfg):
         """
         Test the validation fast method by comparing its results to the accurate method.
@@ -191,7 +191,7 @@ class TestMain:
 
     @pytest.mark.parametrize("left_disparity", [[-60, 0]])
     @pytest.mark.parametrize("left_classif_path", [None, "classif_file"], indirect=["left_classif_path"])
-    @pytest.mark.parametrize("matching_cost_method", ["ssd", "sad", "zncc", "census"])
+    @pytest.mark.parametrize("matching_cost_method", ["ssd", "sad", "zncc", "census", "mc_cnn"])
     def test_validation_fast_right_output(self, user_cfg_filter):
         """
         Test the whole pipeline's output when using validation fast,

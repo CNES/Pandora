@@ -123,7 +123,7 @@ class BilateralFilter(filter.AbstractFilter):
         :return: None
         """
         masked_data = disp["disparity_map"].copy(deep=True).data
-        masked_data[np.where((disp["validity_mask"].data & cst.PANDORA_MSK_PIXEL_INVALID) != 0)] = np.nan
+        masked_data[np.where((disp["validity_mask"].data & cst.Criteria.PANDORA_MSK_PIXEL_INVALID) != 0)] = np.nan
 
         valid = np.isfinite(masked_data)
         disp_bilateral = self.filter_bilateral(masked_data, self._sigma_space, self._sigma_color)

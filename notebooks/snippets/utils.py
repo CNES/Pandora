@@ -673,57 +673,66 @@ def add_validity_mask_to_dataset(input_disp_map: xr.Dataset) -> xr.Dataset:
 
     # Invalid
     disp_map["invalid_mask"] = xr.DataArray(
-        np.copy(add_mask(disp_map["validity_mask"].values, PANDORA_MSK_PIXEL_INVALID)), dims=["row", "col"]
+        np.copy(add_mask(disp_map["validity_mask"].values, Criteria.PANDORA_MSK_PIXEL_INVALID)), dims=["row", "col"]
     )
     # Bit 0: Edge of the left image or nodata in left image
     disp_map["nodata_border_left_mask"] = xr.DataArray(
-        np.copy(add_mask(disp_map["validity_mask"].values, PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER)),
+        np.copy(add_mask(disp_map["validity_mask"].values, Criteria.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER)),
         dims=["row", "col"],
     )
     # Bit 1: Disparity interval to explore is missing or nodata in the right image
     disp_map["nodata_border_right_mask"] = xr.DataArray(
-        np.copy(add_mask(disp_map["validity_mask"].values, PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING)),
+        np.copy(
+            add_mask(
+                disp_map["validity_mask"].values, Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
+            )
+        ),
         dims=["row", "col"],
     )
     # Bit 2: Incomplete disparity interval in right image
     disp_map["incomplete_right_mask"] = xr.DataArray(
-        np.copy(add_mask(disp_map["validity_mask"].values, PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE)),
+        np.copy(
+            add_mask(disp_map["validity_mask"].values, Criteria.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE)
+        ),
         dims=["row", "col"],
     )
     # Bit 3: Unsuccesful sub-pixel interpolation
     disp_map["stopped_interp_mask"] = xr.DataArray(
-        np.copy(add_mask(disp_map["validity_mask"].values, PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION)),
+        np.copy(add_mask(disp_map["validity_mask"].values, Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION)),
         dims=["row", "col"],
     )
     # Bit 4: Filled occlusion
     disp_map["filled_occlusion_mask"] = xr.DataArray(
-        np.copy(add_mask(disp_map["validity_mask"].values, PANDORA_MSK_PIXEL_FILLED_OCCLUSION)), dims=["row", "col"]
+        np.copy(add_mask(disp_map["validity_mask"].values, Criteria.PANDORA_MSK_PIXEL_FILLED_OCCLUSION)),
+        dims=["row", "col"],
     )
     # Bit 5: Filled mismatch
     disp_map["filled_mismatch_mask"] = xr.DataArray(
-        np.copy(add_mask(disp_map["validity_mask"].values, PANDORA_MSK_PIXEL_FILLED_MISMATCH)), dims=["row", "col"]
+        np.copy(add_mask(disp_map["validity_mask"].values, Criteria.PANDORA_MSK_PIXEL_FILLED_MISMATCH)),
+        dims=["row", "col"],
     )
     # Bit 6: Pixel is masked on the mask of the left image
     disp_map["masked_left_mask"] = xr.DataArray(
-        np.copy(add_mask(disp_map["validity_mask"].values, PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT)),
+        np.copy(add_mask(disp_map["validity_mask"].values, Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT)),
         dims=["row", "col"],
     )
     # Bit 7: Disparity to explore is masked on the mask of the right image
     disp_map["masked_right_mask"] = xr.DataArray(
-        np.copy(add_mask(disp_map["validity_mask"].values, PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT)),
+        np.copy(add_mask(disp_map["validity_mask"].values, Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT)),
         dims=["row", "col"],
     )
     # Bit 8: Pixel located in an occlusion region
     disp_map["occlusion_mask"] = xr.DataArray(
-        np.copy(add_mask(disp_map["validity_mask"].values, PANDORA_MSK_PIXEL_OCCLUSION)), dims=["row", "col"]
+        np.copy(add_mask(disp_map["validity_mask"].values, Criteria.PANDORA_MSK_PIXEL_OCCLUSION)), dims=["row", "col"]
     )
     # Bit 9: Mismatch
     disp_map["mismatch_mask"] = xr.DataArray(
-        np.copy(add_mask(disp_map["validity_mask"].values, PANDORA_MSK_PIXEL_MISMATCH)), dims=["row", "col"]
+        np.copy(add_mask(disp_map["validity_mask"].values, Criteria.PANDORA_MSK_PIXEL_MISMATCH)), dims=["row", "col"]
     )
     # Bit 10: Filled nodata
     disp_map["filled_nodata"] = xr.DataArray(
-        np.copy(add_mask(disp_map["validity_mask"].values, PANDORA_MSK_PIXEL_FILLED_NODATA)), dims=["row", "col"]
+        np.copy(add_mask(disp_map["validity_mask"].values, Criteria.PANDORA_MSK_PIXEL_FILLED_NODATA)),
+        dims=["row", "col"],
     )
     return disp_map
 

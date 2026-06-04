@@ -63,7 +63,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
         cfg = super().check_conf(**cfg)
 
         schema = self.schema
-        schema["matching_cost_method"] = And(str, lambda input: "zncc")
+        schema["matching_cost_method"] = And(str, lambda input: input == "zncc")
         schema["window_size"] = And(int, lambda input: input > 0 and (input % 2) != 0)
 
         checker = Checker(schema)

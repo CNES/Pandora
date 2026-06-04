@@ -119,7 +119,7 @@ class MedianFilter(filter.AbstractFilter):
         """
         # Invalid pixels are nan
         masked_data = disp["disparity_map"].copy(deep=True).data
-        masked_data[np.where((disp["validity_mask"].data & cst.PANDORA_MSK_PIXEL_INVALID) != 0)] = np.nan
+        masked_data[np.where((disp["validity_mask"].data & cst.Criteria.PANDORA_MSK_PIXEL_INVALID) != 0)] = np.nan
 
         valid = np.isfinite(masked_data)
         disp_median = self.median_filter(masked_data)

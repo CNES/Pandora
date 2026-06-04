@@ -41,7 +41,7 @@ include:
     # Default stage for jobs is build.
     # Below is the list of items to contains.
     inputs:
-      image: ${UL_ARTIFACTORY_HOST}/publicremotes-docker/python:3.10
+      image: ${UL_ARTIFACTORY_HOST}/publicremotes-docker/python:3.10.13
       pytest-enabled: true
       pylint-enabled: true
       black-enabled: true
@@ -157,7 +157,7 @@ functional-sgm-test:
     - apt-get update && apt-get install -y cmake
     # ${TRACE+-d} define the log level
     # Install in editable mode to compute coverage
-    - make ${TRACE+-d} test-functional
+    - make ${TRACE+-d} test-functional-sgm
   variables:
     PYTHON_EXTRA_DEPS: test,sgm
   artifacts:

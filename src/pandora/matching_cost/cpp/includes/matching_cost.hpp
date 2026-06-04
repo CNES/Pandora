@@ -45,12 +45,43 @@ py::array_t<float> reverse_cost_volume(
  * @brief Create the right disp ranges from the left disp ranges
  *
  * @param left_min: the 2D left disp min array, with dimensions row, col
- * @param left_max: the 2D left disp min array, with dimensions row, col
+ * @param left_max: the 2D left disp max array, with dimensions row, col
  * @return: The min and max disp ranges for the right image
  */
 std::tuple<py::array_t<float>, py::array_t<float>> reverse_disp_range(
     py::array_t<float> left_min,
     py::array_t<float> left_max
+);
+
+/**
+ * @brief Apply masking to cost volume based on valid pixels and local disparity ranges
+ *
+ * Masks the cost volume by:
+ * - Setting entire disparity range to NaN for pixels masked in left image
+ * - Setting disparities outside local [disp_min, disp_max] range to NaN
+ * - Setting disparities to NaN if corresponding right pixel is masked
+ *
+ * @param cost_volume: the 3D cost volume data array (row, col, disp)
+ * @param mask_left: the 2D left mask array (row, col)
+ * @param mask_right_native: the 2D right mask for whole pixel disparities (row, col)
+ * @param mask_right_shift: the 2D right mask for subpix disparities (row, col)
+ * @param disp_min: the 2D local minimum disparities (row, col)
+ * @param disp_max: the 2D local maximum disparities (row, col)
+ * @param disp_range: the 1D disparity range values (disp)
+ * @param global_disp_min: global cost volume minimum disparity
+ * @param subpix: subpixel precision
+ * @return: None
+ */
+void cv_masked(
+    py::array_t<float> cost_volume,
+    py::array_t<float> mask_left,
+    py::array_t<float> mask_right_native,
+    py::array_t<float> mask_right_shift,
+    py::array_t<float> disp_min,
+    py::array_t<float> disp_max,
+    py::array_t<float> disp_range,
+    int global_disp_min,
+    int subpix
 );
 
 #endif  // MATCHING_COST_HPP

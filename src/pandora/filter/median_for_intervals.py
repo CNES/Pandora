@@ -33,7 +33,7 @@ from pandora.profiler import profile
 from pandora.margins import Margins
 
 from . import filter  # pylint: disable= redefined-builtin
-from ..constants import PANDORA_MSK_PIXEL_INTERVAL_REGULARIZED
+from ..constants import Criteria
 from ..interval_tools import interval_regularization
 from .median import MedianFilter
 
@@ -190,7 +190,9 @@ class MedianForIntervalsFilter(filter.AbstractFilter):
             conf_measure = disp["confidence_measure"].data
 
             # Regularization can be done multiple times, so the mask cannot simply be added
-            disp["validity_mask"].data[mask_regularization] |= PANDORA_MSK_PIXEL_INTERVAL_REGULARIZED
+            disp["validity_mask"].data[mask_regularization] |= np.uint16(
+                Criteria.PANDORA_MSK_PIXEL_INTERVAL_REGULARIZED
+            )
 
             indicator_inf_index = np.argwhere(disp.coords["indicator"].data == indicator_interval_inf)[0, 0]
             indicator_sup_index = np.argwhere(disp.coords["indicator"].data == indicator_interval_sup)[0, 0]

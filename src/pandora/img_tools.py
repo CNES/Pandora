@@ -35,7 +35,7 @@ from rasterio.windows import Window
 from scipy.ndimage import zoom
 from skimage.transform.pyramids import pyramid_gaussian
 
-import pandora.constants as cst
+from pandora.constants import Criteria
 from .cpp import img_tools_cpp
 
 
@@ -392,7 +392,7 @@ def create_dataset_from_inputs(input_config: dict, roi: dict = None) -> xr.Datas
         image = {"im": (["band_im", "row", "col"], data)}
         # Band names are in the image metadata
         coords = {
-            "band_im": list(img_ds.descriptions),  # type: ignore
+            "band_im": list(img_ds.descriptions),
             "row": np.arange(row_off, ny_ + row_off),
             "col": np.arange(col_off, nx_ + col_off),
         }
@@ -589,8 +589,8 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
             img, msk = interpolate_nodata_sgm(
                 dataset["im"].data,
                 dataset["msk"].data,
-                cst.PANDORA_MSK_PIXEL_INVALID,
-                cst.PANDORA_MSK_PIXEL_FILLED_NODATA,
+                Criteria.PANDORA_MSK_PIXEL_INVALID,
+                Criteria.PANDORA_MSK_PIXEL_FILLED_NODATA,
             )
         else:
             img = dataset["im"].data
@@ -601,8 +601,8 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
                 img[band, :, :], msk[:, :] = interpolate_nodata_sgm(
                     dataset["im"].data[band, :, :],
                     dataset["msk"].data[:, :],
-                    cst.PANDORA_MSK_PIXEL_INVALID,
-                    cst.PANDORA_MSK_PIXEL_FILLED_NODATA,
+                    Criteria.PANDORA_MSK_PIXEL_INVALID,
+                    Criteria.PANDORA_MSK_PIXEL_FILLED_NODATA,
                 )
     else:
         msk = np.full(

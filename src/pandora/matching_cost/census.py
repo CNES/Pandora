@@ -64,7 +64,7 @@ class Census(matching_cost.AbstractMatchingCost):
         cfg = super().check_conf(**cfg)
 
         schema = self.schema
-        schema["matching_cost_method"] = And(str, lambda input: "census")
+        schema["matching_cost_method"] = And(str, lambda input: input == "census")
         schema["window_size"] = And(int, lambda input: input in (3, 5, 7, 9, 11, 13))
 
         checker = Checker(schema)

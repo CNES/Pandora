@@ -111,51 +111,6 @@ In this case, a search for the nearest coordinate is carried out to obtain the c
                 `Coordinates{Right}{0}` = find_nearest_column(Coordinates{Right}{0}, Index{Right}, "-")
 
 
-
-.. warning::  What was explained above is only valid in the classic case of Pandora, i.e. without the use of a step and a ROI.
-
-
-The case of step
-----------------
-
-The use of a step in image processing can only be done via Pandora2D, see doc `matching cost Pandora2D`_.
-
-This constraint means that the previous equations can no longer be used. In this case, the possible coordinates 
-for the left image are those identified in the cost volume by the coordinates of the cost volume columns. 
-
-Then, an increasing search starting from the first coordinate for a negative disparity, and a decreasing
-search starting from the last coordinate for a positive disparity, is performed in order to obtain the correct interval.
-
-Then, the formula :math:`Coordinates{Right} = Coordinates{Left} - disparity` is  applied.
-
-.. _matching cost Pandora2D: https://pandora2d.readthedocs.io/en/latest/userguide/step_by_step/matching_cost.html
-
-
-
-The case of ROI (Region of Interest)
-------------------------------------
-
-The ROI can be enabled by the user, if they use Pandora in library or notebook mode.
-
-.. admonition:: Reminder
-
-    The ROI configuration is as follows, see doc `Region of Interest Pandora2D`_.
-
-    .. code-block::
-    
-        "ROI":
-        {
-            "col": {"first": <int>, "last": <int>},
-            "row": {"first": <int>, "last": <int>}
-        },
-
-
-.. _Region of Interest Pandora2D: https://pandora2d.readthedocs.io/en/latest/userguide/roi.html
-
-In this case, the coordinates of the left and right images no longer start at zero, but at `["row"]["first"]` and `["col"]["first"]`.
-If the user provides the images or ROIs themselves, they must check that images or ROIs begin with the same coordinates.
-
-
 Apply Left/Right masks on cost volume
 *************************************
 
