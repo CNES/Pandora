@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.8.1a2 (June 2026)
+
+### Fixed
+
+- Fixed call to PANDORA_MSK_PIXEL_OCCLUSION criteria in notebook.
+
 ## 1.8.1a1 (June 2026)
 
 ### Changed
