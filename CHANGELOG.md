@@ -1,5 +1,7 @@
 # Changelog
 
+## 1.8.1 (June 2026)
+
 ## 1.8.1a2 (June 2026)
 
 ### Fixed
