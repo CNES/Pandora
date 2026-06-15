@@ -20,31 +20,52 @@
 #include "quadratic.hpp"
 #include "refinement_tools.hpp"
 #include <algorithm>
-#include <numeric>
 #include <cmath>
+#include <numeric>
 
 namespace py = pybind11;
 
-std::tuple<float, float, int> quadratic_refinement_method(
-    py::array_t<float> cost, float disp, std::string measure,
+std::tuple<float, float, int> quadratic_refinement_method_impl(
+    float c0,
+    float c1,
+    float c2,
+    float disp,
+    const std::string& measure,
     int cst_pandora_msk_pixel_stopped_interpolation
 ) {
-    auto [valid, c0, c1, c2, ic0, ic1, ic2] = validate_costs_and_get_variables(cost, measure);
+    (void)disp;
+    auto [valid, c0_out, c1_out, c2_out, ic0, ic1, ic2] =
+        validate_costs_and_get_variables(c0, c1, c2, measure);
 
-    if (!valid) 
-        return {0.f, c1, cst_pandora_msk_pixel_stopped_interpolation};
+    if (!valid)
+        return {0.f, c1_out, cst_pandora_msk_pixel_stopped_interpolation};
 
     // Solve the system: col = alpha * row ** 2 + beta * row + gamma
     // gamma = c1
-    float alpha = (c0 - 2.f * c1 + c2) / 2.f;
-    float beta = (c2 - c0) / 2.f;
+    float alpha = (c0_out - 2.f * c1_out + c2_out) / 2.f;
+    float beta = (c2_out - c0_out) / 2.f;
 
     // If the costs are close, the result of -b / 2a (minimum) is bounded between [-1, 1]
     // sub_disp is row
     float sub_disp = std::min(1.f, std::max(-1.f, -beta / (2.f * alpha)));
 
     // sub_cost is col
-    float sub_cost = (alpha * sub_disp*sub_disp) + (beta * sub_disp) + c1;
+    float sub_cost = (alpha * sub_disp*sub_disp) + (beta * sub_disp) + c1_out;
 
     return {sub_disp, sub_cost, 0};
+}
+
+std::tuple<float, float, int> quadratic_refinement_method(
+    py::array_t<float> cost, float disp, std::string measure,
+    int cst_pandora_msk_pixel_stopped_interpolation
+) {
+    auto r_cost = cost.unchecked<1>();
+    return quadratic_refinement_method_impl(
+        r_cost(0),
+        r_cost(1),
+        r_cost(2),
+        disp,
+        measure,
+        cst_pandora_msk_pixel_stopped_interpolation
+    );
 }

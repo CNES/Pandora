@@ -109,7 +109,7 @@ class AbstractRefinement:
             d_max,
             subpixel,
             measure,
-            self.refinement_method,
+            self._refinement_method_name,
             Criteria.PANDORA_MSK_PIXEL_INVALID,
             Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
         )
@@ -163,7 +163,7 @@ class AbstractRefinement:
             d_max,
             subpixel,
             measure,
-            self.refinement_method,
+            self._refinement_method_name,
             Criteria.PANDORA_MSK_PIXEL_INVALID,
             Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION,
         )

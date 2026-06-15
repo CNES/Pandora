@@ -17,13 +17,26 @@
  * limitations under the License.
  */
 
-#include <pybind11/functional.h>
 #include "refinement.hpp"
+#include "vfit.hpp"
+#include "quadratic.hpp"
 #include <algorithm>
-#include <numeric>
 #include <cmath>
+#include <limits>
+#include <numeric>
+#include <stdexcept>
 
 namespace py = pybind11;
+
+RefinementMethodFn get_refinement_method(const std::string& method) {
+    if (method == "vfit") {
+        return &vfit_refinement_method_impl;
+    }
+    if (method == "quadratic") {
+        return &quadratic_refinement_method_impl;
+    }
+    throw std::invalid_argument("No refinement method named " + method + " supported");
+}
 
 std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_refinement(
     py::array_t<float> cv,
@@ -33,12 +46,13 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_re
     double d_max,
     int subpixel,
     std::string measure,
-    std::function<
-        std::tuple<float, float, int>(py::array_t<float>, float, std::string)
-    > &method,
+    std::string method,
     int64_t cst_pandora_msk_pixel_invalid, 
     int64_t cst_pandora_msk_pixel_stopped_interpolation 
 ) {
+    RefinementMethodFn refinement_fn = get_refinement_method(method);
+    const int stopped_interpolation = static_cast<int>(cst_pandora_msk_pixel_stopped_interpolation);
+
     auto rw_disp = disp.mutable_unchecked<2>();
     auto rw_mask = mask.mutable_unchecked<2>();
     auto r_cv = cv.unchecked<3>();
@@ -76,17 +90,13 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_re
             float sub_disp;
             float sub_cost;
             int valid;
-            std::tie(sub_disp, sub_cost, valid) = method(
-                py::array(
-                    {3},
-                    std::vector<float>{
-                        r_cv(row, col, dsp-1),
-                        r_cv(row, col, dsp),
-                        r_cv(row, col, dsp+1)
-                    }.data()
-                ),
+            std::tie(sub_disp, sub_cost, valid) = refinement_fn(
+                r_cv(row, col, dsp-1),
+                r_cv(row, col, dsp),
+                r_cv(row, col, dsp+1),
                 raw_dsp,
-                measure
+                measure,
+                stopped_interpolation
             );
             rw_disp(row, col) = raw_dsp + sub_disp / static_cast<float>(subpixel);
             rw_itp_coeff(row, col) = sub_cost;
@@ -108,12 +118,13 @@ loop_approximate_refinement(
     double d_max,
     int subpixel,
     std::string measure,
-    std::function<
-        std::tuple<float, float, int>(py::array_t<float>, float, std::string)
-    > &method,
+    std::string method,
     int64_t cst_pandora_msk_pixel_invalid, 
     int64_t cst_pandora_msk_pixel_stopped_interpolation 
 ) {
+    RefinementMethodFn refinement_fn = get_refinement_method(method);
+    const int stopped_interpolation = static_cast<int>(cst_pandora_msk_pixel_stopped_interpolation);
+
     auto r_cv = cv.unchecked<3>();
     auto rw_mask = mask.mutable_unchecked<2>();
     auto rw_disp = disp.mutable_unchecked<2>();
@@ -159,17 +170,13 @@ loop_approximate_refinement(
             float sub_disp;
             float sub_cost;
             int valid;
-            std::tie(sub_disp, sub_cost, valid) = method(
-                py::array(
-                    {3},
-                    std::vector<float>{
-                        r_cv(row, diag-1, dsp+subpixel),
-                        r_cv(row, diag, dsp),
-                        r_cv(row, diag+1, dsp-subpixel)
-                    }.data()
-                ),
+            std::tie(sub_disp, sub_cost, valid) = refinement_fn(
+                r_cv(row, diag-1, dsp+subpixel),
+                r_cv(row, diag, dsp),
+                r_cv(row, diag+1, dsp-subpixel),
                 raw_dsp,
-                measure
+                measure,
+                stopped_interpolation
             );
             rw_disp(row, col) = raw_dsp + sub_disp / static_cast<float>(subpixel);
             rw_itp_coeff(row, col) = sub_cost;

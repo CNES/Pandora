@@ -67,8 +67,8 @@ def loop_refinement(
     :type subpixel: int ( 1 | 2 | 4 )
     :param measure: the measure used to create the cot volume
     :param measure: string
-    :param method: the refinement method
-    :param method: function
+    :param method: the refinement method name ("vfit" or "quadratic")
+    :param method: string
     :param cst_pandora_msk_pixel_invalid: value for the PANDORA_MSK_PIXEL_INVALID constant in pandora.constants
     :param cst_pandora_msk_pixel_invalid: int
     :param cst_pandora_msk_pixel_stopped_interpolation: value for the PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION \
@@ -109,8 +109,8 @@ def loop_approximate_refinement(
     :type subpixel: int ( 1 | 2 | 4 )
     :param measure: the type of measure used to create the cost volume
     :type measure: string = min | max
-    :param method: the refinement method
-    :type method: function
+    :param method: the refinement method name ("vfit" or "quadratic")
+    :type method: string
     :param cst_pandora_msk_pixel_invalid: value for the PANDORA_MSK_PIXEL_INVALID constant in pandora.constants
     :param cst_pandora_msk_pixel_invalid: int
     :param cst_pandora_msk_pixel_stopped_interpolation: value for the PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION \

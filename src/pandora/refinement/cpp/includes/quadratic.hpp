@@ -39,6 +39,15 @@ namespace py = pybind11;
  * PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION constant.
  * @return A tuple containing the disparity shift, refined cost, and pixel state.
  */
+std::tuple<float, float, int> quadratic_refinement_method_impl(
+    float c0,
+    float c1,
+    float c2,
+    float disp,
+    const std::string& measure,
+    int cst_pandora_msk_pixel_stopped_interpolation
+);
+
 std::tuple<float, float, int> quadratic_refinement_method(
     py::array_t<float> cost, float disp, std::string measure,
     int cst_pandora_msk_pixel_stopped_interpolation

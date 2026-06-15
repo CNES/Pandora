@@ -23,14 +23,11 @@
 namespace py = pybind11;
 
 std::tuple<bool, float, float, float, float, float, float> validate_costs_and_get_variables(
-    py::array_t<float>& cost,
+    float c0,
+    float c1,
+    float c2,
     const std::string& measure
 ) {
-    auto r_cost = cost.unchecked<1>();
-    float c0 = r_cost(0);
-    float c1 = r_cost(1);
-    float c2 = r_cost(2);
-    
     if (std::isnan(c0) || std::isnan(c2)) {
         // Bit 3 = 1: Information: calculations stopped at the pixel step,
         // sub-pixel interpolation did not succeed
@@ -53,4 +50,12 @@ std::tuple<bool, float, float, float, float, float, float> validate_costs_and_ge
     }
 
     return {true, c0, c1, c2, ic0, ic1, ic2};
+}
+
+std::tuple<bool, float, float, float, float, float, float> validate_costs_and_get_variables(
+    py::array_t<float>& cost,
+    const std::string& measure
+) {
+    auto r_cost = cost.unchecked<1>();
+    return validate_costs_and_get_variables(r_cost(0), r_cost(1), r_cost(2), measure);
 }
