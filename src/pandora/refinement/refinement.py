@@ -24,7 +24,7 @@ This module contains classes and functions associated to the subpixel refinement
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import Dict, Tuple
+from typing import Dict
 
 import numpy as np
 import xarray as xr
@@ -207,20 +207,3 @@ class AbstractRefinement:
         :return: None
         """
         print("Subpixel method description")
-
-    @staticmethod
-    @abstractmethod
-    def refinement_method(cost: np.ndarray, disp: float, measure: str) -> Tuple[float, float, int]:
-        """
-        Return the subpixel disparity and cost
-
-        :param cost: cost of the values disp - 1, disp, disp + 1
-        :type cost: 1D numpy array : [cost[disp -1], cost[disp], cost[disp + 1]]
-        :param disp: the disparity
-        :type disp: float
-        :param measure: the type of measure used to create the cost volume
-        :type measure: string = min | max
-        :return: the refined disparity (disp + (sub_disp/subpix)), the refined cost and the state of the pixel
-         ( Information: calculations stopped at the pixel step, sub-pixel interpolation did not succeed )
-        :rtype: float, float, int
-        """

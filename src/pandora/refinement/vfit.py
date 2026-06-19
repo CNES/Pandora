@@ -23,14 +23,10 @@
 This module contains functions associated to the vfit method used in the refinement step.
 """
 
-from typing import Dict, Tuple
-import numpy as np
+from typing import Dict
 
 from json_checker import And, Checker
 
-from pandora.constants import Criteria
-
-from .cpp import refinement_cpp
 from . import refinement
 
 
@@ -39,12 +35,6 @@ class Vfit(refinement.AbstractRefinement):
     """
     Vfit class allows to perform the subpixel cost refinement step
     """
-
-    @staticmethod
-    def refinement_method(cost: np.ndarray, disp: float, measure: str) -> Tuple[float, float, int]:
-        return refinement_cpp.vfit_refinement_method(
-            cost, disp, measure, Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
-        )
 
     def __init__(self, **cfg: str) -> None:
         """
