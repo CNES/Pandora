@@ -38,15 +38,15 @@ std::tuple<bool, float, float, float, float, float, float> validate_costs_and_ge
         inverse = -1.f;
     }
 
-    float inv_cost_0 = inverse * cost_0;
-    float inv_cost_1 = inverse * cost_1;
-    float inv_cost_2 = inverse * cost_2;
+    float inverse_cost_0 = inverse * cost_0;
+    float inverse_cost_1 = inverse * cost_1;
+    float inverse_cost_2 = inverse * cost_2;
     // Check if cost[disp] is the minimum cost (or maximum using similarity measure) before fitting
     // If not, interpolation is not applied
-    if ( inv_cost_1 > inv_cost_0 || inv_cost_1 > inv_cost_2 ) {
+    if ( inverse_cost_1 > inverse_cost_0 || inverse_cost_1 > inverse_cost_2 ) {
         return {false, cost_0, cost_1, cost_2, 0.f, 0.f, 0.f};
     }
 
-    return {true, cost_0, cost_1, cost_2, inv_cost_0, inv_cost_1, inv_cost_2};
+    return {true, cost_0, cost_1, cost_2, inverse_cost_0, inverse_cost_1, inverse_cost_2};
 }
 

@@ -99,4 +99,3 @@ def loop_approximate_refinement(
     :rtype: tuple(2D numpy array (row, col), 2D numpy array (row, col), 2D numpy array (row, col))
     """
     ...
-

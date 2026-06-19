@@ -32,7 +32,7 @@ std::tuple<float, float, int> vfit_refinement_method(
     int cst_pandora_msk_pixel_stopped_interpolation
 ) {
     (void)disp;
-    auto [valid, cost_0_out, cost_1_out, cost_2_out, inv_cost_0, inv_cost_1, inv_cost_2] =
+    auto [valid, cost_0_out, cost_1_out, cost_2_out, inverse_cost_0, inverse_cost_1, inverse_cost_2] =
         validate_costs_and_get_variables(cost_0, cost_1, cost_2, measure);
 
     if (!valid)
@@ -40,7 +40,7 @@ std::tuple<float, float, int> vfit_refinement_method(
 
     // The problem is to approximate sub_cost function with an affine function: y = a * x + origin
     // Calculate the slope
-    float a = inv_cost_0 > inv_cost_2 ? cost_0_out - cost_1_out : cost_2_out - cost_1_out;
+    float a = inverse_cost_0 > inverse_cost_2 ? cost_0_out - cost_1_out : cost_2_out - cost_1_out;
 
     // Compare the difference disparity between (cost[0]-cost[1]) and (cost[2]-cost[1]):
     // the highest cost is used
