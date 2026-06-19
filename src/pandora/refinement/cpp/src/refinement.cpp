@@ -30,10 +30,10 @@ namespace py = pybind11;
 
 RefinementMethodFn get_refinement_method(const std::string& method) {
     if (method == "vfit") {
-        return &vfit_refinement_method_impl;
+        return &vfit_refinement_method;
     }
     if (method == "quadratic") {
-        return &quadratic_refinement_method_impl;
+        return &quadratic_refinement_method;
     }
     throw std::invalid_argument("No refinement method named " + method + " supported");
 }

@@ -24,11 +24,8 @@ This module contains functions used by the Refinement algorithms in cpp.
 #ifndef REFINEMENT_TOOLS_HPP
 #define REFINEMENT_TOOLS_HPP
 
-#include <pybind11/numpy.h>
-#include <tuple>
 #include <string>
-
-namespace py = pybind11;
+#include <tuple>
 
 /**
  * @brief Validate costs and return early if necessary
@@ -38,15 +35,11 @@ namespace py = pybind11;
  * @return A tuple containing: whether the costs are valid, c0, c1, c2, ic0, ic1, ic2
  */
 std::tuple<bool, float, float, float, float, float, float> validate_costs_and_get_variables(
-    float c0,
-    float c1,
-    float c2,
+    float cost_0,
+    float cost_1,
+    float cost_2,
     const std::string& measure
 );
 
-std::tuple<bool, float, float, float, float, float, float> validate_costs_and_get_variables(
-    pybind11::array_t<float>& cost,
-    const std::string& measure
-);
 
 #endif // REFINEMENT_TOOLS_HPP

@@ -20,18 +20,16 @@
 #include "refinement_tools.hpp"
 #include <cmath>
 
-namespace py = pybind11;
-
 std::tuple<bool, float, float, float, float, float, float> validate_costs_and_get_variables(
-    float c0,
-    float c1,
-    float c2,
+    float cost_0,
+    float cost_1,
+    float cost_2,
     const std::string& measure
 ) {
-    if (std::isnan(c0) || std::isnan(c2)) {
+    if (std::isnan(cost_0) || std::isnan(cost_2)) {
         // Bit 3 = 1: Information: calculations stopped at the pixel step,
         // sub-pixel interpolation did not succeed
-        return {false, c0, c1, c2, 0.f, 0.f, 0.f};
+        return {false, cost_0, cost_1, cost_2, 0.f, 0.f, 0.f};
     }
 
     float inverse = 1.f;
@@ -40,22 +38,15 @@ std::tuple<bool, float, float, float, float, float, float> validate_costs_and_ge
         inverse = -1.f;
     }
 
-    float ic0 = inverse * c0;
-    float ic1 = inverse * c1;
-    float ic2 = inverse * c2;
+    float inv_cost_0 = inverse * cost_0;
+    float inv_cost_1 = inverse * cost_1;
+    float inv_cost_2 = inverse * cost_2;
     // Check if cost[disp] is the minimum cost (or maximum using similarity measure) before fitting
     // If not, interpolation is not applied
-    if ( ic1 > ic0 || ic1 > ic2 ) {
-        return {false, c0, c1, c2, 0.f, 0.f, 0.f};
+    if ( inv_cost_1 > inv_cost_0 || inv_cost_1 > inv_cost_2 ) {
+        return {false, cost_0, cost_1, cost_2, 0.f, 0.f, 0.f};
     }
 
-    return {true, c0, c1, c2, ic0, ic1, ic2};
+    return {true, cost_0, cost_1, cost_2, inv_cost_0, inv_cost_1, inv_cost_2};
 }
 
-std::tuple<bool, float, float, float, float, float, float> validate_costs_and_get_variables(
-    py::array_t<float>& cost,
-    const std::string& measure
-) {
-    auto r_cost = cost.unchecked<1>();
-    return validate_costs_and_get_variables(r_cost(0), r_cost(1), r_cost(2), measure);
-}

@@ -32,9 +32,9 @@ This module contains functions associated to the Refinement algorithms in cpp.
 namespace py = pybind11;
 
 using RefinementMethodFn = std::tuple<float, float, int> (*)(
-    float c0,
-    float c1,
-    float c2,
+    float cost_0,
+    float cost_1,
+    float cost_2,
     float disp,
     const std::string& measure,
     int cst_pandora_msk_pixel_stopped_interpolation

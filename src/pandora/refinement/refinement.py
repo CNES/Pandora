@@ -26,7 +26,6 @@ This module contains classes and functions associated to the subpixel refinement
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
-import numpy as np
 import xarray as xr
 
 from pandora.constants import Criteria

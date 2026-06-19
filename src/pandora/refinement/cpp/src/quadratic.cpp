@@ -23,49 +23,33 @@
 #include <cmath>
 #include <numeric>
 
-namespace py = pybind11;
-
-std::tuple<float, float, int> quadratic_refinement_method_impl(
-    float c0,
-    float c1,
-    float c2,
+std::tuple<float, float, int> quadratic_refinement_method(
+    float cost_0,
+    float cost_1,
+    float cost_2,
     float disp,
     const std::string& measure,
     int cst_pandora_msk_pixel_stopped_interpolation
 ) {
     (void)disp;
-    auto [valid, c0_out, c1_out, c2_out, ic0, ic1, ic2] =
-        validate_costs_and_get_variables(c0, c1, c2, measure);
+    auto [valid, cost_0_out, cost_1_out, cost_2_out, inv_cost_0, inv_cost_1, inv_cost_2] =
+        validate_costs_and_get_variables(cost_0, cost_1, cost_2, measure);
 
     if (!valid)
-        return {0.f, c1_out, cst_pandora_msk_pixel_stopped_interpolation};
+        return {0.f, cost_1_out, cst_pandora_msk_pixel_stopped_interpolation};
 
     // Solve the system: col = alpha * row ** 2 + beta * row + gamma
-    // gamma = c1
-    float alpha = (c0_out - 2.f * c1_out + c2_out) / 2.f;
-    float beta = (c2_out - c0_out) / 2.f;
+    // gamma = cost_1
+    float alpha = (cost_0_out - 2.f * cost_1_out + cost_2_out) / 2.f;
+    float beta = (cost_2_out - cost_0_out) / 2.f;
 
     // If the costs are close, the result of -b / 2a (minimum) is bounded between [-1, 1]
     // sub_disp is row
     float sub_disp = std::min(1.f, std::max(-1.f, -beta / (2.f * alpha)));
 
     // sub_cost is col
-    float sub_cost = (alpha * sub_disp*sub_disp) + (beta * sub_disp) + c1_out;
+    float sub_cost = (alpha * sub_disp*sub_disp) + (beta * sub_disp) + cost_1_out;
 
     return {sub_disp, sub_cost, 0};
 }
 
-std::tuple<float, float, int> quadratic_refinement_method(
-    py::array_t<float> cost, float disp, std::string measure,
-    int cst_pandora_msk_pixel_stopped_interpolation
-) {
-    auto r_cost = cost.unchecked<1>();
-    return quadratic_refinement_method_impl(
-        r_cost(0),
-        r_cost(1),
-        r_cost(2),
-        disp,
-        measure,
-        cst_pandora_msk_pixel_stopped_interpolation
-    );
-}
