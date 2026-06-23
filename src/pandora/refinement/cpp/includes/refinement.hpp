@@ -31,6 +31,18 @@ This module contains functions associated to the Refinement algorithms in cpp.
 
 namespace py = pybind11;
 
+/**
+ * @brief Function pointer type used to dispatch subpixel refinement methods.
+ *
+ * @param cost_0 Cost at disp - 1.
+ * @param cost_1 Cost at disp.
+ * @param cost_2 Cost at disp + 1.
+ * @param disp The current disparity value.
+ * @param measure The type of measure used to create the cost volume ("min" or "max").
+ * @param cst_pandora_msk_pixel_stopped_interpolation Value for the
+ * PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION constant.
+ * @return A tuple containing the disparity shift, refined cost, and pixel state.
+ */
 using RefinementMethodFn = std::tuple<float, float, int> (*)(
     float cost_0,
     float cost_1,
@@ -40,6 +52,13 @@ using RefinementMethodFn = std::tuple<float, float, int> (*)(
     int cst_pandora_msk_pixel_stopped_interpolation
 );
 
+/**
+ * @brief Returns the refinement method function pointer matching the given name.
+ *
+ * @param method const std::string& The refinement method name ("vfit" or "quadratic").
+ * @return RefinementMethodFn Function pointer to the corresponding subpixel refinement method.
+ * @throws std::invalid_argument If the method name is not supported.
+ */
 RefinementMethodFn get_refinement_method(const std::string& method);
 
 /**
