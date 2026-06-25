@@ -26,9 +26,40 @@ This module contains functions associated to the Refinement algorithms in cpp.
 
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
-#include <pybind11/functional.h>
+#include <string>
+#include <tuple>
 
 namespace py = pybind11;
+
+/**
+ * @brief Function pointer type used to dispatch subpixel refinement methods.
+ *
+ * @param cost_0 Cost at disp - 1.
+ * @param cost_1 Cost at disp.
+ * @param cost_2 Cost at disp + 1.
+ * @param disp The current disparity value.
+ * @param measure The type of measure used to create the cost volume ("min" or "max").
+ * @param cst_pandora_msk_pixel_stopped_interpolation Value for the
+ * PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION constant.
+ * @return A tuple containing the disparity shift, refined cost, and pixel state.
+ */
+using RefinementMethodFn = std::tuple<float, float, int> (*)(
+    float cost_0,
+    float cost_1,
+    float cost_2,
+    float disp,
+    const std::string& measure,
+    int cst_pandora_msk_pixel_stopped_interpolation
+);
+
+/**
+ * @brief Returns the refinement method function pointer matching the given name.
+ *
+ * @param method const std::string& The refinement method name ("vfit" or "quadratic").
+ * @return RefinementMethodFn Function pointer to the corresponding subpixel refinement method.
+ * @throws std::invalid_argument If the method name is not supported.
+ */
+RefinementMethodFn get_refinement_method(const std::string& method);
 
 /**
  * @brief Applies the refinement method for each pixel.
@@ -40,7 +71,7 @@ namespace py = pybind11;
  * @param d_max Maximal disparity.
  * @param subpixel Subpixel precision used to create the cost volume (1, 2, or 4).
  * @param measure The measure used to create the cost volume.
- * @param method The refinement method.
+ * @param method The refinement method name ("vfit" or "quadratic").
  * @param cst_pandora_msk_pixel_invalid Value for the PANDORA_MSK_PIXEL_INVALID constant.
  * @param cst_pandora_msk_pixel_stopped_interpolation Value for the 
  * PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION constant.
@@ -55,9 +86,7 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_re
     double d_max,
     int subpixel,
     std::string measure,
-    std::function<
-        std::tuple<float, float, int>(py::array_t<float>, float, std::string)
-    > &method,
+    std::string method,
     int64_t cst_pandora_msk_pixel_invalid, 
     int64_t cst_pandora_msk_pixel_stopped_interpolation 
 );
@@ -75,7 +104,7 @@ std::tuple<py::array_t<float>, py::array_t<float>, py::array_t<int64_t>> loop_re
  * @param d_max Maximal disparity.
  * @param subpixel Subpixel precision used to create the cost volume (1, 2, or 4).
  * @param measure The type of measure used to create the cost volume ("min" or "max").
- * @param method The refinement method.
+ * @param method The refinement method name ("vfit" or "quadratic").
  * @param cst_pandora_msk_pixel_invalid Value for the PANDORA_MSK_PIXEL_INVALID constant.
  * @param cst_pandora_msk_pixel_stopped_interpolation Value for the 
  * PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION constant.
@@ -91,9 +120,7 @@ loop_approximate_refinement(
     double d_max,
     int subpixel,
     std::string measure,
-    std::function<
-        std::tuple<float, float, int>(py::array_t<float>, float, std::string)
-    > &method,
+    std::string method,
     int64_t cst_pandora_msk_pixel_invalid, 
     int64_t cst_pandora_msk_pixel_stopped_interpolation 
 );

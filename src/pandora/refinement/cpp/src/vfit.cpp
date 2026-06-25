@@ -20,37 +20,42 @@
 #include "vfit.hpp"
 #include "refinement_tools.hpp"
 #include <algorithm>
-#include <numeric>
 #include <cmath>
-
-namespace py = pybind11;
+#include <numeric>
 
 std::tuple<float, float, int> vfit_refinement_method(
-    py::array_t<float> cost, float disp, std::string measure,
+    float cost_0,
+    float cost_1,
+    float cost_2,
+    float disp,
+    const std::string& measure,
     int cst_pandora_msk_pixel_stopped_interpolation
 ) {
-    auto [valid, c0, c1, c2, ic0, ic1, ic2] = validate_costs_and_get_variables(cost, measure);
+    (void)disp;
+    auto [valid, cost_0_out, cost_1_out, cost_2_out, inverse_cost_0, inverse_cost_1, inverse_cost_2] =
+        validate_costs_and_get_variables(cost_0, cost_1, cost_2, measure);
 
-    if (!valid) 
-        return {0.f, c1, cst_pandora_msk_pixel_stopped_interpolation};
-    
-    // The problem is to approximate sub_cost function with an affine function: y = a * x + origin
+    if (!valid)
+        return {0.f, cost_1_out, cst_pandora_msk_pixel_stopped_interpolation};
+
+    // The problem is to approximate sub_cost function with an affine function: y = slope * x + origin
     // Calculate the slope
-    float a = ic0 > ic2 ? c0 - c1 : c2 - c1;
+    float slope = inverse_cost_0 > inverse_cost_2 ? cost_0_out - cost_1_out : cost_2_out - cost_1_out;
 
     // Compare the difference disparity between (cost[0]-cost[1]) and (cost[2]-cost[1]):
     // the highest cost is used
-    if ( std::abs(a) < 1.0e-15 ) {
-        return {0.f, c1, 0};
+    if ( std::abs(slope) < 1.0e-15 ) {
+        return {0.f, cost_1_out, 0};
     }
 
     // Problem is resolved with tangents equality, due to the symmetric V shape of
     // 3 points (cv0, cv2 and (x,y))
     // sub_disp is dx
-    float sub_disp = (c0 - c2) / (2 * a);
+    float sub_disp = (cost_0_out - cost_2_out) / (2 * slope);
 
     // sub_cost is y
-    float sub_cost = a * (sub_disp - 1) + c2;
+    float sub_cost = slope * (sub_disp - 1) + cost_2_out;
 
     return {sub_disp, sub_cost, 0};
 }
+
