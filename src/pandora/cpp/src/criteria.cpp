@@ -101,3 +101,77 @@ py::array_t<bool> partially_missing_variable_ranges(
 
     return missing;
 }
+
+void allocate_right_mask_cpp(
+    py::array_t<uint16_t> validity_mask,
+    py::array_t<bool> bit_1_skip,
+    py::array_t<bool> nodata_dil_mask,
+    py::array_t<uint8_t> right_mask,
+    int disp_min,
+    int disp_max,
+    int offset,
+    uint16_t flag_validity_right,
+    uint16_t flag_nodata_right
+) {
+    // Fast unchecked accessors: validity_mask is written in-place, others are read-only
+    auto rw_validity_mask = validity_mask.mutable_unchecked<2>();
+    auto r_bit_1_skip = bit_1_skip.unchecked<1>();
+    auto r_nodata_dil_mask = nodata_dil_mask.unchecked<2>();
+    auto r_right_mask = right_mask.unchecked<2>();
+
+    // Image dimensions and disparity interval size
+    size_t n_row = rw_validity_mask.shape(0);
+    size_t n_col = rw_validity_mask.shape(1);
+    int disp_count = disp_max - disp_min + 1;
+    // Rightmost column reachable in the right image (aggregation window border)
+    int col_limit = static_cast<int>(n_col) - offset;
+
+    // For each left pixel, check whether its full disparity interval is invalidated
+    for (size_t row = 0; row < n_row; ++row) {
+        for (size_t col = 0; col < n_col; ++col) {
+            // Columns already flagged as outside the right image (bit_1) are skipped
+            if (r_bit_1_skip(col)) {
+                continue;
+            }
+
+            // Counters: how many disparities are invalidated by mask vs nodata
+            int cnt_validity = 0;
+            int cnt_nodata = 0;
+
+            // Walk the disparity interval in the right image
+            for (int dsp = disp_min; dsp <= disp_max; ++dsp) {
+                int col_d = static_cast<int>(col) + dsp;
+
+                // Disparity range outside the right image counts as invalid for both criteria
+                if (col_d < offset || col_d >= col_limit) {
+                    ++cnt_validity;
+                    ++cnt_nodata;
+                    continue;
+                }
+
+                // Early exit: at least one valid right pixel found, no flag will be raised
+                if (r_right_mask(row, col_d) == 0 && !r_nodata_dil_mask(row, col_d)) {
+                    break;
+                }
+
+                // Invalid pixel in the right validity mask
+                if (r_right_mask(row, col_d) != 0) {
+                    ++cnt_validity;
+                }
+                // Nodata pixel (dilated) in the right image
+                if (r_nodata_dil_mask(row, col_d)) {
+                    ++cnt_nodata;
+                }
+            }
+
+            // Full interval invalidated by the right validity mask
+            if (cnt_validity == disp_count) {
+                rw_validity_mask(row, col) |= flag_validity_right;
+            }
+            // Full interval invalidated by nodata in the right image
+            if (cnt_nodata == disp_count) {
+                rw_validity_mask(row, col) |= flag_nodata_right;
+            }
+        }
+    }
+}
