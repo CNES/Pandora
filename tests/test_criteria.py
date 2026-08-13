@@ -27,20 +27,20 @@ This module contains functions to test the criteria module.
 """
 
 import numpy as np
+import pytest
 import xarray as xr
 from rasterio import Affine
-import pytest
 
-from pandora.constants import Criteria
 from pandora import matching_cost
+from pandora.constants import Criteria
 from pandora.criteria import (
-    validity_mask,
     allocate_left_mask,
     allocate_right_mask,
-    mask_invalid_variable_disparity_range,
-    mask_border,
-    binary_dilation_msk,
     allocate_validity_mask,
+    binary_dilation_msk,
+    mask_border,
+    mask_invalid_variable_disparity_range,
+    validity_mask,
 )
 from pandora.img_tools import add_disparity
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -28,6 +27,7 @@ from __future__ import annotations
 import logging
 import logging.config
 import sys
+from importlib.metadata import entry_points
 from os import PathLike
 from typing import Dict, Tuple
 
@@ -40,11 +40,6 @@ from .check_configuration import check_conf, check_datasets, read_config_file, r
 from .img_tools import create_dataset_from_inputs
 from .state_machine import PandoraMachine
 
-if sys.version_info < (3, 10):
-    from importlib_metadata import entry_points
-else:
-    from importlib.metadata import entry_points
-
 
 # pylint: disable=too-many-arguments
 @profile("main.run", memprof=True)
@@ -52,8 +47,8 @@ def run(
     pandora_machine: PandoraMachine,
     img_left: xr.Dataset,
     img_right: xr.Dataset,
-    cfg: Dict[str, dict],
-) -> Tuple[xr.Dataset, xr.Dataset]:
+    cfg: dict[str, dict],
+) -> tuple[xr.Dataset, xr.Dataset]:
     """
     Run the pandora pipeline
 

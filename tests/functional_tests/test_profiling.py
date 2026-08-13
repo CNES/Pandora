@@ -25,19 +25,12 @@ Module with functional tests.
 # pylint: disable=redefined-outer-name,too-few-public-methods,too-many-positional-arguments
 
 import json
-import sys
 import os
+from importlib.metadata import entry_points
 
-import numpy as np
 import pytest
 
 import pandora
-
-if sys.version_info < (3, 10):
-    from importlib_metadata import entry_points
-else:
-    from importlib.metadata import entry_points
-
 
 plugin_set = entry_points(group="pandora.plugin").names
 

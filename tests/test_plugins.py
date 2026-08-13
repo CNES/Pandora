@@ -31,10 +31,10 @@ import unittest
 
 import numpy as np
 
-from tests import common
 import pandora
 from pandora.img_tools import create_dataset_from_inputs, rasterio_open
 from pandora.state_machine import PandoraMachine
+from tests import common
 
 
 class TestPandora(unittest.TestCase):

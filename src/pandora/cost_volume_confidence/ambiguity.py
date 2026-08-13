@@ -21,15 +21,15 @@ This module contains functions for estimating confidence from ambiguity.
 """
 
 import logging
-from typing import Dict, Tuple, Union
 
 import numpy as np
 import xarray as xr
 from json_checker import And, Checker
 
 from pandora.profiler import profile
-from .cpp import cost_volume_confidence_cpp
+
 from . import cost_volume_confidence
+from .cpp import cost_volume_confidence_cpp
 
 
 @cost_volume_confidence.AbstractCostVolumeConfidence.register_subclass("ambiguity")
@@ -67,7 +67,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         self._etas = np.arange(self._eta_min, self._eta_max, self._eta_step)
         self._nbr_etas = self._etas.shape[0]
 
-    def check_conf(self, **cfg: Union[str, float]) -> Dict[str, Union[str, float]]:
+    def check_conf(self, **cfg: str | float) -> dict[str, str | float]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
@@ -111,7 +111,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         img_left: xr.Dataset = None,
         img_right: xr.Dataset = None,
         cv: xr.Dataset = None,
-    ) -> Tuple[xr.Dataset, xr.Dataset]:
+    ) -> tuple[xr.Dataset, xr.Dataset]:
         """
         Computes a confidence measure that evaluates the matching cost function at each point
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.9.0a1 (August 2026)
+
+### Changed 
+
+- Optimization of cpp refinement loop. [#452]
+- Optimization of allocate_right_mask method. [#495]
+
 ## 1.8.1 (June 2026)
 
 ## 1.8.1a2 (June 2026)

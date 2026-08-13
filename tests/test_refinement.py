@@ -30,15 +30,13 @@ import numpy as np
 import xarray as xr
 from rasterio import Affine
 
-from tests import common
-from pandora.constants import Criteria
-from pandora import refinement
-from pandora import matching_cost
 import pandora.filter as flt
-from pandora import disparity
-from pandora.margins.descriptors import NullMargins
-from pandora.img_tools import add_disparity
+from pandora import disparity, matching_cost, refinement
+from pandora.constants import Criteria
 from pandora.criteria import validity_mask
+from pandora.img_tools import add_disparity
+from pandora.margins.descriptors import NullMargins
+from tests import common
 
 
 class TestRefinement(unittest.TestCase):

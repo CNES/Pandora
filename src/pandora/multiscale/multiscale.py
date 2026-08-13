@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -24,7 +23,6 @@ This module contains functions associated to the multiscale step.
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import Tuple, Union, Dict
 
 import numpy as np
 import xarray as xr
@@ -39,10 +37,10 @@ class AbstractMultiscale:
 
     __metaclass__ = ABCMeta
 
-    multiscale_methods_avail: Dict = {}
-    cfg: Dict | None = None
+    multiscale_methods_avail: dict = {}
+    cfg: dict | None = None
 
-    def __new__(cls, _left_img: xr.Dataset, _right_img: xr.Dataset, **cfg: Union[str, int]):
+    def __new__(cls, _left_img: xr.Dataset, _right_img: xr.Dataset, **cfg: str | int):
         """
         Return the plugin associated with the multiscale method given in the configuration
 
@@ -56,22 +54,18 @@ class AbstractMultiscale:
         if cls is AbstractMultiscale:
             if isinstance(cfg["multiscale_method"], str):
                 try:
-                    return super(AbstractMultiscale, cls).__new__(
-                        cls.multiscale_methods_avail[cfg["multiscale_method"]]
-                    )
+                    return super().__new__(cls.multiscale_methods_avail[cfg["multiscale_method"]])
                 except:
                     raise KeyError("No multiscale method named {} supported".format(cfg["multiscale_method"]))
             else:
                 if isinstance(cfg["multiscale_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
-                        return super(AbstractMultiscale, cls).__new__(
-                            cls.multiscale_methods_avail[cfg["multiscale_method"].encode("utf-8")]
-                        )
+                        return super().__new__(cls.multiscale_methods_avail[cfg["multiscale_method"].encode("utf-8")])
                     except:
                         raise KeyError("No multiscale method named {} supported".format(cfg["multiscale_method"]))
         else:
-            return super(AbstractMultiscale, cls).__new__(cls)
+            return super().__new__(cls)
         return None
 
     @classmethod
@@ -108,7 +102,7 @@ class AbstractMultiscale:
     @abstractmethod
     def disparity_range(
         self, disp: xr.Dataset, disp_min: np.ndarray, disp_max: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Disparity range computation by seeking the max and min values in the window.
         Unvalid disparities are given the full disparity range

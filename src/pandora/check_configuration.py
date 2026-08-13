@@ -31,16 +31,15 @@ import json
 import logging
 from collections.abc import Mapping
 from os import PathLike
-from typing import Dict, Union, List, Tuple
-import xarray as xr
-import rasterio
 
 import numpy as np
-from json_checker import Checker, Or, And
+import rasterio
+import xarray as xr
+from json_checker import And, Checker, Or
 
-from pandora.state_machine import PandoraMachine
-from pandora.img_tools import rasterio_open, get_metadata
 from pandora import multiscale
+from pandora.img_tools import get_metadata, rasterio_open
+from pandora.state_machine import PandoraMachine
 
 
 def rasterio_can_open_mandatory(file_: str) -> bool:
@@ -181,7 +180,7 @@ def check_image_dimension(img1: rasterio.io.DatasetReader, img2: rasterio.io.Dat
         raise AttributeError("Images must have the same size")
 
 
-def check_images(user_cfg: Dict[str, dict]) -> None:
+def check_images(user_cfg: dict[str, dict]) -> None:
     """
     Check the images
 
@@ -297,7 +296,7 @@ def check_disparities_from_dataset(disparity: xr.DataArray) -> None:
         raise AttributeError("Disp_max grid must be bigger than Disp_min grid for each pixel")
 
 
-def get_config_input(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
+def get_config_input(user_cfg: dict[str, dict]) -> dict[str, dict]:
     """
     Get the input configuration
 
@@ -315,7 +314,7 @@ def get_config_input(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     return cfg
 
 
-def get_config_pipeline(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
+def get_config_pipeline(user_cfg: dict[str, dict]) -> dict[str, dict]:
     """
     Get the pipeline configuration
 
@@ -334,11 +333,11 @@ def get_config_pipeline(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
 
 
 def memory_consumption_estimation(
-    user_pipeline_cfg: Dict[str, dict],
-    user_input: Union[Dict[str, dict], Tuple[str, int, int], Tuple[str, str]],
+    user_pipeline_cfg: dict[str, dict],
+    user_input: dict[str, dict] | tuple[str, int, int] | tuple[str, str],
     pandora_machine: PandoraMachine,
     checked_cfg_flag: bool = False,
-) -> Union[Tuple[float, float], None]:
+) -> tuple[float, float] | None:
     """
     Return the approximate memory consumption for a given pipeline in GiB.
 
@@ -404,17 +403,17 @@ def memory_consumption_estimation(
                 minmem = ((cv_size * m_line + n_line) * (1 - 0.1)) / 1024
                 maxmem = ((cv_size * m_line + n_line) * (1 + 0.1)) / 1024
 
-                logging.debug(
+                logging.debug(  # pylint:disable=logging-fstring-interpolation
                     "Estimated maximum memory consumption between "  # pylint:disable=consider-using-f-string
-                    "{:.2f} GiB and {:.2f} GiB".format(minmem, maxmem)
+                    f"{minmem:.2f} GiB and {maxmem:.2f} GiB"
                 )
                 return minmem, maxmem
     return None
 
 
 def check_pipeline_section(
-    user_cfg: Dict[str, dict], img_left: xr.Dataset, img_right: xr.Dataset, pandora_machine: PandoraMachine
-) -> Dict[str, dict]:
+    user_cfg: dict[str, dict], img_left: xr.Dataset, img_right: xr.Dataset, pandora_machine: PandoraMachine
+) -> dict[str, dict]:
     """
     Check if the pipeline is correct by
     - Checking the sequence of steps according to the machine transitions
@@ -447,7 +446,7 @@ def check_pipeline_section(
     return pipeline_cfg
 
 
-def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
+def check_input_section(user_cfg: dict[str, dict]) -> dict[str, dict]:
     """
     Complete and check if the dictionary is correct
 
@@ -496,7 +495,7 @@ def check_input_section(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
     return cfg
 
 
-def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> dict:
+def check_conf(user_cfg: dict[str, dict], pandora_machine: PandoraMachine) -> dict:
     """
     Complete and check if the dictionary is correct
 
@@ -538,7 +537,7 @@ def check_conf(user_cfg: Dict[str, dict], pandora_machine: PandoraMachine) -> di
     return cfg
 
 
-def concat_conf(cfg_list: List[Dict[str, dict]]) -> Dict[str, dict]:
+def concat_conf(cfg_list: list[dict[str, dict]]) -> dict[str, dict]:
     """
     Concatenate dictionaries
 
@@ -555,7 +554,7 @@ def concat_conf(cfg_list: List[Dict[str, dict]]) -> Dict[str, dict]:
     return cfg
 
 
-def read_multiscale_params(left_img: xr.Dataset, right_img: xr.Dataset, cfg: Dict[str, dict]) -> Tuple[int, int]:
+def read_multiscale_params(left_img: xr.Dataset, right_img: xr.Dataset, cfg: dict[str, dict]) -> tuple[int, int]:
     """
     Returns the multiscale parameters
 
@@ -676,7 +675,7 @@ default_short_configuration_pipeline: dict = {"pipeline": {}}
 default_short_configuration = concat_conf([default_short_configuration_input, default_short_configuration_pipeline])
 
 
-def read_config_file(config_file: PathLike | str) -> Dict[str, dict]:
+def read_config_file(config_file: PathLike | str) -> dict[str, dict]:
     """
     Read a json configuration file
 
@@ -685,12 +684,12 @@ def read_config_file(config_file: PathLike | str) -> Dict[str, dict]:
     :return user_cfg: configuration dictionary
     :rtype: dict
     """
-    with open(config_file, "r") as file_:  # pylint: disable=unspecified-encoding
+    with open(config_file) as file_:  # pylint: disable=unspecified-encoding
         user_cfg = json.load(file_)
     return user_cfg
 
 
-def update_conf(def_cfg: Dict[str, dict], user_cfg: Dict[str, dict]) -> Dict[str, dict]:
+def update_conf(def_cfg: dict[str, dict], user_cfg: dict[str, dict]) -> dict[str, dict]:
     """
     Update the default configuration with the user configuration,
 

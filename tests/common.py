@@ -24,10 +24,10 @@
 This module contains common functions present in Pandora's tests.
 """
 
-import os
-import logging
 import json
-from typing import Tuple
+import logging
+import os
+
 import numpy as np
 import xarray as xr
 from rasterio import Affine
@@ -46,14 +46,14 @@ def setup_logging(
     :type default_level: logging level
     """
     if os.path.exists(path):
-        with open(path, "rt", encoding="utf-8") as file_:
+        with open(path, encoding="utf-8") as file_:
             config = json.load(file_)
         logging.config.dictConfig(config)
     else:
         logging.basicConfig(level=default_level)
 
 
-def matching_cost_tests_setup() -> Tuple[xr.Dataset, xr.Dataset]:
+def matching_cost_tests_setup() -> tuple[xr.Dataset, xr.Dataset]:
     """
     Setup the matching_cost_tests data
 
@@ -82,7 +82,7 @@ def matching_cost_tests_setup() -> Tuple[xr.Dataset, xr.Dataset]:
     return left, right
 
 
-def matching_cost_tests_multiband_setup() -> Tuple[xr.Dataset, xr.Dataset]:
+def matching_cost_tests_multiband_setup() -> tuple[xr.Dataset, xr.Dataset]:
     """
     Setup the matching_cost_tests data
 

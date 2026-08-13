@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -26,7 +25,7 @@ This module contains functions associated to raster images.
 from __future__ import annotations
 
 import warnings
-from typing import Dict, List, Tuple, Union, cast
+from typing import cast
 
 import numpy as np
 import rasterio
@@ -36,10 +35,11 @@ from scipy.ndimage import zoom
 from skimage.transform.pyramids import pyramid_gaussian
 
 from pandora.constants import Criteria
+
 from .cpp import img_tools_cpp
 
 
-def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.DatasetReader:
+def rasterio_open(*args: str, **kwargs: int | str | None) -> rasterio.io.DatasetReader:
     """
     rasterio.open wrapper to silence UserWarning like NotGeoreferencedWarning.
 
@@ -58,7 +58,7 @@ def rasterio_open(*args: str, **kwargs: Union[int, str, None]) -> rasterio.io.Da
         return rasterio.open(*args, **kwargs)
 
 
-def get_window(roi: Dict, width: int, height: int) -> Window:
+def get_window(roi: dict, width: int, height: int) -> Window:
     """
     Get window from image size and roi
 
@@ -99,7 +99,7 @@ def get_window(roi: Dict, width: int, height: int) -> Window:
 
 
 def add_disparity(
-    dataset: xr.Dataset, disparity: Union[Tuple[int, int], list[int], str, None], window: Window
+    dataset: xr.Dataset, disparity: tuple[int, int] | list[int] | str | None, window: Window
 ) -> xr.Dataset:
     """
     Add disparity to dataset
@@ -137,8 +137,8 @@ def add_disparity(
 
 def add_disparity_grid(
     dataset: xr.Dataset,
-    disparity_grid: Union[xr.DataArray, None] = None,
-    disparity_source: Union[Tuple[int, int], list[int], str, None] = "xr.Dataset",
+    disparity_grid: xr.DataArray | None = None,
+    disparity_source: tuple[int, int] | list[int] | str | None = "xr.Dataset",
 ) -> xr.Dataset:
     """
     Add a disparity grid to dataset.
@@ -162,7 +162,7 @@ def add_disparity_grid(
     return dataset
 
 
-def add_classif(dataset: xr.Dataset, classif: Union[str, None], window: Window) -> xr.Dataset:
+def add_classif(dataset: xr.Dataset, classif: str | None, window: Window) -> xr.Dataset:
     """
     Add classification information and image to dataset
 
@@ -187,7 +187,7 @@ def add_classif(dataset: xr.Dataset, classif: Union[str, None], window: Window) 
     return dataset
 
 
-def add_segm(dataset: xr.Dataset, segm: Union[str, None], window: Window) -> xr.Dataset:
+def add_segm(dataset: xr.Dataset, segm: str | None, window: Window) -> xr.Dataset:
     """
     Add Segmentation information and image to dataset
 
@@ -209,7 +209,7 @@ def add_segm(dataset: xr.Dataset, segm: Union[str, None], window: Window) -> xr.
     return dataset
 
 
-def add_edges(dataset: xr.Dataset, edges: Union[str, None], window: Window) -> xr.Dataset:
+def add_edges(dataset: xr.Dataset, edges: str | None, window: Window) -> xr.Dataset:
     """
     Add Edges information and image to dataset
 
@@ -231,7 +231,7 @@ def add_edges(dataset: xr.Dataset, edges: Union[str, None], window: Window) -> x
     return dataset
 
 
-def add_no_data(dataset: xr.Dataset, no_data: Union[int, float], no_data_pixels: Tuple[np.ndarray, ...]) -> xr.Dataset:
+def add_no_data(dataset: xr.Dataset, no_data: int | float, no_data_pixels: tuple[np.ndarray, ...]) -> xr.Dataset:
     """
     Add no data information to dataset
 
@@ -256,8 +256,8 @@ def add_no_data(dataset: xr.Dataset, no_data: Union[int, float], no_data_pixels:
 
 def add_mask(
     dataset: xr.Dataset,
-    mask: Union[str, None],
-    no_data_pixels: Tuple[np.ndarray, ...],
+    mask: str | None,
+    no_data_pixels: tuple[np.ndarray, ...],
     width: int,
     height: int,
     window: Window,
@@ -507,7 +507,7 @@ def get_pyramids(data, num_scales, scale_factor, channel_axis=None):
 
 def prepare_pyramid(
     img_left: xr.Dataset, img_right: xr.Dataset, num_scales: int, scale_factor: int
-) -> Tuple[List[xr.Dataset], List[xr.Dataset]]:
+) -> tuple[list[xr.Dataset], list[xr.Dataset]]:
     """
     Return a List with the datasets at the different scales
 
@@ -575,7 +575,7 @@ def prepare_pyramid(
     return pyramid_left[::-1], pyramid_right[::-1]
 
 
-def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
+def fill_nodata_image(dataset: xr.Dataset) -> tuple[np.ndarray, np.ndarray]:
     """
     Interpolate no data values in image. If no mask was given, create all valid masks
 
@@ -616,7 +616,7 @@ def fill_nodata_image(dataset: xr.Dataset) -> Tuple[np.ndarray, np.ndarray]:
 interpolate_nodata_sgm = img_tools_cpp.interpolate_nodata_sgm
 
 
-def masks_pyramid(msk: np.ndarray, scale_factor: int, num_scales: int) -> List[np.ndarray]:
+def masks_pyramid(msk: np.ndarray, scale_factor: int, num_scales: int) -> list[np.ndarray]:
     """
     Return a List with the downsampled masks for each scale
 
@@ -640,8 +640,8 @@ def masks_pyramid(msk: np.ndarray, scale_factor: int, num_scales: int) -> List[n
 
 
 def convert_pyramid_to_dataset(
-    img_orig: xr.Dataset, images: List[np.ndarray], masks: List[np.ndarray], disps=None
-) -> List[xr.Dataset]:
+    img_orig: xr.Dataset, images: list[np.ndarray], masks: list[np.ndarray], disps=None
+) -> list[xr.Dataset]:
     """
     Return a List with the datasets at the different scales
 
@@ -710,7 +710,7 @@ def convert_pyramid_to_dataset(
     return pyramid
 
 
-def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None, order: int = 1) -> List[xr.Dataset]:
+def shift_right_img(img_right: xr.Dataset, subpix: int, band: str = None, order: int = 1) -> list[xr.Dataset]:
     """
     Return an array that contains the shifted right images
 
@@ -952,7 +952,7 @@ def compute_std_raster(img: xr.Dataset, win_size: int, band: str = None) -> np.n
     return np.sqrt(var)
 
 
-def read_disp(disparity: Tuple[int, int] | list[int] | str) -> Tuple[int, int] | Tuple[np.ndarray, np.ndarray]:
+def read_disp(disparity: tuple[int, int] | list[int] | str) -> tuple[int, int] | tuple[np.ndarray, np.ndarray]:
     """
     Read the disparity :
         - if cfg_disp is the path of a disparity grid, read and return the grids (type tuple of numpy arrays)
@@ -969,13 +969,13 @@ def read_disp(disparity: Tuple[int, int] | list[int] | str) -> Tuple[int, int] |
     if not isinstance(disparity, str):
         # cast because of mypy when we give list as input while it expects a tuple as output
         # not sure if it is the best solution
-        return cast(Tuple[int, int], tuple(disparity))
+        return cast(tuple[int, int], tuple(disparity))
 
     raster_disparity = rasterio_open(disparity)
     return raster_disparity.read(1), raster_disparity.read(2)
 
 
-def fuse_classification_bands(img: xr.Dataset, class_names: List[str]) -> np.ndarray:
+def fuse_classification_bands(img: xr.Dataset, class_names: list[str]) -> np.ndarray:
     """
     Get the multiband classification map present in the input image dataset
     and select the given classes to make a single-band classification map

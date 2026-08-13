@@ -22,13 +22,13 @@ Set of fixtures available to all tests.
 
 # pylint: disable=redefined-outer-name
 
+from collections.abc import Callable, Generator, Iterable
 from contextlib import contextmanager
-from typing import Union, Iterable, Generator, Callable
 
 import numpy as np
-import xarray as xr
 import pytest
 import rasterio
+import xarray as xr
 
 
 @pytest.fixture(scope="session")
@@ -45,7 +45,7 @@ def memory_tiff_file() -> Callable:
     """
 
     @contextmanager
-    def context_manager(data: Union[np.ndarray, xr.DataArray]) -> Generator[rasterio.MemoryFile, None, None]:
+    def context_manager(data: np.ndarray | xr.DataArray) -> Generator[rasterio.MemoryFile, None, None]:
         """
         Contextmanager that yield a Tiff file stored in memory.
 
@@ -62,7 +62,7 @@ def memory_tiff_file() -> Callable:
         :rtype: Generator[rasterio.MemoryFile, None, None]
         """
         nb_of_bands = 1
-        band_indices: Union[int, Iterable[int]] = 1
+        band_indices: int | Iterable[int] = 1
         if len(data.shape) == 2:
             row, col = data.shape
         else:

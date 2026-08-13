@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -23,19 +22,17 @@
 This module contains functions associated to the disparity map computation step.
 """
 
-from abc import ABCMeta, abstractmethod
-from typing import Dict, Union, Tuple
-
 import copy
+from abc import ABCMeta, abstractmethod
+
 import numpy as np
 import xarray as xr
-from json_checker import Checker, And, Or
+from json_checker import And, Checker, Or
 
 from pandora.constants import Criteria
+from pandora.criteria import mask_border
 from pandora.img_tools import compute_std_raster
 from pandora.margins.descriptors import NullMargins
-from pandora.criteria import mask_border
-
 from pandora.profiler import profile
 
 
@@ -46,8 +43,8 @@ class AbstractDisparity:
 
     __metaclass__ = ABCMeta
 
-    disparity_methods_avail: Dict = {}
-    cfg: Dict | None = None
+    disparity_methods_avail: dict = {}
+    cfg: dict | None = None
     margins = NullMargins()
 
     def __new__(cls, **cfg: dict):
@@ -60,20 +57,18 @@ class AbstractDisparity:
         if cls is AbstractDisparity:
             if isinstance(cfg["disparity_method"], str):
                 try:
-                    return super(AbstractDisparity, cls).__new__(cls.disparity_methods_avail[cfg["disparity_method"]])
+                    return super().__new__(cls.disparity_methods_avail[cfg["disparity_method"]])
                 except:
                     raise KeyError("No disparity method named {} supported".format(cfg["disparity_method"]))
             else:
                 if isinstance(cfg["disparity_method"], unicode):  # type: ignore # pylint:disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
-                        return super(AbstractDisparity, cls).__new__(
-                            cls.disparity_methods_avail[cfg["disparity_method"].encode("utf-8")]
-                        )
+                        return super().__new__(cls.disparity_methods_avail[cfg["disparity_method"].encode("utf-8")])
                     except:
                         raise KeyError("No disparity method named {} supported".format(cfg["disparity_method"]))
         else:
-            return super(AbstractDisparity, cls).__new__(cls)
+            return super().__new__(cls)
         return None
 
     @classmethod
@@ -315,7 +310,7 @@ def extract_disparity_interval_from_cost_volume(cost_volume: xr.Dataset) -> xr.D
     return result
 
 
-def extract_interval_from_disparity_map(disparity_map: xr.Dataset) -> Tuple[int, int]:
+def extract_interval_from_disparity_map(disparity_map: xr.Dataset) -> tuple[int, int]:
     """
     Return a DataArray with min and max disparity from `disparity_map`.
 
@@ -365,7 +360,7 @@ class WinnerTakesAll(AbstractDisparity):
         self.cfg = self.check_conf(**cfg)
         self._invalid_disparity = self.cfg["invalid_disparity"]
 
-    def check_conf(self, **cfg: Union[str, int, float, bool]) -> Dict[str, Union[str, int, float, bool]]:
+    def check_conf(self, **cfg: str | int | float | bool) -> dict[str, str | int | float | bool]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 

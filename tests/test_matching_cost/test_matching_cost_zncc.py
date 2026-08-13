@@ -28,14 +28,14 @@ This module contains functions to test the Zncc matching cost step.
 # pylint: disable=redefined-outer-name
 
 import unittest
-import pytest
 
 import numpy as np
+import pytest
 import xarray as xr
 
 from pandora import matching_cost
-from pandora.img_tools import add_disparity
 from pandora.criteria import validity_mask
+from pandora.img_tools import add_disparity
 from tests import common
 
 
@@ -87,16 +87,14 @@ class TestMatchingCostZncc(unittest.TestCase):
         row = self.left["im"].data[:, 1:]
         col = self.right["im"].data[:, :5]
         ground_truth = np.array(
-            (
-                [
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                    (np.mean(row * col) - (np.mean(row) * np.mean(col))) / (np.std(row) * np.std(col)),
-                    np.nan,
-                    np.nan,
-                ]
-            )
+            [
+                np.nan,
+                np.nan,
+                np.nan,
+                (np.mean(row * col) - (np.mean(row) * np.mean(col))) / (np.std(row) * np.std(col)),
+                np.nan,
+                np.nan,
+            ]
         )
 
         # Check if the calculated cost volume for the disparity -1 is equal to the ground truth
@@ -106,16 +104,14 @@ class TestMatchingCostZncc(unittest.TestCase):
         row = self.left["im"].data[:, :5]
         col = self.right["im"].data[:, 1:]
         ground_truth = np.array(
-            (
-                [
-                    np.nan,
-                    np.nan,
-                    (np.mean(row * col) - (np.mean(row) * np.mean(col))) / (np.std(row) * np.std(col)),
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                ]
-            )
+            [
+                np.nan,
+                np.nan,
+                (np.mean(row * col) - (np.mean(row) * np.mean(col))) / (np.std(row) * np.std(col)),
+                np.nan,
+                np.nan,
+                np.nan,
+            ]
         )
         # Check if the calculated cost volume
         # Check if the calculated cost volume for the disparity 1 is equal to the ground truth

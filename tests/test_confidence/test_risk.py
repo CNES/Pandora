@@ -24,9 +24,8 @@ This module contains functions to test the confidence module with risk.
 import numpy as np
 
 import pandora.cost_volume_confidence as confidence
-from pandora import matching_cost
+from pandora import img_tools, matching_cost
 from pandora.criteria import validity_mask
-from pandora import img_tools
 
 
 def test_compute_risk():

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -23,17 +22,18 @@
 This module contains functions associated to the Cross Based Cost Aggregation (cbca) method.
 """
 
-from typing import Dict, Union, Tuple, List, cast
+from typing import cast
 
 import numpy as np
 import xarray as xr
-from json_checker import Checker, And
+from json_checker import And, Checker
 
 from pandora.filter import AbstractFilter
 from pandora.img_tools import shift_right_img
 from pandora.profiler import profile
-from .cpp import aggregation_cpp
+
 from . import aggregation
+from .cpp import aggregation_cpp
 
 
 @aggregation.AbstractAggregation.register_subclass("cbca")
@@ -57,7 +57,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
         self._cbca_intensity = cast(float, self.cfg["cbca_intensity"])
         self._cbca_distance = cast(int, self.cfg["cbca_distance"])
 
-    def check_conf(self, **cfg: Union[str, float, int]) -> Dict[str, Union[str, float, int]]:
+    def check_conf(self, **cfg: str | float | int) -> dict[str, str | float | int]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
@@ -90,7 +90,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
 
     @profile("aggregation.cost_volume_aggregation")
     def cost_volume_aggregation(
-        self, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset, **cfg: Union[str, int]
+        self, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset, **cfg: str | int
     ) -> None:
         """
         Aggregated the cost volume with Cross-Based Cost Aggregation, using the pipeline define in
@@ -184,7 +184,7 @@ class CrossBasedCostAggregation(aggregation.AbstractAggregation):
 
     def computes_cross_supports(
         self, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset
-    ) -> Tuple[np.ndarray, List[np.ndarray]]:
+    ) -> tuple[np.ndarray, list[np.ndarray]]:
         """
         Prepare images and compute the cross support region of the left and right images.
         A 3x3 median filter is applied to the images before calculating the cross support region.

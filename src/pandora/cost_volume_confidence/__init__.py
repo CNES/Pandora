@@ -20,8 +20,5 @@
 Init file for cost volume confidence module.
 """
 
-from . import ambiguity
+from . import ambiguity, interval_bounds, risk, std_intensity
 from .cost_volume_confidence import AbstractCostVolumeConfidence
-from . import interval_bounds
-from . import std_intensity
-from . import risk

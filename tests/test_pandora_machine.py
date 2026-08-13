@@ -28,9 +28,9 @@ import numpy as np
 import pytest
 import xarray as xr
 from pytest_mock import MockerFixture
-from pandora import check_configuration
+
+from pandora import PandoraMachine, check_configuration
 from pandora.margins import Margins
-from pandora import PandoraMachine
 
 
 @pytest.fixture()

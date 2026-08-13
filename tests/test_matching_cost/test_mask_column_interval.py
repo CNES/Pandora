@@ -25,11 +25,11 @@ This module contains functions to test the cv_masked method.
 
 # pylint: disable=redefined-outer-name
 
-from typing import NamedTuple, Union
+from typing import NamedTuple
 
 import numpy as np
-import xarray as xr
 import pytest
+import xarray as xr
 
 from pandora import matching_cost
 from pandora.criteria import validity_mask
@@ -49,7 +49,7 @@ class MaskColumnIntervalParameters(NamedTuple):
     cost_volume: xr.Dataset
     coord_mask_left: np.ndarray
     coord_mask_right: np.ndarray
-    disp: Union[int, float]
+    disp: int | float
 
 
 class TestMaskColumnInterval:

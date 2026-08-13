@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -23,16 +22,14 @@
 This module contains functions for estimating the risk.
 """
 
-from typing import Dict, Tuple, Union
-
 import numpy as np
 import xarray as xr
 from json_checker import And, Checker
 
 from pandora.profiler import profile
-from .cpp import cost_volume_confidence_cpp
 
 from . import cost_volume_confidence
+from .cpp import cost_volume_confidence_cpp
 
 
 @cost_volume_confidence.AbstractCostVolumeConfidence.register_subclass("risk")
@@ -74,7 +71,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         self._etas = np.arange(self._eta_min, self._eta_max, self._eta_step)
         self._nbr_etas = self._etas.shape[0]
 
-    def check_conf(self, **cfg: Union[str, float]) -> Dict[str, Union[str, float]]:
+    def check_conf(self, **cfg: str | float) -> dict[str, str | float]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
@@ -115,7 +112,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         img_left: xr.Dataset = None,
         img_right: xr.Dataset = None,
         cv: xr.Dataset = None,
-    ) -> Tuple[xr.Dataset, xr.Dataset]:
+    ) -> tuple[xr.Dataset, xr.Dataset]:
         """
         Computes a risk confidence measure that evaluates the matching cost function at each point
 
@@ -173,7 +170,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         nbr_etas: int,
         grids: np.ndarray,
         disparity_range: np.ndarray,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Computes minimum and maximum risk.
         Cost Volume must correspond to min similarity measure.
@@ -206,7 +203,7 @@ class Risk(cost_volume_confidence.AbstractCostVolumeConfidence):
         nbr_etas: int,
         grids: np.ndarray,
         disparity_range: np.ndarray,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Computes minimum and maximum risk and sampled_risk.
         Cost Volume must correspond to min similarity measure.

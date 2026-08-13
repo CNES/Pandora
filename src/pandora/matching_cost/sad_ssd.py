@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -23,16 +22,13 @@
 This module contains functions associated to SAD and SSD methods used in the cost volume measure step.
 """
 
-from typing import Dict, Union, Tuple, List
-
 import numpy as np
 import xarray as xr
-from json_checker import Checker, And
+from json_checker import And, Checker
 
-from pandora.img_tools import shift_right_img
 from pandora import common
+from pandora.img_tools import shift_right_img
 from pandora.matching_cost import matching_cost
-
 from pandora.profiler import profile
 
 
@@ -43,7 +39,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
     """
 
     @profile("sad_ssd.__init__")
-    def __init__(self, **cfg: Union[str, int]) -> None:
+    def __init__(self, **cfg: str | int) -> None:
         """
         :param cfg: optional configuration,  {'matching_cost_method': value, 'window_size': value, 'subpix': value}
         :type cfg: dict
@@ -53,7 +49,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         super().instantiate_class(**cfg)
         self._pixel_wise_methods = {"sad": self.ad_cost, "ssd": self.sd_cost}
 
-    def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
+    def check_conf(self, **cfg: dict[str, str | int]) -> dict[str, str | int]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
@@ -207,7 +203,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         return cost_volume
 
     def allocate_numpy_cost_volume(
-        self, img_left: xr.Dataset, disparity_range: Union[np.ndarray, List], offset_row_col: int = 0
+        self, img_left: xr.Dataset, disparity_range: np.ndarray | list, offset_row_col: int = 0
     ) -> np.ndarray:
         # Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
         # If offset , over allocate the cost volume by adding 2 * offset on row and col dimension
@@ -216,8 +212,8 @@ class SadSsd(matching_cost.AbstractMatchingCost):
         return np.full(
             (
                 len(disparity_range),
-                int((img_left.sizes["col"] + 2 * offset_row_col)),
-                int((img_left.sizes["row"] + 2 * offset_row_col)),
+                int(img_left.sizes["col"] + 2 * offset_row_col),
+                int(img_left.sizes["row"] + 2 * offset_row_col),
             ),
             np.nan,
             dtype=np.float32,
@@ -225,8 +221,8 @@ class SadSsd(matching_cost.AbstractMatchingCost):
 
     def ad_cost(
         self,
-        point_p: Tuple[int, int],
-        point_q: Tuple[int, int],
+        point_p: tuple[int, int],
+        point_q: tuple[int, int],
         img_left: xr.Dataset,
         img_right: xr.Dataset,
     ) -> np.ndarray:
@@ -282,7 +278,7 @@ class SadSsd(matching_cost.AbstractMatchingCost):
             )
         return cost
 
-    def sd_cost(self, point_p: Tuple, point_q: Tuple, img_left: xr.Dataset, img_right: xr.Dataset) -> np.ndarray:
+    def sd_cost(self, point_p: tuple, point_q: tuple, img_left: xr.Dataset, img_right: xr.Dataset) -> np.ndarray:
         """
         Computes the square difference
 

@@ -28,14 +28,14 @@ This module contains functions to test the matching cost step.
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-lines
 
-import numpy as np
-import xarray as xr
 import json_checker
+import numpy as np
 import pytest
+import xarray as xr
 
 from pandora import matching_cost
+from pandora.img_tools import add_disparity, create_dataset_from_inputs
 from pandora.margins.descriptors import HalfWindowMargins
-from pandora.img_tools import create_dataset_from_inputs, add_disparity
 from tests import common  # pylint: disable=no-name-in-module
 
 

@@ -1,5 +1,4 @@
 # type: ignore
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -26,10 +25,10 @@
 This module contains functions to test the disparity denoiser filter.
 """
 
-import pytest
-from json_checker import MissKeyCheckerError, DictCheckerError
 import numpy as np
+import pytest
 import xarray as xr
+from json_checker import DictCheckerError, MissKeyCheckerError
 
 import pandora.constants as cst
 import pandora.filter as flt

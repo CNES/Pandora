@@ -31,8 +31,8 @@ This module contains functions to test the matching cost's cv_masked function.
 from typing import NamedTuple
 
 import numpy as np
-import xarray as xr
 import pytest
+import xarray as xr
 
 from pandora import matching_cost
 from pandora.criteria import validity_mask

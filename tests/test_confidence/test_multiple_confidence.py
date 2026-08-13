@@ -22,11 +22,8 @@ This module contains functions to test the confidence module with mixed measure.
 """
 
 import numpy as np
-import xarray as xr
-from rasterio import Affine
 
 import pandora
-from pandora.img_tools import add_disparity
 from pandora.state_machine import PandoraMachine
 
 

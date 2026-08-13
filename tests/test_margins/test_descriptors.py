@@ -21,11 +21,11 @@
 import pytest
 
 from pandora.margins.descriptors import (
-    ReadOnlyDescriptor,
     FixedMargins,
-    UniformMargins,
-    NullMargins,
     HalfWindowMargins,
+    NullMargins,
+    ReadOnlyDescriptor,
+    UniformMargins,
 )
 
 

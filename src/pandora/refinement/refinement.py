@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -24,7 +23,6 @@ This module contains classes and functions associated to the subpixel refinement
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import Dict
 
 import xarray as xr
 
@@ -42,9 +40,9 @@ class AbstractRefinement:
 
     __metaclass__ = ABCMeta
 
-    subpixel_methods_avail: Dict = {}
+    subpixel_methods_avail: dict = {}
     _refinement_method_name: str | None = None
-    cfg: Dict | None = None
+    cfg: dict | None = None
     margins = NullMargins()
 
     def __new__(cls, **cfg: dict):
@@ -57,20 +55,18 @@ class AbstractRefinement:
         if cls is AbstractRefinement:
             if isinstance(cfg["refinement_method"], str):
                 try:
-                    return super(AbstractRefinement, cls).__new__(cls.subpixel_methods_avail[cfg["refinement_method"]])
+                    return super().__new__(cls.subpixel_methods_avail[cfg["refinement_method"]])
                 except:
                     raise KeyError("No refinement method named {} supported".format(cfg["refinement_method"]))
             else:
                 if isinstance(cfg["refinement_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
-                        return super(AbstractRefinement, cls).__new__(
-                            cls.subpixel_methods_avail[cfg["refinement_method"].encode("utf-8")]
-                        )
+                        return super().__new__(cls.subpixel_methods_avail[cfg["refinement_method"].encode("utf-8")])
                     except:
                         raise KeyError("No refinement method named {} supported".format(cfg["refinement_method"]))
         else:
-            return super(AbstractRefinement, cls).__new__(cls)
+            return super().__new__(cls)
         return None
 
     @profile("subpixel_refinement")

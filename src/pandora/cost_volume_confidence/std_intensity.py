@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -23,14 +22,13 @@
 This module contains functions for estimating confidence from image.
 """
 
-from typing import Dict, Tuple
-
 import numpy as np
-from json_checker import Checker, And
 import xarray as xr
+from json_checker import And, Checker
 
-from pandora.profiler import profile
 from pandora.img_tools import compute_std_raster
+from pandora.profiler import profile
+
 from . import cost_volume_confidence
 
 
@@ -55,7 +53,7 @@ class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
         # Indicator
         self._indicator = self._method + self.cfg["indicator"]
 
-    def check_conf(self, **cfg: str) -> Dict[str, str]:
+    def check_conf(self, **cfg: str) -> dict[str, str]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
@@ -87,7 +85,7 @@ class StdIntensity(cost_volume_confidence.AbstractCostVolumeConfidence):
         img_left: xr.Dataset = None,
         img_right: xr.Dataset = None,
         cv: xr.Dataset = None,
-    ) -> Tuple[xr.Dataset, xr.Dataset]:
+    ) -> tuple[xr.Dataset, xr.Dataset]:
         """
         Computes a confidence measure that evaluates the standard deviation of intensity of the left image
 
