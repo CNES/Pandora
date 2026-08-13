@@ -17,8 +17,8 @@
 # limitations under the License.
 
 # pylint: skip-file
+
 import numpy as np
-from typing import Tuple
 
 def create_connected_graph(border_left: np.ndarray, border_right: np.ndarray, depth: int) -> np.ndarray:
     """
@@ -42,7 +42,7 @@ def graph_regularization(
     border_right: np.ndarray,
     connection_graph: np.ndarray,
     quantile: float,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Regularize the intervals based on quantiles and a given connection graph.
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -23,8 +22,6 @@
 This module contains functions associated to confidence intervals.
 """
 
-from typing import Tuple
-
 import numpy as np
 
 from .cpp import interval_tools_cpp
@@ -42,7 +39,7 @@ def interval_regularization(
     ambiguity_kernel_size: int,
     vertical_depth: int = 0,
     quantile_regularization: float = 1.0,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Regularize interval bounds in ambiguous zones.
 

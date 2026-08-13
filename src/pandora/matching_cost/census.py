@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -23,11 +22,9 @@
 This module contains functions associated to census method used in the cost volume measure step.
 """
 
-from typing import Dict, Union
-
 import numpy as np
 import xarray as xr
-from json_checker import Checker, And
+from json_checker import And, Checker
 
 from pandora.img_tools import shift_right_img
 from pandora.matching_cost import matching_cost
@@ -43,7 +40,7 @@ class Census(matching_cost.AbstractMatchingCost):
     """
 
     @profile("census.__init__")
-    def __init__(self, **cfg: Dict[str, Union[str, int]]) -> None:
+    def __init__(self, **cfg: dict[str, str | int]) -> None:
         """
         :param cfg: optional configuration,  {'window_size': value, 'subpix': value}
         :type cfg: dict
@@ -52,7 +49,7 @@ class Census(matching_cost.AbstractMatchingCost):
 
         super().instantiate_class(**cfg)  # type: ignore
 
-    def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
+    def check_conf(self, **cfg: dict[str, str | int]) -> dict[str, str | int]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 

@@ -23,11 +23,11 @@ Margin margins
 
 from __future__ import annotations
 
-from collections import UserDict
-from dataclasses import dataclass, astuple, asdict
 import operator
+from collections import UserDict
+from collections.abc import Sequence
+from dataclasses import asdict, astuple, dataclass
 from functools import reduce
-from typing import Sequence, Tuple, Dict
 
 __all__ = ["Margins", "max_margins", "MarginDict", "GlobalMargins"]
 
@@ -48,11 +48,11 @@ class Margins:
     def __add__(self, other: Margins) -> Margins:
         return Margins(*map(operator.add, self.astuple(), other.astuple()))
 
-    def astuple(self) -> Tuple:
+    def astuple(self) -> tuple:
         """Convert self to a tuple of (left, up, right, down)."""
         return astuple(self)
 
-    def asdict(self) -> Dict:
+    def asdict(self) -> dict:
         """Convert self to a dictionary."""
         return asdict(self)
 

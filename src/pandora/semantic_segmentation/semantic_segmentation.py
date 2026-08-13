@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -24,7 +23,6 @@ This module contains classes and functions associated to the semantic segmentati
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import Dict
 
 import xarray as xr
 
@@ -36,10 +34,10 @@ class AbstractSemanticSegmentation:
 
     __metaclass__ = ABCMeta
 
-    segmentation_methods_avail: Dict = {}
+    segmentation_methods_avail: dict = {}
     cfg = None
 
-    def __new__(cls, _img: xr.Dataset, **cfg: Dict[str, dict]):
+    def __new__(cls, _img: xr.Dataset, **cfg: dict[str, dict]):
         """
         Return the plugin associated with the segmentation_method given in the configuration
 
@@ -51,9 +49,7 @@ class AbstractSemanticSegmentation:
         if cls is AbstractSemanticSegmentation:
             if isinstance(cfg["segmentation_method"], str):
                 try:
-                    return super(AbstractSemanticSegmentation, cls).__new__(
-                        cls.segmentation_methods_avail[cfg["segmentation_method"]]
-                    )
+                    return super().__new__(cls.segmentation_methods_avail[cfg["segmentation_method"]])
                 except:
                     raise KeyError(
                         "No semantic segmentation method named {} supported".format(cfg["segmentation_method"])
@@ -62,7 +58,7 @@ class AbstractSemanticSegmentation:
                 if isinstance(cfg["segmentation_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
-                        return super(AbstractSemanticSegmentation, cls).__new__(
+                        return super().__new__(
                             cls.segmentation_methods_avail[cfg["segmentation_method"].encode("utf-8")]
                         )
                     except:
@@ -70,7 +66,7 @@ class AbstractSemanticSegmentation:
                             "No semantic segmentation method named {} supported".format(cfg["segmentation_method"])
                         )
         else:
-            return super(AbstractSemanticSegmentation, cls).__new__(cls)
+            return super().__new__(cls)
         return None
 
     @classmethod

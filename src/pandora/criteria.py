@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -23,16 +22,16 @@
 This module contains functions associated to the validity mask created in the cost volume step.
 """
 
-from typing import Union, Tuple
 from enum import IntFlag
 
 import numpy as np
-from numpy.typing import DTypeLike, ArrayLike
-from scipy.ndimage import binary_dilation
 import xarray as xr
-from pandora.constants import Criteria
+from numpy.typing import ArrayLike, DTypeLike
+from scipy.ndimage import binary_dilation
 
+from pandora.constants import Criteria
 from pandora.profiler import profile
+
 from .cpp import criteria_cpp
 
 
@@ -270,7 +269,7 @@ def allocate_left_mask(cv: xr.Dataset, img_left: xr.Dataset) -> None:
     ).data.astype(np.uint16)
 
 
-def allocate_right_mask(cv: xr.Dataset, img_right: xr.Dataset, bit_1: Union[np.ndarray, Tuple]) -> None:
+def allocate_right_mask(cv: xr.Dataset, img_right: xr.Dataset, bit_1: np.ndarray | tuple) -> None:
     """
     Allocate the right image mask
 
@@ -305,41 +304,25 @@ def allocate_right_mask(cv: xr.Dataset, img_right: xr.Dataset, bit_1: Union[np.n
         (r_mask != img_right.attrs["no_data_mask"]) & (r_mask != img_right.attrs["valid_pixels"]),
         1,
         0,
-    ).data
+    ).data.astype(np.uint8)
 
-    # Useful to calculate the case where the disparity interval is incomplete, and all remaining right
-    # positions are invalidated by the right mask
-    b_2_7 = np.full((cv.sizes["row"], cv.sizes["col"]), 0, dtype=np.uint16)
-    # Useful to calculate the case where no_data in the right image invalidated the disparity interval
-    no_data_right = np.full((cv.sizes["row"], cv.sizes["col"]), 0, dtype=np.uint16)
+    # bit_1 is a np.where tuple of column indices (disparity interval outside the right image,
+    # already flagged in validity_mask). Convert it to a 1D boolean skip mask for the C++ loop.
+    bit_1_skip = np.zeros(cv.sizes["col"], dtype=bool)
+    if len(bit_1[0]) > 0:
+        bit_1_skip[bit_1[0]] = True
 
-    col_range = np.arange(cv.sizes["col"])
-    for dsp in range(d_min, d_max + 1):
-        # Diagonal in the cost volume
-        col_d = col_range + dsp
-        valid_index = np.where((col_d >= col_range[0] + offset) & (col_d <= col_range[-1] - offset))
-
-        # No_data and masked pixels do not raise the same flag, we need to treat them differently
-        b_2_7[:, col_range[valid_index]] += r_mask[:, col_d[valid_index]].astype(np.uint16)
-        b_2_7[:, col_range[np.setdiff1d(col_range, valid_index)]] += 1
-
-        no_data_right[:, col_range[valid_index]] += dil[:, col_d[valid_index]]
-        no_data_right[:, col_range[np.setdiff1d(col_range, valid_index)]] += 1
-
-        # Exclusion of pixels that have flag 1 already enabled
-        b_2_7[:, bit_1[0]] = 0
-        no_data_right[:, bit_1[0]] = 0
-
-        # Invalid pixel: right positions invalidated by the mask of the right image given as input
-        cv["validity_mask"].data[np.where(b_2_7 == len(range(d_min, d_max + 1)))] |= np.uint16(
-            Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT
-        )
-
-        # If Invalid pixel : the disparity interval is missing in the right image (disparity interval
-        # is invalidated by no_data in the right image )
-        cv["validity_mask"].data[np.where(no_data_right == len(range(d_min, d_max + 1)))] |= np.uint16(
-            Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING
-        )
+    criteria_cpp.allocate_right_mask_cpp(
+        cv["validity_mask"].data,
+        bit_1_skip,
+        dil,
+        r_mask,
+        d_min,
+        d_max,
+        offset,
+        int(Criteria.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT),
+        int(Criteria.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING),
+    )
 
 
 def mask_invalid_variable_disparity_range(cv: xr.Dataset) -> None:

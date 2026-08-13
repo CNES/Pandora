@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -23,13 +22,11 @@
 This module contains the function which defines the images margins.
 """
 
-from typing import Dict
-
 import numpy as np
 import xarray as xr
 
 
-def get_margins(disp_min: int, disp_max: int, cfg: Dict[str, dict]) -> xr.Dataset:
+def get_margins(disp_min: int, disp_max: int, cfg: dict[str, dict]) -> xr.Dataset:
     """
     Calculates the margins for the left and right images according to the
     steps present on the pipeline.

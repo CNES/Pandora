@@ -28,16 +28,17 @@ This module contains functions to test all the methods in img_tools module.
 # pylint: disable=redefined-outer-name
 
 import copy
+
 import numpy as np
 import pytest
 import rasterio
-from rasterio.windows import Window
-from rasterio.errors import RasterioIOError
 import xarray as xr
+from rasterio.errors import RasterioIOError
+from rasterio.windows import Window
 
 import pandora
 from pandora import img_tools
-from pandora.img_tools import rasterio_open, create_dataset_from_inputs
+from pandora.img_tools import create_dataset_from_inputs, rasterio_open
 from tests import common
 
 
@@ -73,7 +74,7 @@ def multiband_image():
             ),
             id="Window size of 3",
         ),
-        pytest.param(5, np.array(([[0b0000000001000110000000000, 0b0]])), id="Window size of 5"),
+        pytest.param(5, np.array([[0b0000000001000110000000000, 0b0]]), id="Window size of 5"),
     ],
 )
 class TestSensusTransform:
@@ -112,7 +113,7 @@ class TestSensusTransform:
             ),
             id="Window size of 3",
         ),
-        pytest.param(5, np.array(([[31 / 25.0, 31 / 25.0]])), id="Window size of 5"),
+        pytest.param(5, np.array([[31 / 25.0, 31 / 25.0]]), id="Window size of 5"),
     ],
 )
 class TestComputeMeanMaster:
@@ -206,7 +207,7 @@ class TestStdRaster:
     def test_monoband_with_window_size_of_5(self, monoband_image):
         """Test monoband with window size of 5."""
         # standard deviation raster ground truth for the image with window size 5
-        std_ground_truth = np.array(([[np.std(monoband_image["im"][:, :5]), np.std(monoband_image["im"][:, 1:])]]))
+        std_ground_truth = np.array([[np.std(monoband_image["im"][:, :5]), np.std(monoband_image["im"][:, 1:])]])
         # Computes the standard deviation raster for the image with window size 5
         std_r = img_tools.compute_std_raster(monoband_image, 5)
         # Check if the calculated standard deviation is equal ( to desired tolerance 1e-07 ) to the ground truth
@@ -246,7 +247,7 @@ class TestStdRaster:
         """Test multiband with window size of 5."""
         # standard deviation raster ground truth for the image self.img with window size 5
         std_ground_truth = np.array(
-            ([[np.std(multiband_image["im"][0, :, :5]), np.std(multiband_image["im"][0, :, 1:])]])
+            [[np.std(multiband_image["im"][0, :, :5]), np.std(multiband_image["im"][0, :, 1:])]]
         )
         # Computes the standard deviation raster for the image self.img with window size 5
         std_r = img_tools.compute_std_raster(multiband_image, 5, "red")

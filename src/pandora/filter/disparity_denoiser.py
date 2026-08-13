@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -23,15 +22,13 @@
 This module contains functions associated to the disparity denoiser filter used to filter the disparity map.
 """
 
-from typing import Dict, Union
-
-import xarray as xr
-from json_checker import Checker, And, Or
 import numpy as np
+import xarray as xr
+from json_checker import And, Checker, Or
 from scipy.ndimage import gaussian_filter
 
-from pandora.profiler import profile
 import pandora.constants as cst
+from pandora.profiler import profile
 
 from . import filter  # pylint: disable=redefined-builtin
 
@@ -63,7 +60,7 @@ class DisparityDenoiser(filter.AbstractFilter):
     _BAND = None
 
     @profile("disparity_denoiser.__init__")
-    def __init__(self, *args, cfg: Dict, **kwargs):  # pylint:disable=unused-argument
+    def __init__(self, *args, cfg: dict, **kwargs):  # pylint:disable=unused-argument
         """
         :param cfg: optional configuration, {'filterSize': value,  'sigmaEuclidian' : value,
         'sigmaColor' : value, 'sigmaPlanar' : value, 'sigmaGrad': value}
@@ -89,7 +86,7 @@ class DisparityDenoiser(filter.AbstractFilter):
         )
         self.win_coords = np.stack(win_coords, 0)
 
-    def check_conf(self, cfg: Dict) -> Dict[str, Union[str, float]]:
+    def check_conf(self, cfg: dict) -> dict[str, str | float]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 

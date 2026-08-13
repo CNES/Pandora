@@ -27,15 +27,15 @@ This module contains functions to test the SAD matching cost step.
 """
 
 import unittest
-import pytest
 
 import numpy as np
+import pytest
 import xarray as xr
 from rasterio import Affine
 
 from pandora import matching_cost
-from pandora.img_tools import add_disparity
 from pandora.criteria import validity_mask
+from pandora.img_tools import add_disparity
 from tests import common
 
 
@@ -87,15 +87,13 @@ class TestMatchingCostSAD(unittest.TestCase):
 
         # Sum of absolute difference pixel-wise ground truth for the images self.left, self.right with window size 5
         sad_ground_truth = np.array(
-            (
-                [
-                    [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, 6.0, 10.0, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                ]
-            )
+            [
+                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                [np.nan, np.nan, 6.0, 10.0, np.nan, np.nan],
+                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+            ]
         )
 
         # Computes the ad cost for the whole images
@@ -158,15 +156,13 @@ class TestMatchingCostSAD(unittest.TestCase):
 
         # Sum of absolute difference pixel-wise ground truth for the images self.left, self.right with window size 5
         sad_ground_truth = np.array(
-            (
-                [
-                    [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, 6.0, 10.0, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                ]
-            )
+            [
+                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                [np.nan, np.nan, 6.0, 10.0, np.nan, np.nan],
+                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+            ]
         )
         # Computes the ad cost for the whole images
         matching_cost_matcher = matching_cost.AbstractMatchingCost(

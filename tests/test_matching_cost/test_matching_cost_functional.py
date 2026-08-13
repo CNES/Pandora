@@ -22,11 +22,11 @@ This module contains functional tests for the matching cost step.
 """
 
 import pytest
-import pandora
 
+import pandora
 import pandora.matching_cost
-from pandora.state_machine import PandoraMachine
 from pandora.img_tools import create_dataset_from_inputs
+from pandora.state_machine import PandoraMachine
 
 
 class TestFunctionalMatchingCost:

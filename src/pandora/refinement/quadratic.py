@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -23,14 +22,8 @@
 This module contains functions associated to the quadratic method used in the refinement step.
 """
 
-from typing import Dict, Tuple
-import numpy as np
-
 from json_checker import And, Checker
 
-from pandora.constants import Criteria
-
-from .cpp import refinement_cpp
 from . import refinement
 
 
@@ -39,12 +32,6 @@ class Quadratic(refinement.AbstractRefinement):
     """
     Quadratic class allows to perform the subpixel cost refinement step
     """
-
-    @staticmethod
-    def refinement_method(cost: np.ndarray, disp: float, measure: str) -> Tuple[float, float, int]:
-        return refinement_cpp.quadratic_refinement_method(
-            cost, disp, measure, Criteria.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
-        )
 
     def __init__(self, **cfg: str) -> None:
         """
@@ -56,7 +43,7 @@ class Quadratic(refinement.AbstractRefinement):
         self._refinement_method_name = str(self.cfg["refinement_method"])
 
     @staticmethod
-    def check_conf(**cfg: str) -> Dict[str, str]:
+    def check_conf(**cfg: str) -> dict[str, str]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 

@@ -26,14 +26,14 @@ This module contains functions to test the SSD matching cost step.
 """
 
 import unittest
-import pytest
 
 import numpy as np
+import pytest
 import xarray as xr
 
 from pandora import matching_cost
-from pandora.img_tools import add_disparity
 from pandora.criteria import validity_mask
+from pandora.img_tools import add_disparity
 from tests import common
 
 
@@ -85,15 +85,13 @@ class TestMatchingCostSSD(unittest.TestCase):
 
         # Sum of squared difference pixel-wise ground truth for the images self.left, self.right, with window_size = 5
         ssd_ground_truth = np.array(
-            (
-                [
-                    [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, 12.0, 22.0, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                ]
-            )
+            [
+                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                [np.nan, np.nan, 12.0, 22.0, np.nan, np.nan],
+                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+            ]
         )
 
         # Computes the sd cost for the whole images
@@ -154,15 +152,13 @@ class TestMatchingCostSSD(unittest.TestCase):
 
         # Sum of squared difference pixel-wise ground truth for the images self.left, self.right, with window_size = 5
         ssd_ground_truth = np.array(
-            (
-                [
-                    [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, 12.0, 22.0, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                    [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                ]
-            )
+            [
+                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                [np.nan, np.nan, 12.0, 22.0, np.nan, np.nan],
+                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+            ]
         )
 
         # Compute gt cmax:

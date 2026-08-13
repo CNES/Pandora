@@ -30,5 +30,11 @@ PYBIND11_MODULE(criteria_cpp, m) {
         &partially_missing_variable_ranges,
         ""
     );
-    
+
+    m.def(
+        "allocate_right_mask_cpp",
+        &allocate_right_mask_cpp,
+        ""
+    );
+
 }

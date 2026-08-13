@@ -30,7 +30,6 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import Dict, Union, List
 
 import numpy as np
 import xarray as xr
@@ -48,20 +47,20 @@ from transitions import MachineError
 
 from pandora import (  # pylint: disable=redefined-builtin
     aggregation,
+    cost_volume_confidence,
     disparity,
     filter,
+    matching_cost,
     multiscale,
     optimization,
     refinement,
-    matching_cost,
     semantic_segmentation,
+    validation,
 )
-from pandora.profiler import profile
-from pandora.margins import GlobalMargins
 from pandora.criteria import validity_mask
+from pandora.margins import GlobalMargins
+from pandora.profiler import profile
 
-from pandora import validation
-from pandora import cost_volume_confidence
 from .img_tools import prepare_pyramid
 
 # This module contains class associated to the pandora state machine
@@ -211,9 +210,9 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :return: None
         """
         # Left image scale pyramid
-        self.img_left_pyramid: List[xr.Dataset] = [None]
+        self.img_left_pyramid: list[xr.Dataset] = [None]
         # Right image scale pyramid
-        self.img_right_pyramid: List[xr.Dataset] = [None]
+        self.img_right_pyramid: list[xr.Dataset] = [None]
         # Left image
         self.left_img: xr.Dataset = None
         # Right image
@@ -254,7 +253,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         self.step: int = 1
 
         # Pandora's pipeline configuration
-        self.pipeline_cfg: Dict = {"pipeline": {}}
+        self.pipeline_cfg: dict = {"pipeline": {}}
 
         # Margins that cumulates:
         self.margins = GlobalMargins()
@@ -265,7 +264,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         states_ = ["begin", "cost_volume", "disp_map"]
 
         # Instance matching_cost
-        self.matching_cost_: Union[matching_cost.AbstractMatchingCost, None] = None
+        self.matching_cost_: matching_cost.AbstractMatchingCost | None = None
 
         if FLAG_GRAPHVIZ:
             # Initialize a machine without any transition
@@ -290,7 +289,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         logging.getLogger("transitions").setLevel(logging.WARNING)
 
     @profile("matching_cost_prepare")
-    def matching_cost_prepare(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def matching_cost_prepare(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Matching cost computation
         :param cfg: user configuration
@@ -331,7 +330,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             self.right_cv = validity_mask(self.right_img, self.left_img, self.right_cv)
 
     @profile("matching_cost_run")
-    def matching_cost_run(self, _: Dict[str, dict], __: str) -> None:
+    def matching_cost_run(self, _: dict[str, dict], __: str) -> None:
         """
         Matching cost computation
         :return: None
@@ -364,7 +363,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             )
 
     @profile("aggregation_run")
-    def aggregation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def aggregation_run(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Cost (support) aggregation
         :param cfg: pipeline configuration
@@ -380,7 +379,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             aggregation_.cost_volume_aggregation(self.right_img, self.left_img, self.right_cv)
 
     @profile("semantic_segmentation_run")
-    def semantic_segmentation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def semantic_segmentation_run(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Building semantic segmentation computation
         :param cfg: pipeline configuration
@@ -402,7 +401,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             )
 
     @profile("optimization_run")
-    def optimization_run(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def optimization_run(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Cost optimization
         :param cfg: pipeline configuration
@@ -419,7 +418,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             self.right_cv = optimization_.optimize_cv(self.right_cv, self.right_img, self.left_img)
 
     @profile("disparity_run")
-    def disparity_run(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def disparity_run(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Disparity computation and validity mask
         :param cfg: pipeline configuration
@@ -448,7 +447,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             self.right_disparity = disparity_.to_disp(self.right_cv, self.right_img, self.left_img)
 
     @profile("filter_run")
-    def filter_run(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def filter_run(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Disparity filter
         :param cfg: pipeline configuration
@@ -473,7 +472,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             filter_.filter_disparity(self.right_disparity, self.right_img)
 
     @profile("refinement_run")
-    def refinement_run(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def refinement_run(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Subpixel disparity refinement
         :param cfg: pipeline configuration
@@ -490,7 +489,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             refinement_.subpixel_refinement(self.right_cv, self.right_disparity)
 
     @profile("validation_run")
-    def validation_run(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def validation_run(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Validation of disparity map
         :param cfg: pipeline configuration
@@ -519,7 +518,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             self.right_cv = None
 
     @profile("run_multiscale")
-    def run_multiscale(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def run_multiscale(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Compute the disparity range for the next scale
         :param cfg: pipeline configuration
@@ -559,7 +558,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         self.current_scale = self.current_scale - 1
 
     @profile("cost_volume_confidence_run")
-    def cost_volume_confidence_run(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def cost_volume_confidence_run(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Confidence prediction
         :param cfg: pipeline configuration
@@ -589,11 +588,11 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
     @profile("run_prepare")
     def run_prepare(
         self,
-        cfg: Dict[str, dict],
+        cfg: dict[str, dict],
         left_img: xr.Dataset,
         right_img: xr.Dataset,
-        scale_factor: Union[None, int] = None,
-        num_scales: Union[None, int] = None,
+        scale_factor: None | int = None,
+        num_scales: None | int = None,
     ) -> None:
         """
         Prepare the machine before running
@@ -691,7 +690,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # Add transitions
         self.add_transitions(self._transitions_run)
 
-    def run(self, input_step: str, cfg: Dict[str, dict]) -> None:
+    def run(self, input_step: str, cfg: dict[str, dict]) -> None:
         """
         Run pandora step by triggering the corresponding machine transition
 
@@ -729,7 +728,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         self.remove_transitions(self._transitions_run)
         self.set_state("begin")
 
-    def matching_cost_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def matching_cost_check_conf(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Check the matching cost configuration
 
@@ -758,7 +757,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             matching_cost_.cfg["band"],  # type: ignore
         )
 
-    def disparity_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def disparity_check_conf(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Check the disparity computation configuration
 
@@ -772,7 +771,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         self.pipeline_cfg["pipeline"][input_step] = disparity_.cfg
         self.margins.add_cumulative(input_step, disparity_.margins)
 
-    def filter_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def filter_check_conf(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Check the filter configuration
 
@@ -791,7 +790,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         self.pipeline_cfg["pipeline"][input_step] = filter_.cfg
         self.margins.add_non_cumulative(input_step, filter_.margins)
 
-    def refinement_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def refinement_check_conf(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Check the refinement configuration
 
@@ -805,7 +804,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         self.pipeline_cfg["pipeline"][input_step] = refinement_.cfg
         self.margins.add_cumulative(input_step, refinement_.margins)
 
-    def aggregation_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def aggregation_check_conf(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Check the aggregation configuration
 
@@ -819,7 +818,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         self.pipeline_cfg["pipeline"][input_step] = aggregation_.cfg
         self.margins.add_cumulative(input_step, aggregation_.margins)
 
-    def semantic_segmentation_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def semantic_segmentation_check_conf(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Check the semantic_segmentation configuration
 
@@ -854,7 +853,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                 cfg["semantic_segmentation"]["vegetation_band"]["classes"],
             )
 
-    def optimization_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def optimization_check_conf(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Check the optimization configuration
 
@@ -891,7 +890,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                     )
         self.margins.add_cumulative(input_step, optimization_.margins)
 
-    def validation_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def validation_check_conf(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Check the validation configuration
 
@@ -921,7 +920,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         elif isinstance(ds_left, str) and isinstance(ds_right, str):
             logging.warning("The right disp will be ignored, and instead computed from the left disp.")
 
-    def multiscale_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def multiscale_check_conf(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Check the disparity computation configuration
 
@@ -934,7 +933,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         multiscale_ = multiscale.AbstractMultiscale(self.left_img, self.right_img, **cfg[input_step])  # type: ignore
         self.pipeline_cfg["pipeline"][input_step] = multiscale_.cfg
 
-    def cost_volume_confidence_check_conf(self, cfg: Dict[str, dict], input_step: str) -> None:
+    def cost_volume_confidence_check_conf(self, cfg: dict[str, dict], input_step: str) -> None:
         """
         Check the confidence configuration
 
@@ -949,7 +948,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
 
     @profile("check_conf")
     def check_conf(
-        self, cfg: Dict[str, dict], img_left: xr.Dataset, img_right: xr.Dataset, right_left_img_check: bool = False
+        self, cfg: dict[str, dict], img_left: xr.Dataset, img_right: xr.Dataset, right_left_img_check: bool = False
     ) -> None:
         """
         Check configuration and transitions
@@ -1007,7 +1006,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
             self.left_img = img_left
             self.right_img = img_right
 
-    def remove_transitions(self, transition_list: List[Dict[str, str]]) -> None:
+    def remove_transitions(self, transition_list: list[dict[str, str]]) -> None:
         """
         Delete all transitions defined in the input list
 
@@ -1024,7 +1023,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
                 self.remove_transition(trans["trigger"])
                 deleted_triggers.append(trans["trigger"])
 
-    def is_not_last_scale(self, _: str, __: Dict[str, dict]) -> bool:
+    def is_not_last_scale(self, _: str, __: dict[str, dict]) -> bool:
         """
         Check if the current scale is the last scale
         :param cfg: configuration
@@ -1039,7 +1038,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         return True
 
     @staticmethod
-    def check_band_pipeline(band_list: np.ndarray, step: str, band_used: Union[None, str, List[str], Dict]) -> None:
+    def check_band_pipeline(band_list: np.ndarray, step: str, band_used: None | str | list[str] | dict) -> None:
         """
         Check coherence band parameter between pipeline step and image dataset
 

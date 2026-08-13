@@ -25,14 +25,14 @@ This module contains functions to test the pyramid class of the multiscale modul
 """
 
 import unittest
-import pytest
 
 import numpy as np
+import pytest
 import xarray as xr
 
-from tests import common
 from pandora import multiscale
 from pandora.constants import Criteria
+from tests import common
 
 
 class TestMultiScale(unittest.TestCase):

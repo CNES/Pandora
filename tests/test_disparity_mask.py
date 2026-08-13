@@ -31,12 +31,12 @@ import unittest
 import numpy as np
 import xarray as xr
 from rasterio import Affine
-from tests import common
+
+from pandora import disparity, matching_cost
 from pandora.constants import Criteria
-from pandora import disparity
-from pandora import matching_cost
-from pandora.img_tools import add_disparity
 from pandora.criteria import validity_mask
+from pandora.img_tools import add_disparity
+from tests import common
 
 
 class TestDisparityMask(unittest.TestCase):

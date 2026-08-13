@@ -24,17 +24,15 @@
 This module contains functions to test the census matching cost step.
 """
 
-import pytest
-
+import json_checker
 import numpy as np
+import pytest
 import xarray as xr
 from rasterio import Affine
-import json_checker
 
 from pandora import matching_cost
-from pandora.img_tools import add_disparity
 from pandora.criteria import validity_mask
-
+from pandora.img_tools import add_disparity
 from tests import common
 
 

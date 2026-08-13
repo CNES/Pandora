@@ -24,16 +24,16 @@ This module contains functions associated to the Vfit Refinement algorithms in c
 #ifndef VFIT_HPP
 #define VFIT_HPP
 
-#include <pybind11/numpy.h>
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
+#include <string>
+#include <tuple>
 
 /**
- * @brief Returns the subpixel disparity and cost by matching a symmetric V shape 
+ * @brief Returns the subpixel disparity and cost by matching a symmetric V shape
  * (linear interpolation).
  *
- * @param cost Array of costs for disp - 1, disp, disp + 1.
+ * @param cost_0 Cost at disp - 1.
+ * @param cost_1 Cost at disp.
+ * @param cost_2 Cost at disp + 1.
  * @param disp The current disparity value.
  * @param measure The type of measure used to create the cost volume ("min" or "max").
  * @param cst_pandora_msk_pixel_stopped_interpolation Value for the
@@ -41,7 +41,11 @@ namespace py = pybind11;
  * @return A tuple containing the disparity shift, refined cost, and pixel state.
  */
 std::tuple<float, float, int> vfit_refinement_method(
-    py::array_t<float> cost, float disp, std::string measure,
+    float cost_0,
+    float cost_1,
+    float cost_2,
+    float disp,
+    const std::string& measure,
     int cst_pandora_msk_pixel_stopped_interpolation
 );
 

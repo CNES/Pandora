@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -24,7 +23,7 @@ This module contains classes and functions associated to the disparity map filte
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import Dict
+
 import xarray as xr
 
 from pandora.margins.descriptors import NullMargins
@@ -37,8 +36,8 @@ class AbstractFilter:
 
     __metaclass__ = ABCMeta
 
-    filter_methods_avail: Dict = {}
-    cfg: Dict | None = None
+    filter_methods_avail: dict = {}
+    cfg: dict | None = None
     margins = NullMargins()
 
     def __new__(cls, *args, cfg: dict = None, step=1, **kwargs):  # pylint:disable=unused-argument
@@ -51,20 +50,18 @@ class AbstractFilter:
         if cls is AbstractFilter:
             if isinstance(cfg["filter_method"], str):
                 try:
-                    return super(AbstractFilter, cls).__new__(cls.filter_methods_avail[cfg["filter_method"]])
+                    return super().__new__(cls.filter_methods_avail[cfg["filter_method"]])
                 except:
                     raise KeyError("No filter method named {} supported".format(cfg["filter_method"]))
             else:
                 if isinstance(cfg["filter_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
-                        return super(AbstractFilter, cls).__new__(
-                            cls.filter_methods_avail[cfg["filter_method"].encode("utf-8")]
-                        )
+                        return super().__new__(cls.filter_methods_avail[cfg["filter_method"].encode("utf-8")])
                     except:
                         raise KeyError("No filter method named {} supported".format(cfg["filter_method"]))
         else:
-            return super(AbstractFilter, cls).__new__(cls)
+            return super().__new__(cls)
         return None
 
     @classmethod

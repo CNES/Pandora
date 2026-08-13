@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -24,17 +23,17 @@ This module contains functions associated to the bilateral filter used to filter
 """
 
 import warnings
-from typing import Dict, Union, Tuple
 
 import numpy as np
 import xarray as xr
-from json_checker import Checker, And
+from json_checker import And, Checker
 
 import pandora.constants as cst
 from pandora.margins import Margins
 from pandora.profiler import profile
-from . import filter  # pylint: disable=redefined-builtin
+
 from ..common import sliding_window
+from . import filter  # pylint: disable=redefined-builtin
 
 
 @filter.AbstractFilter.register_subclass("bilateral")
@@ -48,7 +47,7 @@ class BilateralFilter(filter.AbstractFilter):
     _SIGMA_SPACE = 6.0
 
     @profile("bilateral_filter.__init__")
-    def __init__(self, cfg: Dict, image_shape: Tuple[int, int], step: int = 1):
+    def __init__(self, cfg: dict, image_shape: tuple[int, int], step: int = 1):
         """
         :param cfg: optional configuration, {'sigmaColor' : value, 'sigmaSpace' : value, 'image_shape': value}
         :type cfg: dict
@@ -65,7 +64,7 @@ class BilateralFilter(filter.AbstractFilter):
         value = min(*self._image_shape, sigma) * self._step
         return Margins(value, value, value, value)
 
-    def check_conf(self, cfg: Dict) -> Dict[str, Union[str, float]]:
+    def check_conf(self, cfg: dict) -> dict[str, str | float]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 

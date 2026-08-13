@@ -24,15 +24,17 @@
 This module contains functions to test the configuration
 """
 
-import unittest
 import copy
+import unittest
+
 import json_checker
+import numpy as np
 import pytest
 from transitions.core import MachineError
-import numpy as np
-from tests import common
+
 from pandora import check_configuration
 from pandora.state_machine import PandoraMachine
+from tests import common
 
 
 class TestConfig(unittest.TestCase):

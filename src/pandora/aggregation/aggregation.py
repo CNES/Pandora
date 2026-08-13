@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -24,7 +23,6 @@ This module contains classes and functions associated to the cost volume aggrega
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import Union, Dict
 
 import xarray as xr
 
@@ -38,8 +36,8 @@ class AbstractAggregation:
 
     __metaclass__ = ABCMeta
 
-    aggreg_methods_avail: Dict = {}
-    cfg: Dict | None = None
+    aggreg_methods_avail: dict = {}
+    cfg: dict | None = None
     margins = NullMargins()
 
     def __new__(cls, **cfg: dict):
@@ -53,20 +51,18 @@ class AbstractAggregation:
         if cls is AbstractAggregation:
             if isinstance(cfg["aggregation_method"], str):
                 try:
-                    return super(AbstractAggregation, cls).__new__(cls.aggreg_methods_avail[cfg["aggregation_method"]])
+                    return super().__new__(cls.aggreg_methods_avail[cfg["aggregation_method"]])
                 except:
                     raise KeyError("No aggregation method named {} supported".format(cfg["aggregation_method"]))
             else:
                 if isinstance(cfg["aggregation_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
-                        return super(AbstractAggregation, cls).__new__(
-                            cls.aggreg_methods_avail[cfg["aggregation_method"].encode("utf-8")]
-                        )
+                        return super().__new__(cls.aggreg_methods_avail[cfg["aggregation_method"].encode("utf-8")])
                     except:
                         raise KeyError("No aggregation method named {} supported".format(cfg["aggregation_method"]))
         else:
-            return super(AbstractAggregation, cls).__new__(cls)
+            return super().__new__(cls)
         return None
 
     @classmethod
@@ -100,7 +96,7 @@ class AbstractAggregation:
 
     @abstractmethod
     def cost_volume_aggregation(
-        self, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset, **cfg: Union[str, int]
+        self, img_left: xr.Dataset, img_right: xr.Dataset, cv: xr.Dataset, **cfg: str | int
     ) -> None:
         """
         Aggregate the cost volume for a pair of images

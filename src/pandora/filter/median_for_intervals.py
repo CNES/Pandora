@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -23,18 +22,18 @@
 This module contains functions associated to the median filter used to filter the disparity map.
 """
 
-from typing import Dict, cast
+from typing import cast
 
 import numpy as np
-from json_checker import Checker, And
 import xarray as xr
+from json_checker import And, Checker
 
-from pandora.profiler import profile
 from pandora.margins import Margins
+from pandora.profiler import profile
 
-from . import filter  # pylint: disable= redefined-builtin
 from ..constants import Criteria
 from ..interval_tools import interval_regularization
+from . import filter  # pylint: disable= redefined-builtin
 from .median import MedianFilter
 
 
@@ -52,7 +51,7 @@ class MedianForIntervalsFilter(filter.AbstractFilter):
     _QUANTILE_REGULARIZATION = 1.0
 
     @profile("median_for_intervals.__init__")
-    def __init__(self, *args, cfg: Dict, step: int = 1, **kwargs):  # pylint:disable=unused-argument
+    def __init__(self, *args, cfg: dict, step: int = 1, **kwargs):  # pylint:disable=unused-argument
         """
         :param cfg: optional configuration, {'filter_size': value}
         :type cfg: dictionary
@@ -68,7 +67,7 @@ class MedianForIntervalsFilter(filter.AbstractFilter):
         self._ambiguity_kernel_size = int(self.cfg["ambiguity_kernel_size"])
         self._step = step
 
-    def check_conf(self, cfg: Dict) -> Dict:
+    def check_conf(self, cfg: dict) -> dict:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 

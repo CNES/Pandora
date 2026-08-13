@@ -24,22 +24,25 @@ This module contains functions used by the Refinement algorithms in cpp.
 #ifndef REFINEMENT_TOOLS_HPP
 #define REFINEMENT_TOOLS_HPP
 
-#include <pybind11/numpy.h>
-#include <tuple>
 #include <string>
-
-namespace py = pybind11;
+#include <tuple>
 
 /**
- * @brief Validate costs and return early if necessary
+ * @brief Validate costs and return early if necessary.
  *
- * @param cost Array of costs for disp - 1, disp, disp + 1
- * @param measure The measure used to create the cost volume.
- * @return A tuple containing: whether the costs are valid, c0, c1, c2, ic0, ic1, ic2
+ * @param cost_0 Cost at disp - 1.
+ * @param cost_1 Cost at disp.
+ * @param cost_2 Cost at disp + 1.
+ * @param measure The measure used to create the cost volume ("min" or "max").
+ * @return A tuple containing: whether the costs are valid, cost_0, cost_1, cost_2,
+ * inverse_cost_0, inverse_cost_1, inverse_cost_2.
  */
 std::tuple<bool, float, float, float, float, float, float> validate_costs_and_get_variables(
-    pybind11::array_t<float>& cost,
+    float cost_0,
+    float cost_1,
+    float cost_2,
     const std::string& measure
 );
+
 
 #endif // REFINEMENT_TOOLS_HPP
