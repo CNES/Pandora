@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -25,7 +24,6 @@ This module contains classes and functions associated to the interpolation of th
 
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Dict
 
 import numpy as np
 import xarray as xr
@@ -44,7 +42,7 @@ class AbstractInterpolation:
 
     __metaclass__ = ABCMeta
 
-    interpolation_methods_avail: Dict = {}
+    interpolation_methods_avail: dict = {}
 
     def __new__(cls, **cfg: dict):
         """
@@ -56,9 +54,7 @@ class AbstractInterpolation:
         if cls is AbstractInterpolation:
             if isinstance(cfg["interpolated_disparity"], str):
                 try:
-                    return super(AbstractInterpolation, cls).__new__(
-                        cls.interpolation_methods_avail[cfg["interpolated_disparity"]]
-                    )
+                    return super().__new__(cls.interpolation_methods_avail[cfg["interpolated_disparity"]])
                 except KeyError:
                     logging.error(
                         "No interpolation method named % supported",
@@ -71,7 +67,7 @@ class AbstractInterpolation:
                 ):
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
-                        return super(AbstractInterpolation, cls).__new__(
+                        return super().__new__(
                             cls.interpolation_methods_avail[cfg["interpolated_disparity"].encode("utf-8")]
                         )
                     except KeyError:
@@ -81,7 +77,7 @@ class AbstractInterpolation:
                         )
                         raise KeyError
         else:
-            return super(AbstractInterpolation, cls).__new__(cls)
+            return super().__new__(cls)
         return None
 
     @classmethod

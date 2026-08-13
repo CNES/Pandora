@@ -25,8 +25,8 @@ This module contains functions to test the disparity map validation step.
 """
 
 import unittest
-import pytest
 
+import pytest
 from json_checker.core.exceptions import DictCheckerError, MissKeyCheckerError
 
 from pandora.profiler import Profiler

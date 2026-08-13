@@ -25,20 +25,20 @@ This module contains functions associated to the cost volume measure step.
 """
 
 # pylint:disable=too-many-branches
+import operator
 import sys
 from abc import ABCMeta, abstractmethod
 from math import ceil, floor
-from typing import Tuple, List, Union, Dict
-import operator
-from json_checker import And, Or
+
 import numpy as np
 import xarray as xr
+from json_checker import And, Or
 from scipy.ndimage import binary_dilation
 
+from pandora.criteria import mask_border, mask_invalid_variable_disparity_range
+from pandora.margins.descriptors import HalfWindowMargins
 from pandora.profiler import profile
 
-from pandora.margins.descriptors import HalfWindowMargins
-from pandora.criteria import mask_invalid_variable_disparity_range, mask_border
 from .cpp import matching_cost_cpp
 
 
@@ -49,10 +49,10 @@ class AbstractMatchingCost:
 
     __metaclass__ = ABCMeta
 
-    matching_cost_methods_avail: Dict = {}
+    matching_cost_methods_avail: dict = {}
     _subpix: int | None = None
     _window_size: int | None = None
-    cfg: Dict[str, Union[str, int]] | None = None
+    cfg: dict[str, str | int] | None = None
     _band: str | None = None
     _step_col: int | None = None
     _method: str | None = None
@@ -77,7 +77,7 @@ class AbstractMatchingCost:
 
     ops = {"+": operator.add, "-": operator.sub}
 
-    def __new__(cls, **cfg: Union[str, int]):
+    def __new__(cls, **cfg: str | int):
         """
         Return the plugin associated with the matching_cost_method given in the configuration
 
@@ -88,22 +88,20 @@ class AbstractMatchingCost:
         if cls is AbstractMatchingCost:
             if isinstance(cfg["matching_cost_method"], str):
                 try:
-                    return super(AbstractMatchingCost, cls).__new__(
-                        cls.matching_cost_methods_avail[cfg["matching_cost_method"]]
-                    )
+                    return super().__new__(cls.matching_cost_methods_avail[cfg["matching_cost_method"]])
                 except:
                     raise KeyError("No matching cost method named {} supported".format(cfg["matching_cost_method"]))
             else:
                 if isinstance(cfg["matching_cost_method"], unicode):  # type: ignore # pylint:disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
-                        return super(AbstractMatchingCost, cls).__new__(
+                        return super().__new__(
                             cls.matching_cost_methods_avail[cfg["matching_cost_method"].encode("utf-8")]
                         )
                     except:
                         raise KeyError("No matching cost method named {} supported".format(cfg["matching_cost_method"]))
         else:
-            return super(AbstractMatchingCost, cls).__new__(cls)
+            return super().__new__(cls)
         return None
 
     @classmethod
@@ -137,7 +135,7 @@ class AbstractMatchingCost:
         """
         print(f"{self._method} similarity measure")
 
-    def instantiate_class(self, **cfg: Union[str, int]) -> None:
+    def instantiate_class(self, **cfg: str | int) -> None:
         """
         :param cfg: optional configuration,  {'window_size': int, 'subpix': int,
                                                 'band': str}
@@ -155,7 +153,7 @@ class AbstractMatchingCost:
         # Remove spline_order key because it is a pandora2d setting and a need
         del self.cfg["spline_order"]
 
-    def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
+    def check_conf(self, **cfg: dict[str, str | int]) -> dict[str, str | int]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
@@ -328,7 +326,7 @@ class AbstractMatchingCost:
         return index_compute
 
     def grid_estimation(
-        self, img: xr.Dataset, cfg: Union[Dict[str, dict], None], disparity_grids: Tuple[np.ndarray, np.ndarray]
+        self, img: xr.Dataset, cfg: dict[str, dict] | None, disparity_grids: tuple[np.ndarray, np.ndarray]
     ) -> xr.Dataset:
         """
         Estimation of the grid xarray dataset that will store the cost volume.
@@ -376,7 +374,7 @@ class AbstractMatchingCost:
 
     @profile("matching_cost.allocate_cost_volume")
     def allocate_cost_volume(
-        self, image: xr.Dataset, disparity_grids: Tuple[np.ndarray, np.ndarray], cfg: Dict = None
+        self, image: xr.Dataset, disparity_grids: tuple[np.ndarray, np.ndarray], cfg: dict = None
     ) -> xr.Dataset:
         """
         Create a cost_volume dataset.
@@ -428,7 +426,7 @@ class AbstractMatchingCost:
 
     def point_interval(
         self, img_left: xr.Dataset, img_right: xr.Dataset, disp: float
-    ) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+    ) -> tuple[tuple[int, int], tuple[int, int]]:
         """
         Computes the range of points over which the similarity measure will be applied
 
@@ -484,7 +482,7 @@ class AbstractMatchingCost:
     @staticmethod
     def masks_dilatation(
         img_left: xr.Dataset, img_right: xr.Dataset, window_size: int, subp: int
-    ) -> Tuple[xr.DataArray, List[xr.DataArray]]:
+    ) -> tuple[xr.DataArray, list[xr.DataArray]]:
         """
         Return the left and right mask with the convention :
             - Invalid pixels are nan
@@ -602,7 +600,7 @@ class AbstractMatchingCost:
         return dilatate_left_mask_xr, [dilatate_right_mask_xr, dilatate_right_mask_shift]
 
     @staticmethod
-    def get_min_max_from_grid(disp_min: np.ndarray, disp_max: np.ndarray) -> Tuple[int, int]:
+    def get_min_max_from_grid(disp_min: np.ndarray, disp_max: np.ndarray) -> tuple[int, int]:
         """
         Find the smallest disparity present in disp_min, and the highest disparity present in disp_max
 
@@ -657,7 +655,7 @@ class AbstractMatchingCost:
 
     def mask_column_interval_without_step(
         self, cost_volume: xr.Dataset, coord_mask_right: np.ndarray, disp: float
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Computes the index columns over which the similarity measure will be applied
 
@@ -713,7 +711,7 @@ class AbstractMatchingCost:
 
     def mask_column_interval(
         self, cost_volume: xr.Dataset, coord_mask_left: np.ndarray, coord_mask_right: np.ndarray, disp: float
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Computes the index columns over which the similarity measure will be applied
 
@@ -852,7 +850,7 @@ class AbstractMatchingCost:
             mask_border(cost_volume)
 
     @profile("matching_cost.allocate_numpy_cost_volume")
-    def allocate_numpy_cost_volume(self, img_left: xr.Dataset, disparity_range: Union[np.ndarray, List]) -> np.ndarray:
+    def allocate_numpy_cost_volume(self, img_left: xr.Dataset, disparity_range: np.ndarray | list) -> np.ndarray:
         """
         Allocate the numpy cost volume cv = (disp, col, row), for efficient memory management
 

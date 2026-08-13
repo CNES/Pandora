@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -25,25 +24,24 @@ This module contains functions allowing to save the results and the configuratio
 
 import errno
 import json
-import os
-from typing import Dict, Tuple, List, Union
 import logging
+import os
 
 import numpy as np
 import rasterio.dtypes
 import xarray as xr
 
-from pandora.output_tree_design import get_out_dir, get_out_file_path
 from pandora.img_tools import rasterio_open
+from pandora.output_tree_design import get_out_dir, get_out_file_path
 
 
 def write_data_array(
     data_array: xr.DataArray,
     filename: str,
     dtype: rasterio.dtypes = rasterio.dtypes.float32,
-    band_names: List[str] = None,
-    crs: Union[rasterio.crs.CRS, None] = None,
-    transform: Union[rasterio.Affine, None] = None,
+    band_names: list[str] = None,
+    crs: rasterio.crs.CRS | None = None,
+    transform: rasterio.Affine | None = None,
 ) -> None:
     """
     Write a xarray.DataArray in a tiff file
@@ -181,7 +179,7 @@ def save_results(left: xr.Dataset, right: xr.Dataset, output: str) -> None:
         )
 
 
-def sliding_window(base_array: np.ndarray, shape: Tuple[int, int]) -> np.ndarray:
+def sliding_window(base_array: np.ndarray, shape: tuple[int, int]) -> np.ndarray:
     """
     Create a sliding window of using as_strided function : this function create a new a view (by manipulating
     data pointer) of the data array with a different shape. The new view pointing to the same memory block as
@@ -199,7 +197,7 @@ def sliding_window(base_array: np.ndarray, shape: Tuple[int, int]) -> np.ndarray
     return np.lib.stride_tricks.as_strided(base_array, shape=shp, strides=strides)
 
 
-def save_config(output: str, user_cfg: Dict) -> None:
+def save_config(output: str, user_cfg: dict) -> None:
     """
     Save the user configuration in json file
 
@@ -220,7 +218,7 @@ def save_config(output: str, user_cfg: Dict) -> None:
         json.dump(user_cfg, file_, indent=2)
 
 
-def is_method(string_method: str, methods: List[str]) -> bool:
+def is_method(string_method: str, methods: list[str]) -> bool:
     """
     Test if string_method is a method in methods
 

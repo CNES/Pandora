@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -23,8 +22,6 @@
 This module contains functions associated to the vfit method used in the refinement step.
 """
 
-from typing import Dict
-
 from json_checker import And, Checker
 
 from . import refinement
@@ -46,7 +43,7 @@ class Vfit(refinement.AbstractRefinement):
         self._refinement_method_name = str(self.cfg["refinement_method"])
 
     @staticmethod
-    def check_conf(**cfg: str) -> Dict[str, str]:
+    def check_conf(**cfg: str) -> dict[str, str]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 

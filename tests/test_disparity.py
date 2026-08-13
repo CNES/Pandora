@@ -32,14 +32,13 @@ import numpy as np
 import xarray as xr
 from rasterio import Affine
 
-from tests import common
 import pandora
-from pandora import disparity
-from pandora import matching_cost
-from pandora.img_tools import create_dataset_from_inputs, add_disparity
+from pandora import disparity, matching_cost
 from pandora.criteria import validity_mask
-from pandora.state_machine import PandoraMachine
+from pandora.img_tools import add_disparity, create_dataset_from_inputs
 from pandora.margins.descriptors import NullMargins
+from pandora.state_machine import PandoraMachine
+from tests import common
 
 
 class TestDisparity(unittest.TestCase):

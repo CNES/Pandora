@@ -28,8 +28,8 @@ import unittest
 
 import numpy as np
 
-from tests import common
 import pandora.marge
+from tests import common
 
 
 class TestMargins(unittest.TestCase):

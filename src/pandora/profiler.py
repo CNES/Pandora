@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -31,9 +30,9 @@ import time
 import uuid
 from multiprocessing import Pipe
 from threading import Thread
-from json_checker import Checker
 
 import pandas as pd  # type: ignore
+from json_checker import Checker
 
 try:
     import plotly.express as px  # type: ignore

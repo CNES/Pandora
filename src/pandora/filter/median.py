@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -24,17 +23,18 @@ This module contains functions associated to the median filter used to filter th
 """
 
 import warnings
-from typing import Dict, Union, cast
+from typing import cast
 
 import numpy as np
 import xarray as xr
-from json_checker import Checker, And
+from json_checker import And, Checker
 
 import pandora.constants as cst
-from pandora.profiler import profile
 from pandora.margins import Margins
-from . import filter  # pylint: disable= redefined-builtin
+from pandora.profiler import profile
+
 from ..common import sliding_window
+from . import filter  # pylint: disable= redefined-builtin
 
 
 @filter.AbstractFilter.register_subclass("median")
@@ -48,7 +48,7 @@ class MedianFilter(filter.AbstractFilter):
     # We ignore type because we just override a null value.
 
     @profile("median.__init__")
-    def __init__(self, *args, cfg: Dict, step: int = 1, **kwargs):  # pylint:disable=unused-argument
+    def __init__(self, *args, cfg: dict, step: int = 1, **kwargs):  # pylint:disable=unused-argument
         """
         :param cfg: optional configuration, {'filter_size': value}
         :type cfg: dictionary
@@ -62,7 +62,7 @@ class MedianFilter(filter.AbstractFilter):
         value = self._filter_size * self._step
         return Margins(value, value, value, value)
 
-    def check_conf(self, cfg: Dict) -> Dict[str, Union[str, int]]:
+    def check_conf(self, cfg: dict) -> dict[str, str | int]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 

@@ -25,15 +25,15 @@ This module contains functions to test the disparity map validation step.
 """
 
 import unittest
-import pytest
 
 import numpy as np
+import pytest
 import xarray as xr
 
-from tests import common
-from pandora.constants import Criteria
 from pandora import validation
+from pandora.constants import Criteria
 from pandora.validation.validation import CrossCheckingAccurate
+from tests import common
 
 
 class TestValidation(unittest.TestCase):

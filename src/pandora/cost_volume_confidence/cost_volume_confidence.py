@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -24,10 +23,9 @@ This module contains classes and functions to estimate confidence.
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import Tuple, Dict
 
-import xarray as xr
 import numpy as np
+import xarray as xr
 
 
 class AbstractCostVolumeConfidence:
@@ -38,7 +36,7 @@ class AbstractCostVolumeConfidence:
     __metaclass__ = ABCMeta
 
     confidence_methods_avail = {}
-    cfg: Dict | None = None
+    cfg: dict | None = None
     # Indicator
     _indicator = ""
 
@@ -52,13 +50,11 @@ class AbstractCostVolumeConfidence:
         if cls is AbstractCostVolumeConfidence:
             if isinstance(cfg["confidence_method"], str):
                 try:
-                    return super(AbstractCostVolumeConfidence, cls).__new__(
-                        cls.confidence_methods_avail[cfg["confidence_method"]]
-                    )
+                    return super().__new__(cls.confidence_methods_avail[cfg["confidence_method"]])
                 except:
                     raise KeyError("No confidence method named {} supported".format(cfg["confidence_method"]))
         else:
-            return super(AbstractCostVolumeConfidence, cls).__new__(cls)
+            return super().__new__(cls)
         return None
 
     @classmethod
@@ -97,7 +93,7 @@ class AbstractCostVolumeConfidence:
         img_left: xr.Dataset,
         img_right: xr.Dataset,
         cv: xr.Dataset,
-    ) -> Tuple[xr.Dataset, xr.Dataset]:
+    ) -> tuple[xr.Dataset, xr.Dataset]:
         """
         Computes a confidence prediction.
 
@@ -143,7 +139,7 @@ class AbstractCostVolumeConfidence:
         confidence_map: np.ndarray,
         disp: xr.Dataset,
         cv: xr.Dataset,
-    ) -> Tuple[xr.Dataset, xr.Dataset]:
+    ) -> tuple[xr.Dataset, xr.Dataset]:
         """
         Create or update the confidence measure : confidence_measure (xarray.DataArray of the cost volume and the
         disparity map) by adding an indicator

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -23,15 +22,14 @@
 This module contains functions for estimating interval bounds for the disparity
 """
 
-from typing import Dict, Tuple, Union
-
 import numpy as np
-from json_checker import And, Checker
 import xarray as xr
+from json_checker import And, Checker
 
 from pandora.profiler import profile
-from . import cost_volume_confidence
+
 from ..interval_tools import interval_regularization
+from . import cost_volume_confidence
 from .cpp import cost_volume_confidence_cpp
 
 
@@ -76,7 +74,7 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
         self._indicator_inf = self._method + "_inf" + str(self.cfg["indicator"])
         self._indicator_sup = self._method + "_sup" + str(self.cfg["indicator"])
 
-    def check_conf(self, **cfg: Union[str, float, int, bool]) -> Dict[str, Union[str, float, int, bool]]:
+    def check_conf(self, **cfg: str | float | int | bool) -> dict[str, str | float | int | bool]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
@@ -134,7 +132,7 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
         img_left: xr.Dataset = None,
         img_right: xr.Dataset = None,
         cv: xr.Dataset = None,
-    ) -> Tuple[xr.Dataset, xr.Dataset]:
+    ) -> tuple[xr.Dataset, xr.Dataset]:
         """
         Computes a confidence measure that evaluates the minimum and maximum disparity at
         each point with a confidence of possibility_threshold %
@@ -206,7 +204,7 @@ class IntervalBounds(cost_volume_confidence.AbstractCostVolumeConfidence):
         type_factor: float,
         grids: np.ndarray,
         disparity_range: np.ndarray,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Computes interval bounds on the disparity.
 

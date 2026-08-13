@@ -24,10 +24,11 @@
 This module contains functions to test the Pandora notebooks.
 """
 
+import fileinput
 import subprocess
 import tempfile
 import unittest
-import fileinput
+
 import pytest
 
 
@@ -88,8 +89,7 @@ class TestPandora(unittest.TestCase):
                 shell=True,
                 check=False,
                 cwd=directory,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
             )
         assert out.returncode == 0
 
@@ -113,8 +113,7 @@ class TestPandora(unittest.TestCase):
                 shell=True,
                 check=False,
                 cwd="notebooks",
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
             )
 
             assert out.returncode == 0
@@ -140,8 +139,7 @@ class TestPandora(unittest.TestCase):
                 shell=True,
                 check=False,
                 cwd="notebooks",
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
             )
 
             assert out.returncode == 0
@@ -166,8 +164,7 @@ class TestPandora(unittest.TestCase):
                 shell=True,
                 check=False,
                 cwd="notebooks/advanced_examples",
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
             )
 
             assert out.returncode == 0

@@ -25,19 +25,13 @@ Module with functional tests.
 # pylint: disable=redefined-outer-name,too-few-public-methods,too-many-positional-arguments
 
 import json
-import sys
+from importlib.metadata import entry_points
 
 import numpy as np
 import pytest
 
 import pandora
-from pandora.img_tools import rasterio_open, create_dataset_from_inputs
-
-if sys.version_info < (3, 10):
-    from importlib_metadata import entry_points
-else:
-    from importlib.metadata import entry_points
-
+from pandora.img_tools import create_dataset_from_inputs, rasterio_open
 
 plugin_set = entry_points(group="pandora.plugin").names
 

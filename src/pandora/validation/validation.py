@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -24,18 +23,16 @@ This module contains classes and functions associated to the validation step.
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import Dict, Union
 
 import numpy as np
 import xarray as xr
 from json_checker import And, Checker, OptionalKey, Or
 
-from pandora.constants import Criteria
 from pandora import common
+from pandora.constants import Criteria
 from pandora.cost_volume_confidence.cost_volume_confidence import AbstractCostVolumeConfidence
 from pandora.criteria import mask_border
 from pandora.disparity import extract_disparity_range_from_disparity_map
-
 from pandora.profiler import profile
 
 
@@ -46,8 +43,8 @@ class AbstractValidation:
 
     __metaclass__ = ABCMeta
 
-    validation_methods_avail: Dict = {}
-    cfg: Dict | None = None
+    validation_methods_avail: dict = {}
+    cfg: dict | None = None
 
     def __new__(cls, **cfg: dict):
         """
@@ -59,22 +56,18 @@ class AbstractValidation:
         if cls is AbstractValidation:
             if isinstance(cfg["validation_method"], str):
                 try:
-                    return super(AbstractValidation, cls).__new__(
-                        cls.validation_methods_avail[cfg["validation_method"]]
-                    )
+                    return super().__new__(cls.validation_methods_avail[cfg["validation_method"]])
                 except:
                     raise KeyError("No validation method named {} supported".format(cfg["validation_method"]))
             else:
                 if isinstance(cfg["validation_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
-                        return super(AbstractValidation, cls).__new__(
-                            cls.validation_methods_avail[cfg["validation_method"].encode("utf-8")]
-                        )
+                        return super().__new__(cls.validation_methods_avail[cfg["validation_method"].encode("utf-8")])
                     except:
                         raise KeyError("No validation method named {} supported".format(cfg["validation_method"]))
         else:
-            return super(AbstractValidation, cls).__new__(cls)
+            return super().__new__(cls)
         return None
 
     @classmethod
@@ -192,7 +185,7 @@ class CrossCheckingAccurate(AbstractValidation):
         self._threshold = self.cfg["cross_checking_threshold"]
         self._method = self.cfg["validation_method"]
 
-    def check_conf(self, **cfg: Union[str, int, float, bool]) -> Dict[str, Union[str, int, float, bool]]:
+    def check_conf(self, **cfg: str | int | float | bool) -> dict[str, str | int | float | bool]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 

@@ -17,8 +17,8 @@
 # limitations under the License.
 
 # pylint: skip-file
+
 import numpy as np
-from typing import Tuple
 
 def partially_missing_variable_ranges(disps: np.ndarray, img_mask: np.ndarray) -> np.ndarray:
     """

@@ -1,5 +1,4 @@
 # type: ignore
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -28,8 +27,8 @@ import pytest
 import xarray as xr
 from json_checker import MissKeyCheckerError
 
-from pandora.constants import Criteria
 import pandora.filter as flt
+from pandora.constants import Criteria
 from pandora.margins import Margins
 
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -23,15 +22,12 @@
 This module contains functions associated to ZNCC method used in the cost volume measure step.
 """
 
-from typing import Dict, Union, Tuple, List
-
 import numpy as np
 import xarray as xr
-from json_checker import Checker, And
+from json_checker import And, Checker
 
-from pandora.img_tools import shift_right_img, compute_mean_raster, compute_std_raster
+from pandora.img_tools import compute_mean_raster, compute_std_raster, shift_right_img
 from pandora.matching_cost import matching_cost
-
 from pandora.profiler import profile
 
 
@@ -43,7 +39,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
     """
 
     @profile("zncc.__init__")
-    def __init__(self, **cfg: Union[str, int]) -> None:
+    def __init__(self, **cfg: str | int) -> None:
         """
         :param cfg: optional configuration,  {'window_size': value, 'subpix': value}
         :type cfg: dictionary
@@ -51,7 +47,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
         """
         super().instantiate_class(**cfg)
 
-    def check_conf(self, **cfg: Dict[str, Union[str, int]]) -> Dict[str, Union[str, int]]:
+    def check_conf(self, **cfg: dict[str, str | int]) -> dict[str, str | int]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
@@ -72,7 +68,7 @@ class Zncc(matching_cost.AbstractMatchingCost):
 
     def point_interval(
         self, img_left: xr.Dataset, img_right: xr.Dataset, disp: float
-    ) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+    ) -> tuple[tuple[int, int], tuple[int, int]]:
         """
         Update point_p and point_q values if abs(disp) > nb_col - (int(self._window_size / 2) * 2).
 
@@ -244,9 +240,9 @@ class Zncc(matching_cost.AbstractMatchingCost):
 def apply_divide_standard(
     zncc: np.ndarray,
     img_left: np.ndarray,
-    img_right: List[np.ndarray],
-    p_std: Tuple[int, int],
-    q_std: Tuple[int, int],
+    img_right: list[np.ndarray],
+    p_std: tuple[int, int],
+    q_std: tuple[int, int],
     i_right: int,
 ):
     """

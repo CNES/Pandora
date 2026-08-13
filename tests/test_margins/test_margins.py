@@ -27,8 +27,8 @@ import pytest
 
 from pandora.margins import (
     GlobalMargins,
-    Margins,
     MarginDict,
+    Margins,
     max_margins,
 )
 

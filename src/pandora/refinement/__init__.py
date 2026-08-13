@@ -23,8 +23,7 @@
 Init file for refinement module.
 """
 
-from . import quadratic
-from . import vfit
+from . import quadratic, vfit
 from .refinement import AbstractRefinement
 
 # pylint: disable=missing-module-docstring

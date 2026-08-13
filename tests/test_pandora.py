@@ -26,20 +26,20 @@ This module contains functions to test the Pandora pipeline.
 
 # pylint: disable=redefined-outer-name
 
+import copy
 import json
 import unittest
-import copy
 
 import numpy as np
 import pytest
 import xarray as xr
 from rasterio import Affine
 
-from tests import common
 import pandora
 from pandora import import_plugin
-from pandora.img_tools import create_dataset_from_inputs, rasterio_open, add_disparity
+from pandora.img_tools import add_disparity, create_dataset_from_inputs, rasterio_open
 from pandora.state_machine import PandoraMachine
+from tests import common
 
 
 def error(
@@ -248,7 +248,7 @@ class TestPandora(unittest.TestCase):
         for row in range(n_row):
             for col in range(n_col):
                 if gt[row, col] != unknown_disparity:
-                    if abs((data[row, col] + gt[row, col])) > threshold:
+                    if abs(data[row, col] + gt[row, col]) > threshold:
                         nb_error += 1
 
         return nb_error / float(n_row * n_col)

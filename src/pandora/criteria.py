@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -23,16 +22,16 @@
 This module contains functions associated to the validity mask created in the cost volume step.
 """
 
-from typing import Union, Tuple
 from enum import IntFlag
 
 import numpy as np
-from numpy.typing import DTypeLike, ArrayLike
-from scipy.ndimage import binary_dilation
 import xarray as xr
-from pandora.constants import Criteria
+from numpy.typing import ArrayLike, DTypeLike
+from scipy.ndimage import binary_dilation
 
+from pandora.constants import Criteria
 from pandora.profiler import profile
+
 from .cpp import criteria_cpp
 
 
@@ -270,7 +269,7 @@ def allocate_left_mask(cv: xr.Dataset, img_left: xr.Dataset) -> None:
     ).data.astype(np.uint16)
 
 
-def allocate_right_mask(cv: xr.Dataset, img_right: xr.Dataset, bit_1: Union[np.ndarray, Tuple]) -> None:
+def allocate_right_mask(cv: xr.Dataset, img_right: xr.Dataset, bit_1: np.ndarray | tuple) -> None:
     """
     Allocate the right image mask
 

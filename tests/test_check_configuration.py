@@ -24,25 +24,25 @@ This module contains functions to test all the methods in check_configuration mo
 import re
 
 import numpy as np
+import pytest
 import xarray as xr
 from rasterio import Affine
 from skimage.io import imsave
-import pytest
 
-from pandora.img_tools import create_dataset_from_inputs, add_disparity, rasterio_open
 from pandora.check_configuration import (
+    check_attributes,
+    check_band_names,
     check_dataset,
     check_datasets,
+    check_disparities_from_dataset,
+    check_disparities_from_input,
+    check_disparity_ranges_are_inside_image,
+    check_image_dimension,
+    check_shape,
     default_short_configuration,
     update_conf,
-    check_shape,
-    check_band_names,
-    check_image_dimension,
-    check_disparities_from_input,
-    check_disparities_from_dataset,
-    check_attributes,
-    check_disparity_ranges_are_inside_image,
 )
+from pandora.img_tools import add_disparity, create_dataset_from_inputs, rasterio_open
 from tests import common
 
 

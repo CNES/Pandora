@@ -23,7 +23,5 @@
 Init file for matching cost module.
 """
 
-from . import census
-from . import sad_ssd
-from . import zncc
+from . import census, sad_ssd, zncc
 from .matching_cost import AbstractMatchingCost

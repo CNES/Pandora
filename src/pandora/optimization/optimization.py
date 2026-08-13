@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf8
 #
 # Copyright (c) 2026 Centre National d'Etudes Spatiales (CNES).
 #
@@ -24,7 +23,6 @@ This module contains classes and functions associated to the cost volume optimiz
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import Dict
 
 import xarray as xr
 
@@ -38,11 +36,11 @@ class AbstractOptimization:
 
     __metaclass__ = ABCMeta
 
-    optimization_methods_avail: Dict = {}
+    optimization_methods_avail: dict = {}
     cfg = None
     margins = UniformMargins(40)
 
-    def __new__(cls, _img: xr.Dataset, **cfg: Dict[str, dict]):
+    def __new__(cls, _img: xr.Dataset, **cfg: dict[str, dict]):
         """
         Return the plugin associated with the optimization_method given in the configuration
 
@@ -54,22 +52,20 @@ class AbstractOptimization:
         if cls is AbstractOptimization:
             if isinstance(cfg["optimization_method"], str):
                 try:
-                    return super(AbstractOptimization, cls).__new__(
-                        cls.optimization_methods_avail[cfg["optimization_method"]]
-                    )
+                    return super().__new__(cls.optimization_methods_avail[cfg["optimization_method"]])
                 except:
                     raise KeyError("No optimization method named {} supported".format(cfg["optimization_method"]))
             else:
                 if isinstance(cfg["optimization_method"], unicode):  # type: ignore # pylint: disable=undefined-variable
                     # creating a plugin from registered short name given as unicode (py2 & 3 compatibility)
                     try:
-                        return super(AbstractOptimization, cls).__new__(
+                        return super().__new__(
                             cls.optimization_methods_avail[cfg["optimization_method"].encode("utf-8")]
                         )
                     except:
                         raise KeyError("No optimization method named {} supported".format(cfg["optimization_method"]))
         else:
-            return super(AbstractOptimization, cls).__new__(cls)
+            return super().__new__(cls)
         return None
 
     @classmethod
