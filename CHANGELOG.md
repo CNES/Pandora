@@ -1,5 +1,7 @@
 # Changelog
 
+# 1.9.0 (August 2026)
+
 ## 1.9.0a1 (August 2026)
 
 ### Changed 
