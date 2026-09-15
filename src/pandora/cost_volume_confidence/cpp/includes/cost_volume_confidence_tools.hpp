@@ -38,9 +38,18 @@ namespace py = pybind11;
  * @return the index where value should be inserted
  */
 size_t searchsorted(const py::array_t<float>& array, float value);
-std::tuple<float, float,
-           pybind11::detail::unchecked_mutable_reference<float, 2>,
-           pybind11::detail::unchecked_mutable_reference<float, 2>>
+
+/**
+ * @brief Compute the global and per-pixel minimum and maximum costs across all disparity values.
+ * 
+ * @param r_cv the 3D cost volume array with shape (n_row, n_col, n_disp)
+ * @param n_row the number of rows in the cost volume
+ * @param n_col the number of columns in the cost volume
+ * @param n_disp the number of disparity values in the cost volume
+ * @return  a tuple containing the global minimum cost, the global maximum cost, 
+ * the 2D array of per-pixel minimum costs, and the 2D array of per-pixel maximum costs
+ */
+std::tuple<float, float, py::array_t<float>, py::array_t<float>>
 min_max_cost(
     py::detail::unchecked_reference<float, 3> r_cv,
     size_t n_row,
