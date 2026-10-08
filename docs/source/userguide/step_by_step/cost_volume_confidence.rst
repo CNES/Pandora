@@ -109,9 +109,11 @@ ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial
      - No. Only available if "ambiguity" or "risk" method
    * - *normalization*
      - Ambiguity normalization
-     - bool
-     - true
-     - true, false
+     - dict
+     - {"enable": True, "type": "global"}
+     - | {"enable": true, "type": "global"}
+       | {"enable": true, "type": "local"}
+       | {"enable": false}
      - No. Only available if "ambiguity" method
    * - *possibility_threshold*
      - Threshold on possibility distribution
@@ -157,6 +159,10 @@ ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial
      - 0.9
      - >=0 and <=1
      - No. Only available if "interval_bounds" method
+
+.. note::
+
+    * When ``normalization`` is set to {"enable": true}, the type is automatically set to "global".
 
 
 **Example**

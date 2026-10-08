@@ -109,6 +109,36 @@ class AbstractCostVolumeConfidence:
         """
 
     @staticmethod
+    def local_ambiguity_normalization(confidence: np.ndarray, dataset: xr.Dataset, nbr_etas: int, subpix: int = 1):
+        """
+        Normalize ambiguity with local disparity range
+
+        :param confidence: confidence
+        :type confidence: 2D np.ndarray (row, col) dtype = float32
+        :param dataset: Dataset image
+        :tye dataset: xarray.Dataset
+        :param nbr_etas: size of etas
+        :type nbr_etas: int
+        :param subpix:  subpix used in matching cost
+        :type subpix: int
+        :return: the normalized confidence
+        :rtype: 2D np.ndarray (row, col) dtype = float32
+        """
+
+        confidence_ = np.copy(confidence)
+
+        disp_range = dataset["disparity"].sel(band_disp="max").values - dataset["disparity"].sel(band_disp="min").values
+
+        normalization = disp_range * nbr_etas * subpix
+        norm_confidence = np.divide(
+            confidence_,
+            normalization,
+            out=confidence_,
+            where=normalization != 0,
+        )
+        return norm_confidence
+
+    @staticmethod
     def normalize_with_extremum(
         confidence: np.ndarray, dataset: xr.Dataset, nbr_etas: int, subpix: int = 1
     ) -> np.ndarray:

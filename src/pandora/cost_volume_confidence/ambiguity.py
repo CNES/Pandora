@@ -21,7 +21,7 @@ This module contains functions for estimating confidence from ambiguity.
 """
 
 import logging
-
+from typing import Any
 import numpy as np
 import xarray as xr
 from json_checker import And, Checker
@@ -45,7 +45,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
     # Percentile value to normalize ambiguity
     _PERCENTILE = 1.0
     # Ambiguity normalization
-    _NORMALIZATION = True
+    _NORMALIZATION = {"enable": True, "type": "global"}
     # Method name
     _method = "ambiguity"
 
@@ -67,7 +67,24 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         self._etas = np.arange(self._eta_min, self._eta_max, self._eta_step)
         self._nbr_etas = self._etas.shape[0]
 
-    def check_conf(self, **cfg: str | float) -> dict[str, str | float]:
+    @staticmethod
+    def _is_valid_normalization(x: Any) -> bool:
+        if not isinstance(x, dict):
+            return False
+
+        enable = x.get("enable")
+
+        if enable is True:
+            if set(x) == {"enable"}:
+                return True
+            return set(x) == {"enable", "type"} and x["type"] in ("global", "local")
+
+        if enable is False:
+            return set(x) == {"enable"}
+
+        return False
+
+    def check_conf(self, **cfg: Any) -> dict[str, Any]:
         """
         Add default values to the dictionary if there are missing elements and check if the dictionary is correct
 
@@ -76,6 +93,7 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         :return cfg: ambiguity configuration updated
         :rtype: dict
         """
+
         if "eta_max" not in cfg:
             cfg["eta_max"] = self._ETA_MAX
         if "eta_step" not in cfg:
@@ -85,11 +103,14 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         if "normalization" not in cfg:
             cfg["normalization"] = self._NORMALIZATION
 
+        if cfg["normalization"]["enable"]:
+            cfg["normalization"].setdefault("type", "global")
+
         schema = {
             "confidence_method": And(str, lambda input: "ambiguity"),
             "eta_max": And(float, lambda input: 0 < input < 1),
             "eta_step": And(float, lambda input: 0 < input < 1),
-            "normalization": bool,
+            "normalization": And(dict, self._is_valid_normalization),
             "indicator": str,
         }
 
@@ -145,22 +166,27 @@ class Ambiguity(cost_volume_confidence.AbstractCostVolumeConfidence):
         )[0]
 
         # If activated, ambiguity normalization with percentile
-        if self._normalization:
-            if "global_disparity" in img_left.attrs:
-                ambiguity = self.normalize_with_extremum(
+        if self._normalization["enable"]:
+            if self._normalization["type"] == "global":
+                if "global_disparity" in img_left.attrs:
+                    ambiguity = self.normalize_with_extremum(
+                        ambiguity, img_left, nbr_etas=self._nbr_etas, subpix=cv.attrs["subpixel"]
+                    )
+                    logging.info(
+                        "You are not using ambiguity normalization by percentile; \n"
+                        "you are in a specific case with the instantiation of global_disparity."
+                    )
+                # in case of cross correlation
+                elif "global_disparity" in img_right.attrs:
+                    ambiguity = self.normalize_with_extremum(
+                        ambiguity, img_right, nbr_etas=self._nbr_etas, subpix=cv.attrs["subpixel"]
+                    )
+                else:
+                    ambiguity = self.normalize_with_percentile(ambiguity)
+            elif self._normalization["type"] == "local":
+                ambiguity = self.local_ambiguity_normalization(
                     ambiguity, img_left, nbr_etas=self._nbr_etas, subpix=cv.attrs["subpixel"]
                 )
-                logging.info(
-                    "You are not using ambiguity normalization by percentile; \n"
-                    "you are in a specific case with the instantiation of global_disparity."
-                )
-            # in case of cross correlation
-            elif "global_disparity" in img_right.attrs:
-                ambiguity = self.normalize_with_extremum(
-                    ambiguity, img_right, nbr_etas=self._nbr_etas, subpix=cv.attrs["subpixel"]
-                )
-            else:
-                ambiguity = self.normalize_with_percentile(ambiguity)
 
         # Conversion of ambiguity into a confidence measure
         ambiguity = 1 - ambiguity
