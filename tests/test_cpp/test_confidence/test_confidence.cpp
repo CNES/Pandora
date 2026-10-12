@@ -55,20 +55,23 @@ TEST_CASE("test min max function"){
     min_cost_ref = 28;
     max_cost_ref = 49;
 
-    std::vector<float> rw_min_img_ref = {28, 34, std::nanf("")};
-    std::vector<float> rw_max_img_ref = {39, 49, std::nanf("")};
+    std::vector<float> min_img_ref = {28, 34, std::nanf("")};
+    std::vector<float> max_img_ref = {39, 49, std::nanf("")};
 
-    auto [min_cost, max_cost, rw_min_img, rw_max_img] = min_max_cost(unchecked_cv, n_rows, n_cols, n_disp);
+    auto [min_cost, max_cost, min_img, max_img] = min_max_cost(unchecked_cv, n_rows, n_cols, n_disp);
+
+    auto rw_min_img = min_img.unchecked<2>();
+    auto rw_max_img = max_img.unchecked<2>();
 
     CHECK(min_cost == doctest::Approx(28));
     CHECK(max_cost == doctest::Approx(49));
 
-    CHECK(rw_min_img(0, 0) == doctest::Approx(rw_min_img_ref[0]));
-    CHECK(rw_min_img(0, 1) == doctest::Approx(rw_min_img_ref[1]));
+    CHECK(rw_min_img(0, 0) == doctest::Approx(min_img_ref[0]));
+    CHECK(rw_min_img(0, 1) == doctest::Approx(min_img_ref[1]));
     CHECK(std::isnan(rw_min_img(0, 2)));
 
-    CHECK(rw_max_img(0, 0) == doctest::Approx(rw_max_img_ref[0]));
-    CHECK(rw_max_img(0, 1) == doctest::Approx(rw_max_img_ref[1]));
+    CHECK(rw_max_img(0, 0) == doctest::Approx(max_img_ref[0]));
+    CHECK(rw_max_img(0, 1) == doctest::Approx(max_img_ref[1]));
     CHECK(std::isnan(rw_max_img(0, 2)));
 
     CHECK(min_cost == doctest::Approx(min_cost_ref));

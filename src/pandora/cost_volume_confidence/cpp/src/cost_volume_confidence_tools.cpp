@@ -38,9 +38,7 @@ size_t searchsorted(const py::array_t<float>& array, float value) {
     return left;
 }
 
-std::tuple<float, float,
-           pybind11::detail::unchecked_mutable_reference<float, 2>,
-           pybind11::detail::unchecked_mutable_reference<float, 2>>
+std::tuple<float, float, py::array_t<float>, py::array_t<float>>
 min_max_cost(
     py::detail::unchecked_reference<float, 3> r_cv,
     size_t n_row,
@@ -80,8 +78,8 @@ min_max_cost(
             rw_max_img(i, j) = pix_max_cost;
             min_cost = std::min(min_cost, pix_min_cost);
             max_cost = std::max(max_cost, pix_max_cost);
-
         }
     }
-    return std::make_tuple(min_cost, max_cost, rw_min_img, rw_max_img);
+
+    return std::make_tuple(min_cost, max_cost, min_img, max_img);
 }
