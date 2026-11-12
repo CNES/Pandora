@@ -21,6 +21,8 @@
 This module contains functions to test the confidence module with interval bounds.
 """
 
+import logging
+
 import numpy as np
 
 import pandora
@@ -114,3 +116,32 @@ def test_interval_bounds(create_img_for_confidence):
     # Check if the calculated intervals is equal to the ground truth (same shape and all elements equals)
     np.testing.assert_allclose(left["confidence_measure"].data[:, :, 0], inf_bound_gt, rtol=1e-06)
     np.testing.assert_allclose(left["confidence_measure"].data[:, :, 1], sup_bound_gt, rtol=1e-06)
+
+
+def test_interval_bounds_warning_non_normalized_ambiguity(create_img_for_confidence, caplog):
+    """A warning should be logged when interval bounds use non-normalized ambiguity."""
+    left_im, right_im = create_img_for_confidence
+
+    user_cfg = {
+        "input": {"left": {"disp_min": -1, "disp_max": 1}},
+        "pipeline": {
+            "matching_cost": {"matching_cost_method": "sad", "window_size": 1, "subpix": 1},
+            "cost_volume_confidence.1": {
+                "confidence_method": "ambiguity",
+                "normalization": {"enable": False},
+            },
+            "cost_volume_confidence.2": {
+                "confidence_method": "interval_bounds",
+                "ambiguity_indicator": "1",
+            },
+            "disparity": {"disparity_method": "wta"},
+            "filter": {"filter_method": "median"},
+        },
+    }
+    pandora_machine = PandoraMachine()
+    cfg = pandora.check_configuration.update_conf(pandora.check_configuration.default_short_configuration, user_cfg)
+
+    with caplog.at_level(logging.WARNING):
+        pandora.run(pandora_machine, left_im, right_im, cfg)
+
+    assert "Interval bounds are being computed with non-normalized ambiguity" in caplog.text
