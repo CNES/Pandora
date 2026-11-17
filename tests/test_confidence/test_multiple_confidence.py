@@ -117,7 +117,7 @@ def test_non_normalized_ambiguity_std_full_pipeline(create_img_for_confidence):
                 "confidence_method": "ambiguity",
                 "eta_max": 0.3,
                 "eta_step": 0.25,
-                "normalization": False,
+                "normalization": {"enable": False},
             },
             "disparity": {"disparity_method": "wta"},
             "filter": {"filter_method": "median"},

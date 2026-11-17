@@ -75,7 +75,8 @@ py::list compute_risk_and_sampled_risk(
         );
     }
 
-    auto [min_cost, max_cost, rw_min_img, _] = min_max_cost(r_cv, n_row, n_col, n_disp);
+    auto [min_cost, max_cost, min_img, _] = min_max_cost(r_cv, n_row, n_col, n_disp);
+    auto rw_min_img = min_img.unchecked<2>();
 
     float diff_cost = max_cost - min_cost;
 

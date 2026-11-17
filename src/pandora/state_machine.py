@@ -557,6 +557,32 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         # Update the current scale for the next state
         self.current_scale = self.current_scale - 1
 
+    @staticmethod
+    def _warn_if_interval_with_non_normalized_ambiguity(cfg: dict[str, dict], input_step: str) -> None:
+        """Warn when interval bounds rely on unnormalized ambiguity."""
+        step_cfg = cfg["pipeline"].get(input_step, {})
+        if not isinstance(step_cfg, dict):
+            return
+        if step_cfg.get("confidence_method") != "interval_bounds":
+            return
+
+        for step_name, pipeline_step in cfg["pipeline"].items():
+            if not isinstance(pipeline_step, dict):
+                continue
+            if not str(step_name).startswith("cost_volume_confidence"):
+                continue
+            if pipeline_step.get("confidence_method") != "ambiguity":
+                continue
+
+            # if normalization is not specified, use default value
+            normalization = pipeline_step.get("normalization", {"enable": True, "type": "global"})
+            if isinstance(normalization, dict) and normalization.get("enable") is False:
+                logging.warning(
+                    "Interval bounds are being computed with non-normalized ambiguity. "
+                    "This may create artifacts. Consider enabling ambiguity normalization."
+                )
+                return
+
     @profile("cost_volume_confidence_run")
     def cost_volume_confidence_run(self, cfg: dict[str, dict], input_step: str) -> None:
         """
@@ -573,6 +599,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         cfg["pipeline"][input_step]["indicator"] = ""
         if len(input_step.split(".")) == 2:
             cfg["pipeline"][input_step]["indicator"] = "." + input_step.split(".")[1]
+        self._warn_if_interval_with_non_normalized_ambiguity(cfg, input_step)
         confidence_ = cost_volume_confidence.AbstractCostVolumeConfidence(**cfg["pipeline"][input_step])  # type: ignore
 
         logging.info("Confidence prediction...")
@@ -1015,7 +1042,7 @@ class PandoraMachine(Machine):  # pylint:disable=too-many-instance-attributes
         :return: None
         """
         # Transition is removed using trigger name. But one trigger name can be used by multiple transitions
-        # In this case, the 'remove_transition' function removes all transitions using this trigger name
+        # In this case, the 'remove_transition' function removes all transitions using this trigger name.
         # deleted_triggers list is used to avoid multiple call of 'remove_transition' with the same trigger name.
         deleted_triggers = []
         for trans in transition_list:

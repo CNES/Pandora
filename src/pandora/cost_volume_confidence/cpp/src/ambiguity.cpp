@@ -63,7 +63,8 @@ py::list compute_ambiguity_and_sampled_ambiguity(
         to_return.append(samp_amb);
     }
 
-    auto [min_cost, max_cost, rw_min_img, _] = min_max_cost(r_cv, n_row, n_col, n_disp);
+    auto [min_cost, max_cost, min_img, _] = min_max_cost(r_cv, n_row, n_col, n_disp);
+    auto rw_min_img = min_img.mutable_unchecked<2>(); 
 
     float diff_cost = max_cost - min_cost;
 

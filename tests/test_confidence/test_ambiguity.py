@@ -84,7 +84,7 @@ def test_ambiguity_without_normalization(create_img_for_confidence):
     cv_.attrs["type_measure"] = "min"
 
     ambiguity_ = confidence.AbstractCostVolumeConfidence(
-        **{"confidence_method": "ambiguity", "eta_max": 0.2, "eta_step": 0.1, "normalization": False}
+        **{"confidence_method": "ambiguity", "eta_max": 0.2, "eta_step": 0.1, "normalization": {"enable": False}}
     )
 
     # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
@@ -97,6 +97,81 @@ def test_ambiguity_without_normalization(create_img_for_confidence):
 
     # Check if the calculated ambiguity is equal to the ground truth (same shape and all elements equals)
     np.testing.assert_allclose(cv_["confidence_measure"].data[:, :, 0], ambiguity_ground_truth, rtol=1e-06)
+
+
+def test_ambiguity_local_normalization(create_images, create_cv_for_variable_disparities):
+    """
+    Test the ambiguity method with local normalization
+    """
+
+    left_im, right_im, _ = create_images
+
+    cv_ = create_cv_for_variable_disparities
+
+    cv_ = xr.Dataset(
+        {"cost_volume": (["row", "col", "disp"], cv_)},
+        coords={
+            "row": [0, 1, 2, 3],
+            "col": [0, 1, 2, 3],
+            "disp": [-1, 0, 1],
+        },
+    )
+    cv_.attrs["type_measure"] = "min"
+    cv_.attrs["subpixel"] = 1.0
+
+    ambiguity_ = confidence.AbstractCostVolumeConfidence(
+        **{
+            "confidence_method": "ambiguity",
+            "eta_max": 0.2,
+            "eta_step": 0.1,
+            "normalization": {"enable": True, "type": "local"},
+        }
+    )
+
+    # Apply median filter to the disparity map. Median filter is only applied on valid pixels.
+    ambiguity_.confidence_prediction(None, left_im, right_im, cv_)
+
+    amb_int_local_normalization = np.array(
+        [[1.5, 2.0, 1.0, 2.0], [2.0, 2.0, 2.0, 1.5], [2.0, 2.0, 1.0, 2.0], [2.0, 2.0, 2.0, 1.0]]
+    )
+    # Ambiguity to confidence measure
+    confidence_ground_truth = 1 - amb_int_local_normalization
+
+    # Check if the calculated ambiguity is equal to the ground truth (same shape and all elements equals)
+    np.testing.assert_allclose(cv_["confidence_measure"].data[:, :, 0], confidence_ground_truth, rtol=1e-06)
+
+
+def test_local_ambiguity_normalization_function(create_images):
+    """
+    Test the specific local normalization function
+    """
+
+    # Ambiguity integral not normalized
+    ambiguity_before_normalization = np.array(
+        [[1.5, 2.0, 1.0, 2.0], [2.0, 2.0, 2.0, 1.5], [2.0, 2.0, 1.0, 2.0], [2.0, 2.0, 2.0, 1.0]]
+    )
+
+    left_im, right_im, _ = create_images
+
+    ambiguity_ = confidence.AbstractCostVolumeConfidence(
+        **{
+            "confidence_method": "ambiguity",
+            "eta_max": 0.2,
+            "eta_step": 0.1,
+            "normalization": {"enable": True, "type": "local"},
+        }
+    )
+
+    ambiguity_after_normalization = ambiguity_.local_ambiguity_normalization(
+        ambiguity_before_normalization, left_im, 2, 1.0
+    )
+
+    confidence_ground_truth = np.array(
+        [[0.375, 1.0, 0.25, 1.0], [1.0, 1.0, 1.0, 0.375], [1.0, 1.0, 0.5, 1.0], [1.0, 1.0, 1.0, 0.25]]
+    )
+
+    # Check if the calculated ambiguity is equal to the ground truth (same shape and all elements equals)
+    np.testing.assert_allclose(ambiguity_after_normalization, confidence_ground_truth, rtol=1e-06)
 
 
 def test_compute_ambiguity_and_sampled_ambiguity():
