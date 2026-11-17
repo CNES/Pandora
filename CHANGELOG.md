@@ -1,6 +1,17 @@
 # Changelog
 
-# 1.9.0 (August 2026)
+## 1.10.0 (November 2026)
+
+### Added 
+
+- Added local ambiguity normalization. [#507]
+- Added warning when ambiguity used for interval bounds is not normalized. 
+
+### Fixed 
+
+- Fixed bug in cost volume confidence cpp computation. [#506]
+
+## 1.9.0 (August 2026)
 
 ## 1.9.0a1 (August 2026)
 
